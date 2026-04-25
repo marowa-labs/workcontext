@@ -1,9 +1,13 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3001/api";
-// Extracted from terminal logs - still valid for ~40 mins
-const AUTH_TOKEN =
-  "eyJhbGciOiJFUzI1NiIsImtpZCI6IjA0MDljNWUyLTg1NTAtNDk5OC1hODBjLThkYjNlYWU3ZjAxZiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL21xZGVxZWZ0c2t5Z2FmeXJuZ3V3LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJiYTA5ODM3YS04ZGU5LTRmOTUtOTQ5OC04OWNiYmRjNjQ3NmYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzcwNDg0MzkxLCJpYXQiOjE3NzA0ODA3OTEsImVtYWlsIjoiY2FzaHRlY2hkaWdpdGFsQGdtYWlsLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWwiOiJjYXNodGVjaGRpZ2l0YWxAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZ1bGxfbmFtZSI6IkNhc2ggVGVjaCIsIm90cF9tZXRob2QiOiJzbXMiLCJwaG9uZV9udW1iZXIiOiIrOTE5MDYzNTg2NTY4IiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJwbGFuIjoiZnJlZSIsInJvbGUiOiJ1c2VyIiwic3ViIjoiYmEwOTgzN2EtOGRlOS00Zjk1LTk0OTgtODljYmJkYzY0NzZmIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NzA0ODA3OTF9XSwic2Vzc2lvbl9pZCI6IjgyZDc3NWQyLWY3ODAtNGUwNS04MTk3LWIyZWEyNzA3NjVjOSIsImlzX2Fub255bW91cyI6ZmFsc2V9.CQbnKuPCoGkuqdCdwr23yC5kHEQZoWbA3kkilBsz1kBgyvky-NUoo587f6ENCp_rPTTB17ugd3utUSubwjnbyA";
+const API_URL = process.env.API_URL || "http://localhost:3001/api";
+const AUTH_TOKEN = process.env.AUTH_TOKEN;
+
+if (!AUTH_TOKEN) {
+  console.error("❌ AUTH_TOKEN environment variable is required");
+  console.error("   Set it with: export AUTH_TOKEN=your_jwt_token_here");
+  process.exit(1);
+}
 
 async function verifyTimeTracking() {
   try {

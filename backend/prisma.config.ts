@@ -6,10 +6,14 @@ import { Pool } from "pg";
 
 // Create the adapter
 // Use DATABASE_URL directly for migrations since DIRECT_URL is having connection issues
-const directUrl =
-  process.env.DATABASE_URL ||
-  "postgresql://postgres:Aud%40cit-y2004@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
-console.log("Using database URL:", directUrl); // Debug output
+const directUrl = process.env.DATABASE_URL;
+
+if (!directUrl) {
+  throw new Error(
+    "DATABASE_URL environment variable is required but not set. " +
+    "Please configure your database connection string in the environment variables."
+  );
+}
 // Configure pool with connection limits to prevent MaxClientsInSessionMode error
 const pool = new Pool({
   connectionString: directUrl,

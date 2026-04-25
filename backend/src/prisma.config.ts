@@ -5,10 +5,15 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 // Create the adapter
-const directUrl =
-  process.env.DIRECT_URL ||
-  process.env.DATABASE_URL ||
-  "postgresql://postgres:Aud%40cit-y2004@db.emcjywwqlrxdjfxiwnxi.supabase.co:5432/postgres";
+const directUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
+if (!directUrl) {
+  throw new Error(
+    "DIRECT_URL or DATABASE_URL environment variable is required but not set. " +
+    "Please configure your database connection string in the environment variables."
+  );
+}
+
 const pool = new Pool({ connectionString: directUrl });
 const adapter = new PrismaPg(pool);
 

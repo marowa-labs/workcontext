@@ -2,18 +2,22 @@ import * as crypto from "crypto";
 import logger from "../monitoring/logger";
 import { SecretsService } from "../services/secrets-service";
 
-// Get encryption key from environment variables or generate a default one
-// In production, this should be a securely generated and stored key
-const DEFAULT_ENCRYPTION_KEY = "default-key-for-development-only-32bytes!";
 const IV_LENGTH = 16; // For AES, this is always 16
 
 /**
  * Gets the encryption key from secrets service
  * @returns Encryption key as string
+ * @throws Error if encryption key is not configured
  */
 async function getEncryptionKey(): Promise<string> {
   const key = await SecretsService.getTokenEncryptionKey();
-  return key || DEFAULT_ENCRYPTION_KEY;
+  if (!key) {
+    throw new Error(
+      "TOKEN_ENCRYPTION_KEY environment variable is required but not set. " +
+      "Please set a secure 32-byte encryption key in your environment variables."
+    );
+  }
+  return key;
 }
 
 /**

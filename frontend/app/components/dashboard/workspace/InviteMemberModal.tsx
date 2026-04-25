@@ -35,7 +35,7 @@ export function InviteMemberModal({
   workspaceId,
 }: InviteMemberModalProps) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("viewer");
+  const [role, setRole] = useState<"editor" | "admin" | "viewer">("viewer");
   const [loading, setLoading] = useState(false);
 
   const handleInvite = async () => {
@@ -96,7 +96,7 @@ export function InviteMemberModal({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={setRole}>
+            <Select value={role} onValueChange={(value) => setRole(value as "editor" | "admin" | "viewer")}>
               <SelectTrigger className="bg-white border-slate-200">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
