@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "std/": "https://deno.land/std@0.173.0/",
+    "@supabase/supabase-js": "https://cdn.skypack.dev/@supabase/supabase-js"
+  }
+}

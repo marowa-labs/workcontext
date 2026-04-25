@@ -1,0 +1,298 @@
+/* Plan-specific styling classes for UI/UX contrast to inspire upgrades */
+
+/* Free Plan Styling - Muted gray-blue theme */
+.plan-free {
+  /* Minimal animations */
+  --plan-transition-speed: 0s;
+  --plan-transition-timing: linear;
+
+  /* Clean & simple layout density */
+  --plan-spacing-factor: 1;
+
+  /* Text-based buttons */
+  --plan-button-padding: 0.5rem 1rem;
+  --plan-button-border-radius: 0.375rem;
+  --plan-button-font-weight: 400;
+
+  /* Simple pop-up feedback */
+  --plan-feedback-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --plan-feedback-border-radius: 0.375rem;
+
+  /* Clean & simple layout organization */
+  --plan-card-border-width: 1px;
+  --plan-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* Documentation styling using official ScholarForge AIcolors */
+  --plan-doc-text: hsl(var(--cw-gray));
+  --plan-doc-heading: hsl(var(--foreground));
+  --plan-doc-border: hsl(var(--border));
+  --plan-doc-link: hsl(var(--cw-gray));
+  --plan-doc-link-hover: hsl(var(--foreground));
+  --plan-doc-code-bg: hsl(var(--cw-light-gray));
+  --plan-doc-code-text: hsl(var(--foreground));
+}
+
+/* Student Plan Styling - Bright gradient blues */
+.plan-student {
+  /* Smooth micro-interactions */
+  --plan-transition-speed: 300ms;
+  --plan-transition-timing: ease-in-out;
+
+  /* Balanced & feature-rich layout density */
+  --plan-spacing-factor: 1.2;
+
+  /* Icon + text buttons */
+  --plan-button-padding: 0.5rem 1rem;
+  --plan-button-border-radius: 0.5rem;
+  --plan-button-font-weight: 500;
+
+  /* Animated success modals */
+  --plan-feedback-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --plan-feedback-border-radius: 0.75rem;
+
+  /* Balanced & feature-rich layout organization */
+  --plan-card-border-width: 1px;
+  --plan-card-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  /* Documentation styling using official ScholarForge AIcolors */
+  --plan-doc-text: hsl(var(--cw-blue));
+  --plan-doc-heading: hsl(var(--cw-blue));
+  --plan-doc-border: hsl(var(--cw-light-gray));
+  --plan-doc-link: hsl(var(--cw-blue));
+  --plan-doc-link-hover: hsl(var(--cw-blue));
+  --plan-doc-code-bg: hsl(var(--cw-light-gray));
+  --plan-doc-code-text: hsl(var(--cw-blue));
+}
+
+/* Researcher Plan Styling - Deep academic purple + gold */
+.plan-researcher {
+  /* Elegant transitions, data visualizations */
+  --plan-transition-speed: 500ms;
+  --plan-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Complex but well-organized panels */
+  --plan-spacing-factor: 1.4;
+
+  /* Icon + tooltip + shortcut buttons */
+  --plan-button-padding: 0.75rem 1.5rem;
+  --plan-button-border-radius: 0.75rem;
+  --plan-button-font-weight: 600;
+
+  /* Contextual banners */
+  --plan-feedback-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --plan-feedback-border-radius: 1rem;
+
+  /* Complex but well-organized panels */
+  --plan-card-border-width: 2px;
+  --plan-card-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Documentation styling using official ScholarForge AIcolors */
+  --plan-doc-text: hsl(var(--cw-blue));
+  --plan-doc-heading: hsl(var(--cw-purple));
+  --plan-doc-border: hsl(var(--cw-light-gray));
+  --plan-doc-link: hsl(var(--cw-purple));
+  --plan-doc-link-hover: hsl(var(--cw-purple));
+  --plan-doc-code-bg: hsl(var(--cw-light-gray));
+  --plan-doc-code-text: hsl(var(--cw-purple));
+}
+
+/* Plan-specific animations */
+.plan-free.plan-no-animations * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.plan-student:not(.plan-no-animations) * {
+  transition: all var(--plan-transition-speed) var(--plan-transition-timing) !important;
+}
+
+.plan-researcher:not(.plan-no-animations) * {
+  transition: all var(--plan-transition-speed) var(--plan-transition-timing) !important;
+}
+
+/* Plan-specific button styles */
+.plan-free .plan-button-text {
+  padding: var(--plan-button-padding);
+  border-radius: var(--plan-button-border-radius);
+  font-weight: var(--plan-button-font-weight);
+}
+
+.plan-student .plan-button-icon-text {
+  padding: var(--plan-button-padding);
+  border-radius: var(--plan-button-border-radius);
+  font-weight: var(--plan-button-font-weight);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-researcher .plan-button-icon-tooltip-shortcut {
+  padding: var(--plan-button-padding);
+  border-radius: var(--plan-button-border-radius);
+  font-weight: var(--plan-button-font-weight);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Plan-specific card styles */
+.plan-free .plan-card {
+  border-width: var(--plan-card-border-width);
+  box-shadow: var(--plan-card-shadow);
+}
+
+.plan-student .plan-card {
+  border-width: var(--plan-card-border-width);
+  box-shadow: var(--plan-card-shadow);
+}
+
+.plan-researcher .plan-card {
+  border-width: var(--plan-card-border-width);
+  box-shadow: var(--plan-card-shadow);
+}
+
+/* Plan-specific feedback styles */
+.plan-free .plan-popup {
+  box-shadow: var(--plan-feedback-shadow);
+  border-radius: var(--plan-feedback-border-radius);
+}
+
+.plan-student .plan-animated-modal {
+  box-shadow: var(--plan-feedback-shadow);
+  border-radius: var(--plan-feedback-border-radius);
+  animation: plan-student-modal-animation 0.3s ease-out;
+}
+
+.plan-researcher .plan-contextual-banner {
+  box-shadow: var(--plan-feedback-shadow);
+  border-radius: var(--plan-feedback-border-radius);
+  animation: plan-researcher-banner-animation 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Documentation styling classes */
+.plan-free .plan-doc-content {
+  /* Removed background color to inherit from DocsLayout */
+  color: var(--plan-doc-text);
+}
+
+.plan-free .plan-doc-content h1,
+.plan-free .plan-doc-content h2,
+.plan-free .plan-doc-content h3,
+.plan-free .plan-doc-content h4,
+.plan-free .plan-doc-content h5,
+.plan-free .plan-doc-content h6 {
+  color: var(--plan-doc-heading);
+}
+
+.plan-free .plan-doc-content a {
+  color: var(--plan-doc-link);
+}
+
+.plan-free .plan-doc-content a:hover {
+  color: var(--plan-doc-link-hover);
+}
+
+.plan-free .plan-doc-content code {
+  background-color: var(--plan-doc-code-bg);
+  color: var(--plan-doc-code-text);
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+}
+
+.plan-student .plan-doc-content {
+  /* Removed background color to inherit from DocsLayout */
+  color: var(--plan-doc-text);
+}
+
+.plan-student .plan-doc-content h1,
+.plan-student .plan-doc-content h2,
+.plan-student .plan-doc-content h3,
+.plan-student .plan-doc-content h4,
+.plan-student .plan-doc-content h5,
+.plan-student .plan-doc-content h6 {
+  color: var(--plan-doc-heading);
+}
+
+.plan-student .plan-doc-content a {
+  color: var(--plan-doc-link);
+}
+
+.plan-student .plan-doc-content a:hover {
+  color: var(--plan-doc-link-hover);
+}
+
+.plan-student .plan-doc-content code {
+  background-color: var(--plan-doc-code-bg);
+  color: var(--plan-doc-code-text);
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+}
+
+.plan-researcher .plan-doc-content {
+  /* Removed background color to inherit from DocsLayout */
+  color: var(--plan-doc-text);
+}
+
+.plan-researcher .plan-doc-content h1,
+.plan-researcher .plan-doc-content h2,
+.plan-researcher .plan-doc-content h3,
+.plan-researcher .plan-doc-content h4,
+.plan-researcher .plan-doc-content h5,
+.plan-researcher .plan-doc-content h6 {
+  color: var(--plan-doc-heading);
+}
+
+.plan-researcher .plan-doc-content a {
+  color: var(--plan-doc-link);
+}
+
+.plan-researcher .plan-doc-content a:hover {
+  color: var(--plan-doc-link-hover);
+}
+
+.plan-researcher .plan-doc-content code {
+  background-color: var(--plan-doc-code-bg);
+  color: var(--plan-doc-code-text);
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+}
+
+/* Animations */
+@keyframes plan-student-modal-animation {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes plan-researcher-banner-animation {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Density settings */
+.plan-density-compact {
+  --density-factor: 0.8;
+}
+
+.plan-density-comfortable {
+  --density-factor: 1;
+}
+
+.plan-density-spacious {
+  --density-factor: 1.2;
+}

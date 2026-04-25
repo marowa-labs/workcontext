@@ -1,0 +1,1547 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+model Document {
+  id        BigInt                 @id @default(autoincrement())
+  content   String
+  metadata  Json?
+  embedding Unsupported("vector")?
+
+  @@map("documents")
+}
+
+model User {
+  id                       String                  @id @default(uuid())
+  email                    String                  @unique
+  full_name                String?
+  phone_number             String?
+  otp_method               String?
+  user_type                String?
+  field_of_study           String?
+  selected_plan            String?
+  retention_period         Int?                    @default(28)
+  affiliate_ref            String?
+  created_at               DateTime                @default(now())
+  updated_at               DateTime                @updatedAt
+  preferred_ai_model       String?                 @default("gpt-4o-mini")
+  storage_used             Float?                  @default(0)
+  storage_limit            Float?                  @default(5)
+  last_backup              DateTime?
+  bio                      String?
+  institution              String?
+  location                 String?
+  ai_preferences           Json?
+  user_role                String?
+  heard_about_platform     String?
+  user_goal                String?
+  main_job                 String?
+  survey_completed         Boolean?                @default(false)
+  ai_chat_messages         AIChatMessage[]
+  ai_chat_sessions         AIChatSession[]
+  ai_feedback              AIFeedback[]
+  ai_history               AIHistory[]
+  ai_performance_metrics   AIPerformanceMetric[]
+  ai_usage                 AIUsage[]
+  backups                  Backup[]
+  backup_schedule          BackupSchedule?
+  citation_activities      CitationActivity[]
+  collaborators            CollaboratorPresence[]
+  document_templates       DocumentTemplate[]
+  document_versions        DocumentVersion[]
+  editor_activities        EditorActivity[]
+  editor_events            EditorEvent[]
+  editor_settings          EditorSettings?
+  exports                  Export[]
+  feedback_comments        FeedbackComment[]
+  invoices                 Invoice[]
+  login_history            LoginHistory[]
+  notifications            Notification[]
+  notification_settings    NotificationSettings?
+  otp_code                 OTPCode?
+  payment_methods          PaymentMethod[]
+  projects                 Project[]
+  push_notification_tokens PushNotificationToken[]
+  recycled_items           RecycledItem[]
+  researchSources          ResearchSource[]
+  researchTopics           ResearchTopic[]
+  restores                 Restore[]
+  saved_papers             SavedPaper[]
+  subscriptions            Subscription?
+  support_tickets          SupportTicket[]
+  task_trackings           TaskTracking[]
+  appearance_settings      UserAppearanceSettings?
+  feedback_items           UserFeedback[]
+  privacy_settings         UserPrivacySettings?
+  sessions                 UserSession[]
+  search_alerts            SearchAlert[]
+  audit_logs               AuditLog[]
+  waitlist_entries         WaitlistEntry[]
+  pdf_documents            PdfDocument[]
+  notes                    Note[]
+  project_sources          ProjectSource[] // Sources added by user to projects
+
+  // Workspace Relations
+  owned_workspaces           Workspace[]           @relation("WorkspaceOwner")
+  workspace_memberships      WorkspaceMember[]
+  sent_workspace_invitations WorkspaceInvitation[] @relation("WorkspaceInviter")
+  team_chat_messages         TeamChatMessage[]
+  assigned_tasks             TaskAssignee[]        @relation("TaskAssignees")
+  created_tasks              WorkspaceTask[]       @relation("TaskCreator")
+  task_comments              TaskComment[]         @relation("UserTaskComments")
+  time_entries               TaskTimeEntry[] // Time tracking entries
+}
+
+model Workspace {
+  id            String                @id @default(uuid())
+  name          String
+  description   String?
+  icon          String? // URL or emoji
+  created_at    DateTime              @default(now())
+  updated_at    DateTime              @updatedAt
+  owner_id      String
+  owner         User                  @relation("WorkspaceOwner", fields: [owner_id], references: [id])
+  projects      Project[]
+  members       WorkspaceMember[]
+  invitations   WorkspaceInvitation[] // New: pending invitations
+  chat_messages TeamChatMessage[]
+  tasks         WorkspaceTask[]
+  labels        WorkspaceLabel[]
+  views         WorkspaceView[]
+  custom_fields WorkspaceCustomField[]
+
+  @@index([owner_id])
+}
+
+model WorkspaceView {
+  id           String   @id @default(uuid())
+  workspace_id String
+  name         String
+  filters      Json // e.g., { priority: "high", labels: ["id1"], dateStatus: "overdue" }
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  @@index([workspace_id])
+}
+
+model WorkspaceMember {
+  id           String    @id @default(uuid())
+  workspace_id String
+  user_id      String
+  role         String    @default("viewer") // "admin", "editor", "viewer"
+  joined_at    DateTime  @default(now())
+  workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([workspace_id, user_id])
+  @@index([workspace_id])
+  @@index([user_id])
+}
+
+model WorkspaceInvitation {
+  id           String   @id @default(uuid())
+  workspace_id String
+  email        String
+  role         String   @default("viewer") // "admin", "editor", "viewer"
+  token        String   @unique @default(uuid())
+  status       String   @default("pending") // "pending", "accepted", "declined", "expired"
+  expires_at   DateTime
+  invited_by   String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  inviter   User      @relation("WorkspaceInviter", fields: [invited_by], references: [id])
+
+  @@unique([workspace_id, email])
+  @@index([token])
+  @@index([email])
+  @@index([status])
+  @@index([expires_at])
+}
+
+model Note {
+  id            String   @id @default(uuid())
+  user_id       String
+  project_id    String
+  category      String // "audio", "lit_review", "mind_map", "report", "flashcards", "quiz", "data_table", "infographic", "slide_deck", "manual"
+  title         String
+  content       String   @db.Text
+  preview_image String?
+  tags          Json?    @default("[]")
+  metadata      Json? // Category-specific data
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user    User    @relation(fields: [user_id], references: [id])
+  project Project @relation(fields: [project_id], references: [id])
+
+  @@index([user_id])
+  @@index([project_id])
+  @@index([category])
+  @@index([created_at])
+}
+
+model PushNotificationToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, token])
+  @@index([user_id])
+  @@index([token])
+}
+
+model Project {
+  id                  String                 @id @default(uuid())
+  user_id             String
+  title               String
+  type                String
+  citation_style      String
+  description         String?
+  content             Json?
+  word_count          Int                    @default(0)
+  due_date            DateTime?
+  status              String                 @default("draft")
+  created_at          DateTime               @default(now())
+  updated_at          DateTime               @updatedAt
+  template_id         String?
+  workspace_id        String?
+  workspace           Workspace?             @relation(fields: [workspace_id], references: [id])
+  ai_chat_sessions    AIChatSession[]
+  citations           Citation[]
+  citation_activities CitationActivity[]
+  collaborators       CollaboratorPresence[]
+  share_settings      DocumentShareSettings?
+  document_versions   DocumentVersion[]
+  editor_activities   EditorActivity[]
+  editor_events       EditorEvent[]
+  exports             Export[]
+  user                User                   @relation(fields: [user_id], references: [id], map: "ProjectToUser")
+  template            DocumentTemplate?      @relation(fields: [template_id], references: [id])
+  version_schedules   VersionSchedule[]
+  research_analysis   ResearchAnalysis?
+  generated_audio     GeneratedAudio?
+  notes               Note[]
+  chat_messages       TeamChatMessage[]
+  tasks               WorkspaceTask[] // Tasks linked to this research project
+  sources             ProjectSource[] // Sources linked to this project
+
+  @@index([user_id])
+}
+
+model PdfDocument {
+  id         String   @id @default(uuid())
+  user_id    String
+  filename   String
+  status     String   @default("processing")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("pdf_documents")
+}
+
+model CollaboratorPresence {
+  id             String   @id @default(uuid())
+  project_id     String
+  user_id        String
+  permission     String   @default("view")
+  join_method    String?  @default("workspace_member") // "workspace_member", "link_editor", "direct_invite"
+  last_active_at DateTime @default(now())
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  project        Project  @relation(fields: [project_id], references: [id])
+  user           User     @relation(fields: [user_id], references: [id])
+
+  @@unique([project_id, user_id])
+  @@index([project_id])
+  @@index([user_id])
+  @@index([last_active_at])
+  @@index([join_method])
+}
+
+model DocumentShareSettings {
+  id                   String    @id @default(uuid())
+  project_id           String    @unique
+  link_sharing_enabled Boolean   @default(true)
+  link_permission      String    @default("edit")
+  require_sign_in      Boolean   @default(true)
+  allow_download       Boolean   @default(true)
+  notify_on_view       Boolean   @default(false)
+  expiration           DateTime?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+  project              Project   @relation(fields: [project_id], references: [id])
+
+  @@index([project_id])
+  @@index([link_sharing_enabled])
+}
+
+model Citation {
+  id                  String             @id @default(uuid())
+  project_id          String
+  type                String
+  title               String
+  authors             Json
+  year                Int?
+  journal             String?
+  volume              String?
+  issue               String?
+  pages               String?
+  doi                 String?
+  url                 String?
+  publisher           String?
+  isbn                String?
+  edition             String?
+  place               String?
+  conference          String?
+  abstract            String?
+  tags                Json?
+  notes               String?
+  metadata            Json
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+  project             Project            @relation(fields: [project_id], references: [id])
+  citation_activities CitationActivity[]
+
+  @@index([project_id])
+  @@index([type])
+  @@index([year])
+}
+
+model CitationActivity {
+  id          String    @id @default(uuid())
+  user_id     String
+  project_id  String?
+  citation_id String?
+  action      String
+  details     Json?
+  created_at  DateTime  @default(now())
+  citation    Citation? @relation(fields: [citation_id], references: [id])
+  project     Project?  @relation(fields: [project_id], references: [id])
+  user        User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([project_id])
+  @@index([citation_id])
+  @@index([action])
+  @@index([created_at])
+}
+
+model RecycledItem {
+  id          String    @id @default(uuid())
+  user_id     String
+  item_type   String
+  item_id     String
+  item_data   Json
+  deleted_at  DateTime  @default(now())
+  expires_at  DateTime
+  restored_at DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now()) @updatedAt
+  user        User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([item_type])
+  @@index([deleted_at])
+  @@index([expires_at])
+  @@index([restored_at])
+}
+
+model DocumentVersion {
+  id         String   @id @default(uuid())
+  project_id String
+  user_id    String
+  content    Json
+  version    Int
+  created_at DateTime @default(now())
+  word_count Int      @default(0)
+  project    Project  @relation(fields: [project_id], references: [id])
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@index([project_id])
+  @@index([user_id])
+  @@index([created_at])
+}
+
+model AIUsage {
+  id                     String   @id @default(uuid())
+  user_id                String
+  month                  Int
+  year                   Int
+  request_count          Int      @default(0)
+  chat_message_count     Int      @default(0)
+  image_generation_count Int      @default(0)
+  web_search_count       Int      @default(0)
+  deep_search_count      Int      @default(0)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+  average_response_time  Float    @default(0)
+  feature_usage          Json?    @default("[]")
+  most_used_actions      Json?    @default("[]")
+  most_used_models       Json?    @default("[]")
+  peak_usage_hours       Json?    @default("[]")
+  success_rate           Float    @default(0)
+  total_cost_estimate    Float    @default(0)
+  total_tokens_used      Int      @default(0)
+  user                   User     @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, month, year])
+  @@index([user_id])
+  @@index([month, year])
+}
+
+model Subscription {
+  id                           String    @id @default(uuid())
+  user_id                      String    @unique
+  plan                         String    @default("free")
+  status                       String    @default("active")
+  lemonsqueezy_subscription_id String?
+  current_period_end           DateTime?
+  created_at                   DateTime  @default(now())
+  updated_at                   DateTime  @updatedAt
+  user                         User      @relation(fields: [user_id], references: [id], map: "SubscriptionToUser")
+
+  @@index([user_id])
+  @@index([plan])
+  @@index([status])
+  @@index([lemonsqueezy_subscription_id])
+}
+
+model OTPCode {
+  id           String   @id @default(uuid())
+  user_id      String   @unique
+  otp_code     String
+  method       String
+  expires_at   DateTime
+  created_at   DateTime @default(now())
+  phone_number String?  @unique @db.VarChar(20)
+  user         User     @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, method])
+  @@index([user_id])
+  @@index([phone_number])
+  @@index([expires_at])
+}
+
+model Notification {
+  id            String    @id @default(uuid())
+  user_id       String
+  type          String
+  title         String
+  message       String
+  read          Boolean   @default(false)
+  dismissed     Boolean   @default(false)
+  snoozed_until DateTime?
+  data          Json?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  user          User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([read])
+  @@index([dismissed])
+  @@index([created_at])
+}
+
+model NotificationSettings {
+  id                                         String   @id @default(uuid())
+  user_id                                    String   @unique
+  project_activity_enabled                   Boolean  @default(true)
+  project_activity_comments                  Boolean  @default(true)
+  project_activity_mentions                  Boolean  @default(true)
+  project_activity_changes                   Boolean  @default(true)
+  project_activity_shared                    Boolean  @default(false)
+  collaboration_enabled                      Boolean  @default(true)
+  collaboration_new_collaborator             Boolean  @default(true)
+  collaboration_permission_changes           Boolean  @default(true)
+  collaboration_comments_resolved           Boolean  @default(true)
+  collaboration_real_time                    Boolean  @default(false)
+  ai_features_enabled                        Boolean  @default(true)
+  ai_features_plagiarism_complete            Boolean  @default(true)
+  ai_features_ai_limit                       Boolean  @default(false)
+  ai_features_new_features                   Boolean  @default(true)
+  ai_features_weekly_summary                 Boolean  @default(false)
+  account_billing_enabled                    Boolean  @default(true)
+  account_billing_payment_success            Boolean  @default(true)
+  account_billing_payment_failed             Boolean  @default(true)
+  account_billing_subscription_renewed       Boolean  @default(true)
+  account_billing_subscription_expiring      Boolean  @default(true)
+  account_billing_security_alerts            Boolean  @default(true)
+  product_updates_enabled                    Boolean  @default(true)
+  product_updates_new_features               Boolean  @default(true)
+  product_updates_tips                       Boolean  @default(false)
+  product_updates_newsletter                 Boolean  @default(false)
+  product_updates_special_offers             Boolean  @default(false)
+  writing_progress_enabled                   Boolean  @default(true)
+  writing_progress_document_deadline         Boolean  @default(true)
+  writing_progress_writing_streak            Boolean  @default(true)
+  writing_progress_goal_achieved             Boolean  @default(true)
+  research_updates_enabled                   Boolean  @default(true)
+  research_updates_ai_suggestion             Boolean  @default(true)
+  research_updates_citation_reminder         Boolean  @default(true)
+  research_updates_research_update           Boolean  @default(true)
+  document_management_enabled                Boolean  @default(true)
+  document_management_backup_available       Boolean  @default(true)
+  document_management_template_update        Boolean  @default(true)
+  document_management_document_version       Boolean  @default(true)
+  collaboration_request_enabled              Boolean  @default(true)
+  collaboration_request_collaborator_request Boolean  @default(true)
+  frequency                                  String   @default("real-time")
+  quiet_hours_enabled                        Boolean  @default(false)
+  quiet_hours_start_time                     String   @default("22:00")
+  quiet_hours_end_time                       String   @default("08:00")
+  push_notifications_enabled                 Boolean  @default(true)
+  push_notifications_mentions                Boolean  @default(true)
+  push_notifications_comments                Boolean  @default(true)
+  push_notifications_direct_messages         Boolean  @default(true)
+  push_notifications_marketing               Boolean  @default(false)
+  in_app_notifications_enabled               Boolean  @default(true)
+  in_app_notifications_sound                 Boolean  @default(true)
+  in_app_notifications_desktop               Boolean  @default(true)
+  created_at                                 DateTime @default(now())
+  updated_at                                 DateTime @updatedAt
+  sms_notifications_enabled                  Boolean  @default(false)
+  sms_notifications_high_priority_only       Boolean  @default(true)
+  account_billing_invoice_available          Boolean  @default(true)
+  account_billing_payment_refunded           Boolean  @default(true)
+  account_billing_subscription_cancelled     Boolean  @default(true)
+  account_billing_subscription_created       Boolean  @default(true)
+  account_billing_subscription_expired       Boolean  @default(true)
+  account_billing_subscription_resumed       Boolean  @default(true)
+  account_billing_subscription_updated       Boolean  @default(true)
+  user                                       User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
+
+model FailedWebhook {
+  id          String   @id @default(uuid())
+  event_name  String
+  payload     Json
+  retry_count Int      @default(0)
+  last_error  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([event_name])
+  @@index([created_at])
+  @@index([retry_count])
+}
+
+model IdempotencyRecord {
+  idempotency_key String    @id
+  status          String
+  result          String?
+  error_message   String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  expires_at      DateTime?
+
+  @@index([status])
+  @@index([expires_at])
+}
+
+model SubscriptionEventLog {
+  id                 String   @id @default(uuid())
+  event_type         String
+  user_id            String
+  status             String
+  metadata           String?
+  processing_time_ms Int?
+  created_at         DateTime @default(now())
+
+  @@index([event_type])
+  @@index([user_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model AlertLog {
+  id         String   @id @default(uuid())
+  alert_type String
+  message    String
+  data       String?
+  severity   String
+  created_at DateTime @default(now())
+
+  @@index([alert_type])
+  @@index([severity])
+  @@index([created_at])
+}
+
+model AIHistory {
+  id            String   @id @default(uuid())
+  user_id       String
+  action        String
+  original_text String
+  suggestion    String
+  is_favorite   Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  user          User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([action])
+  @@index([is_favorite])
+  @@index([created_at])
+}
+
+model AIChatSession {
+  id              String          @id @default(uuid())
+  user_id         String
+  project_id      String?
+  title           String          @default("New Chat")
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  last_message_at DateTime?
+  is_active       Boolean         @default(true)
+  messages        AIChatMessage[]
+  project         Project?        @relation(fields: [project_id], references: [id])
+  user            User            @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([project_id])
+  @@index([is_active])
+  @@index([created_at])
+  @@index([last_message_at])
+}
+
+model AIChatMessage {
+  id               String        @id @default(uuid())
+  session_id       String
+  user_id          String
+  content          String
+  role             String
+  message_type     String        @default("text")
+  image_url        String?
+  file_url         String?
+  metadata         Json?
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  citations        Json?
+  confidence_score Float?
+  context_used     Json?
+  mode             String        @default("general")
+  sources          Json?
+  session          AIChatSession @relation(fields: [session_id], references: [id])
+  user             User          @relation(fields: [user_id], references: [id])
+
+  @@index([session_id])
+  @@index([user_id])
+  @@index([role])
+  @@index([created_at])
+  @@index([mode])
+}
+
+model PaymentMethod {
+  id          String   @id @default(uuid())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  description String?
+  relevance   Int      @default(1)
+  title       String
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([title])
+  @@index([relevance])
+  @@index([created_at])
+}
+
+model TeamChatMessage {
+  id           String   @id @default(uuid())
+  workspace_id String?
+  project_id   String?
+  user_id      String
+  content      String
+  parent_id    String? // For threading
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  workspace Workspace?        @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  project   Project?          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [user_id], references: [id])
+  parent    TeamChatMessage?  @relation("Threads", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  replies   TeamChatMessage[] @relation("Threads")
+
+  @@index([workspace_id])
+  @@index([project_id])
+  @@index([parent_id])
+  @@index([created_at])
+}
+
+model WorkspaceTask {
+  id           String    @id @default(uuid())
+  workspace_id String
+  creator_id   String
+  title        String
+  description  String?
+  status       String    @default("todo")
+  priority     String    @default("medium")
+  due_date     DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  // Recurrence fields
+  is_recurring               Boolean   @default(false)
+  recurrence_pattern         String? // RRULE string or simple pattern
+  recurrence_end_date        DateTime?
+  recurrence_max_occurrences Int?
+  parent_recurring_task_id   String? // Links to parent if this is an instance
+  is_recurrence_exception    Boolean   @default(false)
+  original_due_date          DateTime? // For tracking rescheduled instances
+
+  // Project linking - tasks can optionally belong to a research project
+  project_id String?
+  project    Project? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+
+  // Time tracking
+  estimated_hours Float? // Estimated time to complete in hours
+  time_entries    TaskTimeEntry[] // Time tracking entries
+
+  workspace    Workspace          @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  creator      User               @relation("TaskCreator", fields: [creator_id], references: [id])
+  assignees    TaskAssignee[] // Multiple assignees through junction table
+  comments     TaskComment[]
+  subtasks     WorkspaceSubtask[]
+  labels       WorkspaceLabel[]   @relation("TaskLabels")
+  attachments  TaskAttachment[]
+  dependencies TaskDependency[]   @relation("TaskDependencies")
+  blocked_by   TaskDependency[]   @relation("BlockedTasks")
+
+  // Self-relation for recurring task instances
+  parent_task     WorkspaceTask?  @relation("RecurringTaskInstances", fields: [parent_recurring_task_id], references: [id], onDelete: Cascade)
+  child_instances WorkspaceTask[] @relation("RecurringTaskInstances")
+
+  // Task Template fields
+  is_template       Boolean   @default(false)
+  template_name     String?
+  template_category String?
+
+  custom_field_values TaskCustomFieldValue[]
+
+  @@index([workspace_id])
+  @@index([creator_id])
+  @@index([status])
+  @@index([parent_recurring_task_id])
+  @@index([is_recurring])
+  @@index([due_date])
+  @@index([project_id])
+  @@index([is_template])
+}
+
+model TaskDependency {
+  id            String   @id @default(uuid())
+  task_id       String // The task that depends on another task
+  depends_on_id String // The task that is required (the "blocked by" task)
+  type          String   @default("blocks")
+  created_at    DateTime @default(now())
+
+  task       WorkspaceTask @relation("TaskDependencies", fields: [task_id], references: [id], onDelete: Cascade)
+  depends_on WorkspaceTask @relation("BlockedTasks", fields: [depends_on_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, depends_on_id])
+  @@index([task_id])
+  @@index([depends_on_id])
+}
+
+model WorkspaceSubtask {
+  id         String   @id @default(uuid())
+  task_id    String
+  title      String
+  is_done    Boolean  @default(false)
+  order      Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  task WorkspaceTask @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+}
+
+model WorkspaceLabel {
+  id           String   @id @default(uuid())
+  workspace_id String
+  name         String
+  color        String   @default("#94a3b8")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  workspace Workspace       @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  tasks     WorkspaceTask[] @relation("TaskLabels")
+
+  @@unique([workspace_id, name])
+  @@index([workspace_id])
+}
+
+model TaskAttachment {
+  id         String   @id @default(uuid())
+  task_id    String
+  name       String
+  file_url   String
+  file_type  String
+  file_size  Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  task WorkspaceTask @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+}
+
+model WorkspaceCustomField {
+  id           String    @id @default(uuid())
+  workspace_id String
+  name         String
+  type         String    @default("text") // "text", "number", "date", "dropdown"
+  options      Json?     // For dropdown types (array of strings)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  values       TaskCustomFieldValue[]
+
+  @@unique([workspace_id, name])
+  @@index([workspace_id])
+}
+
+model TaskCustomFieldValue {
+  id               String               @id @default(uuid())
+  task_id          String
+  field_id         String
+  text_value       String?
+  number_value     Float?
+  date_value       DateTime?
+  
+  task             WorkspaceTask        @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  field            WorkspaceCustomField @relation(fields: [field_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, field_id])
+  @@index([task_id])
+  @@index([field_id])
+}
+
+model TaskTimeEntry {
+  id          String    @id @default(uuid())
+  task_id     String
+  user_id     String
+  start_time  DateTime
+  end_time    DateTime?
+  duration    Int? // Duration in minutes, calculated when timer stops
+  description String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  task WorkspaceTask @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [user_id], references: [id])
+
+  @@index([task_id])
+  @@index([user_id])
+}
+
+model TaskAssignee {
+  id                       String    @id @default(uuid())
+  task_id                  String
+  user_id                  String
+  assigned_at              DateTime  @default(now())
+  last_notified_soon_at    DateTime?
+  last_notified_overdue_at DateTime?
+
+  task WorkspaceTask @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user User          @relation("TaskAssignees", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, user_id])
+  @@index([task_id])
+  @@index([user_id])
+}
+
+model TaskComment {
+  id         String   @id @default(uuid())
+  task_id    String
+  user_id    String
+  content    String   @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  task WorkspaceTask @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user User          @relation("UserTaskComments", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@index([user_id])
+}
+
+model Invoice {
+  id              String    @id @default(uuid())
+  user_id         String
+  lemonsqueezy_id String?
+  amount          Float
+  currency        String    @default("USD")
+  status          String
+  description     String
+  issued_at       DateTime  @default(now())
+  due_at          DateTime?
+  paid_at         DateTime?
+  receipt_url     String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  user            User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([status])
+  @@index([issued_at])
+}
+
+model UserAppearanceSettings {
+  id               String   @id @default(uuid())
+  user_id          String   @unique
+  theme            String   @default("light")
+  auto_dark_mode   Boolean  @default(false)
+  font_family      String   @default("Inter")
+  font_size        Int      @default(18)
+  line_height      Float    @default(1.75)
+  line_width       Int      @default(700)
+  accent_color     String   @default("blue")
+  sidebar_position String   @default("left")
+  density          String   @default("comfortable")
+  animations       Boolean  @default(true)
+  reduce_motion    Boolean  @default(false)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  user             User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
+
+model AIPerformanceMetric {
+  id               String   @id @default(uuid())
+  user_id          String
+  model            String
+  action           String
+  response_time    Float
+  tokens_used      Int
+  success          Boolean
+  error_message    String?
+  timestamp        DateTime @default(now())
+  content_length   Int      @default(0)
+  context          String?
+  cost_estimate    Float    @default(0)
+  feature_category String?
+  input_tokens     Int      @default(0)
+  output_tokens    Int      @default(0)
+  user             User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([model])
+  @@index([action])
+  @@index([timestamp])
+}
+
+model AIFeedback {
+  id            String   @id @default(uuid())
+  user_id       String
+  action        String
+  original_text String
+  suggestion    String
+  is_helpful    Boolean
+  feedback_text String?
+  created_at    DateTime @default(now())
+  user          User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([action])
+  @@index([is_helpful])
+  @@index([created_at])
+  @@map("AIFeedback")
+}
+
+model UserPrivacySettings {
+  id                        String    @id @default(uuid())
+  user_id                   String    @unique
+  profile_visibility        String    @default("private")
+  show_activity             Boolean   @default(true)
+  show_location_in_document Boolean   @default(false)
+  search_indexing           Boolean   @default(false)
+  share_analytics           Boolean   @default(true)
+  share_crash_reports       Boolean   @default(true)
+  third_party_cookies       Boolean   @default(false)
+  document_privacy          String    @default("private")
+  auto_save                 Boolean   @default(true)
+  offline_mode              Boolean   @default(false)
+  email_unusual_logins      Boolean   @default(true)
+  notify_new_devices        Boolean   @default(true)
+  gdpr_consent_given        Boolean   @default(false)
+  gdpr_consent_date         DateTime?
+  ferpa_consent_given       Boolean   @default(false)
+  ferpa_consent_date        DateTime?
+  hipaa_consent_given       Boolean   @default(false)
+  hipaa_consent_date        DateTime?
+  ai_training_opt_out       Boolean   @default(false)
+  audit_logs_enabled        Boolean   @default(true)
+  marketing_consent_given   Boolean   @default(false)
+  data_sharing_consent      Boolean   @default(true)
+  data_retention_period     Int       @default(28)
+  created_at                DateTime  @default(now())
+  updated_at                DateTime  @updatedAt
+  user                      User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([gdpr_consent_given])
+  @@index([ferpa_consent_given])
+  @@index([hipaa_consent_given])
+  @@index([created_at])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  user_id     String
+  action      String
+  resource    String
+  resource_id String?
+  ip_address  String?
+  device_info String?
+  payload     Json?
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([action])
+  @@index([resource])
+  @@index([created_at])
+}
+
+model UserSession {
+  id          String   @id @default(uuid())
+  user_id     String
+  device_info String
+  ip_address  String
+  location    String?
+  last_active DateTime @default(now())
+  is_current  Boolean  @default(false)
+  created_at  DateTime @default(now())
+  expires_at  DateTime
+  user        User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([last_active])
+  @@index([is_current])
+}
+
+model LoginHistory {
+  id          String   @id @default(uuid())
+  user_id     String
+  ip_address  String
+  device_info String
+  location    String?
+  status      String
+  error_code  String?
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([created_at])
+  @@index([status])
+}
+
+model EditorSettings {
+  id                   String   @id @default(uuid())
+  user_id              String   @unique
+  font_family          String   @default("Inter")
+  font_size            Int      @default(16)
+  line_height          Float    @default(1.5)
+  line_width           Int      @default(768)
+  accent_color         String   @default("blue")
+  sidebar_position     String   @default("right")
+  density              String   @default("comfortable")
+  auto_dark_mode       Boolean  @default(false)
+  dark_mode_start_time String   @default("20:00")
+  dark_mode_end_time   String   @default("07:00")
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  page_color           String   @default("#FFFFFF")
+  user                 User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
+
+model EditorActivity {
+  id            String   @id @default(uuid())
+  user_id       String
+  project_id    String?
+  activity_type String
+  details       Json?
+  timestamp     DateTime @default(now())
+  project       Project? @relation(fields: [project_id], references: [id])
+  user          User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([project_id])
+  @@index([activity_type])
+  @@index([timestamp])
+}
+
+model EditorEvent {
+  id         String   @id @default(uuid())
+  user_id    String
+  project_id String?
+  event_type String
+  metadata   Json?
+  created_at DateTime @default(now())
+  project    Project? @relation(fields: [project_id], references: [id])
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([project_id])
+  @@index([event_type])
+  @@index([created_at])
+}
+
+model UserFeedback {
+  id              String            @id @default(uuid())
+  user_id         String?
+  type            String
+  category        String?
+  priority        String            @default("medium")
+  title           String
+  description     String
+  status          String            @default("open")
+  attachment_urls String[]
+  browser_info    String?
+  os_info         String?
+  screen_size     String?
+  user_plan       String?
+  admin_notes     String?
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  resolved_at     DateTime?
+  comments        FeedbackComment[]
+  user            User?             @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([type])
+  @@index([category])
+  @@index([priority])
+  @@index([status])
+  @@index([created_at])
+}
+
+model FeedbackComment {
+  id          String       @id @default(uuid())
+  feedback_id String
+  user_id     String?
+  content     String
+  is_internal Boolean      @default(false)
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  feedback    UserFeedback @relation(fields: [feedback_id], references: [id])
+  user        User?        @relation(fields: [user_id], references: [id])
+
+  @@index([feedback_id])
+  @@index([user_id])
+  @@index([is_internal])
+  @@index([created_at])
+}
+
+model Backup {
+  id             String    @id @default(uuid())
+  user_id        String
+  name           String
+  size           Float
+  status         String    @default("completed")
+  type           String    @default("manual")
+  storage_path   String
+  encryption_key String?
+  created_at     DateTime  @default(now())
+  completed_at   DateTime?
+  failed_at      DateTime?
+  error_message  String?
+  user           User      @relation(fields: [user_id], references: [id])
+  restores       Restore[]
+
+  @@index([user_id])
+  @@index([status])
+  @@index([type])
+  @@index([created_at])
+}
+
+model SearchAlert {
+  id                String   @id @default(uuid())
+  user_id           String
+  query             String
+  frequency         String   @default("weekly") // daily, weekly, monthly
+  is_active         Boolean  @default(true)
+  last_checked      DateTime @default(now())
+  new_matches_count Int      @default(0)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  user              User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
+
+model Restore {
+  id            String    @id @default(uuid())
+  user_id       String
+  backup_id     String
+  status        String    @default("pending")
+  started_at    DateTime  @default(now())
+  completed_at  DateTime?
+  failed_at     DateTime?
+  error_message String?
+  backup        Backup    @relation(fields: [backup_id], references: [id])
+  user          User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([status])
+  @@index([started_at])
+}
+
+model BackupSchedule {
+  id              String    @id @default(uuid())
+  user_id         String    @unique
+  enabled         Boolean   @default(true)
+  frequency       String    @default("weekly")
+  time            String    @default("02:00")
+  retention_count Int       @default(7)
+  last_run        DateTime?
+  next_run        DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  destination     String    @default("ScholarForge AI")
+  user            User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([enabled])
+  @@index([next_run])
+}
+
+model Export {
+  id                   String   @id @default(uuid())
+  user_id              String
+  project_id           String
+  file_name            String
+  file_size            Int      @default(0)
+  file_type            String
+  download_url         String
+  status               String   @default("pending")
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  collaboration_export Boolean  @default(false)
+  export_options       Json?
+  exported_by          String?
+  project              Project  @relation(fields: [project_id], references: [id])
+  user                 User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([project_id])
+  @@index([file_type])
+  @@index([status])
+  @@index([created_at])
+  @@index([collaboration_export])
+}
+
+model ContactRequest {
+  id         String    @id @default(uuid())
+  name       String
+  email      String
+  subject    String
+  message    String
+  status     String    @default("new")
+  ip_address String?
+  user_agent String?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  replied_at DateTime?
+
+  @@index([email])
+  @@index([status])
+  @@index([created_at])
+}
+
+model SupportTicket {
+  id             String    @id @default(uuid())
+  user_id        String?
+  subject        String
+  message        String
+  priority       String    @default("normal")
+  attachment_url String?
+  status         String    @default("open")
+  browser_info   String?
+  os_info        String?
+  screen_size    String?
+  user_plan      String?
+  admin_notes    String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  resolved_at    DateTime?
+  user           User?     @relation(fields: [user_id], references: [id], map: "SupportTicketToUser")
+
+  @@index([user_id])
+  @@index([priority])
+  @@index([status])
+  @@index([created_at])
+}
+
+model ResearchTopic {
+  id           String           @id @default(uuid())
+  user_id      String
+  title        String
+  description  String?
+  sources      Int              @default(0)
+  last_updated DateTime         @default(now())
+  created_at   DateTime         @default(now())
+  updated_at   DateTime         @updatedAt
+  sources_data ResearchSource[]
+  user         User             @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([title])
+  @@index([created_at])
+}
+
+model ResearchSource {
+  id         String        @id @default(uuid())
+  user_id    String
+  topic_id   String
+  title      String
+  author     String?
+  year       Int?
+  journal    String?
+  abstract   String?
+  url        String?
+  content    String?
+  relevance  Int?
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+  topic      ResearchTopic @relation(fields: [topic_id], references: [id])
+  user       User          @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([topic_id])
+}
+
+model ResearchPaper {
+  id             String       @id @default(uuid())
+  title          String
+  abstract       String?
+  authors        Json?        @default("[]")
+  year           Int?
+  venue          String?
+  citationCount  Int?
+  referenceCount Int?
+  fieldsOfStudy  String[]
+  openAccessPdf  String?
+  externalId     String       @unique
+  url            String?
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+  savedBy        SavedPaper[]
+
+  @@index([title])
+  @@index([year])
+  @@index([externalId])
+}
+
+model SavedPaper {
+  id         String        @id @default(uuid())
+  user_id    String
+  paper_id   String
+  notes      String?
+  tags       Json?         @default("[]")
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+  paper      ResearchPaper @relation(fields: [paper_id], references: [id])
+  user       User          @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, paper_id])
+  @@index([user_id])
+  @@index([paper_id])
+}
+
+model VersionSchedule {
+  id         String   @id @default(uuid())
+  project_id String
+  frequency  String
+  next_run   DateTime
+  enabled    Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  project    Project  @relation(fields: [project_id], references: [id])
+
+  @@index([project_id])
+  @@index([enabled])
+  @@index([next_run])
+}
+
+model TaskTracking {
+  id           String   @id @default(cuid())
+  user_id      String
+  action       String
+  service_type String
+  quantity     Int      @default(1)
+  cost         Float    @default(0)
+  metadata     Json?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  user         User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([service_type])
+  @@index([action])
+  @@index([created_at])
+}
+
+model WaitlistEntry {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  joined_waitlist DateTime  @default(now())
+  converted       Boolean   @default(false)
+  converted_at    DateTime?
+  priority        Int       @default(0)
+  notes           String?
+  user_id         String?
+  user            User?     @relation(fields: [user_id], references: [id])
+
+  @@index([email])
+  @@index([created_at])
+  @@index([priority])
+  @@index([converted])
+}
+
+model DemoRequest {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  institution String
+  role        String?
+  date        DateTime
+  time        String
+  message     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  ip_address  String?
+  user_agent  String?
+
+  @@index([email])
+  @@index([created_at])
+}
+
+model FeatureRequest {
+  id                 String   @id @default(uuid())
+  featureTitle       String
+  featureDescription String
+  useCase            String
+  category           String
+  priority           String
+  email              String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  ip_address         String?
+  user_agent         String?
+
+  @@index([category])
+  @@index([priority])
+  @@index([created_at])
+}
+
+model DocumentTemplate {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?
+  type           String
+  content        Json
+  tags           String[]
+  is_public      Boolean   @default(false)
+  user_id        String?
+  citation_style String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  rating         Float?    @default(0)
+  reviews        Int       @default(0)
+  downloads      Int       @default(0)
+  author_name    String?
+  category_id    String?
+  user           User?     @relation(fields: [user_id], references: [id])
+  projects       Project[]
+
+  @@index([type])
+  @@index([is_public])
+  @@index([user_id])
+  @@index([category_id])
+  @@index([rating])
+}
+
+model ResearchAnalysis {
+  id           String   @id @default(uuid())
+  project_id   String   @unique
+  summary      String?  @db.Text
+  topics       Json?
+  questions    Json?
+  concept_map  Json?
+  reports      Json?
+  flashcards   Json?
+  quiz         Json?
+  data_table   Json?
+  infographic  String?  @db.Text
+  slide_deck   Json?
+  sources_used Int      @default(0)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  project      Project  @relation(fields: [project_id], references: [id])
+
+  @@index([project_id])
+}
+
+model GeneratedAudio {
+  id             String   @id @default(uuid())
+  project_id     String   @unique
+  audio_url      String? // If using ElevenLabs/Storage
+  script         Json? // The dialogue script
+  provider       String   @default("elevenlabs") // "elevenlabs" | "browser_tts"
+  status         String   @default("pending") // "pending", "processing", "completed", "failed"
+  title          String?
+  failure_reason String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  project        Project  @relation(fields: [project_id], references: [id])
+
+  @@index([project_id])
+}
+
+// Sources linked to projects for the Notebook feature
+model ProjectSource {
+  id          String   @id @default(uuid())
+  project_id  String
+  user_id     String
+  title       String
+  type        String   // "file", "url", "text", "web_search"
+  url         String?
+  content     String?  // For text sources or extracted content
+  file_path   String?  // For uploaded files
+  file_size   Int?     // File size in bytes
+  mime_type   String?  // MIME type for files
+  metadata    Json?    // Additional metadata like favicon, snippet, etc.
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id])
+
+  @@index([project_id])
+  @@index([user_id])
+  @@index([type])
+}

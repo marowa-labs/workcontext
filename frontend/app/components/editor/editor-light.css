@@ -1,0 +1,367 @@
+/* Light Editor Styles - Pure white editor with dark text */
+
+/* Main editor container */
+.light-editor .ProseMirror {
+  background: #ffffff !important;
+  min-height: 100vh;
+  height: auto;
+  padding: 3rem 3rem;
+  outline: none;
+  font-family: var(--editor-font-family,
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif);
+  font-size: var(--editor-font-size, 16px);
+  line-height: var(--editor-line-height, 1.75);
+  color: #1a1a1a;
+  caret-color: #3b82f6;
+  /* Bright blue cursor */
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Ensure the editor takes full height when empty */
+.light-editor .ProseMirror:empty {
+  min-height: 100vh;
+}
+
+/* When content exists, allow natural scrolling */
+.light-editor .ProseMirror:not(:empty) {
+  min-height: 100vh;
+}
+
+/* Originality Map Highlights */
+.originality-highlight {
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  cursor: help;
+}
+
+.originality-highlight-red {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-bottom-color: rgba(239, 68, 68, 0.5);
+}
+
+.originality-highlight-yellow {
+  background-color: rgba(234, 179, 8, 0.2);
+  border-bottom-color: rgba(234, 179, 8, 0.5);
+}
+
+.originality-highlight-green {
+  background-color: rgba(34, 197, 94, 0.1);
+  border-bottom-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Light editor text selection */
+.light-editor .ProseMirror ::selection {
+  background: rgba(59, 130, 246, 0.2);
+  /* Soft translucent blue highlight */
+  color: inherit;
+}
+
+.light-editor .ProseMirror ::-moz-selection {
+  background: rgba(59, 130, 246, 0.2);
+  color: inherit;
+}
+
+/* Light editor headings */
+.light-editor .ProseMirror h1,
+.light-editor .ProseMirror h2,
+.light-editor .ProseMirror h3,
+.light-editor .ProseMirror h4,
+.light-editor .ProseMirror h5,
+.light-editor .ProseMirror h6 {
+  color: #0f172a;
+  /* Dark headings */
+  font-weight: 700;
+}
+
+/* Light editor links */
+.light-editor .ProseMirror a {
+  color: #3b82f6;
+  /* Blue links */
+  border-bottom: 1px dotted rgba(59, 130, 246, 0.4);
+  text-decoration: none;
+}
+
+.light-editor .ProseMirror a:hover {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+/* Light editor paragraphs */
+.light-editor .ProseMirror p {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
+/* Light editor lists */
+.light-editor .ProseMirror ul,
+.light-editor .ProseMirror ol {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.light-editor .ProseMirror li {
+  margin-bottom: 0.25rem;
+}
+
+.light-editor .ProseMirror li::marker {
+  color: #64748b;
+}
+
+/* Light editor blockquotes */
+.light-editor .ProseMirror blockquote {
+  margin: 1.5rem 0;
+  padding-left: 1.5rem;
+  border-left: 3px solid #cbd5e1;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Light editor code blocks */
+.light-editor .ProseMirror pre {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-size: 0.875rem;
+}
+
+.light-editor .ProseMirror code {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  font-family: "MonoLisa", "Fira Code", monospace;
+  font-size: 0.875em;
+}
+
+/* Light editor horizontal rules */
+.light-editor .ProseMirror hr {
+  margin: 2rem 0;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Light editor tables */
+.light-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+}
+
+.light-editor .ProseMirror th,
+.light-editor .ProseMirror td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.light-editor .ProseMirror th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+/* Light editor images */
+.light-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Light editor editor wrapper */
+.light-editor .editor-wrapper {
+  background: #ffffff;
+  min-height: 100vh;
+  height: auto;
+  transition: background-color 0.3s ease;
+}
+
+/* Light editor scrollbar */
+.light-editor .ProseMirror::-webkit-scrollbar {
+  width: 8px;
+}
+
+.light-editor .ProseMirror::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.light-editor .ProseMirror::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.light-editor .ProseMirror::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Light editor placeholder */
+.light-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: #94a3b8;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Light editor task lists */
+.light-editor .ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.light-editor .ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.light-editor .ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
+  margin-top: 0.25rem;
+  accent-color: #3b82f6;
+}
+
+/* Light editor focus mode */
+.light-editor.focus-mode .ProseMirror {
+  padding: 2rem 1.5rem;
+}
+
+/* Responsive padding */
+@media (max-width: 768px) {
+  .light-editor .ProseMirror {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .light-editor .ProseMirror {
+    padding: 0;
+  }
+}
+
+/* --- MIGRATED COMPONENT STYLES --- */
+
+/* Highlight mark */
+.light-editor .ProseMirror mark {
+  background: rgba(59, 130, 246, 0.15);
+  color: inherit;
+  padding: 0.125rem 0;
+  border-radius: 0.125rem;
+}
+
+/* Strong emphasis */
+.light-editor .ProseMirror strong {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Columns layout */
+.light-editor .ProseMirror .columns {
+  display: grid;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.light-editor .ProseMirror .columns[data-columns="2"] {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.light-editor .ProseMirror .columns[data-columns="3"] {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.light-editor .ProseMirror .column-item {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+/* Citation styles */
+.light-editor .ProseMirror .citation {
+  color: #3b82f6;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.light-editor .ProseMirror .citation:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Footnote styles */
+.light-editor .ProseMirror .footnote {
+  color: #3b82f6;
+  font-size: 0.875em;
+  vertical-align: super;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.light-editor .ProseMirror .footnote:hover {
+  color: #2563eb;
+}
+
+/* Selected cell */
+.light-editor .ProseMirror .selectedCell {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Image Shadows */
+.light-editor .ProseMirror img {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Collaboration cursor styles */
+.light-editor .ProseMirror .collaboration-cursor__caret {
+  position: relative;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  word-break: normal;
+}
+
+.light-editor .ProseMirror .collaboration-cursor__label {
+  position: absolute;
+  top: -1.1em;
+  left: -1px;
+  font-size: 12px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px 4px 4px 0;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+  user-select: none;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+.light-editor .ProseMirror .collaboration-cursor__selection {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* AI Inline Suggestion (Ghost Text) */
+.light-editor .api-inline-suggestion,
+.ai-inline-suggestion {
+  color: #9ca3af; /* Gray-400 */
+  pointer-events: none;
+  font-style: italic;
+}

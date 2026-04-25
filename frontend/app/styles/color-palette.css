@@ -1,0 +1,203 @@
+/* Color Palette Utility Classes */
+/* These classes use CSS variables defined in index.css */
+
+/* Background Colors */
+.bg-cw-primary {
+  background-color: hsl(var(--cw-blue));
+}
+.bg-cw-secondary {
+  background-color: hsl(var(--cw-purple));
+}
+.bg-cw-accent {
+  background-color: hsl(var(--cw-teal));
+}
+.bg-cw-success {
+  background-color: hsl(var(--cw-green));
+}
+.bg-cw-warning {
+  background-color: hsl(var(--cw-orange));
+}
+.bg-cw-danger {
+  background-color: hsl(var(--destructive));
+}
+.bg-cw-info {
+  background-color: hsl(var(--cw-indigo));
+}
+.bg-cw-gray {
+  background-color: hsl(var(--cw-gray));
+}
+.bg-cw-light-gray {
+  background-color: hsl(var(--cw-light-gray));
+}
+
+/* Text Colors */
+.text-cw-primary {
+  color: hsl(var(--cw-blue));
+}
+.text-cw-secondary {
+  color: hsl(var(--cw-purple));
+}
+.text-cw-accent {
+  color: hsl(var(--cw-teal));
+}
+.text-cw-success {
+  color: hsl(var(--cw-green));
+}
+.text-cw-warning {
+  color: hsl(var(--cw-orange));
+}
+.text-cw-danger {
+  color: hsl(var(--destructive));
+}
+.text-cw-info {
+  color: hsl(var(--cw-indigo));
+}
+.text-cw-gray {
+  color: hsl(var(--cw-gray));
+}
+.text-cw-light-gray {
+  color: hsl(var(--cw-light-gray));
+}
+
+/* Border Colors */
+.border-cw-primary {
+  border-color: hsl(var(--cw-blue));
+}
+.border-cw-secondary {
+  border-color: hsl(var(--cw-purple));
+}
+.border-cw-accent {
+  border-color: hsl(var(--cw-teal));
+}
+.border-cw-success {
+  border-color: hsl(var(--cw-green));
+}
+.border-cw-warning {
+  border-color: hsl(var(--cw-orange));
+}
+.border-cw-danger {
+  border-color: hsl(var(--destructive));
+}
+.border-cw-info {
+  border-color: hsl(var(--cw-indigo));
+}
+.border-cw-gray {
+  border-color: hsl(var(--cw-gray));
+}
+.border-cw-light-gray {
+  border-color: hsl(var(--cw-light-gray));
+}
+
+/* Dark mode variants */
+.dark .bg-cw-primary-dark {
+  background-color: hsl(var(--cw-blue));
+}
+.dark .bg-cw-secondary-dark {
+  background-color: hsl(var(--cw-purple));
+}
+.dark .bg-cw-accent-dark {
+  background-color: hsl(var(--cw-teal));
+}
+.dark .bg-cw-success-dark {
+  background-color: hsl(var(--cw-green));
+}
+.dark .bg-cw-warning-dark {
+  background-color: hsl(var(--cw-orange));
+}
+.dark .bg-cw-danger-dark {
+  background-color: hsl(var(--destructive));
+}
+.dark .bg-cw-info-dark {
+  background-color: hsl(var(--cw-indigo));
+}
+.dark .bg-cw-gray-dark {
+  background-color: hsl(var(--cw-gray));
+}
+.dark .bg-cw-light-gray-dark {
+  background-color: hsl(var(--cw-light-gray));
+}
+
+.dark .text-cw-primary-dark {
+  color: hsl(var(--cw-blue));
+}
+.dark .text-cw-secondary-dark {
+  color: hsl(var(--cw-purple));
+}
+.dark .text-cw-accent-dark {
+  color: hsl(var(--cw-teal));
+}
+.dark .text-cw-success-dark {
+  color: hsl(var(--cw-green));
+}
+.dark .text-cw-warning-dark {
+  color: hsl(var(--cw-orange));
+}
+.dark .text-cw-danger-dark {
+  color: hsl(var(--destructive));
+}
+.dark .text-cw-info-dark {
+  color: hsl(var(--cw-indigo));
+}
+.dark .text-cw-gray-dark {
+  color: hsl(var(--cw-gray));
+}
+.dark .text-cw-light-gray-dark {
+  color: hsl(var(--cw-light-gray));
+}
+
+.dark .border-cw-primary-dark {
+  border-color: hsl(var(--cw-blue));
+}
+.dark .border-cw-secondary-dark {
+  border-color: hsl(var(--cw-purple));
+}
+.dark .border-cw-accent-dark {
+  border-color: hsl(var(--cw-teal));
+}
+.dark .border-cw-success-dark {
+  border-color: hsl(var(--cw-green));
+}
+.dark .border-cw-warning-dark {
+  border-color: hsl(var(--cw-orange));
+}
+.dark .border-cw-danger-dark {
+  border-color: hsl(var(--destructive));
+}
+.dark .border-cw-info-dark {
+  border-color: hsl(var(--cw-indigo));
+}
+.dark .border-cw-gray-dark {
+  border-color: hsl(var(--cw-gray));
+}
+.dark .border-cw-light-gray-dark {
+  border-color: hsl(var(--cw-light-gray));
+}
+
+/* Focus ring colors */
+.ring-cw-primary {
+  --tw-ring-color: hsl(var(--cw-blue));
+}
+.ring-cw-secondary {
+  --tw-ring-color: hsl(var(--cw-purple));
+}
+.ring-cw-accent {
+  --tw-ring-color: hsl(var(--cw-teal));
+}
+.ring-cw-success {
+  --tw-ring-color: hsl(var(--cw-green));
+}
+.ring-cw-warning {
+  --tw-ring-color: hsl(var(--cw-orange));
+}
+.ring-cw-danger {
+  --tw-ring-color: hsl(var(--destructive));
+}
+.ring-cw-info {
+  --tw-ring-color: hsl(var(--cw-indigo));
+}
+.ring-cw-gray {
+  --tw-ring-color: hsl(var(--cw-gray));
+}
+.ring-cw-light-gray {
+  --tw-ring-color: hsl(var(--cw-light-gray));
+}

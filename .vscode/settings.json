@@ -1,0 +1,8 @@
+{
+  "terminal.integrated.allowChords": true,
+  "accessibility.signals.terminalBell": {
+    "sound": "on"
+  },
+  "terminal.integrated.enableVisualBell": true,
+  "snyk.advanced.autoSelectOrganization": true
+}

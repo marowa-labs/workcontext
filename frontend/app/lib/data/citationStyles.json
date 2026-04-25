@@ -1,0 +1,278 @@
+[
+    {
+        "label": "American Psychological Association 7th edition",
+        "value": "apa"
+    },
+    {
+        "label": "Modern Language Association 9th edition",
+        "value": "modern-language-association"
+    },
+    {
+        "label": "Chicago Manual of Style 17th edition (author-date)",
+        "value": "chicago-author-date"
+    },
+    {
+        "label": "IEEE",
+        "value": "ieee"
+    },
+    {
+        "label": "Harvard",
+        "value": "harvard1"
+    },
+    {
+        "label": "Vancouver",
+        "value": "vancouver"
+    },
+    {
+        "label": "American Medical Association",
+        "value": "american-medical-association"
+    },
+    {
+        "label": "Nature",
+        "value": "nature"
+    },
+    {
+        "label": "Science",
+        "value": "science"
+    },
+    {
+        "label": "Cell",
+        "value": "cell"
+    },
+    {
+        "label": "Begell House - Chicago Manual of Style",
+        "value": "begell-house-chicago-manual-of-style"
+    },
+    {
+        "label": "Modern Language Association 8th edition",
+        "value": "modern-language-association-8th-edition"
+    },
+    {
+        "label": "Academy of Management Review",
+        "value": "academy-of-management-review"
+    },
+    {
+        "label": "Accident Analysis and Prevention",
+        "value": "accident-analysis-and-prevention"
+    },
+    {
+        "label": "ACI Materials Journal",
+        "value": "aci-materials-journal"
+    },
+    {
+        "label": "ACM SIG Proceedings (\"et al.\" for 3+ authors)",
+        "value": "acm-sig-proceedings"
+    },
+    {
+        "label": "ACM SIG Proceedings (\"et al.\" for 15+ authors)",
+        "value": "acm-sig-proceedings-15-authors"
+    },
+    {
+        "label": "ACM SIGCHI Proceedings (2016)",
+        "value": "acm-sigchi-proceedings-2016"
+    },
+    {
+        "label": "ACM SIGCHI Proceedings - Extended Abstract Format",
+        "value": "acm-sigchi-proceedings-extended-abstract-format"
+    },
+    {
+        "label": "ACM SIGGRAPH",
+        "value": "acm-siggraph"
+    },
+    {
+        "label": "ACME: An International Journal for Critical Geographies",
+        "value": "acme-an-international-journal-for-critical-geographies"
+    },
+    {
+        "label": "Acta Amazonica",
+        "value": "acta-amazonica"
+    },
+    {
+        "label": "Acta Anaesthesiologica Scandinavica",
+        "value": "acta-anaesthesiologica-scandinavica"
+    },
+    {
+        "label": "Acta Anaesthesiologica Taiwanica",
+        "value": "acta-anaesthesiologica-taiwanica"
+    },
+    {
+        "label": "Acta Botanica Croatica",
+        "value": "acta-botanica-croatica"
+    },
+    {
+        "label": "Acta Chiropterologica",
+        "value": "acta-chiropterologica"
+    },
+    {
+        "label": "Acta chirurgiae orthopaedicae et traumatologiae Čechoslovaca",
+        "value": "acta-chirurgiae-orthopaedicae-et-traumatologiae-cechoslovaca"
+    },
+    {
+        "label": "Acta hydrotechnica",
+        "value": "acta-hydrotechnica"
+    },
+    {
+        "label": "Acta Ichthyologica et Piscatoria",
+        "value": "acta-ichthyologica-et-piscatoria"
+    },
+    {
+        "label": "Acta Médica Peruana",
+        "value": "acta-medica-peruana"
+    },
+    {
+        "label": "Acta Naturae",
+        "value": "acta-naturae"
+    },
+    {
+        "label": "Acta Neurobiologiae Experimentalis",
+        "value": "acta-neurobiologiae-experimentalis"
+    },
+    {
+        "label": "Acta Neurochirurgica",
+        "value": "acta-neurochirurgica"
+    },
+    {
+        "label": "Acta Ophthalmologica",
+        "value": "acta-ophthalmologica"
+    },
+    {
+        "label": "Acta Ornithologica",
+        "value": "acta-ornithologica"
+    },
+    {
+        "label": "Acta Orthopaedica",
+        "value": "acta-orthopaedica"
+    },
+    {
+        "label": "Acta Orthopædica Belgica",
+        "value": "acta-orthopaedica-belgica"
+    },
+    {
+        "label": "Acta Paediatrica",
+        "value": "acta-paediatrica"
+    },
+    {
+        "label": "Acta Palaeontologica Polonica",
+        "value": "acta-palaeontologica-polonica"
+    },
+    {
+        "label": "Acta Pharmaceutica",
+        "value": "acta-pharmaceutica"
+    },
+    {
+        "label": "Acta Pharmaceutica Sinica B",
+        "value": "acta-pharmaceutica-sinica-b"
+    },
+    {
+        "label": "Acta Philosophica",
+        "value": "acta-philosophica"
+    },
+    {
+        "label": "Acta Physica Sinica (物理学报)",
+        "value": "acta-physica-sinica"
+    },
+    {
+        "label": "Acta Physiologica",
+        "value": "acta-physiologica"
+    },
+    {
+        "label": "Acta Polytechnica",
+        "value": "acta-polytechnica"
+    },
+    {
+        "label": "Acta Radiologica",
+        "value": "acta-radiologica"
+    },
+    {
+        "label": "Acta Scientiae Veterinariae",
+        "value": "acta-scientiae-veterinariae"
+    },
+    {
+        "label": "Acta Societatis Botanicorum Poloniae",
+        "value": "acta-societatis-botanicorum-poloniae"
+    },
+    {
+        "label": "Acta Universitatis Agriculturae et Silviculturae Mendelianae Brunensis",
+        "value": "acta-universitatis-agriculturae-et-silviculturae-mendelianae-brunensis"
+    },
+    {
+        "label": "Acta Universitatis Agriculturae Sueciae (Swedish University of Agricultural Sciences)",
+        "value": "acta-universitatis-agriculturae-sueciae"
+    },
+    {
+        "label": "Acta Zoologica Academiae Scientiarum Hungaricae",
+        "value": "acta-zoologica-academiae-scientiarum-hungaricae"
+    },
+    {
+        "label": "Administrative Science Quarterly",
+        "value": "administrative-science-quarterly"
+    },
+    {
+        "label": "Advanced Engineering Materials",
+        "value": "advanced-engineering-materials"
+    },
+    {
+        "label": "Advanced Functional Materials",
+        "value": "advanced-functional-materials"
+    },
+    {
+        "label": "Advanced Healthcare Materials",
+        "value": "advanced-healthcare-materials"
+    },
+    {
+        "label": "Advanced Materials",
+        "value": "advanced-materials"
+    },
+    {
+        "label": "Advanced Optical Materials",
+        "value": "advanced-optical-materials"
+    },
+    {
+        "label": "Advanced Pharmaceutical Bulletin",
+        "value": "advanced-pharmaceutical-bulletin"
+    },
+    {
+        "label": "Advances in Alzheimer's Disease",
+        "value": "advances-in-alzheimers-disease"
+    },
+    {
+        "label": "Advances in Complex Systems",
+        "value": "advances-in-complex-systems"
+    },
+    {
+        "label": "Aerosol and Air Quality Research",
+        "value": "aerosol-and-air-quality-research"
+    },
+    {
+        "label": "Aerosol Science and Technology",
+        "value": "aerosol-science-and-technology"
+    },
+    {
+        "label": "Aerospace Medicine and Human Performance",
+        "value": "aerospace-medicine-and-human-performance"
+    },
+    {
+        "label": "African Journal of Marine Science",
+        "value": "african-journal-of-marine-science"
+    },
+    {
+        "label": "African Online Scientific Information Systems - Harvard",
+        "value": "african-online-scientific-information-systems-harvard"
+    },
+    {
+        "label": "African Online Scientific Information Systems - Vancouver",
+        "value": "african-online-scientific-information-systems-vancouver"
+    },
+    {
+        "label": "African Zoology",
+        "value": "african-zoology"
+    },
+    {
+        "label": "Afro-Ásia (Português - Brasil)",
+        "value": "afro-asia"
+    },
+    {
+        "label": "Age and Ageing",
+        "value": "age-and-ageing"
+    }
+]
