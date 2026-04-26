@@ -51,7 +51,6 @@ model User {
   ai_usage                 AIUsage[]
   backups                  Backup[]
   backup_schedule          BackupSchedule?
-  citation_activities      CitationActivity[]
   collaborators            CollaboratorPresence[]
   document_templates       DocumentTemplate[]
   document_versions        DocumentVersion[]
@@ -69,10 +68,7 @@ model User {
   projects                 Project[]
   push_notification_tokens PushNotificationToken[]
   recycled_items           RecycledItem[]
-  researchSources          ResearchSource[]
-  researchTopics           ResearchTopic[]
   restores                 Restore[]
-  saved_papers             SavedPaper[]
   subscriptions            Subscription?
   support_tickets          SupportTicket[]
   task_trackings           TaskTracking[]
@@ -85,7 +81,7 @@ model User {
   waitlist_entries         WaitlistEntry[]
   pdf_documents            PdfDocument[]
   notes                    Note[]
-  project_sources          ProjectSource[] // Sources added by user to projects
+  ai_actions               AIAction[] // AI-executed actions
 
   // Workspace Relations
   owned_workspaces           Workspace[]           @relation("WorkspaceOwner")
@@ -208,20 +204,18 @@ model Project {
   user_id             String
   title               String
   type                String
-  citation_style      String
   description         String?
   content             Json?
   word_count          Int                    @default(0)
   due_date            DateTime?
   status              String                 @default("draft")
+  citation_style      String?                @default("apa")
   created_at          DateTime               @default(now())
   updated_at          DateTime               @updatedAt
   template_id         String?
   workspace_id        String?
   workspace           Workspace?             @relation(fields: [workspace_id], references: [id])
   ai_chat_sessions    AIChatSession[]
-  citations           Citation[]
-  citation_activities CitationActivity[]
   collaborators       CollaboratorPresence[]
   share_settings      DocumentShareSettings?
   document_versions   DocumentVersion[]
@@ -231,12 +225,10 @@ model Project {
   user                User                   @relation(fields: [user_id], references: [id], map: "ProjectToUser")
   template            DocumentTemplate?      @relation(fields: [template_id], references: [id])
   version_schedules   VersionSchedule[]
-  research_analysis   ResearchAnalysis?
   generated_audio     GeneratedAudio?
   notes               Note[]
   chat_messages       TeamChatMessage[]
-  tasks               WorkspaceTask[] // Tasks linked to this research project
-  sources             ProjectSource[] // Sources linked to this project
+  tasks               WorkspaceTask[] // Tasks linked to this project
 
   @@index([user_id])
 }
@@ -288,57 +280,6 @@ model DocumentShareSettings {
 
   @@index([project_id])
   @@index([link_sharing_enabled])
-}
-
-model Citation {
-  id                  String             @id @default(uuid())
-  project_id          String
-  type                String
-  title               String
-  authors             Json
-  year                Int?
-  journal             String?
-  volume              String?
-  issue               String?
-  pages               String?
-  doi                 String?
-  url                 String?
-  publisher           String?
-  isbn                String?
-  edition             String?
-  place               String?
-  conference          String?
-  abstract            String?
-  tags                Json?
-  notes               String?
-  metadata            Json
-  created_at          DateTime           @default(now())
-  updated_at          DateTime           @updatedAt
-  project             Project            @relation(fields: [project_id], references: [id])
-  citation_activities CitationActivity[]
-
-  @@index([project_id])
-  @@index([type])
-  @@index([year])
-}
-
-model CitationActivity {
-  id          String    @id @default(uuid())
-  user_id     String
-  project_id  String?
-  citation_id String?
-  action      String
-  details     Json?
-  created_at  DateTime  @default(now())
-  citation    Citation? @relation(fields: [citation_id], references: [id])
-  project     Project?  @relation(fields: [project_id], references: [id])
-  user        User      @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([project_id])
-  @@index([citation_id])
-  @@index([action])
-  @@index([created_at])
 }
 
 model RecycledItem {
@@ -490,10 +431,6 @@ model NotificationSettings {
   writing_progress_document_deadline         Boolean  @default(true)
   writing_progress_writing_streak            Boolean  @default(true)
   writing_progress_goal_achieved             Boolean  @default(true)
-  research_updates_enabled                   Boolean  @default(true)
-  research_updates_ai_suggestion             Boolean  @default(true)
-  research_updates_citation_reminder         Boolean  @default(true)
-  research_updates_research_update           Boolean  @default(true)
   document_management_enabled                Boolean  @default(true)
   document_management_backup_available       Boolean  @default(true)
   document_management_template_update        Boolean  @default(true)
@@ -632,11 +569,9 @@ model AIChatMessage {
   metadata         Json?
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
-  citations        Json?
   confidence_score Float?
   context_used     Json?
   mode             String        @default("general")
-  sources          Json?
   session          AIChatSession @relation(fields: [session_id], references: [id])
   user             User          @relation(fields: [user_id], references: [id])
 
@@ -1295,82 +1230,6 @@ model SupportTicket {
   @@index([created_at])
 }
 
-model ResearchTopic {
-  id           String           @id @default(uuid())
-  user_id      String
-  title        String
-  description  String?
-  sources      Int              @default(0)
-  last_updated DateTime         @default(now())
-  created_at   DateTime         @default(now())
-  updated_at   DateTime         @updatedAt
-  sources_data ResearchSource[]
-  user         User             @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([title])
-  @@index([created_at])
-}
-
-model ResearchSource {
-  id         String        @id @default(uuid())
-  user_id    String
-  topic_id   String
-  title      String
-  author     String?
-  year       Int?
-  journal    String?
-  abstract   String?
-  url        String?
-  content    String?
-  relevance  Int?
-  created_at DateTime      @default(now())
-  updated_at DateTime      @updatedAt
-  topic      ResearchTopic @relation(fields: [topic_id], references: [id])
-  user       User          @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([topic_id])
-}
-
-model ResearchPaper {
-  id             String       @id @default(uuid())
-  title          String
-  abstract       String?
-  authors        Json?        @default("[]")
-  year           Int?
-  venue          String?
-  citationCount  Int?
-  referenceCount Int?
-  fieldsOfStudy  String[]
-  openAccessPdf  String?
-  externalId     String       @unique
-  url            String?
-  created_at     DateTime     @default(now())
-  updated_at     DateTime     @updatedAt
-  savedBy        SavedPaper[]
-
-  @@index([title])
-  @@index([year])
-  @@index([externalId])
-}
-
-model SavedPaper {
-  id         String        @id @default(uuid())
-  user_id    String
-  paper_id   String
-  notes      String?
-  tags       Json?         @default("[]")
-  created_at DateTime      @default(now())
-  updated_at DateTime      @updatedAt
-  paper      ResearchPaper @relation(fields: [paper_id], references: [id])
-  user       User          @relation(fields: [user_id], references: [id])
-
-  @@unique([user_id, paper_id])
-  @@index([user_id])
-  @@index([paper_id])
-}
-
 model VersionSchedule {
   id         String   @id @default(uuid())
   project_id String
@@ -1468,7 +1327,6 @@ model DocumentTemplate {
   tags           String[]
   is_public      Boolean   @default(false)
   user_id        String?
-  citation_style String?
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
   rating         Float?    @default(0)
@@ -1484,27 +1342,6 @@ model DocumentTemplate {
   @@index([user_id])
   @@index([category_id])
   @@index([rating])
-}
-
-model ResearchAnalysis {
-  id           String   @id @default(uuid())
-  project_id   String   @unique
-  summary      String?  @db.Text
-  topics       Json?
-  questions    Json?
-  concept_map  Json?
-  reports      Json?
-  flashcards   Json?
-  quiz         Json?
-  data_table   Json?
-  infographic  String?  @db.Text
-  slide_deck   Json?
-  sources_used Int      @default(0)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  project      Project  @relation(fields: [project_id], references: [id])
-
-  @@index([project_id])
 }
 
 model GeneratedAudio {
@@ -1523,25 +1360,44 @@ model GeneratedAudio {
   @@index([project_id])
 }
 
-// Sources linked to projects for the Notebook feature
-model ProjectSource {
-  id          String   @id @default(uuid())
-  project_id  String
-  user_id     String
-  title       String
-  type        String   // "file", "url", "text", "web_search"
-  url         String?
-  content     String?  // For text sources or extracted content
-  file_path   String?  // For uploaded files
-  file_size   Int?     // File size in bytes
-  mime_type   String?  // MIME type for files
-  metadata    Json?    // Additional metadata like favicon, snippet, etc.
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [user_id], references: [id])
+// AI Action System - Track and manage AI-executed actions
+model AIAction {
+  id              String    @id @default(uuid())
+  user_id         String
+  action_type     String // "create_workspace", "create_project", "create_task", "edit_project", "delete_item", "invite_member", etc.
+  action_category String // "create", "read", "update", "delete", "manage"
+  status          String    @default("pending") // "pending", "confirmed", "executing", "completed", "failed", "cancelled"
+  user_intent     String // The original user message/request
+  parsed_params   Json? // AI-parsed parameters from the intent
+  target_entity   String? // "workspace", "project", "task", "user", etc.
+  target_id       String? // ID of the affected entity
+  confirmation_required Boolean @default(true)
+  confirmed_at    DateTime?
+  confirmed_by    String? // user_id who confirmed
+  executed_at     DateTime?
+  completed_at    DateTime?
+  failed_at       DateTime?
+  error_message   String?
+  result_data     Json? // Result of the action execution
+  rollback_data   Json? // Data needed to rollback the action
+  is_rolled_back  Boolean   @default(false)
+  rolled_back_at  DateTime?
+  execution_duration_ms Int? // Time taken to execute
+  ai_model_used   String? // Which AI model processed this action
+  tokens_used     Int?
+  cost_estimate   Float?
+  page_context    String? // Which page the user was on when making the request
+  session_id      String? // AI chat session ID
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  user            User      @relation(fields: [user_id], references: [id])
 
-  @@index([project_id])
   @@index([user_id])
-  @@index([type])
+  @@index([action_type])
+  @@index([status])
+  @@index([target_entity])
+  @@index([target_id])
+  @@index([created_at])
+  @@index([session_id])
 }
+

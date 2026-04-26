@@ -527,12 +527,75 @@ async function handlePutChatSession(req: any, res: any) {
 
 router.put("/session", authenticateExpressRequest, handlePutChatSession);
 
+// Rename (update) a chat session
+async function handlePatchChatSession(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { sessionId } = req.params;
+    const { title } = req.body;
+
+    if (!userId || !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID and session ID are required",
+      });
+    }
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Title is required",
+      });
+    }
+
+    // Verify session belongs to user
+    const session = await prisma.aIChatSession.findUnique({
+      where: {
+        id: sessionId,
+        user_id: userId,
+      },
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat session not found",
+      });
+    }
+
+    // Update session title
+    const updatedSession = await prisma.aIChatSession.update({
+      where: { id: sessionId },
+      data: {
+        title: title.trim(),
+        updated_at: new Date(),
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      session: updatedSession,
+    });
+  } catch (error: any) {
+    logger.error("Error updating chat session:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+router.patch(
+  "/session/:sessionId",
+  authenticateExpressRequest,
+  handlePatchChatSession
+);
+
 // Delete chat session
 async function handleDeleteChatSession(req: any, res: any) {
   try {
-    const body = req.body;
     const userId = req.user?.id;
-    const { sessionId } = body;
+    const { sessionId } = req.params;
 
     if (!userId || !sessionId) {
       return res.status(400).json({
@@ -556,14 +619,13 @@ async function handleDeleteChatSession(req: any, res: any) {
       });
     }
 
-    // Delete all messages associated with this session first (due to foreign key constraints)
-    await prisma.aIChatMessage.deleteMany({
-      where: { session_id: sessionId },
-    });
-
-    // Delete the session itself
-    await prisma.aIChatSession.delete({
+    // Soft delete by marking as inactive
+    await prisma.aIChatSession.update({
       where: { id: sessionId },
+      data: {
+        is_active: false,
+        updated_at: new Date(),
+      },
     });
 
     return res.status(200).json({
@@ -579,7 +641,7 @@ async function handleDeleteChatSession(req: any, res: any) {
   }
 }
 
-router.delete("/session", authenticateExpressRequest, handleDeleteChatSession);
+router.delete("/session/:sessionId", authenticateExpressRequest, handleDeleteChatSession);
 
 // Delete chat message
 async function handleDeleteChatMessage(req: any, res: any) {

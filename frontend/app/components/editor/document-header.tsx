@@ -21,15 +21,13 @@ import {
 } from "../ui/tooltip";
 import {
   FileText,
-  Microscope,
+  Sparkles,
   Settings,
   History,
   Download,
   MoreHorizontal,
   Keyboard,
   Maximize,
-  Search,
-  ShieldAlert,
   CloudUpload,
   CheckCircle2,
   Save,
@@ -50,7 +48,6 @@ interface DocumentHeaderProps {
   pageColor?: string;
   onPageColorChange?: (color: string) => void;
   editor?: Editor | null;
-  onOpenResearch?: () => void;
   activePanel?: SidebarPanel;
   onTogglePanel?: (panel: SidebarPanel) => void;
   provider?: HocuspocusProvider | null;
@@ -69,7 +66,6 @@ export function DocumentHeader({
   projectId,
   onOpenHistory,
   editor,
-  onOpenResearch,
   activePanel,
   onTogglePanel,
   provider,
@@ -79,9 +75,7 @@ export function DocumentHeader({
   onShare, // New prop
   allowedPanels = [
     "ai-chat",
-    "citations",
-    "paper-search",
-    "citation-check",
+    "language",
     "team-chat",
   ],
 }: DocumentHeaderProps & {
@@ -287,11 +281,10 @@ export function DocumentHeader({
             <TooltipTrigger asChild>
               <button
                 onClick={onToggleFocusMode}
-                className={`px-3 py-2 border rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium transition-all ${
-                  isFocusMode
-                    ? "bg-blue-50 border-blue-400 text-blue-700"
-                    : "bg-white border-white text-black hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-                }`}>
+                className={`px-3 py-2 border rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium transition-all ${isFocusMode
+                  ? "bg-blue-50 border-blue-400 text-blue-700"
+                  : "bg-white border-white text-black hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                  }`}>
                 <Maximize className="h-4 w-4" />
                 <span>Focus</span>
               </button>
@@ -332,58 +325,15 @@ export function DocumentHeader({
 
           {allowedPanels.includes("ai-chat") && (
             <button
-              onClick={() => {
-                if (onOpenResearch) {
-                  onOpenResearch();
-                }
-              }}
-              className={`px-3 py-2 border rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium transition-all ${"bg-white border-white text-black hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"}`}>
-              <Microscope className="h-3.5 w-3.5 text-black" />
+              onClick={() => onTogglePanel?.("ai-chat")}
+              className={`px-3 py-2 border rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium transition-all ${activePanel === "ai-chat"
+                ? "bg-blue-50 border-blue-400 text-blue-700"
+                : "bg-white border-white text-black hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                }`}>
+              <Sparkles className="h-3.5 w-3.5" />
               <span>Assistant</span>
             </button>
           )}
-
-          {allowedPanels.includes("paper-search") && (
-            <button
-              onClick={() => onTogglePanel?.("paper-search")}
-              className={`px-3 py-2 border rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium transition-all ${
-                activePanel === "paper-search"
-                  ? "bg-blue-50 border-blue-400 text-blue-700"
-                  : "bg-white border-white text-black hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-              }`}>
-              <Search className="h-3.5 w-3.5" />
-              <span>Discovery</span>
-            </button>
-          )}
-
-          {allowedPanels.includes("citations") && (
-            <button
-              onClick={() => onTogglePanel?.("citations")}
-              className={`px-3 py-2 border rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium transition-all ${
-                activePanel === "citations"
-                  ? "bg-blue-50 border-blue-400 text-blue-700"
-                  : "bg-white border-white text-black hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-              }`}>
-              <FileText className="h-3.5 w-3.5" />
-              <span>Citations</span>
-            </button>
-          )}
-
-          {allowedPanels.includes("plagiarism-check") && (
-            <button
-              onClick={() => onTogglePanel?.("plagiarism-check")}
-              className={`px-3 py-2 border rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium transition-all ${
-                activePanel === "plagiarism-check"
-                  ? "bg-blue-50 border-blue-400 text-blue-700"
-                  : "bg-white border-white text-black hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-              }`}>
-              <ShieldAlert className="h-3.5 w-3.5" />
-              <span>Originality</span>
-            </button>
-          )}
-
-          {/* If Team Chat is allowed, showing it here might be useful too if it's not handled elsewhere, 
-              but usually it's in the sidebar. Let's stick to cleaning existing buttons. */}
 
           <div className="h-6 w-px bg-gray-300 mx-1" />
 

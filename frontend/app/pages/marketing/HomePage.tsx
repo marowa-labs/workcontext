@@ -29,12 +29,12 @@ function HeroSection() {
 
   const phrases = [
     {
-      text: "Turn Academic Overwhelm into \nActionable Insights.",
-      gradientWord: "Actionable Insights.",
+      text: "Your Workspace, Truly Understood.",
+      gradientWord: "Truly Understood.",
     },
     {
-      text: "Discover, Synthesize, and Innovate \nwith Confidence",
-      gradientWord: "with Confidence",
+      text: "Connect Ideas, Get Things Done",
+      gradientWord: "Get Things Done",
     },
   ];
 
@@ -104,9 +104,8 @@ function HeroSection() {
           </h1>
 
           <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-            The AI Research Co-Pilot that helps you discover, synthesize, and
-            innovate without the pitfalls of unreliable AI. 250M+ papers,
-            verified citations, and zero hallucinations.
+            The context-aware workspace that connects your docs, tasks, and team.
+            No more searching. No more organizing. Just productive flow.
           </p>
 
           {/* CTAs */}
@@ -116,7 +115,7 @@ function HeroSection() {
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white hover:from-blue-700 hover:to-cyan-800 font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
               <Link href="/signup" className="flex items-center">
-                Start Researching Free
+                Start For Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -145,7 +144,7 @@ function HeroSection() {
                 </div>
               </div>
               <span className="ml-2">
-                Trusted by researchers at top institutions
+                Trusted by productive teams worldwide
               </span>
             </div>
             <div className="hidden sm:block w-1 h-1 bg-gray-500 rounded-full"></div>
@@ -170,7 +169,7 @@ function PreviewSection() {
             See ScholarForge AI in Action
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Experience the power of integrated academic writing tools.
+            Experience the power of a workspace that understands your context.
           </p>
         </div>
 
@@ -185,45 +184,44 @@ function PreviewSection() {
                   <div className="w-3 h-3 rounded-full bg-warning/60" />
                   <div className="w-3 h-3 rounded-full bg-success/60" />
                   <span className="ml-4 text-xl font-semibold text-muted-foreground">
-                    Climate_Research_Paper.docx
+                    Product_Launch_Strategy.docx
                   </span>
                 </div>
                 <div className="space-y-3 font-sans text-sm leading-relaxed text-gray-500">
                   <h3 className="font-serif text-xl font-semibold text-gray-600 mb-4">
-                    The Impact of Climate Change on Marine Ecosystems
+                    Q4 Product Launch Strategy
                   </h3>
                   <p className="text-gray-600">
-                    Climate change represents one of the most significant
-                    challenges facing marine ecosystems today.
+                    Our Q4 launch represents a significant opportunity to capture
+                    the enterprise market.
                     <span
                       className="bg-blue-100 text-blue-800 px-1 rounded border-b-2 border-blue-500 cursor-pointer"
-                      title="Verified Citation: Johnson et al. (2024)">
-                      Rising ocean temperatures have led to widespread coral
-                      bleaching events, threatening biodiversity across tropical
-                      reef systems.
+                      title="Related: Q3 Market Analysis doc">
+                      Customer feedback shows 73% demand for advanced team
+                      collaboration features, particularly in the 50-500
+                      employee segment.
                     </span>
                   </p>
                   <p className="text-gray-600">
-                    Recent studies indicate that
+                    Competitive analysis reveals that
                     <span
                       className="bg-purple-100 text-purple-800 px-1 rounded border-b-2 border-purple-500 cursor-pointer"
-                      title="Gap Analysis: Limited research on cold-water adaptation">
-                      the acidification of seawater is occuring at an
-                      unprecedented rate
+                      title="Action Item: Schedule competitor review meeting">
+                      none of our top 3 competitors offer real-time workspace
+                      intelligence
                     </span>
-                    , with pH levels dropping by 0.1 units since the industrial
-                    revolution.
+                    , giving us a 6-month first-mover advantage in this space.
                   </p>
                   <p className="text-gray-600">
-                    Furthermore, the migration patterns of numerous species have
+                    Furthermore, our team bandwidth analysis shows we have
                     been
                     <span
                       className="bg-green-100 px-1 rounded border-b-2 border-green-500 cursor-pointer"
-                      title="Consensus: High agreement across 15 papers">
-                      significantly altered
+                      title="Task auto-created: Resource planning needed">
+                      significantly under-allocated on UX research
                     </span>
-                    , disrupting established food chains and ecological
-                    relationships...
+                    , which could impact our launch timeline if not addressed
+                    by next sprint...
                   </p>
                 </div>
               </div>
@@ -236,9 +234,9 @@ function PreviewSection() {
                   <Search className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Intelligent Discovery</p>
+                  <p className="font-medium text-sm">Smart Connections</p>
                   <p className="text-xs text-muted-foreground">
-                    15 Relevant Papers Found
+                    8 Related Items Found
                   </p>
                 </div>
               </div>
@@ -250,9 +248,9 @@ function PreviewSection() {
                   <Sparkles className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Gap Analysis</p>
+                  <p className="font-medium text-sm">Action Extracted</p>
                   <p className="text-xs text-muted-foreground">
-                    New Research Opportunity
+                    Task Created for Design Team
                   </p>
                 </div>
               </div>
@@ -275,15 +273,15 @@ function ComparisonSection() {
     },
     {
       icon: Shield,
-      title: "Accuracy & Ethics First",
+      title: "Context You Can Trust",
       description:
-        "Built-in citation verification and human-in-the-loop safeguards ensure your work meets the highest academic standards.",
+        "Every connection is transparent. See exactly why items are related and trace ideas back to their source with confidence.",
     },
     {
       icon: Users,
       title: "Made for Collaboration",
       description:
-        "Real-time editing, comments, and version control make group projects and peer reviews effortless.",
+        "Real-time editing, comments, and version control keep your team aligned and moving fast.",
     },
   ];
 
@@ -329,49 +327,49 @@ function FeaturesGrid() {
   const features = [
     {
       icon: Search,
-      title: "Intelligent Paper Discovery",
+      title: "Smart @-Mentions",
       description:
-        "Scan 250M+ papers to find relevant, high-quality sources without endless scrolling. Includes safety classifications.",
+        "Type @ to instantly connect people, tasks, and docs across your workspace. No more searching through folders.",
       color: "from-purple-600 to-purple-800",
-      href: "/solutions/analytics", // TODO: Update to Discovery route when available
+      href: "/features",
     },
     {
       icon: Sparkles,
-      title: "Smart Summarization",
+      title: "Action Extraction",
       description:
-        "Generate concise, accurate summaries and identify research gaps with multi-model verification.",
+        "Highlight any text to create tasks, set deadlines, and assign team members automatically. Turn ideas into action.",
       color: "from-pink-600 to-pink-800",
-      href: "/solutions/ai-writing-assistant",
+      href: "/features",
     },
     {
       icon: FileText,
-      title: "Citation Confidence Auditor",
+      title: "Related Items",
       description:
-        "Get confidence scores for each section and warnings about outdated or unsupported claims with suggestions for missing links.",
+        "See automatically suggested connections between your docs, tasks, and conversations. Discover what you forgot you knew.",
       color: "from-green-600 to-green-800",
-      href: "/solutions/citations",
+      href: "/features",
     },
     {
       icon: Bot,
-      title: "Personalized Research Feed",
+      title: "Workspace Memory",
       description:
-        "Tailored paper suggestions based on your history and deep personalization via user profiles.",
+        "Ask questions across your entire workspace. Get instant answers with sources.",
       color: "from-blue-600 to-blue-800",
-      href: "/solutions/ai-writing-assistant",
+      href: "/features",
     },
     {
       icon: Shield,
-      title: "Defensibility Log",
+      title: "Source Transparency",
       description:
-        "Generate authorship certificates proving your work is original with time tracking and manual effort verification.",
+        "Every AI suggestion shows exactly where it came from. Hover to see the source doc, task, or conversation.",
       color: "from-amber-600 to-amber-800",
-      href: "/solutions/analytics",
+      href: "/features",
     },
     {
       icon: Users,
       title: "Real-time Collaboration",
       description:
-        "Work together seamlessly with live editing and version history.",
+        "Work together seamlessly with live editing, comments, and version history. Your team, always in sync.",
       color: "from-orange-600 to-orange-800",
       href: "/solutions/collaboration",
     },
@@ -382,11 +380,10 @@ function FeaturesGrid() {
       <div className="container-custom">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-600 mb-4">
-            Five Core Features for Academic Success and Beyond
+            Everything You Need, Connected
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            From originality to publication, all essential tools in one
-            platform.
+            From ideas to execution, all your work in one intelligent workspace.
           </p>
         </div>
 
@@ -421,25 +418,25 @@ function TestimonialsSection() {
   const testimonials = [
     {
       quote:
-        "ScholarForge AI's gap analysis helped me find a unique angle for my thesis in minutes, not months. It's like having a super-powered research assistant.",
-      author: "Dr. Sarah Johnson",
-      role: "PhD Candidate, MIT",
+        "The smart @-mentions saved me hours every week. I used to dig through folders looking for docs. Now ScholarForge just shows me what's relevant, instantly.",
+      author: "Sarah Chen",
+      role: "Product Manager, Stripe",
       avatar:
         "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop",
     },
     {
       quote:
-        "The verified citations feature is a lifesaver. Finally, an AI tool that respects academic rigor and doesn't hallucinate sources.",
-      author: "Prof. Michael Chen",
-      role: "Department of Literature, Stanford University",
+        "Finally, a workspace that actually understands context. I asked 'What did we decide about pricing?' and got the exact doc from 3 months ago with the decision.",
+      author: "Michael Torres",
+      role: "Head of Operations, Linear",
       avatar:
         "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
     },
     {
       quote:
-        "I love how it summarizes complex papers without losing the nuance. It helps me synthesize information faster than ever before.",
+        "We replaced Notion, Asana, and Slack with ScholarForge. The action extraction alone saves our team 10+ hours a week. Game changer.",
       author: "Alex Rivera",
-      role: "Graduate Student, UC Berkeley",
+      role: "CEO, LaunchPad Startups",
       avatar:
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
     },
@@ -450,11 +447,10 @@ function TestimonialsSection() {
       <div className="container-custom">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-600 mb-4">
-            Loved by Academics Worldwide
+            Loved by Productive Teams
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Join thousands of students and researchers who've transformed their
-            workflow.
+            Join thousands of teams who've replaced tool overload with intelligent flow.
           </p>
         </div>
 
@@ -493,7 +489,7 @@ function TestimonialsSection() {
 function CTASection() {
   return (
     <section className="section-padding relative overflow-hidden bg-[#121212]">
-      {/* Background with academic shapes */}
+      {/* Background with productivity shapes */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20 opacity-95"></div>
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-10 w-20 h-20 border-2 border-blue-500/30 rounded-full"></div>

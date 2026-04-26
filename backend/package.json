@@ -26,7 +26,7 @@
     "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@openrouter/sdk": "^0.11.2",
     "@prisma/adapter-pg": "^7.3.0",
-    "@prisma/client": "^7.7.0",
+    "@prisma/client": "^7.8.0",
     "@prisma/config": "^7.3.0",
     "@supabase/supabase-js": "^2.91.0",
     "@tiptap/core": "^3.16.0",
@@ -112,7 +112,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.1.6",
     "nodemon": "^3.1.11",
-    "prisma": "^7.7.0",
+    "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"

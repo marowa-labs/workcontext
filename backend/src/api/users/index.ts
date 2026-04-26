@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { GET, PUT, DELETE } from "./route";
-import { POST as EXPORT_POST } from "./export/route";
 import { POST_REQUEST_OTP as REQUEST_OTP_POST } from "./route";
 
 const router: Router = Router();
@@ -56,25 +55,6 @@ router.post("/request-otp", async (req, res) => {
     };
 
     const response = await REQUEST_OTP_POST(mockRequest as any);
-    const data = await response.json();
-
-    return res.status(response.status).json(data);
-  } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Export user data
-router.post("/export", async (req, res) => {
-  try {
-    // Create a mock request object that matches the Edge function signature
-    const mockRequest = {
-      headers: {
-        get: (name: string) => req.headers[name.toLowerCase()],
-      },
-    };
-
-    const response = await EXPORT_POST(mockRequest as any);
     const data = await response.json();
 
     return res.status(response.status).json(data);

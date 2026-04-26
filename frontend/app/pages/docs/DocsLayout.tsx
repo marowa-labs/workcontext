@@ -347,7 +347,7 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="flex items-center">
               <Link href="/docs" className="flex items-center space-x-2">
                 <img
-                  src="/images/ScholarForge AI-logo.png"
+                  src="/assets/images/ScholarForge-AI-Logo.png"
                   alt="ScholarForge AILogo"
                   className="h-10 w-auto"
                   style={{ color: `hsl(var(--accent))` }}
@@ -456,11 +456,10 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
                           <li key={item.id}>
                             <Link
                               href={item.path}
-                              className={`flex items-center justify-between px-3 py-2 text-sm rounded-md ${
-                                isActive
-                                  ? "bg-blue-50 text-blue-700 font-medium dark:bg-blue-900/30 dark:text-blue-400 tab-active"
-                                  : "text-black hover:bg-gray-50 dark:text-black dark:hover:bg-white"
-                              } ${transitionClasses}`}
+                              className={`flex items-center justify-between px-3 py-2 text-sm rounded-md ${isActive
+                                ? "bg-blue-50 text-blue-700 font-medium dark:bg-blue-900/30 dark:text-blue-400 tab-active"
+                                : "text-black hover:bg-gray-50 dark:text-black dark:hover:bg-white"
+                                } ${transitionClasses}`}
                               onClick={() => setMobileMenuOpen(false)}>
                               <span>{item.label}</span>
                               {isActive && (

@@ -15,7 +15,7 @@ import { cn } from "../../lib/utils";
 interface ParagraphActionMenuProps {
   editor: Editor | null;
   onAIAction: (action: string, text: string) => void;
-  onAddCitation: () => void;
+  onAddCitation?: () => void;
 }
 
 export function ParagraphActionMenu({
@@ -126,8 +126,10 @@ export function ParagraphActionMenu({
     const endPos = activeNodePos + node.content.size;
     editor.commands.setTextSelection(endPos);
 
-    // Trigger citation modal via callback
-    onAddCitation();
+    // Trigger citation modal via callback (if provided)
+    if (onAddCitation) {
+      onAddCitation();
+    }
   };
 
   // Handle Drag Start

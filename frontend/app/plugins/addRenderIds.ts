@@ -114,7 +114,7 @@ const getRenderIdVisitor =
                 importDecl
               );
             } else {
-              body[firstImport].insertBefore(importDecl);
+              (body as any)[firstImport].insertBefore(importDecl);
             }
           }
 

@@ -8,11 +8,9 @@ import DocumentationViewer from "../../components/docs/DocumentationViewer";
 
 const DocStylingTestPage: React.FC = () => {
   const {
-    planClasses,
     planDocContentClasses,
     planDocHeadingClasses,
     planDocLinkClasses,
-    planDocCodeClasses,
     planCardClasses,
   } = usePlanStyling();
 
@@ -91,11 +89,9 @@ function helloWorld() {
               Current Classes
             </h3>
             <ul className="text-sm space-y-1">
-              <li>Container: {planClasses}</li>
               <li>Content: {planDocContentClasses}</li>
               <li>Headings: {planDocHeadingClasses}</li>
               <li>Links: {planDocLinkClasses}</li>
-              <li>Code: {planDocCodeClasses}</li>
             </ul>
           </div>
           <div>

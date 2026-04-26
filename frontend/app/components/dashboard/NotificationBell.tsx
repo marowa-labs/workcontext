@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
 import Link from "next/link";
 import {
   Bell,
   Check,
+  X,
+  Search,
   AlertCircle,
   Info,
   CheckCircle,
@@ -15,11 +18,20 @@ import {
   MessageSquare,
   Clock as Snooze,
   Archive,
+  Clock,
 } from "lucide-react";
 import NotificationService from "../../lib/utils/notificationService";
 import { Button } from "../ui/button";
 
-const NotificationBell: React.FC = () => {
+interface NotificationBellProps {
+  isPinned?: boolean;
+  onPinChange?: (pinned: boolean) => void;
+}
+
+const NotificationBell: React.FC<NotificationBellProps> = ({
+  isPinned: externalPinned,
+  onPinChange,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "low">(
     "all",
@@ -30,6 +42,20 @@ const NotificationBell: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [internalPinned, setInternalPinned] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Use external pinned state if provided, otherwise use internal
+  const isPinned = externalPinned !== undefined ? externalPinned : internalPinned;
+
+  const handlePinToggle = () => {
+    const newPinned = !isPinned;
+    if (externalPinned === undefined) {
+      setInternalPinned(newPinned);
+    }
+    onPinChange?.(newPinned);
+  };
 
   const fetchNotifications = useCallback(
     async (limit: number, offset: number, filters?: any) => {
@@ -182,6 +208,12 @@ const NotificationBell: React.FC = () => {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+      }
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowFilterDropdown(false);
       }
     };
 
@@ -461,198 +493,251 @@ const NotificationBell: React.FC = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
+      {/* Bell Button - always visible */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
-        aria-label="Notifications">
+        onClick={() => setIsOpen(true)}
+        className="relative p-2 rounded-lg hover:bg-muted transition-colors"
+        aria-label="Notifications"
+      >
         <Bell className="h-5 w-5 text-gray-700" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+          <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
         )}
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-white z-50">
-          <div className="p-4 border-b border-white">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-medium text-gray-700">
-                Notifications
-              </h3>
-              {unreadCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={markAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-800">
-                  Mark all as read
-                </Button>
-              )}
-            </div>
-            <div className="mb-3">
-              <input
-                type="text"
-                placeholder="Search notifications..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setFilter("all")}
-                className={`px-3 py-1 text-xs rounded-full ${filter === "all" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}`}>
-                All
-              </button>
-              <button
-                onClick={() => setFilter("high")}
-                className={`px-3 py-1 text-xs rounded-full ${filter === "high" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-700"}`}>
-                High
-              </button>
-              <button
-                onClick={() => setFilter("medium")}
-                className={`px-3 py-1 text-xs rounded-full ${filter === "medium" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-700"}`}>
-                Medium
-              </button>
-              <button
-                onClick={() => setFilter("low")}
-                className={`px-3 py-1 text-xs rounded-full ${filter === "low" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}`}>
-                Low
-              </button>
-            </div>
-          </div>
+      {/* Full Screen Modal Overlay - Portal to render outside sidebar */}
+      {isOpen && ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[100] flex pointer-events-none">
+          {/* Backdrop - only covers area to the RIGHT of the inbox panel */}
+          <div
+            className="absolute inset-0 bg-black/10 backdrop-blur-[2px] lg:left-[calc(16rem+28rem)] pointer-events-auto"
+            onClick={() => setIsOpen(false)}
+          />
 
-          <div className="max-h-96 overflow-y-auto">
-            {loading ? (
-              <div className="p-4 text-center text-gray-700">
-                Loading notifications...
-              </div>
-            ) : error ? (
-              <div className="p-4 text-center text-red-500">Error: {error}</div>
-            ) : notifications.length === 0 ? (
-              <div className="p-4 text-center text-gray-700">
-                No notifications
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {(() => {
-                  const { highPriority, mediumPriority, lowPriority } =
-                    groupNotificationsByPriority();
-                  const sections = [
-                    { priority: "high", notifications: highPriority },
-                    { priority: "medium", notifications: mediumPriority },
-                    { priority: "low", notifications: lowPriority },
-                  ];
+          {/* Modal Panel - Positioned next to sidebar on desktop */}
+          <div className="relative w-full max-w-[28rem] bg-white shadow-2xl flex flex-col h-full animate-in slide-in-from-left duration-300 lg:ml-64 z-10 pointer-events-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
+              <div className="flex items-center gap-1">
+                {/* Pin button */}
+                <button
+                  onClick={handlePinToggle}
+                  className={`p-2 hover:bg-gray-100 rounded-lg transition-colors ${isPinned ? "text-blue-500 bg-blue-50" : "text-gray-500"}`}
+                  aria-label="Pin inbox"
+                  title={isPinned ? "Unpin inbox" : "Pin inbox"}
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2v10M5 12h14M12 12l-4 8M12 12l4 8" />
+                  </svg>
+                </button>
 
-                  // Render sections based on filter
-                  return sections.map(({ priority, notifications }) => {
-                    // When filtered, only show the matching priority section
-                    // When not filtered, show all sections
-                    if (filter === "all" || filter === priority) {
+                {/* Filter dropdown button */}
+                <div className="relative" ref={filterDropdownRef}>
+                  <button
+                    onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                    className={`p-2 hover:bg-gray-100 rounded-lg transition-colors ${showFilterDropdown ? "text-blue-500 bg-blue-50" : "text-gray-500"}`}
+                    aria-label="Filter notifications"
+                    title="Filter notifications"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <line x1="8" y1="12" x2="21" y2="12" />
+                      <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                  </button>
+
+                  {/* Filter Dropdown Menu */}
+                  {showFilterDropdown && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                      <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b border-gray-100">
+                        Filter
+                      </div>
+                      <button
+                        onClick={() => { setFilter("all"); setShowFilterDropdown(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${filter === "all" ? "text-blue-600 bg-blue-50" : "text-gray-700"}`}
+                      >
+                        <Check className="w-4 h-4" />
+                        All notifications
+                        {filter === "all" && <Check className="w-4 h-4 ml-auto" />}
+                      </button>
+                      <button
+                        onClick={() => { setFilter("high"); setShowFilterDropdown(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${filter === "high" ? "text-blue-600 bg-blue-50" : "text-gray-700"}`}
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        High priority
+                        {filter === "high" && <Check className="w-4 h-4 ml-auto" />}
+                      </button>
+                      <button
+                        onClick={() => { setFilter("medium"); setShowFilterDropdown(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${filter === "medium" ? "text-blue-600 bg-blue-50" : "text-gray-700"}`}
+                      >
+                        <Info className="w-4 h-4" />
+                        Medium priority
+                        {filter === "medium" && <Check className="w-4 h-4 ml-auto" />}
+                      </button>
+                      <button
+                        onClick={() => { setFilter("low"); setShowFilterDropdown(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${filter === "low" ? "text-blue-600 bg-blue-50" : "text-gray-700"}`}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Low priority
+                        {filter === "low" && <Check className="w-4 h-4 ml-auto" />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500"
+                  aria-label="Close inbox"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="p-4 border-b border-gray-100">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search notifications..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Notifications List */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loading ? (
+                <div className="p-4 text-center text-gray-700">
+                  Loading notifications...
+                </div>
+              ) : error ? (
+                <div className="p-4 text-center text-red-500">Error: {error}</div>
+              ) : notifications.length === 0 ? (
+                <div className="p-4 text-center text-gray-700">
+                  No notifications
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {(() => {
+                    const { highPriority, mediumPriority, lowPriority } =
+                      groupNotificationsByPriority();
+                    const sections = [
+                      { priority: "high", notifications: highPriority },
+                      { priority: "medium", notifications: mediumPriority },
+                      { priority: "low", notifications: lowPriority },
+                    ];
+
+                    return sections.map(({ priority, notifications }) => {
+                      if (filter !== "all" && priority !== filter) {
+                        return null;
+                      }
+
                       return (
-                        <div key={priority}>
-                          <div className="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-700">
-                            {getPriorityLabel(priority as any)} (
-                            {notifications.length})
-                          </div>
-                          {notifications.length > 0 ? (
-                            <ul>
-                              {notifications.map((notification) => {
-                                const priorityLevel = getPriority(
-                                  notification.type,
-                                );
-                                return (
-                                  <li
-                                    key={notification.id}
-                                    className={`p-4 hover:bg-gray-50 border-l-4 ${getPriorityColor(priorityLevel)} ${!notification.read ? "bg-blue-50" : ""}`}>
-                                    <div className="flex justify-between">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-start">
-                                          <div className="flex-shrink-0 mt-0.5 text-gray-700">
-                                            {getIcon(notification.type)}
-                                          </div>
-                                          <div className="ml-3 flex-1">
-                                            <p className="text-sm font-medium text-gray-700 truncate">
-                                              {notification.title}
-                                            </p>
-                                            <p className="text-sm text-gray-700 mt-1">
-                                              {notification.message}
-                                            </p>
-                                            <p className="text-xs text-gray-700 mt-1">
-                                              {formatDate(
-                                                notification.created_at,
-                                              )}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex space-x-2 mt-2">
-                                        {!notification.read && (
+                        <div key={priority} className="mb-4">
+                          <h4 className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide bg-gray-50">
+                            {getPriorityLabel(priority as "high" | "medium" | "low")}
+                          </h4>
+                          <ul className="divide-y divide-gray-100">
+                            {notifications.length > 0 ? (
+                              notifications.map((notification) => (
+                                <li
+                                  key={notification.id}
+                                  className={`p-4 hover:bg-gray-50 transition-colors ${notification.read ? "opacity-75" : ""
+                                    }`}>
+                                  <div className="flex items-start space-x-3">
+                                    <div
+                                      className={`flex-shrink-0 mt-1 ${getPriorityColor(
+                                        notification.priority,
+                                      )}`}>
+                                      {getIcon(notification.type)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-900 truncate">
+                                        {notification.title}
+                                      </p>
+                                      <p className="text-sm text-gray-600 mt-1">
+                                        {notification.message}
+                                      </p>
+                                      <div className="flex items-center justify-between mt-2">
+                                        <span className="text-xs text-gray-500">
+                                          {formatDate(notification.created_at)}
+                                        </span>
+                                        <div className="flex space-x-2">
+                                          {!notification.read && (
+                                            <button
+                                              onClick={() =>
+                                                markAsRead(notification.id)
+                                              }
+                                              className="text-xs text-blue-600 hover:text-blue-800">
+                                              Mark as read
+                                            </button>
+                                          )}
                                           <button
                                             onClick={() =>
-                                              markAsRead(notification.id)
+                                              snoozeNotification(notification.id)
                                             }
-                                            className="text-xs text-gray-700 hover:text-gray-700 flex items-center"
-                                            aria-label="Mark as read">
-                                            <Check className="h-3 w-3 mr-1" />
-                                            Read
+                                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                                            aria-label="Snooze">
+                                            <Snooze className="h-3 w-3 mr-1" />
+                                            Snooze
                                           </button>
-                                        )}
-                                        <button
-                                          onClick={() =>
-                                            snoozeNotification(
-                                              notification.id,
-                                              1,
-                                            )
-                                          }
-                                          className="text-xs text-gray-700 hover:text-gray-700 flex items-center"
-                                          aria-label="Snooze">
-                                          <Snooze className="h-3 w-3 mr-1" />
-                                          Snooze
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            dismissNotification(notification.id)
-                                          }
-                                          className="text-xs text-gray-700 hover:text-gray-700 flex items-center"
-                                          aria-label="Dismiss">
-                                          <Archive className="h-3 w-3 mr-1" />
-                                          Dismiss
-                                        </button>
+                                          <button
+                                            onClick={() =>
+                                              dismissNotification(notification.id)
+                                            }
+                                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                                            aria-label="Dismiss">
+                                            <Archive className="h-3 w-3 mr-1" />
+                                            Dismiss
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          ) : (
-                            <div className="p-4 text-center text-gray-700">
-                              No{" "}
-                              {getPriorityLabel(priority as any).toLowerCase()}{" "}
-                              notifications
-                            </div>
-                          )}
+                                  </div>
+                                </li>
+                              ))
+                            ) : (
+                              <div className="p-4 text-center text-gray-700">
+                                No{" "}
+                                {getPriorityLabel(priority as "high" | "medium" | "low").toLowerCase()}{" "}
+                                notifications
+                              </div>
+                            )}
+                          </ul>
                         </div>
                       );
-                    }
-                    return null;
-                  });
-                })()}
-              </div>
-            )}
-          </div>
+                    });
+                  })()}
+                </div>
+              )}
+            </div>
 
-          <div className="p-4 border-t border-white text-center">
-            <Link
-              href="/dashboard/notifications"
-              className="text-sm text-blue-600 hover:text-blue-800">
-              View all notifications
-            </Link>
+            <div className="p-4 border-t border-gray-100 text-center">
+              <Link
+                href="/dashboard/notifications"
+                className="text-sm text-blue-600 hover:text-blue-800"
+                onClick={() => setIsOpen(false)}
+              >
+                View all notifications
+              </Link>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
-};
+}
 
 export default NotificationBell;

@@ -77,13 +77,13 @@ export default function Navigation() {
       name: "Individual Plans",
       href: "/pricing",
       icon: <User className="h-5 w-5" />,
-      description: "Plans for individual researchers and students",
+      description: "Plans for individual productivity",
     },
     {
-      name: "Team & Institutional",
+      name: "Team & Business",
       href: "/institutional",
       icon: <Users className="h-5 w-5" />,
-      description: "Plans for universities and research institutions",
+      description: "Plans for teams and organizations",
     },
   ]; */
   }
@@ -120,14 +120,14 @@ export default function Navigation() {
       name: "Analytics",
       href: "/solutions/analytics",
       icon: <BarChart3 className="h-5 w-5" />,
-      description: "Track your writing and research progress",
+      description: "Track team productivity and project progress",
     },
 
     {
-      name: "Citations",
-      href: "/solutions/citations",
+      name: "Smart Connections",
+      href: "/solutions/collaboration",
       icon: <FileText className="h-5 w-5" />,
-      description: "Generate and manage citations automatically",
+      description: "Automatically connect related docs, tasks, and ideas",
     },
     {
       name: "Collaboration",
@@ -181,9 +181,9 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
             <img
-              src="/images/ScholarForge-AI-Logo.png"
+              src="/assets/images/ScholarForge-AI-Logo.png"
               alt="ScholarForge AI Logo"
-              className="h-10 w-auto group-hover:shadow-lg transition-all duration-300"
+              className="h-20 w-auto group-hover:shadow-lg transition-all duration-300"
             />
             <span className="text-xl font-bold text-gray-700">
               ScholarForge AI
@@ -204,9 +204,8 @@ export default function Navigation() {
               <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
                 Solutions
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    solutionsOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 transition-transform duration-200 ${solutionsOpen ? "rotate-180" : ""
+                    }`}
                 />
               </div>
               {solutionsOpen && (
@@ -250,11 +249,11 @@ export default function Navigation() {
                             <Zap className="h-6 w-6 text-blue-400" />
                           </div>
                           <h3 className="text-lg font-bold text-white mb-2">
-                            Boost Your Research Impact
+                            Boost Your Team's Productivity
                           </h3>
                           <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                            Discover how our advanced analytics can help you
-                            increase citation rates and research visibility.
+                            Discover how our context-aware workspace can help
+                            your team connect ideas and get things done faster.
                           </p>
                           <Link
                             href="/signup"
@@ -284,9 +283,8 @@ export default function Navigation() {
               <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
                 Product
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    productOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 transition-transform duration-200 ${productOpen ? "rotate-180" : ""
+                    }`}
                 />
               </div>
               {productOpen && (
@@ -368,9 +366,8 @@ export default function Navigation() {
               <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
                 Resources
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    resourcesOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 transition-transform duration-200 ${resourcesOpen ? "rotate-180" : ""
+                    }`}
                 />
               </div>
               {resourcesOpen && (

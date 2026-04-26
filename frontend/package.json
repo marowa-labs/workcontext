@@ -116,6 +116,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@types/babel__core": "^7.20.5",
     "@types/lodash": "^4.17.23",
+    "@types/micromatch": "^4.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

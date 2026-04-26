@@ -25,21 +25,26 @@ import {
   Plus,
   Trash2,
   Image as ImageIcon,
+  AlertTriangle,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import AIService from "../../lib/utils/aiService";
 import BillingService from "../../lib/utils/billingService";
-import AIModelAccessControl from "../../lib/utils/aiModelAccessControl"; // Add this import
-
-// Research Co-Pilot imports
+import AIModelAccessControl from "../../lib/utils/aiModelAccessControl";
 import { ChatModeSelector, type ChatMode } from "../research/ChatModeSelector";
-import { CitationSuggestionCard } from "../research/CitationSuggestionCard";
-import { PaperCard } from "../research/PaperCard";
-import { GapAnalysisPanel } from "../research/GapAnalysisPanel";
-import { useResearchCoPilot } from "../../hooks/useResearchCoPilot";
-import ResearchCoPilotService from "../../lib/utils/researchCoPilotService";
+import {
+  aiActionService,
+  AIActionResult,
+  formatActionType,
+  getActionIcon,
+  isDestructiveAction,
+  getConfirmationButtonText,
+} from "../../lib/utils/aiActionService";
+import { useRouter } from "next/navigation";
 
 // Enhanced interfaces for the new functionality
 interface ChatMessage {
@@ -151,7 +156,7 @@ export function AIChatPanel({
     const fontSize =
       minFontSize +
       (maxFontSize - minFontSize) *
-        ((clampedWidth - minWidth) / (maxWidth - minWidth));
+      ((clampedWidth - minWidth) / (maxWidth - minWidth));
     return fontSize;
   }, [panelWidth]);
 
@@ -169,7 +174,7 @@ export function AIChatPanel({
     const lineHeight =
       minLineHeight +
       (maxLineHeight - minLineHeight) *
-        ((clampedWidth - minWidth) / (maxWidth - minWidth));
+      ((clampedWidth - minWidth) / (maxWidth - minWidth));
 
     return lineHeight;
   }, [panelWidth]);
@@ -187,7 +192,7 @@ export function AIChatPanel({
     const fontSize =
       minFontSize +
       (maxFontSize - minFontSize) *
-        ((clampedWidth - minWidth) / (maxWidth - minWidth));
+      ((clampedWidth - minWidth) / (maxWidth - minWidth));
     return fontSize;
   }, [panelWidth]);
 
@@ -204,7 +209,7 @@ export function AIChatPanel({
     const fontSize =
       minFontSize +
       (maxFontSize - minFontSize) *
-        ((clampedWidth - minWidth) / (maxWidth - minWidth));
+      ((clampedWidth - minWidth) / (maxWidth - minWidth));
     return fontSize;
   }, [panelWidth]);
 
@@ -259,12 +264,17 @@ export function AIChatPanel({
   const lastInitializedProjectId = useRef<string | null>(null);
   const isInitializing = useRef<boolean>(false);
 
-  // Research Co-Pilot state
+  // Research Co-Pilot state (stubbed - feature removed in productivity pivot)
   const [chatMode, setChatMode] = useState<ChatMode>("general");
   const [showCitationPanel, setShowCitationPanel] = useState(false);
   const [showPaperPanel, setShowPaperPanel] = useState(false);
   const [showGapPanel, setShowGapPanel] = useState(false);
-  const research = useResearchCoPilot();
+  const research = { isLoading: false, error: null, data: null };
+
+  // AI Action System State
+  const [pendingAction, setPendingAction] = useState<AIActionResult | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const router = useRouter();
 
   // Check user plan
   const checkUserPlan = useCallback(async () => {
@@ -518,7 +528,7 @@ export function AIChatPanel({
         try {
           isInitializing.current = true;
           console.log("Initializing AI Chat history for project:", projectId);
-          
+
           const chatSessions = await AIService.getChatSessions(projectId);
           setSessions(chatSessions);
 
@@ -535,7 +545,7 @@ export function AIChatPanel({
               user?.user_metadata?.first_name ||
               user?.email ||
               "there";
-            
+
             const welcomeMessage: ChatMessage = {
               id: "welcome-" + Date.now(),
               content: `Hello ${userName}! I'm ScholarForge AI. How can I help you with your research paper today?`,
@@ -546,7 +556,7 @@ export function AIChatPanel({
             setMessages([welcomeMessage]);
             setSessionId(null);
           }
-          
+
           lastInitializedProjectId.current = projectId;
         } catch (err) {
           console.error("Failed to initialize AI Chat history:", err);
@@ -624,66 +634,7 @@ export function AIChatPanel({
         model: currentModel,
       };
 
-      // Research Mode: Extract document context and use ResearchCoPilotService
-      if (chatMode === "research" && editor) {
-        try {
-          // Extract document context from editor
-          const documentContext = {
-            projectId: projectId || "",
-            title: "Current Document",
-            content: editor.getText() || "",
-            citationStyle: "APA", // TODO: Get from user settings
-          };
-
-          // Call research co-pilot service
-          const researchResponse = await ResearchCoPilotService.chat(
-            inputValue,
-            documentContext,
-            {
-              mode: "research",
-              includeDocumentContext: true,
-              includeCitationLibrary: true,
-            },
-          );
-
-          // Create user message
-          const userMessage = {
-            id: `user-${Date.now()}`,
-            content: inputValue,
-            role: "user" as const,
-            message_type: "text" as const,
-            created_at: new Date().toISOString(),
-          };
-
-          // Create AI message with research data
-          const aiMessage = {
-            id: `ai-${Date.now()}`,
-            content: researchResponse.content,
-            role: "assistant" as const,
-            message_type: "text" as const,
-            created_at: new Date().toISOString(),
-            citations: researchResponse.citations,
-            sources: researchResponse.sources,
-            confidence_score: researchResponse.confidenceScore,
-            mode: "research" as const,
-          };
-
-          // Update messages
-          setMessages((prev) => [...prev, userMessage, aiMessage]);
-
-          // Clear input
-          setInputValue("");
-          removeImage();
-          setIsLoading(false);
-          return;
-        } catch (error: any) {
-          console.error("Research mode error:", error);
-          // Fall back to regular chat on error
-          setError(error.message || "Research mode failed, using regular chat");
-        }
-      }
-
-      // Regular chat mode (existing logic)
+      // Regular chat mode
 
       // Send message to backend
       const result = await AIService.sendChatMessage(messageData);
@@ -951,9 +902,9 @@ export function AIChatPanel({
   // Add a helper function to preprocess AI content
   const preprocessContent = (content: string): string => {
     if (!content) return "";
-    
+
     console.log("Original content:", JSON.stringify(content.substring(0, 200)));
-    
+
     const processed = content
       // First, decode HTML entities that might wrap the br tags
       .replace(/&lt;/g, "<")
@@ -974,7 +925,7 @@ export function AIChatPanel({
       })
       // Remove AI markers
       .replace(/\[\/?[A-Z\s]+(?:\s+[A-Z\s]+)*\]/g, "");
-    
+
     console.log("Processed content:", JSON.stringify(processed.substring(0, 200)));
     return processed;
   };
@@ -1125,31 +1076,73 @@ export function AIChatPanel({
     setIsLoading(true);
 
     try {
-      // Replace direct API call with AIService method
-      const response = await AIService.processAIRequest(
-        "chat",
+      // Use the AI Action Service for intelligent action processing
+      await aiActionService.sendMessage(
         content,
-        getDocumentContext(),
+        {
+          pageContext: "editor", // or derive from router
+          currentProjectId: projectId || undefined,
+          conversationHistory: messages.slice(-10).map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+        },
+        {
+          onConfirmationRequired: (action, confirm, cancel) => {
+            setPendingAction(action);
+            // Store the confirm/cancel callbacks
+            (window as any).__aiActionConfirm = confirm;
+            (window as any).__aiActionCancel = cancel;
+          },
+          onResult: (result) => {
+            // Add AI response to messages
+            const assistantMessage: ChatMessage = {
+              id: `assistant-${Date.now()}`,
+              role: "assistant",
+              content: result.message,
+              message_type: "text",
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+
+            // Add suggested actions as follow-up if available
+            if (result.suggestedActions && result.suggestedActions.length > 0) {
+              const suggestionMessage: ChatMessage = {
+                id: `suggestion-${Date.now()}`,
+                role: "assistant",
+                content: `\n\n**You can also ask me to:**\n${result.suggestedActions.map(a => `- ${a}`).join('\n')}`,
+                message_type: "suggestion",
+                created_at: new Date().toISOString(),
+              };
+              setMessages((prev) => [...prev, suggestionMessage]);
+            }
+          },
+          onError: (errorMsg) => {
+            const errorMessage: ChatMessage = {
+              id: `error-${Date.now()}`,
+              role: "assistant",
+              content: `Sorry, I encountered an error: ${errorMsg}`,
+              message_type: "text",
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, errorMessage]);
+          },
+          onNavigation: (page, params) => {
+            // Handle navigation from AI actions
+            if (page === "editor" && params?.projectId) {
+              router.push(`/editor/${params.projectId}`);
+            } else if (page === "dashboard") {
+              router.push("/dashboard");
+            } else if (page === "workspaces") {
+              router.push("/workspaces");
+            } else if (page === "projects") {
+              router.push("/projects");
+            } else if (page === "tasks") {
+              router.push("/tasks");
+            }
+          },
+        }
       );
-
-      let parsedContent = "";
-      if (typeof response === "string") {
-        parsedContent = response;
-      } else if (response && typeof response === "object") {
-        parsedContent = response.text || response.content || response.response || response.suggestion || response.result || JSON.stringify(response, null, 2);
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content:
-          parsedContent ||
-          "I apologize, but I couldn't generate a response. Please try again.",
-        message_type: "text",
-        created_at: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error("Chat error:", error);
       const errorMessage: ChatMessage = {
@@ -1162,6 +1155,39 @@ export function AIChatPanel({
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle action confirmation
+  const handleConfirmAction = async () => {
+    if (!pendingAction?.actionId) return;
+
+    setIsConfirming(true);
+    try {
+      const confirm = (window as any).__aiActionConfirm;
+      if (confirm) {
+        await confirm();
+      }
+      setPendingAction(null);
+    } catch (error: any) {
+      console.error("Confirm action error:", error);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  // Handle action cancellation
+  const handleCancelAction = async () => {
+    if (!pendingAction?.actionId) return;
+
+    try {
+      const cancel = (window as any).__aiActionCancel;
+      if (cancel) {
+        await cancel();
+      }
+      setPendingAction(null);
+    } catch (error: any) {
+      console.error("Cancel action error:", error);
     }
   };
 
@@ -1346,11 +1372,10 @@ export function AIChatPanel({
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className={`p-3 rounded-lg border cursor-pointer flex justify-between items-center ${
-                    sessionId === session.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-white hover:bg-gray-50"
-                  }`}
+                  className={`p-3 rounded-lg border cursor-pointer flex justify-between items-center ${sessionId === session.id
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-white hover:bg-gray-50"
+                    }`}
                   onClick={() => switchSession(session)}>
                   <div
                     style={{
@@ -1422,6 +1447,74 @@ export function AIChatPanel({
                 <span>{notification.message}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI Action Confirmation Dialog */}
+      {pendingAction && (
+        <div className="absolute inset-x-4 top-20 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+          <div className={`p-4 ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-50 border-b border-red-100' : 'bg-blue-50 border-b border-blue-100'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                {isDestructiveAction(pendingAction.actionType || '') ? (
+                  <AlertTriangle size={20} />
+                ) : (
+                  <span className="text-lg">{getActionIcon(pendingAction.actionType || '')}</span>
+                )}
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900">
+                  {isDestructiveAction(pendingAction.actionType || '') ? 'Confirm Action' : 'Confirm Action'}
+                </h4>
+                <p className="text-sm text-gray-600">
+                  {formatActionType(pendingAction.actionType || '')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <p className="text-gray-700 mb-4">{pendingAction.message}</p>
+
+            {pendingAction.data?.intent && (
+              <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
+                <p className="text-gray-600 font-medium mb-1">Action details:</p>
+                <pre className="text-xs text-gray-500 overflow-x-auto">
+                  {JSON.stringify(pendingAction.data.intent.parameters, null, 2)}
+                </pre>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelAction}
+                disabled={isConfirming}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {getConfirmationButtonText(pendingAction.actionType || '').cancel}
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                disabled={isConfirming}
+                className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${isDestructiveAction(pendingAction.actionType || '')
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+              >
+                {isConfirming ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {getConfirmationButtonText(pendingAction.actionType || '').confirm}
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1603,80 +1696,6 @@ export function AIChatPanel({
         </ScrollArea>
 
         {/* Research Panels */}
-        {chatMode === "research" && (
-          <div className="border-t border-border">
-            {/* Citation Suggestions Panel */}
-            {showCitationPanel && research.citationSuggestions.length > 0 && (
-              <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 max-h-64 overflow-y-auto">
-                <h4 className="text-sm font-semibold mb-2">
-                  Citation Suggestions
-                </h4>
-                <div className="space-y-2">
-                  {research.citationSuggestions.map((suggestion, idx) => (
-                    <CitationSuggestionCard
-                      key={idx}
-                      text={suggestion.text}
-                      suggestions={suggestion.suggestedCitations}
-                      confidence={suggestion.confidence}
-                      onInsertCitation={(citation) => {
-                        // TODO: Insert citation into editor
-                        console.log("Insert citation:", citation);
-                      }}
-                      onDismiss={() => {
-                        // Clear this suggestion
-                        research.clearResults();
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Paper Recommendations Panel */}
-            {showPaperPanel && research.recommendedPapers.length > 0 && (
-              <div className="p-3 bg-green-50/50 dark:bg-green-950/20 max-h-64 overflow-y-auto">
-                <h4 className="text-sm font-semibold mb-2">
-                  Recommended Papers
-                </h4>
-                <div className="space-y-2">
-                  {research.recommendedPapers.map((paper) => (
-                    <PaperCard
-                      key={paper.paperId}
-                      paper={paper}
-                      onInsertCitation={(paper) => {
-                        // TODO: Insert citation into editor
-                        console.log("Insert paper citation:", paper);
-                      }}
-                      onAddToLibrary={(paper) => {
-                        // TODO: Add to citation library
-                        console.log("Add to library:", paper);
-                      }}
-                      compact
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Gap Analysis Panel */}
-            {showGapPanel && research.literatureGaps.length > 0 && (
-              <div className="max-h-80 overflow-hidden">
-                <GapAnalysisPanel
-                  gaps={research.literatureGaps}
-                  isLoading={research.isLoading}
-                  onInsertCitation={(paper) => {
-                    // TODO: Insert citation into editor
-                    console.log("Insert gap citation:", paper);
-                  }}
-                  onAddToLibrary={(paper) => {
-                    // TODO: Add to library
-                    console.log("Add gap paper to library:", paper);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Image preview */}
         {imagePreview && hasAccess && (
@@ -1845,11 +1864,10 @@ export function AIChatPanel({
                 <button
                   type="submit"
                   disabled={!inputValue.trim() || isLoading}
-                  className={`h-8 w-8 flex items-center justify-center rounded-full transition-all ${
-                    inputValue.trim()
-                      ? "bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg"
-                      : "bg-blue-200 text-white cursor-not-allowed"
-                  }`}>
+                  className={`h-8 w-8 flex items-center justify-center rounded-full transition-all ${inputValue.trim()
+                    ? "bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg"
+                    : "bg-blue-200 text-white cursor-not-allowed"
+                    }`}>
                   <div className="w-4 h-4">
                     <svg
                       viewBox="0 0 24 24"

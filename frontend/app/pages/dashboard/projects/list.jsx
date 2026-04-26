@@ -1,109 +1,146 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Grid3X3, List, Download } from "lucide-react";
-import ProjectCards from "../../../components/dashboard/ProjectCards";
-import CreateProjectModal from "../../../components/dashboard/CreateProjectModal";
+import {
+  Plus,
+  Search,
+  Settings,
+  Filter,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  Lock,
+  Users,
+  Building2,
+  Star,
+  Clock,
+  Folder,
+  FileText,
+  Bot,
+  Archive,
+  Trash2,
+  Copy,
+  Edit3,
+  ExternalLink,
+  Check,
+  X,
+} from "lucide-react";
 import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
-import ExportService from "../../../lib/utils/exportService";
+import WorkspaceService from "../../../lib/utils/workspaceService";
 import { useToast } from "../../../hooks/use-toast";
 import BillingService from "../../../lib/utils/billingService";
-import DocumentImportModal from "../../../components/editor/DocumentImportModal";
-import { Upload } from "lucide-react";
+import CreateProjectModal from "../../../components/dashboard/CreateProjectModal";
 
-export default function ProjectsListPage() {
+const TABS = [
+  { id: "teamspaces", label: "Teamspaces", icon: Building2 },
+  { id: "recents", label: "Recents", icon: Clock },
+  { id: "favorites", label: "Favorites", icon: Star },
+  { id: "shared", label: "Shared", icon: Users },
+  { id: "private", label: "Private", icon: Lock },
+  { id: "ai-meeting", label: "AI Meeting Notes", icon: Bot },
+  { id: "agents", label: "Agents", icon: Bot },
+];
+
+export default function SpacesLibraryPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [projects, setProjects] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [spaces, setSpaces] = useState([]);
+  const [workspaces, setWorkspaces] = useState([]);
+  const [activeTab, setActiveTab] = useState("teamspaces");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("grid");
-  const [activeFilter, setActiveFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [renamingProject, setRenamingProject] = useState(null);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [subscriptionData, setSubscriptionData] = useState(null); // New state for subscription data
-  const [selectedProjects, setSelectedProjects] = useState([]); // For batch export
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const [showSettings, setShowSettings] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(null);
+  const dropdownRef = useRef(null);
+  const [renamingSpace, setRenamingSpace] = useState(null);
+  const [newSpaceName, setNewSpaceName] = useState("");
 
   const { data: user, loading: userLoading } = useUser();
 
+  // Load workspaces and their projects
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates after component unmounts
+    let isMounted = true;
 
-    const loadSubscriptionData = async () => {
+    const loadWorkspaces = async () => {
       if (!user) return;
 
       try {
-        const subscription = await BillingService.getCurrentSubscription();
-        // Only update state if component is still mounted
-        if (isMounted) {
-          setSubscriptionData(subscription);
+        setIsLoading(true);
+
+        // Fetch all workspaces
+        const workspacesData = await WorkspaceService.getWorkspaces();
+        const workspacesList = workspacesData?.data || workspacesData || [];
+
+        // Fetch all projects to associate with workspaces
+        const projectsData = await ProjectService.getUserProjects();
+        const projectsList = projectsData?.data || projectsData || [];
+
+        // Group projects by workspace
+        const workspacesWithProjects = workspacesList.map((workspace) => {
+          const workspaceProjects = projectsList.filter(
+            (p) => p.workspace_id === workspace.id,
+          );
+          return {
+            ...workspace,
+            type: "teamspace",
+            access: workspace.access || "Default",
+            members: workspace.members?.length || 1,
+            children: workspaceProjects.map((p) => ({
+              ...p,
+              type: "project",
+              access: p.access || "Default",
+              members: p.members || 1,
+            })),
+          };
+        });
+
+        // Add private workspace for projects without workspace_id
+        const privateProjects = projectsList.filter((p) => !p.workspace_id);
+        if (privateProjects.length > 0) {
+          workspacesWithProjects.push({
+            id: "private",
+            name: "Private",
+            description: "Your personal projects",
+            type: "private",
+            access: "Private",
+            members: 1,
+            children: privateProjects.map((p) => ({
+              ...p,
+              type: "project",
+              access: "Private",
+              members: 1,
+            })),
+          });
         }
-      } catch (error) {
-        console.error("Failed to load subscription data:", error);
+
+        if (isMounted) {
+          setSpaces(workspacesWithProjects);
+        }
+      } catch (err) {
+        console.error("Error loading workspaces:", err);
+        if (isMounted) {
+          setError("Failed to load workspaces. Please try again.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    loadSubscriptionData();
+    loadWorkspaces();
 
-    // Cleanup function to set isMounted to false when component unmounts
     return () => {
       isMounted = false;
     };
   }, [user]);
-
-  useEffect(() => {
-    const loadProjects = async () => {
-      if (!user) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const fetchArchived = activeFilter === "archived";
-        let projectsData;
-
-        if (activeFilter === "all") {
-          // Fetch all projects (personal)
-          projectsData = await ProjectService.getUserPersonalProjects(
-            user.id,
-            fetchArchived,
-          );
-        }
-
-        // Ensure projectsData is always an array to prevent undefined errors
-        setProjects(projectsData || []);
-      } catch (error) {
-        console.error("Failed to load projects:", error);
-        if (error.message && error.message.includes("fetch")) {
-          setError(
-            "Unable to connect to the server. Please make sure the backend API is running.",
-          );
-        } else {
-          setError("Failed to load projects. Please try again later.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadProjects();
-  }, [user, activeFilter]);
-
-  useEffect(() => {
-    let filtered = projects;
-
-    // Apply status filter
-    if (activeFilter !== "all" && activeFilter !== "archived") {
-      filtered = filtered.filter((project) => project.status === activeFilter);
-    }
-
-    setFilteredProjects(filtered);
-  }, [projects, activeFilter]);
 
   const handleCreateProject = () => {
     setIsCreateModalOpen(true);
@@ -112,7 +149,7 @@ export default function ProjectsListPage() {
   const handleProjectCreate = async (newProject) => {
     try {
       console.log("New project created:", newProject);
-      setProjects((prev) => [newProject, ...prev]);
+      setSpaces((prev) => [newProject, ...prev]);
       toast({
         title: "Success",
         description: "Project created successfully!",
@@ -136,28 +173,26 @@ export default function ProjectsListPage() {
   };
 
   const handleRenameProject = (project) => {
-    setRenamingProject(project);
-    setNewProjectName(project.title);
+    setRenamingSpace(project);
+    setNewSpaceName(project.title);
   };
 
   const handleRenameConfirm = async () => {
-    if (!renamingProject || !newProjectName.trim()) return;
+    if (!renamingSpace || !newSpaceName.trim()) return;
 
     try {
-      await ProjectService.updateProject(renamingProject.id, {
-        title: newProjectName.trim(),
+      await ProjectService.updateProject(renamingSpace.id, {
+        title: newSpaceName.trim(),
       });
 
-      setProjects((prev) =>
+      setSpaces((prev) =>
         prev.map((p) =>
-          p.id === renamingProject.id
-            ? { ...p, title: newProjectName.trim() }
-            : p,
+          p.id === renamingSpace.id ? { ...p, title: newSpaceName.trim() } : p,
         ),
       );
 
-      setRenamingProject(null);
-      setNewProjectName("");
+      setRenamingSpace(null);
+      setNewSpaceName("");
 
       toast({
         title: "Success",
@@ -188,7 +223,7 @@ export default function ProjectsListPage() {
 
       const duplicatedProject =
         await ProjectService.createProject(duplicateData);
-      setProjects((prev) => [duplicatedProject, ...prev]);
+      setSpaces((prev) => [duplicatedProject, ...prev]);
 
       toast({
         title: "Success",
@@ -251,7 +286,7 @@ export default function ProjectsListPage() {
           status: "archived",
         });
 
-        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -277,7 +312,7 @@ export default function ProjectsListPage() {
       ) {
         await ProjectService.restoreProject(project.id);
         // Remove the restored project from the list (since we are likely in Archived view)
-        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -302,7 +337,7 @@ export default function ProjectsListPage() {
         )
       ) {
         await ProjectService.deleteProject(project.id);
-        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -364,112 +399,16 @@ export default function ProjectsListPage() {
     }
   };
 
-  const filterOptions = [
-    { id: "all", label: "All" },
-    { id: "draft", label: "Draft" },
-    { id: "in-progress", label: "In Progress" },
-    { id: "completed", label: "Completed" },
-    { id: "planning", label: "Planning" },
-    { id: "archived", label: "Archived" },
-  ];
-
-  // Handle batch export
-  const handleBatchExport = async () => {
-    if (selectedProjects.length === 0) {
-      toast({
-        title: "No Projects Selected",
-        description: "Please select at least one project to export.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      toast({
-        title: "Batch Export Started",
-        description: `Exporting ${selectedProjects.length} projects... This may take a moment.`,
-      });
-
-      // Call the batch export API
-      const token = await ExportService.getAuthToken();
-      if (!token) {
-        throw new Error("Not authenticated");
+  // Close dropdown when clicking outside - MUST be before any conditional returns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(null);
       }
-
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-        }/api/projects/batch-export`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            projectIds: selectedProjects,
-            format: "zip", // Default to ZIP for batch export
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to export projects");
-      }
-
-      // Get filename from Content-Disposition header
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = "batch_export.zip";
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1];
-        }
-      }
-
-      // Get the blob data
-      const blob = await response.blob();
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Batch Export Complete",
-        description: `${selectedProjects.length} projects have been exported successfully.`,
-      });
-
-      // Clear selection
-      setSelectedProjects([]);
-    } catch (error) {
-      console.error("Failed to batch export projects:", error);
-      toast({
-        title: "Batch Export Failed",
-        description:
-          error.message || "Failed to export projects. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Select all projects
-  const selectAllProjects = () => {
-    if (selectedProjects.length === filteredProjects.length) {
-      setSelectedProjects([]);
-    } else {
-      setSelectedProjects(filteredProjects.map((p) => p.id));
-    }
-  };
-
-  // Check if user has Researcher plan
-  const isResearcherPlan = subscriptionData?.plan?.name === "Researcher";
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (userLoading) {
     return (
@@ -484,275 +423,481 @@ export default function ProjectsListPage() {
     );
   }
 
+  // Get filtered spaces based on tab
+  const getFilteredSpaces = () => {
+    let filtered = spaces;
+
+    // Apply tab filter
+    switch (activeTab) {
+      case "teamspaces":
+        filtered = spaces.filter((s) => s.type === "teamspace");
+        break;
+      case "private":
+        filtered = spaces.filter(
+          (s) => s.type === "private" || s.id === "private",
+        );
+        break;
+      case "shared":
+        filtered = spaces.filter((s) => s.type === "shared");
+        break;
+      case "recents":
+        filtered = [...spaces]
+          .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+          .slice(0, 10);
+        break;
+      case "favorites":
+        filtered = spaces.filter((s) => s.is_favorite);
+        break;
+      case "archived":
+        filtered = spaces.filter((s) => s.status === "archived");
+        break;
+      default:
+        break;
+    }
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (s) =>
+          s.name?.toLowerCase().includes(query) ||
+          s.title?.toLowerCase().includes(query) ||
+          s.description?.toLowerCase().includes(query),
+      );
+    }
+
+    // Apply archived filter
+    if (!includeArchived && activeTab !== "archived") {
+      filtered = filtered.filter((s) => s.status !== "archived");
+    }
+
+    return filtered;
+  };
+
+  const filteredSpaces = getFilteredSpaces();
+
+  // Toggle row expansion
+  const toggleRow = (id) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  // Space actions
+  const handleSpaceClick = (space) => {
+    // If it's a workspace, toggle expansion instead of navigating
+    if (space.type === "teamspace" || space.type === "private") {
+      toggleRow(space.id);
+      return;
+    }
+    // If it's a project, navigate to editor
+    router.push(`/editor/${space.id}`);
+  };
+
+  const handleRenameSpace = (space) => {
+    setRenamingSpace(space);
+    setNewSpaceName(space.name || space.title);
+    setDropdownOpen(null);
+  };
+
+  const handleRenameSpaceConfirm = async () => {
+    if (!renamingSpace || !newSpaceName.trim()) return;
+    try {
+      // Check if it's a workspace (has name property) or project (has title property)
+      const isWorkspace = renamingSpace.name !== undefined;
+      const updateField = isWorkspace ? "name" : "title";
+
+      if (isWorkspace) {
+        await WorkspaceService.updateWorkspace(renamingSpace.id, {
+          name: newSpaceName.trim(),
+        });
+      } else {
+        await ProjectService.updateProject(renamingSpace.id, {
+          title: newSpaceName.trim(),
+        });
+      }
+
+      setSpaces((prev) =>
+        prev.map((s) =>
+          s.id === renamingSpace.id
+            ? { ...s, [updateField]: newSpaceName.trim() }
+            : s,
+        ),
+      );
+      setRenamingSpace(null);
+      setNewSpaceName("");
+      toast({ title: "Success", description: "Space renamed successfully!" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to rename space.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDuplicateSpace = async (space) => {
+    try {
+      const duplicateData = {
+        ...space,
+        title: `${space.title} (Copy)`,
+        id: undefined,
+      };
+      const duplicated = await ProjectService.createProject(duplicateData);
+      setSpaces((prev) => [duplicated, ...prev]);
+      toast({
+        title: "Success",
+        description: "Space duplicated successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to duplicate space.",
+        variant: "destructive",
+      });
+    }
+    setDropdownOpen(null);
+  };
+
+  const handleArchiveSpace = async (space) => {
+    if (window.confirm(`Archive "${space.title}"?`)) {
+      try {
+        await ProjectService.updateProject(space.id, { status: "archived" });
+        setSpaces((prev) => prev.filter((s) => s.id !== space.id));
+        toast({ title: "Success", description: "Space archived!" });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to archive space.",
+          variant: "destructive",
+        });
+      }
+    }
+    setDropdownOpen(null);
+  };
+
+  const handleDeleteSpace = async (space) => {
+    if (window.confirm(`Delete "${space.title}" permanently?`)) {
+      try {
+        await ProjectService.deleteProject(space.id);
+        setSpaces((prev) => prev.filter((s) => s.id !== space.id));
+        toast({ title: "Success", description: "Space deleted!" });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete space.",
+          variant: "destructive",
+        });
+      }
+    }
+    setDropdownOpen(null);
+  };
+
+  const handleCreateSpace = async (newSpace) => {
+    try {
+      setSpaces((prev) => [newSpace, ...prev]);
+      toast({
+        title: "Success",
+        description: "New space created successfully!",
+      });
+      return newSpace;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create space.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   return (
-    <div className="p-8 bg-background min-h-screen">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">My Projects</h1>
-          <p className="text-muted-foreground mt-1">
-            {(projects?.length || 0) === 0 && !isLoading
-              ? "Ready to start your first project?"
-              : `${projects?.length || 0} projects`}
-          </p>
+      <div className="px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Library</h1>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New teamspace
+          </button>
         </div>
 
-        <div className="flex space-x-3">
-          {/* Batch Export Button - only for Researcher plan */}
-          {isResearcherPlan && (projects?.length || 0) > 0 && (
-            <button
-              onClick={handleBatchExport}
-              disabled={selectedProjects.length === 0}
-              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
-                selectedProjects.length > 0
-                  ? "bg-primary hover:opacity-90 text-primary-foreground"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              }`}
-            >
-              <Download className="w-5 h-5 mr-2" />
-              Batch Export ({selectedProjects.length})
-            </button>
-          )}
+        {/* Tabs */}
+        <div className="flex items-center gap-1 mb-6 border-b border-gray-200">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                  activeTab === tab.id
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
 
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center px-6 py-3 bg-card hover:bg-accent text-card-foreground border border-border rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
-          >
-            <Upload className="w-5 h-5 mr-2" />
-            Import
-          </button>
+        {/* Toolbar */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-2 w-64 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+              />
+            </div>
+          </div>
 
-          <button
-            onClick={handleCreateProject}
-            className="inline-flex items-center px-6 py-3 bg-primary hover:opacity-90 text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Project
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Settings */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="View settings"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+
+              {showSettings && (
+                <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase">
+                    View settings
+                  </div>
+                  <label className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeArchived}
+                      onChange={(e) => setIncludeArchived(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Include archived pages
+                    </span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Rename Modal */}
-      {renamingProject && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/50 backdrop-blur-sm">
-          <div className="bg-popover rounded-lg p-6 w-full max-w-md border border-border shadow-lg">
-            <h3 className="text-lg font-medium text-foreground mb-4">
-              Rename Project
-            </h3>
-            <input
-              type="text"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground"
-              placeholder="Enter new project name"
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  handleRenameConfirm();
-                }
-              }}
-            />
-            <div className="mt-4 flex justify-end space-x-3">
-              <button
-                onClick={() => setRenamingProject(null)}
-                className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRenameConfirm}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Rename
-              </button>
-            </div>
+      {/* Table */}
+      <div className="px-8">
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          {/* Table Header */}
+          <div className="flex items-center px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div className="w-8"></div>
+            <div className="flex-1">Name</div>
+            <div className="w-48">Description</div>
+            <div className="w-32">Access</div>
+            <div className="w-24">Members</div>
+            <div className="w-10"></div>
           </div>
-        </div>
-      )}
 
-      {/* Filters - ensure visible always */}
-      {(projects?.length || 0) >= 0 && (
-        <div className="flex items-center space-x-2 mb-6">
-          {/* Select All Checkbox - only for Researcher plan */}
-          {isResearcherPlan && (
-            <div className="flex items-center mr-4">
-              <input
-                type="checkbox"
-                id="select-all"
-                checked={
-                  selectedProjects.length === filteredProjects.length &&
-                  filteredProjects.length > 0
-                }
-                onChange={selectAllProjects}
-                className="h-4 w-4 text-primary focus:ring-primary border-input rounded"
-              />
-              <label
-                htmlFor="select-all"
-                className="ml-2 text-sm text-foreground"
-              >
-                Select All
-              </label>
+          {/* Table Body */}
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading spaces...</p>
             </div>
-          )}
-
-          <span className="text-sm font-medium text-foreground mr-2">
-            Filter:
-          </span>
-          {filterOptions.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => setActiveFilter(filter.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                activeFilter === filter.id
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-
-          {/* View Toggle */}
-          <div className="flex items-center bg-muted/50 rounded-lg p-1 ml-auto">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-colors duration-200 ${
-                viewMode === "grid"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-colors duration-200 ${
-                viewMode === "list"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Error Messages */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-lg">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
-                Error loading data
-              </h3>
-              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-                <p>{error}</p>
-                <p className="mt-2">Please make sure:</p>
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>The backend API server is running on port 3001</li>
-                  <li>You have a stable internet connection</li>
-                  <li>You are properly authenticated</li>
-                </ul>
-              </div>
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:text-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50"
-                >
-                  <svg
-                    className="-ml-0.5 mr-2 h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+          ) : filteredSpaces.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No spaces found</div>
+          ) : (
+            filteredSpaces.map((space) => (
+              <div key={space.id}>
+                {/* Main Row */}
+                <div className="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100 group">
+                  {/* Expand/Collapse */}
+                  <button
+                    onClick={() => toggleRow(space.id)}
+                    className="w-8 flex items-center justify-center"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Retry
-                </button>
+                    {expandedRows.has(space.id) ? (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+
+                  {/* Name */}
+                  <div
+                    className="flex-1 flex items-center gap-2 cursor-pointer"
+                    onClick={() => handleSpaceClick(space)}
+                  >
+                    <Building2 className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm font-medium text-gray-900">
+                      {renamingSpace?.id === space.id ? (
+                        <input
+                          type="text"
+                          value={newSpaceName}
+                          onChange={(e) => setNewSpaceName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameSpaceConfirm();
+                            if (e.key === "Escape") setRenamingSpace(null);
+                          }}
+                          onBlur={handleRenameSpaceConfirm}
+                          autoFocus
+                          className="px-2 py-1 text-sm border border-blue-500 rounded outline-none"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        space.name || space.title
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Description */}
+                  <div className="w-48 text-sm text-gray-500 truncate">
+                    {space.description || "—"}
+                  </div>
+
+                  {/* Access */}
+                  <div className="w-32">
+                    <span className="inline-flex items-center gap-1 text-sm text-gray-600">
+                      <Globe className="w-3 h-3" />
+                      {space.access || "Default"}
+                    </span>
+                  </div>
+
+                  {/* Members */}
+                  <div className="w-24 text-sm text-gray-600">
+                    {space.members || 1}
+                  </div>
+
+                  {/* Actions */}
+                  <div
+                    className="w-10 relative"
+                    ref={dropdownOpen === space.id ? dropdownRef : null}
+                  >
+                    <button
+                      onClick={() =>
+                        setDropdownOpen(
+                          dropdownOpen === space.id ? null : space.id,
+                        )
+                      }
+                      className="p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+
+                    {dropdownOpen === space.id && (
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <button
+                          onClick={() => handleSpaceClick(space)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Open
+                        </button>
+                        <button
+                          onClick={() => handleRenameSpace(space)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Rename
+                        </button>
+                        <button
+                          onClick={() => handleDuplicateSpace(space)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Duplicate
+                        </button>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <button
+                          onClick={() => handleArchiveSpace(space)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <Archive className="w-4 h-4" />
+                          Archive
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSpace(space)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded Content - Sub-spaces */}
+                {expandedRows.has(space.id) && space.children?.length > 0 && (
+                  <div className="bg-gray-50/50">
+                    {space.children.map((child) => (
+                      <div
+                        key={child.id}
+                        className="flex items-center px-4 py-2 pl-12 hover:bg-gray-50 border-b border-gray-100"
+                      >
+                        <div className="flex-1 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">
+                            {child.title}
+                          </span>
+                        </div>
+                        <div className="w-48 text-sm text-gray-500 truncate">
+                          {child.description || "—"}
+                        </div>
+                        <div className="w-32">
+                          <span className="inline-flex items-center gap-1 text-sm text-gray-600">
+                            <Globe className="w-3 h-3" />
+                            {child.access || "Default"}
+                          </span>
+                        </div>
+                        <div className="w-24 text-sm text-gray-600">
+                          {child.members || 1}
+                        </div>
+                        <div className="w-10"></div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new sub-space button */}
+                {expandedRows.has(space.id) && (
+                  <div className="flex items-center px-4 py-2 pl-12 bg-gray-50/30 border-b border-gray-100">
+                    <button
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add new
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Project Content - Only show when on projects tab */}
-      <>
-        {isLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white dark:bg-white rounded-xl border border-gray-200 p-6 animate-pulse"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-gray-200 dark:bg-white rounded-lg"></div>
-                  <div className="w-6 h-6 bg-gray-200 dark:bg-white rounded"></div>
-                </div>
-                <div className="space-y-3">
-                  <div className="h-5 bg-gray-200 dark:bg-white rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-white rounded w-full"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-white rounded w-2/3"></div>
-                  <div className="h-6 bg-gray-200 dark:bg-white rounded w-1/3"></div>
-                  <div className="h-2 bg-gray-200 dark:bg-white rounded w-full"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          // Show filtered projects based on active filter
-          <ProjectCards
-            projects={filteredProjects}
-            viewMode={viewMode}
-            onProjectClick={handleProjectClick}
-            onProjectAction={handleProjectAction}
-            onCreateProject={handleCreateProject}
-            error={error}
-          />
-        )}
-      </>
-
-      {/* Create Project Modal */}
+      {/* Create Modal */}
       <CreateProjectModal
         isOpen={isCreateModalOpen}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-        }}
-        onProjectCreate={handleProjectCreate}
-      />
-
-      {/* Import Project Modal */}
-      <DocumentImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onImport={(importedProject) => {
-          if (importedProject) {
-            setProjects((prev) => [importedProject, ...prev]);
-            toast({
-              title: "Import Successful",
-              description: `Project "${importedProject.title}" has been imported.`,
-            });
-          }
-          setIsImportModalOpen(false);
-        }}
+        onClose={() => setIsCreateModalOpen(false)}
+        onProjectCreate={handleCreateSpace}
       />
     </div>
   );

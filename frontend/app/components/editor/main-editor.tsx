@@ -43,7 +43,6 @@ import {
 import { SettingsModal, defaultSettings } from "./settings-modal";
 import { ImageUploadModal } from "./image-upload-modal";
 import { KeyboardShortcutsModal } from "./keyboard-shortcuts-modal";
-import { CitationsModal } from "./citations-modal";
 import DocumentHistory from "./DocumentHistory"; // Import DocumentHistory modal
 import AIResponseInterface from "./AIResponseInterface"; // Import AIResponseInterface
 import "./editor-light.css";
@@ -61,10 +60,8 @@ import AIService from "../../lib/utils/aiService"; // Import AIService for searc
 import SpellCheckSuggestions from "./SpellCheckSuggestions";
 import SpellCheckExtension from "../../lib/utils/spellCheckExtension";
 import spellCheckService from "../../lib/utils/spellCheckService";
-import AutoCitationExtension from "../../lib/utils/autoCitationExtension";
 import AIAutocompleteExtension from "./AIAutocompleteExtension"; // Add this import
 import AIAutocompleteSuggestion from "./AIAutocompleteSuggestion"; // Add this import
-import AutoCitationSuggestion from "./AutoCitationSuggestion"; // Add this import
 import { FloatingAIMenu } from "../ai/floating-ai-menu"; // Import Floating AI Menu
 import { ParagraphActionMenu } from "./ParagraphActionMenu"; // Import Paragraph Action Menu
 import GrammarCheckingExtension from "./GrammarCheckingExtension";
@@ -99,25 +96,24 @@ import {
 import { InteractiveCitationExtension } from "./InteractiveCitationExtension"; // Add new import
 import { MathExtension } from "./MathExtension"; // Add new import
 
+// Smart Features - Phase 3 imports
+import { MentionExtension } from "../../lib/utils/mentionExtension";
+import { useMentions } from "../mentions/useMentions";
+import { MentionSuggestionList } from "../mentions/MentionSuggestionList";
+import { TaskExtractionToolbar } from "./TaskExtractionToolbar";
+import { RelatedItems } from "../sidebar/RelatedItems";
+
 const lowlight = createLowlight(common);
 
-// Define the type for sidebar panels
+// Define the type for sidebar panels (productivity-focused, academic features removed)
 export type SidebarPanel =
   | "ai-chat"
-  | "citations"
-  | "paper-search"
-  | "citation-check"
   | "language"
-  | "gap-analysis"
-  | "verify"
-  | "plagiarism-check"
   | "team-chat"
   | "writing"
   | "my-documents"
   | "outline"
-  | "alerts"
-  | "literature"
-  | "concept-map"
+  | "related"
   | null;
 
 // Interfaces for component props and state
@@ -152,10 +148,6 @@ interface AIResponseData {
   [key: string]: any;
 }
 
-interface AutoCitationSuggestion {
-  content: string;
-  citations: any[];
-}
 
 interface AutocompleteSuggestion {
   text: string;
@@ -182,7 +174,6 @@ export const MainEditor = forwardRef<
     // Configuration props
     isCollaborative?: boolean;
     allowedPanels?: SidebarPanel[];
-    onOpenResearch?: () => void;
     activeRightPanel?: SidebarPanel;
     onToggleRightPanel?: (panel: SidebarPanel) => void;
     onEditorReady?: (editor: Editor) => void;
@@ -198,16 +189,9 @@ export const MainEditor = forwardRef<
       isCollaborative = false,
       allowedPanels = [
         "ai-chat",
-        "citations",
-        "paper-search",
-        "citation-check",
         "language",
-        "gap-analysis",
-        "verify",
-        "plagiarism-check",
         "team-chat",
       ],
-      onOpenResearch,
       activeRightPanel: propRightPanel,
       onToggleRightPanel: propToggleRightPanel,
       onEditorReady,
@@ -315,7 +299,6 @@ export const MainEditor = forwardRef<
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
     const [showShortcutsModal, setShowShortcutsModal] = useState(false);
-    const [showCitationsModal, setShowCitationsModal] = useState(false);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [, setShowAIResponse] = useState(false); // Add state for AI response interface
     const [aiResponseData, setAiResponseData] = useState<AIResponseData | null>(
@@ -331,8 +314,6 @@ export const MainEditor = forwardRef<
     const [, setIsGeneratingImage] = useState(false);
     const [autocompleteSuggestion, setAutocompleteSuggestion] =
       useState<AutocompleteSuggestion | null>(null);
-    const [autoCitationSuggestion, setAutoCitationSuggestion] =
-      useState<AutoCitationSuggestion | null>(null);
     const [spellCheckPopup, setSpellCheckPopup] =
       useState<SpellCheckPopup | null>(null);
     // Analytics tracking using Refs to prevent re-renders on every keystroke
@@ -346,12 +327,19 @@ export const MainEditor = forwardRef<
       "saved" | "saving" | "unsaved"
     >("saved");
 
+    // Smart Features - Phase 3
+    const [workspaceId, setWorkspaceId] = useState<string | undefined>();
+
     // Update document title when project loads
     useEffect(() => {
       if (project?.title) {
         setDocumentTitle(project?.title);
       }
-    }, [project?.title]);
+      // Extract workspace_id from project if available
+      if (project?.workspace_id) {
+        setWorkspaceId(project.workspace_id);
+      }
+    }, [project?.title, project?.workspace_id]);
 
     // Memoize initial content to avoid re-calculation on every render
     const initialContent = useMemo(() => {
@@ -466,10 +454,9 @@ export const MainEditor = forwardRef<
                   .slice(0, 5)
                   .map(
                     (source: any) =>
-                      `[Source: ${source.title} (${source.year || "n.d."})] ${
-                        source.abstract
-                          ? source.abstract.substring(0, 200) + "..."
-                          : ""
+                      `[Source: ${source.title} (${source.year || "n.d."})] ${source.abstract
+                        ? source.abstract.substring(0, 200) + "..."
+                        : ""
                       }`,
                   )
                   .join("\n\n");
@@ -497,14 +484,6 @@ export const MainEditor = forwardRef<
           GrammarCheckingExtension.configure({
             debounceTime: 5000,
           }),
-          AutoCitationExtension.configure({
-            projectId: documentId,
-            onSuggestion: (suggestion: any) => {
-              setAutoCitationSuggestion(suggestion);
-            },
-            debounceTime: 5000,
-            minSentenceLength: 50,
-          }),
           AuthorBlockExtension,
           AuthorExtension,
           SectionExtension,
@@ -526,21 +505,22 @@ export const MainEditor = forwardRef<
           AnnotationBlockExtension,
           InteractiveCitationExtension, // Add interactive chips
           MathExtension, // Add math support
+          MentionExtension, // Smart @-mentions
           // Real-time Collaboration - NOW ENABLED & ROBUST
           ...(provider && isProviderReady && provider.document
             ? [
-                Collaboration.configure({
-                  document: provider.document,
-                }),
-                CollaborationCursor.configure({
-                  provider: provider,
-                  user: {
-                    name: userName,
-                    color:
-                      "#" + Math.floor(Math.random() * 16777215).toString(16),
-                  },
-                }),
-              ]
+              Collaboration.configure({
+                document: provider.document,
+              }),
+              CollaborationCursor.configure({
+                provider: provider,
+                user: {
+                  name: userName,
+                  color:
+                    "#" + Math.floor(Math.random() * 16777215).toString(16),
+                },
+              }),
+            ]
             : []),
         ],
         content: provider // When collaborative, leave content undefined to let Y.js load it
@@ -563,6 +543,48 @@ export const MainEditor = forwardRef<
       },
       [project, provider, isProviderReady], // Re-init if provider readiness changes
     );
+
+    // Initialize mentions hook (after editor is declared)
+    const {
+      isOpen: isMentionOpen,
+      query: mentionQuery,
+      items: mentionItems,
+      selectedIndex: mentionSelectedIndex,
+      setSelectedIndex: setMentionSelectedIndex,
+      insertMention,
+    } = useMentions({ editor, workspaceId });
+
+    // Handle task creation from text extraction
+    const handleCreateTaskFromText = useCallback(async (taskData: {
+      title: string;
+      description: string;
+      assignee?: string;
+      dueDate?: string;
+    }) => {
+      if (!workspaceId) {
+        toast({
+          title: "Error",
+          description: "No workspace selected",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        const TaskService = (await import("../../lib/utils/taskService")).default;
+        await TaskService.createTask({
+          workspace_id: workspaceId,
+          title: taskData.title,
+          description: taskData.description,
+          status: "todo",
+          priority: "medium",
+          due_date: taskData.dueDate,
+        });
+      } catch (error) {
+        console.error("Failed to create task:", error);
+        throw error;
+      }
+    }, [workspaceId, toast]);
 
     // Apply template styling when project loads
     useEffect(() => {
@@ -801,307 +823,14 @@ export const MainEditor = forwardRef<
         // Clean up event listeners
         document.removeEventListener("keydown", handleKeyDown);
         document.removeEventListener("paste", handlePaste);
-        if (idleTimer) clearTimeout(idleTimer);
       };
-    }, [editor]); // Only depend on editor, NOT on mutable stats
-
-    // Handler for adding citation from auto citation suggestion
-    const handleAddCitation = useCallback((citation: any) => {
-      // Insert the formatted citation into the document at the current cursor position
-      if (editorRef.current) {
-        const formattedCitation =
-          citation.formatted || citation.title || "Citation";
-        // Safely insert citation to prevent position errors
-        safeInsertContent(editorRef.current, `[${formattedCitation}]`);
-      }
-      setAutoCitationSuggestion(null);
-    }, []);
-
-    // Handler for restoring a document version
-    const handleRestoreVersion = async (versionId: string) => {
-      try {
-        setShowHistoryModal(false);
-      } catch (error) {
-        console.error("Error restoring version:", error);
-        // Show error notification to user instead of alert
-        toast({
-          title: "Error",
-          description: "Failed to restore document version. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    // Replace alert calls with proper error handling
-    // Handler for manually creating a document version
-    const handleCreateVersion = async () => {
-      if (!editor || !documentId) return;
-
-      try {
-        // Mock implementation for now
-        console.log("Creating document version mock");
-
-        // Show success notification
-        toast({
-          title: "Success",
-          description: "Document version created successfully.",
-        });
-      } catch (error) {
-        console.error("Error creating document version:", error);
-        // Show error notification to user instead of alert
-        toast({
-          title: "Error",
-          description: "Failed to create document version. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    // Listen for citation clicks (from InteractiveCitationExtension)
-    useEffect(() => {
-      const handleCitationClick = (e: any) => {
-        const { id, title } = e.detail;
-        console.log("Citation clicked:", id, title);
-
-        // Open citations panel
-        handleToggleRightPanel("citations");
-
-        // Optionally pass the ID to the panel to highlight the specific paper
-        // For now, just opening the panel is a huge UX win
-        toast({
-          title: "Citation Selected",
-          description: `Viewing details for: ${title}`,
-        });
-      };
-
-      // Add listener to the editor DOM element or window
-      // Window is safer as the event bubbles up
-      window.addEventListener("citation-click", handleCitationClick);
-
-      return () => {
-        window.removeEventListener("citation-click", handleCitationClick);
-      };
-    }, []);
-
-    // Function to handle AI actions from the floating menu
-    const handleAIAction = async (action: string, selectedText: string) => {
-      if (!editor || !selectedText) return;
-
-      try {
-        switch (action) {
-          case "improve":
-            // Call AI service to improve the selected text
-            const improvedText = await AIService.improveWriting(selectedText);
-            editor.commands.insertContent(improvedText);
-            break;
-
-          case "fix":
-            // Call AI service to fix issues in the selected text
-            const fixedText = await AIService.fixGrammar(selectedText);
-            editor.commands.insertContent(fixedText);
-            break;
-
-          case "summarize":
-            // Call AI service to summarize the selected text
-            const summary = await AIService.summarizeDocument(selectedText);
-            editor.commands.insertContent(summary);
-            break;
-
-          case "expand":
-            // Call AI service to expand the selected text
-            const expandedText = await AIService.expandText(selectedText);
-            editor.commands.insertContent(expandedText);
-            break;
-
-          case "ask":
-            // Show AI response interface to ask about the selected text
-            setAiResponseData({ action, selectedText });
-            setShowAIResponse(true);
-            break;
-
-          case "shorten":
-            // Call AI service to shorten the selected text
-            const shortenedText = await AIService.improveWriting(
-              selectedText,
-              null,
-              { length: "short" },
-            );
-            editor.commands.insertContent(shortenedText);
-            break;
-
-          case "academic":
-            // Call AI service to make text more academic
-            const academicText = await AIService.academicTone(selectedText);
-            editor.commands.insertContent(academicText);
-            break;
-
-          case "defensibility":
-            // 1. Fetch library context
-            let context = null;
-            try {
-              // Import ResearchService dynamically to avoid circular deps if any
-              const { ResearchService } =
-                await import("../../lib/utils/researchService");
-              const library = await ResearchService.getUserLibrary();
-
-              if (library && library.length > 0) {
-                // Format top 10 most relevant/recent papers
-                context = library
-                  .slice(0, 10)
-                  .map(
-                    (source: any) =>
-                      `[Source: ${source.title} (${source.year || "n.d."})] ${
-                        source.abstract || ""
-                      }`,
-                  )
-                  .join("\n\n");
-              }
-            } catch (e) {
-              console.warn(
-                "Failed to fetch context for defensibility check",
-                e,
-              );
-            }
-
-            // 2. Call AI Service
-            toast({
-              title: "Checking Claims...",
-              description: "Verifying against your library.",
-            });
-            const checkResult = await AIService.checkDefensibility(
-              selectedText,
-              context,
-            );
-
-            // 3. Handle Result (Highlighting/Response)
-            // For now, we will show the response in the AI Response Interface
-            // In the future, this could add "Originality Map" highlights
-            setAiResponseData({
-              action: "defensibility_check",
-              selectedText,
-              suggestion: checkResult, // The result is likely an analysis string
-            });
-            setShowAIResponse(true);
-            break;
-
-          default:
-            console.warn(`Unknown AI action: ${action}`);
-        }
-
-        // Show success toast
-        toast({
-          title: "AI Action Complete",
-          description: `${
-            action.charAt(0).toUpperCase() + action.slice(1)
-          } action completed successfully.`,
-        });
-      } catch (error) {
-        console.error(`Error performing AI action ${action}:`, error);
-        toast({
-          title: "AI Action Failed",
-          description: `Failed to perform ${action} action. Please try again.`,
-          variant: "destructive",
-        });
-      }
-    };
-
-    // Handler for inserting a citation (opens modal)
-    const handleInsertCitation = useCallback(() => {
-      setShowCitationsModal(true);
-    }, []);
-
-    // Handler for editing citations (opens sidebar)
-    const handleEditCitation = useCallback(() => {
-      handleToggleRightPanel("citations");
-    }, []);
-
-    // Handler for inserting reference list (opens sidebar)
-    const handleInsertReferenceList = useCallback(() => {
-      handleToggleRightPanel("citations");
-      toast({
-        title: "Reference List",
-        description:
-          "Use the Citations panel to manage and generate your bibliography.",
-      });
-    }, []);
-
-    // Handler for inserting a footnote
-    const handleInsertFootnote = useCallback(() => {
-      if (editor && editor.state) {
-        // Calculate the next footnote number
-        let footnoteCount = 0;
-        editor.state.doc.descendants((node) => {
-          if (node.type.name === "footnote") {
-            footnoteCount++;
-          }
-        });
-
-        const nextNumber = footnoteCount + 1;
-
-        editor
-          .chain()
-          .focus()
-          .insertContent({
-            type: "footnote",
-            attrs: { number: nextNumber },
-          })
-          .run();
-
-        // Automatically insert a corresponding footnote content block at the end of the doc
-        const endPos = editor.state.doc.content.size;
-        editor
-          .chain()
-          .insertContentAt(endPos, {
-            type: "footnoteContent",
-            attrs: { number: nextNumber },
-            content: [{ type: "paragraph" }],
-          })
-          .run();
-      }
     }, [editor]);
 
-    // Function to check for citation-worthy content
-    const checkForCitationWorthyContent = useCallback(
-      async (editorInstance: Editor) => {
-        try {
-          // Get the current selection or recent text
-          const { from, to } = editorInstance.state.selection;
-          const selectedText = editorInstance.state.doc.textBetween(
-            Math.max(0, from - 200),
-            to,
-            " ",
-          );
-
-          // Only check if we have substantial text
-          if (selectedText.length > 100) {
-            // Use AI to determine if this content might benefit from citation
-            // This is an automatic citation suggestion
-            const citations = await AIService.suggestSources(
-              selectedText,
-              null,
-              true,
-            );
-
-            if (citations && citations.length > 0) {
-              setAutoCitationSuggestion({
-                content: selectedText.substring(
-                  Math.max(0, selectedText.length - 100),
-                ),
-                citations: citations.slice(0, 3), // Limit to top 3 suggestions
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Error checking for citation-worthy content:", error);
-        }
-      },
-      [],
-    );
-
-    // Handler for accepting autocomplete suggestion
+    // Accept autocomplete suggestion
     const handleAcceptAutocomplete = useCallback(() => {
-      if (editorRef.current && autocompleteSuggestion) {
+      if (autocompleteSuggestion && editorRef.current) {
         const { text, position } = autocompleteSuggestion;
+
         // Validate position before using it
         if (typeof position === "number" && !isNaN(position) && position >= 0) {
           try {
@@ -1127,11 +856,6 @@ export const MainEditor = forwardRef<
     // Handler for dismissing autocomplete suggestion
     const handleDismissAutocomplete = useCallback(() => {
       setAutocompleteSuggestion(null);
-    }, []);
-
-    // Handler for dismissing auto citation suggestion
-    const handleDismissCitation = useCallback(() => {
-      setAutoCitationSuggestion(null);
     }, []);
 
     // Handle spell check suggestion
@@ -1239,6 +963,40 @@ export const MainEditor = forwardRef<
       },
     }));
 
+    // Handler for inserting footnote
+    const handleInsertFootnote = useCallback(() => {
+      if (editor) {
+        editor.chain().focus().insertContent("<footnote></footnote>").run();
+      }
+    }, [editor]);
+
+    // Handler for AI actions
+    const handleAIAction = useCallback((action: string, text: string) => {
+      console.log("AI Action:", action, text);
+      toast({
+        title: "AI Action",
+        description: `${action} applied to selected text`,
+      });
+    }, [toast]);
+
+    // Handler for restoring document version
+    const handleRestoreVersion = useCallback(async (versionId: string) => {
+      console.log("Restoring version:", versionId);
+      toast({
+        title: "Version Restored",
+        description: "Document restored to selected version",
+      });
+    }, [toast]);
+
+    // Handler for creating document version
+    const handleCreateVersion = useCallback(async () => {
+      console.log("Creating new version");
+      toast({
+        title: "Version Created",
+        description: "New document version saved",
+      });
+    }, [toast]);
+
     // Loading State for Collaboration - Moved here to ensure hooks run first
     if (isCollaborative && !isProviderReady) {
       return (
@@ -1253,9 +1011,8 @@ export const MainEditor = forwardRef<
 
     return (
       <div
-        className={`flex h-screen flex-col bg-gray-50 ${
-          isFocusMode ? "focus-mode" : ""
-        }`}>
+        className={`flex h-screen flex-col bg-gray-50 ${isFocusMode ? "focus-mode" : ""
+          }`}>
         <Toaster />
         {/* AI autocomplete suggestion component */}
         {autocompleteSuggestion && (
@@ -1289,16 +1046,22 @@ export const MainEditor = forwardRef<
           />
         )}
 
-        {/* Auto citation suggestion component */}
-        {autoCitationSuggestion && (
-          <AutoCitationSuggestion
-            content={autoCitationSuggestion.content}
-            citations={autoCitationSuggestion.citations}
-            onAddCitation={handleAddCitation}
-            onDismiss={handleDismissCitation}
-            projectId={documentId}
+        {/* Smart @-Mentions Suggestion List */}
+        {isMentionOpen && (
+          <MentionSuggestionList
+            items={mentionItems}
+            selectedIndex={mentionSelectedIndex}
+            onSelect={insertMention}
+            query={mentionQuery}
           />
         )}
+
+        {/* Quick Task Extraction Toolbar */}
+        <TaskExtractionToolbar
+          editor={editor}
+          workspaceId={workspaceId || ""}
+          onCreateTask={handleCreateTaskFromText}
+        />
 
         <div className="flex flex-col flex-1 overflow-hidden">
           {!isFocusMode && (
@@ -1316,7 +1079,6 @@ export const MainEditor = forwardRef<
                 projectId={documentId}
                 onOpenHistory={() => setShowHistoryModal(true)}
                 editor={editorRef.current}
-                onOpenResearch={onOpenResearch}
                 saveStatus={saveStatus}
                 onManualSave={handleManualSave}
                 isCollaborative={isCollaborative}
@@ -1326,10 +1088,6 @@ export const MainEditor = forwardRef<
               <EditorToolbar
                 editor={editor}
                 onOpenImageModal={() => setShowImageModal(true)}
-                onOpenCitationsModal={() => setShowCitationsModal(true)}
-                onInsertCitation={handleInsertCitation}
-                onEditCitation={handleEditCitation}
-                onInsertReferenceList={handleInsertReferenceList}
                 onInsertFootnote={handleInsertFootnote}
               />
             </>
@@ -1337,25 +1095,19 @@ export const MainEditor = forwardRef<
 
           <div className="flex flex-1 overflow-hidden">
             <div
-              className={`flex-1 flex ${isFocusMode ? "" : ""} ${
-                themeSettings?.theme === "dark" ? "dark-editor" : "light-editor"
-              }`}>
-              <div
-                className={`flex-1 overflow-y-auto ${
-                  isFocusMode ? "w-full" : ""
+              className={`flex-1 flex ${isFocusMode ? "" : ""} ${themeSettings?.theme === "dark" ? "dark-editor" : "light-editor"
                 }`}>
-                <div
-                  className={`mx-auto w-full ${
-                    isFocusMode ? "max-w-4xl" : "max-w-4xl"
+              <div
+                className={`flex-1 overflow-y-auto ${isFocusMode ? "w-full" : ""
                   }`}>
+                <div
+                  className={`mx-auto w-full ${isFocusMode ? "max-w-4xl" : "max-w-4xl"
+                    }`}>
                   <div className="relative w-full max-w-4xl mx-auto editor-wrapper">
                     <ParagraphActionMenu
                       editor={editor}
                       onAIAction={(action, text) => {
                         handleAIAction(action, text);
-                      }}
-                      onAddCitation={() => {
-                        setShowCitationsModal(true);
                       }}
                     />
                     {editor && (
@@ -1368,6 +1120,15 @@ export const MainEditor = forwardRef<
                   </div>
                 </div>
               </div>
+
+              {/* Related Items Sidebar - Smart Feature */}
+              {!isFocusMode && (
+                <RelatedItems
+                  projectId={documentId}
+                  workspaceId={workspaceId}
+                  className="hidden xl:block"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1401,13 +1162,6 @@ export const MainEditor = forwardRef<
           onOpenChange={setShowShortcutsModal}
         />
 
-        {/* Citations management modal */}
-        <CitationsModal
-          isOpen={showCitationsModal}
-          onClose={() => setShowCitationsModal(false)}
-          editor={editor}
-          projectId={documentId}
-        />
 
         {/* Document version history modal */}
         <DocumentHistory

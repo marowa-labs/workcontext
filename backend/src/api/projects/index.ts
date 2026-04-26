@@ -19,8 +19,6 @@ import {
 } from "./route";
 
 import { authenticateExpressRequest } from "../../middleware/auth";
-
-// Import ProjectServiceEnhanced for shared project access
 import { ProjectServiceEnhanced } from "../../services/projectServiceEnhanced";
 
 // Import prisma for database access
@@ -952,6 +950,139 @@ router.post("/import", async (req, res) => {
     return res
       .status(500)
       .json({ error: error.message || "Internal server error" });
+  }
+});
+
+// Simple text similarity function for related items
+function calculateSimilarity(text1: string, text2: string): number {
+  const words1 = text1.toLowerCase().split(/\s+/);
+  const words2 = text2.toLowerCase().split(/\s+/);
+  
+  const set1 = new Set(words1);
+  const set2 = new Set(words2);
+  
+  const intersection = new Set([...set1].filter((x) => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  
+  return intersection.size / union.size;
+}
+
+// Get related items for a project
+router.get("/:id/related", async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const workspaceId = req.query.workspaceId as string;
+    const limit = parseInt(req.query.limit as string || "5", 10);
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Get current project content
+    const currentProject = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        OR: [
+          { user_id: userId },
+          { collaborators: { some: { user_id: userId } } }
+        ]
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        workspace_id: true,
+      },
+    });
+
+    if (!currentProject) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    const currentText = `${currentProject.title} ${currentProject.description || ""}`;
+
+    // Get all projects in same workspace
+    const effectiveWorkspaceId = currentProject.workspace_id || workspaceId;
+    const projects = effectiveWorkspaceId
+      ? await prisma.project.findMany({
+          where: {
+            workspace_id: effectiveWorkspaceId,
+            id: { not: projectId },
+            OR: [
+              { user_id: userId },
+              { collaborators: { some: { user_id: userId } } }
+            ]
+          },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            updated_at: true,
+          },
+          take: 20,
+        })
+      : [];
+
+    // Get tasks in same workspace
+    const tasks = effectiveWorkspaceId
+      ? await prisma.workspaceTask.findMany({
+          where: {
+            workspace_id: effectiveWorkspaceId,
+            project_id: { not: projectId },
+          },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            priority: true,
+            due_date: true,
+          },
+          take: 20,
+        })
+      : [];
+
+    // Calculate similarity scores
+    const scoredProjects = projects.map((p: any) => {
+      const text = `${p.title} ${p.description || ""}`;
+      return {
+        id: p.id,
+        type: "page" as const,
+        title: p.title,
+        subtitle: `Last edited ${new Date(p.updated_at).toLocaleDateString()}`,
+        relevanceScore: calculateSimilarity(currentText, text),
+      };
+    });
+
+    const scoredTasks = tasks.map((t: any) => {
+      const text = `${t.title} ${t.description || ""}`;
+      return {
+        id: t.id,
+        type: "task" as const,
+        title: t.title,
+        subtitle: `${t.status} • ${t.priority} priority`,
+        relevanceScore: calculateSimilarity(currentText, text),
+      };
+    });
+
+    // Combine and sort by relevance
+    const allItems = [...scoredProjects, ...scoredTasks]
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, limit)
+      .filter((item) => item.relevanceScore > 0.1) // Minimum threshold
+      .map((item) => ({
+        id: item.id,
+        type: item.type,
+        title: item.title,
+        subtitle: item.subtitle,
+        relevanceScore: Math.min(0.99, item.relevanceScore * 2), // Boost score for display
+      }));
+
+    return res.json({ items: allItems });
+  } catch (error: any) {
+    console.error("Related items error:", error);
+    return res.status(500).json({ error: "Failed to fetch related items" });
   }
 });
 

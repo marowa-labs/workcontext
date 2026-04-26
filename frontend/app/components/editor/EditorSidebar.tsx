@@ -2,21 +2,13 @@
 
 import { useState } from "react";
 import {
-  BookOpen,
-  Network,
-  BarChart2,
   PenTool,
-  Bot,
   Menu,
   ArrowLeft,
   ChevronLeft,
   Settings,
-  SearchCheck,
-  ShieldCheck,
   FileText,
-  Sparkles,
   Wand2,
-  Bell,
   MessageSquare,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -36,12 +28,6 @@ export function EditorSidebar({
     "writing",
     "my-documents",
     "outline",
-    "alerts",
-    "literature",
-    "concept-map",
-    "citations",
-    "gap-analysis",
-    "verify",
     "language",
     "team-chat",
   ],
@@ -70,52 +56,10 @@ export function EditorSidebar({
       description: "Structure your document",
     },
     {
-      id: "alerts",
-      label: "Search Alerts",
-      icon: Bell,
-      description: "Monitor new research",
-    },
-    {
-      id: "literature",
-      label: "Literature Review",
-      icon: BookOpen,
-      description: "Discover and analyze papers",
-    },
-    {
-      id: "concept-map",
-      label: "Concept Map",
-      icon: Network,
-      description: "Visualize connections",
-    },
-    {
-      id: "citations",
-      label: "Citation Tracker",
-      icon: BarChart2,
-      description: "Track impact and reliance",
-    },
-    {
-      id: "writing",
-      label: "Writing Assistant",
-      icon: Bot,
-      description: "AI co-pilot for drafting",
-    },
-    {
-      id: "gap-analysis",
-      label: "Gap Analysis",
-      icon: SearchCheck,
-      description: "Find missing research",
-    },
-    {
-      id: "verify",
-      label: "Ethical Safeguard",
-      icon: ShieldCheck,
-      description: "Bias and integrity check",
-    },
-    {
       id: "language",
       label: "Language Check",
       icon: Wand2,
-      description: "Academic editing (Paperpal)",
+      description: "Grammar and style checking",
     },
     {
       id: "team-chat",

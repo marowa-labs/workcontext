@@ -1,6 +1,6 @@
-import { ProjectServiceEnhanced } from "../../services/projectServiceEnhanced";
 import { ProjectSettingsService } from "../../services/projectSettingsService";
 import { EditorService } from "../../services/editorService";
+import { ProjectServiceEnhanced } from "../../services/projectServiceEnhanced";
 import { prisma } from "../../lib/prisma";
 // Get all projects for a user
 export async function GET(request: Request & { user?: any }) {
@@ -72,8 +72,16 @@ async function handleGET(request: Request & { user?: any }) {
       headers,
     });
   } catch (error) {
-    console.error("Error fetching projects:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    console.error("=== ERROR FETCHING PROJECTS ===");
+    console.error("Error type:", typeof error);
+    console.error("Error message:", (error as Error).message);
+    console.error("Error stack:", (error as Error).stack);
+    console.error("Full error:", error);
+    return new Response(JSON.stringify({ 
+      error: "Internal server error",
+      details: (error as Error).message,
+      stack: (error as Error).stack?.split('\n').slice(0, 5)
+    }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

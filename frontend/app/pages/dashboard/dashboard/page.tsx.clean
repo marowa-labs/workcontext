@@ -1,0 +1,277 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "../../../lib/utils/useUser";
+import {
+  Command,
+  Sparkles,
+  Plus,
+  Search,
+  MessageSquare,
+  FolderOpen,
+  ArrowRight,
+  Zap,
+  ChevronRight,
+} from "lucide-react";
+import { SlashCommandPalette } from "../../../components/dashboard/SlashCommandPalette";
+
+// Quick action tile component
+interface ActionTileProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+  color: string;
+}
+
+function ActionTile({ icon, title, description, onClick, color }: ActionTileProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`group flex flex-col items-start p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-lg transition-all duration-200 text-left ${color}`}
+    >
+      <div className="mb-4 p-3 rounded-xl bg-slate-100 dark:bg-slate-700 group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{title}</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      <div className="mt-4 flex items-center text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+        Get started <ChevronRight className="w-4 h-4 ml-1" />
+      </div>
+    </button>
+  );
+}
+
+export default function DashboardPage() {
+  const { user, loading: userLoading } = useUser();
+  const router = useRouter();
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [greeting, setGreeting] = useState("Good day");
+
+  // Set greeting based on time
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
+
+  // Keyboard shortcut to open command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowCommandPalette(true);
+      }
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
+          e.preventDefault();
+          setShowCommandPalette(true);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleAction = useCallback((action: string) => {
+    switch (action) {
+      case "ai-chat":
+        window.dispatchEvent(new CustomEvent("open-ai-chat"));
+        break;
+      case "create-space":
+        window.dispatchEvent(new CustomEvent("create-project"));
+        break;
+      case "search":
+        window.dispatchEvent(new CustomEvent("open-search"));
+        break;
+      case "workspace":
+        router.push("/dashboard/workspace");
+        break;
+      case "summarize":
+        window.dispatchEvent(new CustomEvent("summarize-workspace"));
+        break;
+    }
+  }, [router]);
+
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Slash Command Palette */}
+      <SlashCommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+      />
+
+      <div className="max-w-6xl mx-auto px-8 py-12">
+        {/* Header Section */}
+        <div className="mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
+            {greeting}, {user?.full_name?.split(" ")[0] || "there"}!
+          </h1>
+          <p className="text-lg text-slate-500 dark:text-slate-400 mb-8">
+            What would you like to work on today? Use{" "}
+            <kbd className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-sm font-mono">
+              /
+            </kbd>{" "}
+            or{" "}
+            <kbd className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-sm font-mono">
+              ⌘K
+            </kbd>{" "}
+            to access commands.
+          </p>
+
+          {/* Command Input Bar */}
+          <button
+            onClick={() => setShowCommandPalette(true)}
+            className="w-full max-w-2xl flex items-center gap-3 px-4 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-shadow text-left group"
+          >
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Command className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="flex-1 text-slate-400">Type a command or search...</span>
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <span className="hidden sm:inline">Press</span>
+              <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs">
+                /
+              </kbd>
+            </div>
+          </button>
+        </div>
+
+        {/* Quick Actions Grid */}
+        <div className="mb-12">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <ActionTile
+              icon={<MessageSquare className="w-6 h-6 text-purple-600" />}
+              title="AI Chat"
+              description="Ask AI anything about your work"
+              onClick={() => handleAction("ai-chat")}
+              color="hover:border-purple-200 dark:hover:border-purple-800"
+            />
+            <ActionTile
+              icon={<Plus className="w-6 h-6 text-green-600" />}
+              title="Create Space"
+              description="Start a new project or workspace"
+              onClick={() => handleAction("create-space")}
+              color="hover:border-green-200 dark:hover:border-green-800"
+            />
+            <ActionTile
+              icon={<Search className="w-6 h-6 text-blue-600" />}
+              title="Search"
+              description="Find anything across your content"
+              onClick={() => handleAction("search")}
+              color="hover:border-blue-200 dark:hover:border-blue-800"
+            />
+            <ActionTile
+              icon={<Sparkles className="w-6 h-6 text-amber-600" />}
+              title="Summarize"
+              description="AI analyzes your workspace"
+              onClick={() => handleAction("summarize")}
+              color="hover:border-amber-200 dark:hover:border-amber-800"
+            />
+          </div>
+        </div>
+
+        {/* Secondary Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Recent Workspaces */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900 dark:text-white">
+                Your Workspaces
+              </h3>
+              <button
+                onClick={() => router.push("/dashboard/workspace")}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                View all <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push("/dashboard/workspace")}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+              >
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <FolderOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    Go to Workspaces
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Manage your projects and teams
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
+              </button>
+            </div>
+          </div>
+
+          {/* Tips & Guide */}
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/30 p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+                <Zap className="w-6 h-6 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                  New to ScholarForge?
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Learn how to use commands, AI features, and more to supercharge your productivity.
+                </p>
+                <button
+                  onClick={() => router.push("/guide")}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                >
+                  Open Guide <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Command Examples */}
+        <div className="mt-12 p-6 bg-slate-100 dark:bg-slate-800/50 rounded-2xl">
+          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
+            Popular Commands
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { cmd: "/ai chat", desc: "Open AI assistant" },
+              { cmd: "/summarize", desc: "Analyze workspace" },
+              { cmd: "/create task", desc: "Add new task" },
+              { cmd: "/search", desc: "Search everything" },
+            ].map((item) => (
+              <button
+                key={item.cmd}
+                onClick={() => setShowCommandPalette(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
+              >
+                <code className="text-sm font-mono text-blue-600 dark:text-blue-400">
+                  {item.cmd}
+                </code>
+                <span className="text-xs text-slate-400">{item.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

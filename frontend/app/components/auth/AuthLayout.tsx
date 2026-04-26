@@ -39,7 +39,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
                 <img
-                  src="/images/ScholarForge AI-logo.png"
+                  src="/assets/images/ScholarForge-AI-Logo.png"
                   alt="ScholarForge AILogo"
                   className="h-12 w-auto"
                 />
@@ -119,7 +119,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
                 href="/"
                 className="inline-flex items-center space-x-3 text-gray-300">
                 <img
-                  src="/images/ScholarForge AI-logo.png"
+                  src="/assets/images/ScholarForge-AI-Logo.png"
                   alt="ScholarForge AILogo"
                   className="h-8 w-auto text-blue-600"
                 />

@@ -14,7 +14,6 @@ const MarkdownDocPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const {
-    planClasses,
     planDocLinkClasses,
     planCardClasses,
     planDocContentClasses,
@@ -45,7 +44,7 @@ const MarkdownDocPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={`max-w-4xl mx-auto p-6 ${planClasses}`}>
+      <div className="max-w-4xl mx-auto p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 dark:bg-white rounded w-1/3 mb-6"></div>
           <div className="space-y-4">
@@ -61,7 +60,7 @@ const MarkdownDocPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className={`max-w-4xl mx-auto p-6 ${planClasses}`}>
+      <div className="max-w-4xl mx-auto p-6">
         <div className={`${planCardClasses} rounded-xl p-6 text-center`}>
           <h2 className={`text-xl font-semibold mb-2`}>Error</h2>
           <p>{error}</p>

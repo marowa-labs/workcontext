@@ -20,10 +20,9 @@ const footerLinks = {
   ],
   solutions: [
     { name: "Analytics", href: "/solutions/analytics" },
-
-    { name: "Citations", href: "/solutions/citations" },
+    { name: "Smart Connections", href: "/solutions/collaboration" },
     { name: "Collaboration", href: "/solutions/collaboration" },
-    { name: "AI Writing Assistant", href: "/solutions/ai-writing-assistant" },
+    { name: "AI Workspace", href: "/solutions/ai-writing-assistant" },
   ],
   company: [
     { name: "About Us", href: "/company/about" },
@@ -56,17 +55,17 @@ export default function Footer() {
             <div className="lg:col-span-1">
               <Link href="/" className="flex items-center space-x-2 mb-4">
                 <img
-                  src="/images/ScholarForge AI-logo.png"
-                  alt="ScholarForge AILogo"
-                  className="h-8 w-auto"
+                  src="/assets/images/ScholarForge-AI-Logo.png"
+                  alt="ScholarForge AI Logo"
+                  className="h-15 w-auto"
                 />
                 <span className="text-xl font-bold text-gray-700">
                   ScholarForge AI
                 </span>
               </Link>
               <p className="text-gray-600 text-sm mb-6 max-w-xs">
-                Your Academic Success, Defended. The AI Research Co-Pilot that
-                turns academic overwhelm into actionable insights.
+                Your context-aware workspace. Connect docs, tasks, and team
+                with intelligent flow.
               </p>
               <div className="flex space-x-4">
                 {socialLinks.map((social) => (

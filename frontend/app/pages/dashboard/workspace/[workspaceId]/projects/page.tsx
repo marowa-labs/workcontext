@@ -95,7 +95,7 @@ export default function WorkspaceProjectsPage() {
             "Unable to connect to the server. Please make sure the backend API is running.",
           );
         } else {
-          setError("Failed to load projects. Please try again later.");
+          setError("Failed to load spaces. Please try again later.");
         }
       } finally {
         setIsLoading(false);
@@ -126,14 +126,14 @@ export default function WorkspaceProjectsPage() {
       setProjects((prev: any[]) => [newProject, ...prev]);
       toast({
         title: "Success",
-        description: "Project created successfully!",
+        description: "Space created successfully!",
       });
       return newProject;
     } catch (error: any) {
       console.error("Failed to create project:", error);
       toast({
         title: "Error",
-        description: "Failed to create project. Please try again.",
+        description: "Failed to create space. Please try again.",
         variant: "destructive",
       });
       throw error;
@@ -170,13 +170,13 @@ export default function WorkspaceProjectsPage() {
 
       toast({
         title: "Success",
-        description: "Project renamed successfully!",
+        description: "Space renamed successfully!",
       });
     } catch (error: any) {
       console.error("Failed to rename project:", error);
       toast({
         title: "Error",
-        description: "Failed to rename project. Please try again.",
+        description: "Failed to rename space. Please try again.",
         variant: "destructive",
       });
     }
@@ -185,7 +185,7 @@ export default function WorkspaceProjectsPage() {
   const handleDuplicateProject = async (project: any) => {
     try {
       toast({
-        title: "Duplicating Project",
+        title: "Duplicating Space",
         description: `Creating a copy of "${project.title}"...`,
       });
 
@@ -201,13 +201,13 @@ export default function WorkspaceProjectsPage() {
 
       toast({
         title: "Success",
-        description: "Project duplicated successfully!",
+        description: "Space duplicated successfully!",
       });
     } catch (error: any) {
       console.error("Failed to duplicate project:", error);
       toast({
         title: "Error",
-        description: "Failed to duplicate project. Please try again.",
+        description: "Failed to duplicate space. Please try again.",
         variant: "destructive",
       });
     }
@@ -235,7 +235,7 @@ export default function WorkspaceProjectsPage() {
 
       toast({
         title: "Export Complete",
-        description: `Project "${project.title}" has been exported successfully.`,
+        description: `"${project.title}" has been exported successfully.`,
       });
     } catch (error: any) {
       console.error("Failed to export project:", error);
@@ -251,7 +251,7 @@ export default function WorkspaceProjectsPage() {
     try {
       if (
         window.confirm(
-          `Are you sure you want to archive "${project.title}"? You can restore it later from the archived projects view.`,
+          `Are you sure you want to archive "${project.title}"? You can restore it later from the archived spaces view.`,
         )
       ) {
         await ProjectService.updateProject(project.id, {
@@ -262,14 +262,14 @@ export default function WorkspaceProjectsPage() {
 
         toast({
           title: "Success",
-          description: "Project archived successfully!",
+          description: "Space archived successfully!",
         });
       }
     } catch (error: any) {
       console.error("Failed to archive project:", error);
       toast({
         title: "Error",
-        description: "Failed to archive project. Please try again.",
+        description: "Failed to archive space. Please try again.",
         variant: "destructive",
       });
     }
@@ -279,7 +279,7 @@ export default function WorkspaceProjectsPage() {
     try {
       if (
         window.confirm(
-          `Are you sure you want to restore "${project.title}"? It will be moved back to your active projects.`,
+          `Are you sure you want to restore "${project.title}"? It will be moved back to your active spaces.`,
         )
       ) {
         // Update project status to draft to restore from archived
@@ -292,14 +292,14 @@ export default function WorkspaceProjectsPage() {
 
         toast({
           title: "Success",
-          description: "Project restored successfully!",
+          description: "Space restored successfully!",
         });
       }
     } catch (error: any) {
       console.error("Failed to restore project:", error);
       toast({
         title: "Error",
-        description: "Failed to restore project. Please try again.",
+        description: "Failed to restore space. Please try again.",
         variant: "destructive",
       });
     }
@@ -309,7 +309,7 @@ export default function WorkspaceProjectsPage() {
     try {
       if (
         window.confirm(
-          "Are you sure you want to delete this project? This action cannot be undone.",
+          "Are you sure you want to delete this space? This action cannot be undone.",
         )
       ) {
         await ProjectService.deleteProject(project.id);
@@ -317,14 +317,14 @@ export default function WorkspaceProjectsPage() {
 
         toast({
           title: "Success",
-          description: "Project deleted successfully!",
+          description: "Space deleted successfully!",
         });
       }
     } catch (error: any) {
       console.error("Failed to delete project:", error);
       toast({
         title: "Error",
-        description: "Failed to delete project. Please try again.",
+        description: "Failed to delete space. Please try again.",
         variant: "destructive",
       });
     }
@@ -387,8 +387,8 @@ export default function WorkspaceProjectsPage() {
   const handleBatchExport = async () => {
     if (selectedProjects.length === 0) {
       toast({
-        title: "No Projects Selected",
-        description: "Please select at least one project to export.",
+        title: "No Spaces Selected",
+        description: "Please select at least one space to export.",
         variant: "destructive",
       });
       return;
@@ -397,7 +397,7 @@ export default function WorkspaceProjectsPage() {
     try {
       toast({
         title: "Batch Export Started",
-        description: `Exporting ${selectedProjects.length} projects... This may take a moment.`,
+        description: `Exporting ${selectedProjects.length} spaces... This may take a moment.`,
       });
 
       // Since batch export API might not exist, export projects individually
@@ -421,7 +421,7 @@ export default function WorkspaceProjectsPage() {
 
       toast({
         title: "Batch Export Complete",
-        description: `${selectedProjects.length} projects have been exported successfully.`,
+        description: `${selectedProjects.length} spaces have been exported successfully.`,
       });
 
       setSelectedProjects([]);
@@ -430,7 +430,7 @@ export default function WorkspaceProjectsPage() {
       toast({
         title: "Batch Export Failed",
         description:
-          error.message || "Failed to export projects. Please try again.",
+          error.message || "Failed to export spaces. Please try again.",
         variant: "destructive",
       });
     }
@@ -456,7 +456,7 @@ export default function WorkspaceProjectsPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading projects...</p>
+            <p className="text-muted-foreground">Loading spaces...</p>
           </div>
         </div>
       </div>
@@ -474,12 +474,12 @@ export default function WorkspaceProjectsPage() {
             ) : (
               workspaceName
             )}{" "}
-            Workspace Projects
+            Spaces
           </h1>
           <p className="text-muted-foreground mt-1">
             {projects.length === 0 && !isLoading
-              ? "Ready to start your first project in this workspace?"
-              : `${projects.length} projects in this workspace`}
+              ? "Ready to create your first space?"
+              : `${projects.length} spaces in this workspace`}
           </p>
         </div>
 
@@ -489,11 +489,10 @@ export default function WorkspaceProjectsPage() {
             <button
               onClick={handleBatchExport}
               disabled={selectedProjects.length === 0}
-              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
-                selectedProjects.length > 0
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              }`}>
+              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${selectedProjects.length > 0
+                ? "bg-green-600 hover:bg-green-700 text-white"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+                }`}>
               <Plus className="w-5 h-5 mr-2" />
               Batch Export ({selectedProjects.length})
             </button>
@@ -503,7 +502,7 @@ export default function WorkspaceProjectsPage() {
             onClick={handleCreateProject}
             className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl">
             <Plus className="w-5 h-5 mr-2" />
-            New Project
+            New Space
           </button>
         </div>
       </div>
@@ -513,14 +512,14 @@ export default function WorkspaceProjectsPage() {
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-card rounded-lg p-6 w-full max-w-md border border-border shadow-lg">
             <h3 className="text-lg font-medium text-foreground mb-4">
-              Rename Project
+              Rename Space
             </h3>
             <input
               type="text"
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary bg-background text-foreground"
-              placeholder="Enter new project name"
+              placeholder="Enter new space name"
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
                   handleRenameConfirm();
@@ -574,11 +573,10 @@ export default function WorkspaceProjectsPage() {
             <button
               key={filter.id}
               onClick={() => setActiveFilter(filter.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                activeFilter === filter.id
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${activeFilter === filter.id
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}>
               {filter.label}
             </button>
           ))}
@@ -587,20 +585,18 @@ export default function WorkspaceProjectsPage() {
           <div className="flex items-center bg-muted rounded-lg p-1 ml-auto">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-colors duration-200 ${
-                viewMode === "grid"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}>
+              className={`p-2 rounded-md transition-colors duration-200 ${viewMode === "grid"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}>
               <Grid3X3 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-colors duration-200 ${
-                viewMode === "list"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}>
+              className={`p-2 rounded-md transition-colors duration-200 ${viewMode === "list"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}>
               <List className="w-4 h-4" />
             </button>
           </div>

@@ -11,7 +11,6 @@ import logger from "../monitoring/logger";
 import { metrics, metricsMiddleware } from "../monitoring/metrics";
 import { scheduleCleanupTask } from "../scheduledTasks/cleanupExpiredItems";
 import { scheduleVersionCleanupTask } from "../scheduledTasks/versionCleanupTask";
-import { scheduleSearchAlertsTask } from "../scheduledTasks/checkSearchAlerts";
 import { scheduleVersionSchedulingTask } from "../scheduledTasks/versionSchedulingTask";
 import { scheduleTaskReminderTask } from "../scheduledTasks/taskReminderTask";
 
@@ -55,24 +54,18 @@ initializeAppUrl();
 // Import hybrid components
 import { AuthService } from "./supabase/auth-service";
 
-// Import batch export handler
-import { POST as batchExportPOST } from "../api/projects/batch-export";
-
 import { supabase } from "./supabase/auth-service";
 import { OTPService } from "../services/otpService";
-import { CitationService } from "../services/citationService";
 import { getNotificationServer } from "../lib/notificationServer";
 // Prisma client is imported dynamically in functions to avoid conflicts
 // Import auth middleware
 import { authenticateExpressRequest } from "../middleware/auth";
-import researchCoPilotRouter from "../api/ai/research-copilot-route";
 import { SecretsService } from "../services/secrets-service";
 
 // Import collaboration server
 import { HocuspocusCollaborationServer } from "./websockets/hocuspocus-server";
 
 // Import routers
-import citationsRouter from "../api/citations/index";
 import aiRouter from "../api/ai/route";
 import billingRouter from "../api/billing/route";
 import recycleBinRouter from "../api/recyclebin/route";
@@ -84,15 +77,11 @@ import subscriptionRoutes from "../api/subscription/route";
 import teamChatRouter from "../api/team-chat/route";
 import docsRouter from "../api/docs/index";
 import templatesRouter from "../api/templates/index";
-import researchRouter from "../api/research/index";
-import pdfRouter from "../api/pdf/index";
-import alertsRouter from "../api/alerts/index";
 import usersRouter from "../api/users/index";
 import dataRouter from "../api/data/index";
 import workspacesRouter from "../api/workspaces/index";
 import backupRouter from "../api/backup/index";
-import sourcesRouter from "../api/sources/index";
-
+import searchRouter from "../api/search/index";
 // Additional utility imports
 
 // Import AI routes
@@ -151,7 +140,6 @@ initializePort();
 const authMiddleware = authenticateExpressRequest;
 
 // Start Scheduled Tasks
-scheduleSearchAlertsTask();
 scheduleCleanupTask();
 scheduleVersionCleanupTask();
 scheduleVersionSchedulingTask();
@@ -228,10 +216,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Register API routers
-app.use("/api/research", researchRouter);
-app.use("/api/citations", citationsRouter);
 app.use("/api/projects", projectsRouter);
-app.use("/api/ai/research-copilot", researchCoPilotRouter); // Research Co-Pilot features (Must be before generic aiRouter)
 app.use("/api/ai", aiRouter);
 app.use("/api/recyclebin", recycleBinRouter);
 app.use("/api/feedback", feedbackRouter);
@@ -241,13 +226,10 @@ app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/team-chat", teamChatRouter);
 app.use("/api/docs", docsRouter);
 app.use("/api/templates", templatesRouter);
-app.use("/api/pdf", pdfRouter);
-app.use("/api/alerts", alertsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/workspaces", workspacesRouter);
 app.use("/api/backup", backupRouter);
-app.use("/api/sources", sourcesRouter);
-app.use("/api/analytics", analyticsRouter);
+app.use("/api/search", searchRouter);
 
 // Health check endpoint
 app.get("/health", async (req, res) => {
@@ -1362,7 +1344,7 @@ app.post("/api/webhooks/lemonsqueezy", async (req, res) => {
       .default;
 
     // Call the webhook handler directly
-    return webhookRouter(req, res, () => {});
+    return webhookRouter(req, res, () => { });
   } catch (error: any) {
     logger.error("LemonSqueezy webhook processing failed", {
       error: error.message,
@@ -1395,7 +1377,7 @@ app.post("/api/webhooks/lemonsqueezy/test/:eventType", async (req, res) => {
       ...req,
       params: { eventType: req.params.eventType, body: req.body },
     };
-    return testWebhookRouter(mockReq as any, res, () => {});
+    return testWebhookRouter(mockReq as any, res, () => { });
   } catch (error: any) {
     logger.error("LemonSqueezy webhook TEST processing failed", {
       error: error.message,
@@ -1999,14 +1981,8 @@ app.use("/api/notifications", authMiddleware);
 // Mount the notifications router
 app.use("/api/notifications", notificationsRouter);
 
-// Mount the citations router for public routes first (before auth)
-app.use("/api/citations/trends-public", citationsRouter);
-
 // Apply auth middleware to citations routes (excluding public routes)
 app.use("/api/citations", authMiddleware);
-
-// Instead of individual citation endpoints, mount the citation router directly (excluding public routes)
-app.use("/api/citations", citationsRouter);
 
 // User account management endpoints
 
@@ -2053,152 +2029,6 @@ app.post("/api/users/request-otp", async (req, res) => {
     logger.error("Request OTP failed", {
       error: error.message,
     });
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Batch export endpoint
-app.post("/api/projects/batch-export", async (req, res) => {
-  try {
-    logger.info("Batch export request");
-
-    // Get user from authentication middleware
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-    }
-
-    // Import and use the real batch export API handler
-    const { POST } = await import("../api/projects/batch-export");
-
-    // Get authorization header from original request
-    const authHeader = req.headers.authorization;
-
-    // Create a mock request object
-    const mockRequest = {
-      json: async () => req.body,
-      headers: {
-        get: (name: string) => {
-          if (name.toLowerCase() === "authorization") {
-            return authHeader;
-          }
-          return null;
-        },
-        authorization: authHeader,
-      },
-      user: { id: userId },
-    };
-
-    const response = await POST(mockRequest as any);
-    const data = await response.json();
-
-    return res.status(response.status).json(data);
-  } catch (error: any) {
-    logger.error("Batch export failed", { error: error.message });
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Project export endpoint
-app.get("/api/projects/export", authMiddleware, async (req, res) => {
-  try {
-    logger.info("Export project request");
-
-    // Helper functions to validate headers
-    const isValidHeaderName = (name: string): boolean => {
-      // Only allow standard header names with alphanumeric chars, hyphens, and underscores
-      return /^[a-zA-Z0-9_-]+$/g.test(name);
-    };
-
-    const isValidHeaderValue = (value: string): boolean => {
-      // Prevent newlines and other characters that could be used for header injection
-      return /^[\w\s!#$%&'()*+,-.\/;:=?@\[\]~`]+$/g.test(value);
-    };
-
-    // Get user from authentication middleware
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-    }
-
-    // Import the actual export API handler
-    const { GET } = await import("../api/projects/export");
-
-    // Get authorization header from original request
-    const authHeader = req.headers.authorization;
-
-    // Create a mock request object with query parameters
-    const url = new URL(`http://localhost:3001/api/projects/export`);
-    const queryParams = req.query as Record<string, string>;
-    for (const key in queryParams) {
-      // Sanitize query parameters to prevent XSS
-      const sanitizedKey = key.replace(/[<>'"&]/g, ""); // Remove potentially dangerous characters
-      const sanitizedValue = queryParams[key]
-        ? queryParams[key].toString().replace(/[<>'"&]/g, "")
-        : "";
-      url.searchParams.append(sanitizedKey, sanitizedValue);
-    }
-
-    const mockRequest = {
-      url: url.toString(),
-      headers: {
-        get: (name: string) => {
-          if (name.toLowerCase() === "authorization") {
-            return authHeader;
-          }
-          return null;
-        },
-        authorization: authHeader,
-      },
-      user: { id: userId },
-    };
-
-    // Call the export handler directly - it will send the response
-    const response = await GET(mockRequest as any);
-
-    // Set the headers from the response
-    // Sanitize headers to prevent XSS
-    response.headers.forEach((value: string, key: string) => {
-      // Only set headers with safe names and values
-      if (isValidHeaderName(key) && isValidHeaderValue(value)) {
-        // Specifically handle Content-Type to ensure it's appropriate for file downloads
-        if (key.toLowerCase() === "content-type") {
-          // Only allow safe content types for file downloads
-          if (
-            value.startsWith("application/") ||
-            value.startsWith("text/") ||
-            value.startsWith("image/")
-          ) {
-            res.setHeader(key, value);
-          }
-        } else {
-          res.setHeader(key, value);
-        }
-      }
-    });
-
-    // Get the response body as ArrayBuffer and convert to Buffer
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Ensure proper content-disposition header to prevent inline execution of content
-    if (!res.get("content-disposition")) {
-      res.setHeader(
-        "Content-Disposition",
-        'attachment; filename="exported-project"',
-      );
-    }
-
-    // Send the response
-    return res.status(response.status).send(buffer);
-  } catch (error: any) {
-    logger.error("Export project failed", { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -2332,20 +2162,9 @@ app.use("/api/billing", billingRouter);
 app.use("/api/subscriptions", authMiddleware);
 app.use("/api/subscriptions", subscriptionRoutes);
 
-// Apply auth middleware to citations routes
-app.use("/api/citations", authMiddleware);
-app.use("/api/citations", citationsRouter);
-
 // Apply auth middleware to projects routes
 app.use("/api/projects", authMiddleware);
 app.use("/api/projects", projectsRouter);
-
-// Apply auth middleware to analytics routes
-app.use("/api/analytics", authMiddleware);
-
-// Import and mount analytics router
-import analyticsRouter from "../api/analytics/index";
-app.use("/api/analytics", analyticsRouter);
 
 // Apply auth middleware to data routes
 app.use("/api/data", authMiddleware);
@@ -3907,63 +3726,6 @@ app.use("/api/recyclebin", authMiddleware);
 // Instead of individual recycle bin endpoints, mount the recycle bin router directly
 app.use("/api/recyclebin", recycleBinRouter);
 
-// File processing endpoints (these would typically be serverless functions)
-app.post("/api/files/process", async (req, res) => {
-  try {
-    logger.info("Process file request");
-
-    // Get user from authentication middleware
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-    }
-
-    // Validate request body
-    const { fileData, fileType } = req.body;
-
-    if (!fileData || !fileType) {
-      return res.status(400).json({
-        success: false,
-        message: "fileData and fileType are required",
-      });
-    }
-
-    // Validate file type
-    const validFileTypes = ["document-import", "export-pdf", "export-docx"];
-    if (!validFileTypes.includes(fileType)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid fileType. Must be one of: ${validFileTypes.join(", ")}`,
-      });
-    }
-
-    // Import and use the real serverless function
-    const { default: fileProcessing } =
-      await import("./serverless/file-processing");
-
-    // Create a mock request object that matches the serverless function signature
-    const mockRequest = {
-      json: async () => ({
-        fileData,
-        fileType,
-        userId,
-      }),
-    } as any;
-
-    // Call the serverless function
-    const response = await fileProcessing(mockRequest);
-    const data = await response.json();
-
-    return res.status(response.status).json(data);
-  } catch (error: any) {
-    logger.error("Process file failed", { error: error.message });
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
-
 // General file upload endpoint
 app.post("/_create/api/upload/", authMiddleware, async (req, res) => {
   try {
@@ -4048,8 +3810,6 @@ function getFileExtensionFromMimeType(mimeType: string): string {
   return mimeToExt[mimeType] || "bin";
 }
 
-// Batch export endpoint
-app.post("/api/projects/batch-export", authMiddleware, batchExportPOST);
 
 // Public feedback endpoint (no auth required for submission)
 app.post("/api/feedback/public", async (req, res) => {
@@ -4128,42 +3888,10 @@ app.use("/api/notifications", authMiddleware);
 // Mount the notifications router
 app.use("/api/notifications", notificationsRouter);
 
-// Apply auth middleware to citations routes
-app.use("/api/citations", authMiddleware);
-
 // Research routes already have per-route authentication defined in the router
 
 // Documentation routes (no auth required)
 app.use("/api/docs", docsRouter);
-
-// Public citation trends endpoint (no auth required)
-app.get("/api/public/citation-trends", async (req, res) => {
-  try {
-    logger.info("Public citation trends route called", {
-      url: req.url,
-    });
-
-    // Call the service method directly
-    const trends = await CitationService.getRealTimeCitationTrends();
-
-    const response = {
-      success: true,
-      trends: trends,
-    };
-    logger.info("Public citation trends response", {
-      status: 200,
-    });
-
-    return res.status(200).json(response);
-  } catch (error: any) {
-    logger.error("Public citation trends route error:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      url: req.url,
-    });
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
 
 // Test endpoint to check auth middleware
 app.get("/api/test-auth", authMiddleware, async (req, res) => {

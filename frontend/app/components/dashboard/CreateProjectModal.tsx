@@ -172,80 +172,80 @@ export default function CreateProjectModal({
 
   const projectTypes = [
     {
-      id: "research-paper",
-      label: "Research Paper",
-      icon: BookOpen,
-      description: "Academic research with citations and references",
+      id: "project-doc",
+      label: "Project Doc",
+      icon: File,
+      description: "Project planning and documentation",
       color: "blue",
     },
     {
-      id: "essay",
-      label: "Essay",
+      id: "meeting-notes",
+      label: "Meeting Notes",
       icon: FileText,
-      description: "Academic essay or analysis paper",
+      description: "Meeting agendas and action items",
       color: "purple",
     },
     {
-      id: "lab-report",
-      label: "Lab Report",
-      icon: Beaker,
-      description: "Scientific experiment report with methodology",
+      id: "strategy",
+      label: "Strategy",
+      icon: Rocket,
+      description: "Strategic planning and roadmaps",
       color: "green",
     },
     {
-      id: "business-proposal",
-      label: "Business Proposal",
-      icon: File,
-      description: "Professional business proposal document",
-      color: "blue",
+      id: "brainstorm",
+      label: "Brainstorm",
+      icon: Zap,
+      description: "Ideas and creative thinking",
+      color: "yellow",
     },
     {
-      id: "research-proposal",
-      label: "Research Proposal",
-      icon: BookOpen,
-      description: "Research proposal for grants or academic funding",
+      id: "product-spec",
+      label: "Product Spec",
+      icon: File,
+      description: "Product requirements and specs",
       color: "indigo",
     },
     {
-      id: "journal-entry",
-      label: "Journal Entry",
-      icon: FileText,
-      description: "Personal or academic journal entry",
-      color: "green",
-    },
-    {
-      id: "conference-paper",
-      label: "Conference Paper",
+      id: "team-wiki",
+      label: "Team Wiki",
       icon: BookOpen,
-      description: "Academic paper for conferences",
-      color: "purple",
-    },
-    {
-      id: "literature-review",
-      label: "Literature Review",
-      icon: BookOpen,
-      description: "Comprehensive literature review",
+      description: "Team knowledge and processes",
       color: "blue",
     },
     {
-      id: "annotated-bibliography",
-      label: "Annotated Bibliography",
-      icon: BookOpen,
-      description: "Bibliography with annotations",
+      id: "decision-doc",
+      label: "Decision Doc",
+      icon: FileText,
+      description: "Decision records and rationales",
+      color: "purple",
+    },
+    {
+      id: "user-research",
+      label: "User Research",
+      icon: Users,
+      description: "Research findings and insights",
+      color: "pink",
+    },
+    {
+      id: "design-doc",
+      label: "Design Doc",
+      icon: File,
+      description: "Design specifications and mocks",
       color: "indigo",
     },
     {
       id: "case-study",
       label: "Case Study",
       icon: File,
-      description: "In-depth analysis of a specific case",
+      description: "In-depth analysis of a project",
       color: "pink",
     },
     {
-      id: "thesis",
-      label: "Thesis",
+      id: "report",
+      label: "Report",
       icon: BookOpen,
-      description: "Dissertation or thesis document",
+      description: "Quarterly or annual reports",
       color: "indigo",
     },
     {
@@ -610,7 +610,7 @@ export default function CreateProjectModal({
       } else if (err.toString().includes("NetworkError")) {
         setError("Network error. Please check your connection and try again.");
       } else {
-        setError("Failed to create project. Please try again.");
+        setError("Failed to create space. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -687,7 +687,7 @@ export default function CreateProjectModal({
                 className={`flex items-center justify-between p-6 rounded-t-2xl ${planStyling.headerBg}`}
               >
                 <div className="flex items-center space-x-3">
-                  <h2 className="text-xl font-semibold">Create New Project</h2>
+                  <h2 className="text-xl font-semibold">Create New Space</h2>
                   {isResearcherUser ? (
                     <Crown className="w-5 h-5" />
                   ) : isStudentUser ? (
@@ -698,11 +698,10 @@ export default function CreateProjectModal({
                 </div>
                 <button
                   onClick={onClose}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    isResearcherUser || isStudentUser
-                      ? "text-white hover:bg-white/20"
-                      : "text-gray-700 hover:text-gray-700 dark:hover:text-gray-700"
-                  }`}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${isResearcherUser || isStudentUser
+                    ? "text-white hover:bg-white/20"
+                    : "text-gray-700 hover:text-gray-700 dark:hover:text-gray-700"
+                    }`}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -713,24 +712,24 @@ export default function CreateProjectModal({
                 <div className="space-y-4">
                   <div>
                     <FormInput
-                      label="Project Name"
+                      label="Space Name"
                       error={errors.name?.message}
                       required
                       {...register("name", {
-                        required: "Project name is required",
+                        required: "Space name is required",
                       })}
                       type="text"
-                      placeholder="Enter project name"
+                      placeholder="Enter space name"
                     />
                     <p className="text-xs text-gray-700 dark:text-gray-700 mt-1">
-                      Customize the name for your project
+                      Give your space a meaningful name
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-500 block mb-2 mt-1">
-                        Project Type
+                        Space Type
                       </label>
                       <select
                         {...register("type")}
@@ -866,7 +865,7 @@ export default function CreateProjectModal({
                     loading={isLoading}
                     disabled={!isValid || isLoading || !watchedFields.name}
                   >
-                    {isLoading ? "Creating..." : "Create Project"}
+                    {isLoading ? "Creating..." : "Create Space"}
                   </Button>
                 </div>
               </form>

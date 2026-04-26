@@ -9,30 +9,16 @@ import { cn } from "../../../../lib/utils";
 import ProjectService from "../../../../lib/utils/projectService";
 import { useUser } from "../../../../lib/utils/useUser";
 import { useToast } from "../../../../hooks/use-toast";
-import { SourcesLibraryPanel } from "../SourcesLibraryPanel";
-import AIResearchAssistant from "../../../../components/editor/AIResearchAssistant";
-import ResearchInterface from "../../../../research/ResearchInterface";
 import {
   MainEditor,
   MainEditorRef,
   SidebarPanel,
 } from "../../../../components/editor/main-editor";
-import PaperDetailsPanel from "../../../../research/PaperDetailsPanel";
-import { ResearchSource } from "../../../../types/research";
 import { EditorSidebar } from "../../../../components/editor/EditorSidebar";
 import { NewProjectModal } from "../../../../components/dashboard/NewProjectModal"; // Import modal
 import { ShareProjectDialog } from "../../../../components/dashboard/ShareProjectDialog";
 import { ProjectJoinDialog } from "../../../../components/dashboard/ProjectJoinDialog";
-import { StudyDashboard } from "../../../../study/StudyDashboard";
-import { CitationAnalysisPanel } from "../../../../components/editor/SidebarRight/CitationAnalysisPanel";
 import { LanguageCheckPanel } from "../../../../components/editor/SidebarRight/LanguageCheckPanel";
-import { GapAnalysisPanel } from "../../../../components/editor/SidebarLeft/GapAnalysisPanel";
-import { VerificationPanel } from "../../../../components/editor/SidebarRight/VerificationPanel";
-import { PlagiarismPanel } from "../../../../components/editor/SidebarRight/PlagiarismPanel";
-import { CitationsPanel } from "../../../../components/editor/SidebarRight/CitationsPanel";
-import { SearchAlertsPanel } from "../../../../components/editor/SidebarLeft/SearchAlertsPanel";
-import { LiteraturePanel } from "../../../../components/editor/SidebarLeft/LiteraturePanel";
-import { ConceptMapPanel } from "../../../../components/editor/SidebarLeft/ConceptMapPanel";
 import { DocumentOutlinePanel } from "../../../../components/editor/SidebarLeft/DocumentOutlinePanel";
 import { TeamChat } from "../../../../components/dashboard/team/TeamChat";
 
@@ -41,21 +27,10 @@ export type LeftPanelType =
   | "documents"
   | "outline"
   | "language"
-  | "gap-analysis"
-  | "verify"
-  | "alerts"
-  | "literature"
-  | "concept-map"
-  | "sources-library"
-  | "research-assistant"
   | null;
 export type RightPanelType =
-  | "citations"
   | "ai-chat"
   | "team-chat"
-  | "paper-search"
-  | "citation-check"
-  | "plagiarism-check"
   | null;
 
 interface Project {
@@ -82,9 +57,7 @@ export default function EditorPage() {
   );
   const [leftPanel, setLeftPanel] = useState<LeftPanelType>(null);
   const [rightPanel, setRightPanel] = useState<RightPanelType>(null);
-  const [viewMode, setViewMode] = useState<"write" | "study" | "concept-map">(
-    "write",
-  );
+  const [viewMode] = useState<"write">("write");
 
   // Modal State
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
@@ -92,9 +65,6 @@ export default function EditorPage() {
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [isPendingJoin, setIsPendingJoin] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
-  const [selectedPaperId, setSelectedPaperId] = useState<string | null>(null);
-  const [selectedPaperData, setSelectedPaperData] =
-    useState<ResearchSource | null>(null);
 
   // Resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(300);
@@ -119,28 +89,11 @@ export default function EditorPage() {
     return false;
   }, [project]);
 
-  // Concept Map Handlers
-  const handleSearchNode = (term: string) => {
-    // Open paper search panel
-    setRightPanel("paper-search");
-    // Update URL to trigger search in ResearchInterface component if needed
-    // Or we could pass a prop to ResearchInterface if we refactor it to accept external query
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set("q", term);
-    router.push(currentUrl.pathname + currentUrl.search);
-  };
-
   const handleChatNode = (message: string) => {
     setAiPrompt(message);
     setRightPanel("ai-chat");
   };
 
-  // Handle library detail view
-  const handleViewLibraryDetail = (source: ResearchSource) => {
-    setSelectedPaperData(source);
-    setSelectedPaperId(source.id);
-    setRightPanel("paper-search");
-  };
 
   // Resize handlers
   useEffect(() => {
@@ -316,14 +269,8 @@ export default function EditorPage() {
   };
 
   const handleMainEditorPanelToggle = (panel: SidebarPanel) => {
-    const rightPanels: string[] = [
-      "citations",
-      "ai-chat",
-      "paper-search",
-      "citation-check",
-      "plagiarism-check",
-    ];
-    const leftPanels: string[] = ["language", "gap-analysis", "verify"];
+    const rightPanels: string[] = ["ai-chat"];
+    const leftPanels: string[] = ["language"];
 
     if (panel === null) {
       setRightPanel(null);
@@ -433,37 +380,19 @@ export default function EditorPage() {
 
   const personalAllowedPanels: SidebarPanel[] = [
     "ai-chat",
-    "citations",
-    "paper-search",
-    "citation-check",
     "language",
-    "gap-analysis",
-    "verify",
-    "plagiarism-check",
     "writing",
     "my-documents",
     "outline",
-    "alerts",
-    "literature",
-    "concept-map",
     // 'team-chat' explicitly excluded
   ];
 
   const teamAllowedPanels: SidebarPanel[] = [
     "ai-chat",
-    "citations",
-    "paper-search",
-    "citation-check",
     "language",
-    "gap-analysis",
-    "verify",
-    "plagiarism-check",
     "writing",
     "my-documents",
     "outline",
-    "alerts",
-    "literature",
-    "concept-map",
     "team-chat", // Added for Team Projects
   ];
 
@@ -477,18 +406,12 @@ export default function EditorPage() {
       <EditorSidebar
         allowedPanels={activeAllowedPanels as string[]}
         onNavigate={(id: string) => {
-          if (id === "concept-map") {
-            setViewMode("concept-map");
-            setLeftPanel(null);
-            setRightPanel(null);
-          } else {
-            setViewMode("write");
-          }
-
           if (id === "my-documents") {
             setLeftPanel("documents");
           } else if (id === "outline") {
             setLeftPanel("outline");
+          } else if (id === "language") {
+            setLeftPanel("language");
           }
 
           if (id === "writing") {
@@ -497,25 +420,6 @@ export default function EditorPage() {
 
           if (id === "team-chat") {
             setRightPanel("team-chat");
-          }
-
-          if (id === "citations") {
-            setRightPanel("citation-check");
-          }
-          if (id === "language") {
-            setLeftPanel("language");
-          }
-          if (id === "gap-analysis") {
-            setLeftPanel("gap-analysis");
-          }
-          if (id === "verify") {
-            setLeftPanel("verify");
-          }
-          if (id === "alerts") {
-            setLeftPanel("alerts");
-          }
-          if (id === "literature") {
-            setLeftPanel("literature");
           }
         }}
       />
@@ -534,7 +438,7 @@ export default function EditorPage() {
             }}
           />
           {/* Panel Header - Only show for documents/library */}
-          {(leftPanel === "documents" || leftPanel === "sources-library") && (
+          {(leftPanel === "documents") && (
             <div className="flex items-center justify-between px-2 pt-2 border-b border-gray-200 bg-white">
               <div className="flex flex-1">
                 <button
@@ -546,16 +450,6 @@ export default function EditorPage() {
                       : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50",
                   )}>
                   Documents
-                </button>
-                <button
-                  onClick={() => setLeftPanel("sources-library")}
-                  className={cn(
-                    "flex-1 px-3 py-2 text-sm font-medium border-b-2 transition-colors mb-[-1px] text-center justify-center whitespace-nowrap overflow-hidden text-ellipsis",
-                    leftPanel === "sources-library"
-                      ? "text-blue-600 border-blue-600 bg-white"
-                      : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50",
-                  )}>
-                  Sources Library
                 </button>
               </div>
               <Button
@@ -592,89 +486,8 @@ export default function EditorPage() {
                 />
               </div>
             )}
-            {leftPanel === "sources-library" && (
-              <div className="p-0 h-full">
-                <SourcesLibraryPanel
-                  onViewDetails={handleViewLibraryDetail}
-                  onCite={(source) => {
-                    // Insert citation into editor
-                    if (editorInstance) {
-                      // Format citation based on source data
-                      const author = source.author || "Unknown";
-                      const year = source.year || new Date().getFullYear();
-                      const citationText = `(${author}, ${year})`;
-
-                      // Insert at cursor position
-                      editorInstance
-                        .chain()
-                        .focus()
-                        .insertContent(citationText)
-                        .run();
-
-                      toast({
-                        title: "Citation Added",
-                        description: `Added citation for ${source.title}`,
-                      });
-                    } else {
-                      toast({
-                        title: "Error",
-                        description: "Editor not available",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                />
-              </div>
-            )}
-            {leftPanel === "research-assistant" && (
-              <AIResearchAssistant
-                isOpen={true}
-                onClose={() => setLeftPanel(null)}
-                isPanel={true}
-                projectId={documentId}
-                onInsertContent={handleInsertContent}
-              />
-            )}
-
             {leftPanel === "language" && (
               <LanguageCheckPanel editor={editorInstance} />
-            )}
-            {leftPanel === "gap-analysis" && (
-              <GapAnalysisPanel
-                editor={editorInstance}
-                projectId={project?.id}
-                documentTitle={project?.title}
-              />
-            )}
-            {leftPanel === "verify" && (
-              <VerificationPanel
-                editor={editorInstance}
-                projectId={project?.id}
-                documentTitle={project?.title}
-              />
-            )}
-            {leftPanel === "alerts" && (
-              <div className="h-full overflow-x-hidden">
-                <SearchAlertsPanel projectId={documentId} />
-              </div>
-            )}
-            {leftPanel === "literature" && (
-              <div className="h-full overflow-x-hidden">
-                <LiteraturePanel
-                  onOpenResearch={(query) => {
-                    setRightPanel("paper-search");
-                    if (query) {
-                      // Update URL parameters safely
-                      const currentUrl = new URL(window.location.href);
-                      currentUrl.searchParams.set("q", query);
-                      router.push(currentUrl.pathname + currentUrl.search);
-                    }
-                  }}
-                  onOpenPaper={(paper) => {
-                    handleViewLibraryDetail(paper);
-                  }}
-                />
-              </div>
             )}
             {leftPanel === "outline" && (
               <div className="h-full overflow-x-hidden">
@@ -718,27 +531,23 @@ export default function EditorPage() {
             let initialContent = "";
             if (outlineType === "standard") {
               initialContent = `<h1>${prompt || "Untitled Document"}</h1>
-<h2>Introduction</h2>
-<p>Enter your introduction here...</p>
-<h2>Literature Review</h2>
-<p>Synthesize existing research...</p>
-<h2>Methodology</h2>
-<p>Describe your methods...</p>
-<h2>Results</h2>
-<p>Present your findings...</p>
-<h2>Discussion</h2>
-<p>Interpret your results...</p>
-<h2>Conclusion</h2>
-<p>Summarize your findings...</p>`;
+<h2>Overview</h2>
+<p>Describe the purpose and scope...</p>
+<h2>Key Points</h2>
+<p>Main ideas and objectives...</p>
+<h2>Action Items</h2>
+<p>Tasks and next steps...</p>
+<h2>Notes</h2>
+<p>Additional information...</p>`;
             } else if (outlineType === "smart") {
               // Mock smart generation for now - ideally call AIService here
               initialContent = `<h1>${prompt || "Untitled Document"}</h1>
 <p><em>AI Generated Outline based on: "${prompt}"</em></p>
-<h2>1. Overview</h2>
+<h2>1. Summary</h2>
 <p>...</p>
-<h2>2. Context</h2>
+<h2>2. Details</h2>
 <p>...</p>
-<h2>3. Key Arguments</h2>
+<h2>3. Next Steps</h2>
 <p>...</p>`;
             } else {
               // Empty/No headings
@@ -803,7 +612,6 @@ export default function EditorPage() {
               onShare={() => setIsShareDialogOpen(true)}
               allowedPanels={activeAllowedPanels}
               onEditorReady={(editor) => setEditorInstance(editor)}
-              onOpenResearch={() => setLeftPanel("research-assistant")}
               activeRightPanel={rightPanel}
               onToggleRightPanel={handleMainEditorPanelToggle}
             />
@@ -815,18 +623,6 @@ export default function EditorPage() {
               </div>
             </div>
           )
-        ) : viewMode === "study" ? (
-          <StudyDashboard
-            projectId={project?.id || ""}
-            projectTitle={project?.title || "Untitled Project"}
-            sourceCount={12} // Mock for now, hook up to real source count later
-          />
-        ) : viewMode === "concept-map" ? (
-          <ConceptMapPanel
-            currentTitle={project?.title || "Research"}
-            onSearchNode={handleSearchNode}
-            onChatNode={handleChatNode}
-          />
         ) : null}
       </div>
 
@@ -841,18 +637,6 @@ export default function EditorPage() {
           </button>
         )}
 
-        {/* Scite / Citation Check Toggle */}
-        {!rightPanel && (
-          <button
-            onClick={() => toggleRightPanel("citation-check")}
-            className="bg-white border border-gray-200 rounded-l-md p-1.5 hover:bg-gray-50 shadow-sm"
-            title="Smart Citation Check">
-            <div className="relative">
-              <ChevronLeft className="h-4 w-4 text-gray-600" />
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse border border-white"></div>
-            </div>
-          </button>
-        )}
       </div>
 
       {/* Right Panel */}
@@ -871,11 +655,8 @@ export default function EditorPage() {
           {/* Panel Header */}
           <div className="flex h-12 items-center justify-between border-b border-gray-200 px-4">
             <h3 className="text-sm font-semibold text-gray-900">
-              {rightPanel === "citations" && "Citations"}
               {rightPanel === "ai-chat" && "AI Assistant"}
               {rightPanel === "team-chat" && "Team Chat"}
-              {rightPanel === "paper-search" &&
-                (selectedPaperId ? "Paper Details" : "Paper Discovery")}
             </h3>
             <Button
               variant="ghost"
@@ -888,25 +669,6 @@ export default function EditorPage() {
 
           {/* Panel Content */}
           <div className="flex-1 overflow-y-auto">
-            {rightPanel === "citations" && (
-              <CitationsPanel
-                projectId={documentId}
-                documentTitle={project?.title || ""}
-              />
-            )}
-            {rightPanel === "citation-check" && (
-              <CitationAnalysisPanel
-                editor={editorInstance}
-                projectId={documentId}
-              />
-            )}
-            {rightPanel === "plagiarism-check" && (
-              <PlagiarismPanel
-                editor={editorInstance}
-                projectId={documentId}
-                documentTitle={project?.title || ""}
-              />
-            )}
             {rightPanel === "ai-chat" && (
               <AIChatPanel
                 isOpen={true}
@@ -924,26 +686,6 @@ export default function EditorPage() {
                 }}
                 onSendPrompt={aiPrompt}
               />
-            )}
-            {rightPanel === "paper-search" && (
-              <div className="h-full">
-                {selectedPaperId ? (
-                  <PaperDetailsPanel
-                    paperId={selectedPaperId}
-                    paperData={selectedPaperData}
-                    isPanel={true}
-                    onBack={() => {
-                      setSelectedPaperId(null);
-                      setSelectedPaperData(null);
-                    }}
-                  />
-                ) : (
-                  <ResearchInterface
-                    isPanel={true}
-                    onSelectPaper={(id) => setSelectedPaperId(id)}
-                  />
-                )}
-              </div>
             )}
             {rightPanel === "team-chat" && (
               <TeamChat

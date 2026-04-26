@@ -13,7 +13,7 @@ import {
   Heart,
 } from "lucide-react";
 import { useState } from "react";
-import { WaitlistService } from "../../lib/utils/waitlistService";
+import WaitlistService from "../../lib/utils/waitlistService";
 
 const TemplatesMarketplacePage = () => {
   // Mock plan styling classes
@@ -64,21 +64,17 @@ const TemplatesMarketplacePage = () => {
 
     try {
       // Send email to backend waitlist service using the proper service
-      const result = await WaitlistService.joinWaitlist(
-        "templates-marketplace",
+      await WaitlistService.addToWaitlist({
         email,
-      );
+        featureInterest: ["templates-marketplace"],
+      });
 
-      if (result.success) {
-        setSubmitStatus({
-          type: "success",
-          message:
-            "Thank you! You have been added to the waitlist. We will notify you when the Templates Marketplace launches.",
-        });
-        setEmail(""); // Clear the email input
-      } else {
-        throw new Error(result.message);
-      }
+      setSubmitStatus({
+        type: "success",
+        message:
+          "Thank you! You have been added to the waitlist. We will notify you when the Templates Marketplace launches.",
+      });
+      setEmail(""); // Clear the email input
     } catch (error) {
       console.error("Error joining waitlist:", error);
       setSubmitStatus({
@@ -428,11 +424,10 @@ const TemplatesMarketplacePage = () => {
           {/* Status Message */}
           {submitStatus.type && (
             <div
-              className={`mb-6 p-4 rounded-lg ${
-                submitStatus.type === "success"
-                  ? "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-200 border-white-800"
-                  : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-200 border-white-800"
-              }`}>
+              className={`mb-6 p-4 rounded-lg ${submitStatus.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-200 border-white-800"
+                : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-200 border-white-800"
+                }`}>
               {submitStatus.message}
             </div>
           )}
@@ -450,9 +445,8 @@ const TemplatesMarketplacePage = () => {
             />
             <button
               type="submit"
-              className={`px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-              }`}
+              className={`px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               disabled={isSubmitting}>
               {isSubmitting ? "Joining..." : "Join Waitlist"}
             </button>

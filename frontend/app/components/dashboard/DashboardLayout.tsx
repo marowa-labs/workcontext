@@ -8,13 +8,12 @@ import {
   Folder,
   Settings,
   CreditCard,
-  BookOpen,
   LogOut,
   Crown,
   Plus,
   ChevronDown,
+  ChevronLeft,
   AlertCircle,
-  FileText,
   Users,
   ChevronRight,
   Lock,
@@ -22,14 +21,15 @@ import {
   Bell,
   LayoutDashboard,
   FolderKanban,
+  HelpCircle,
   Trello,
   CalendarDays,
   GanttChart,
   BarChart2,
-  BookMarked,
   MessageCircle,
   Activity,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import Link from "next/link";
@@ -44,6 +44,11 @@ import { usePresence } from "../../lib/hooks/usePresence";
 import { useTheme } from "../../contexts/ThemeContext";
 import { ModeToggle } from "../ModeToggle";
 import { GlobalTimerWidget } from "./team/GlobalTimerWidget";
+import { SearchModal } from "./SearchModal";
+import { QuickTaskModal } from "./QuickTaskModal";
+import { AIChatDrawer } from "./AIChatDrawer";
+import { FloatingAIButton } from "./FloatingAIButton";
+import { SummarizeModal } from "./SummarizeModal";
 import {
   Dialog,
   DialogContent,
@@ -101,6 +106,23 @@ export default function DashboardLayout({
   // Create Workspace Modal State
   const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] =
     useState(false);
+
+  // Search Modal State
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
+  // Quick Task Modal State
+  const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
+
+  // AI Chat Drawer State
+  const [showAIChat, setShowAIChat] = useState(false);
+
+  // Inbox Pinned State
+  const [isInboxPinned, setIsInboxPinned] = useState(false);
+
+  // Summarize Modal State
+  const [showSummarizeModal, setShowSummarizeModal] = useState(false);
+  const [summarizeWorkspaceId, setSummarizeWorkspaceId] = useState<string | undefined>();
+
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [newWorkspaceDesc, setNewWorkspaceDesc] = useState("");
   const [newWorkspaceIcon, setNewWorkspaceIcon] = useState("Hash");
@@ -153,11 +175,10 @@ export default function DashboardLayout({
 
     // More specific route matching to ensure correct tab highlighting
     if (path === "/dashboard") return "dashboard";
+    if (path === "/guide") return "guide";
+    if (path === "/ai") return "ai";
     if (path === "/projects" || path.startsWith("/projects/"))
       return "projects";
-    if (path.startsWith("/dashboard/library")) return "library";
-    if (path.startsWith("/dashboard/source-guide")) return "source-guide";
-    if (path.startsWith("/dashboard/pdf-chat")) return "pdf-chat";
     if (path.startsWith("/dashboard/admin")) return "admin";
     if (path.startsWith("/settings/")) return "settings";
     if (path.startsWith("/billing/")) return "billing";
@@ -266,6 +287,20 @@ export default function DashboardLayout({
     fetchSidebarData();
   }, [user, token]);
 
+  // Keyboard shortcut: Ctrl+J to toggle AI Chat Drawer
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+J or Cmd+J (Mac)
+      if ((event.ctrlKey || event.metaKey) && event.key === "j") {
+        event.preventDefault();
+        setShowAIChat((prev) => !prev);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -291,6 +326,32 @@ export default function DashboardLayout({
     }
   }, [user, loading, router]);
 
+  // Listen for slash command events
+  useEffect(() => {
+    const handleOpenSearch = () => setShowSearchModal(true);
+    const handleCreateProject = () => setShowCreateWorkspaceModal(true);
+    const handleCreateQuickTask = () => setShowQuickTaskModal(true);
+    const handleOpenAIChat = () => setShowAIChat(true);
+    const handleSummarizeWorkspace = (e: any) => {
+      setSummarizeWorkspaceId(e?.detail?.workspaceId);
+      setShowSummarizeModal(true);
+    };
+
+    window.addEventListener("open-search", handleOpenSearch);
+    window.addEventListener("create-project", handleCreateProject);
+    window.addEventListener("create-quick-task", handleCreateQuickTask);
+    window.addEventListener("open-ai-chat", handleOpenAIChat);
+    window.addEventListener("summarize-workspace", handleSummarizeWorkspace);
+
+    return () => {
+      window.removeEventListener("open-search", handleOpenSearch);
+      window.removeEventListener("create-project", handleCreateProject);
+      window.removeEventListener("create-quick-task", handleCreateQuickTask);
+      window.removeEventListener("open-ai-chat", handleOpenAIChat);
+      window.removeEventListener("summarize-workspace", handleSummarizeWorkspace);
+    };
+  }, []);
+
   // Handle loading state
   if (loading) {
     return (
@@ -307,20 +368,10 @@ export default function DashboardLayout({
 
   // Define navigation categories
   const privateItems = [
+    { id: "guide", label: "How to Use", icon: HelpCircle, href: "/guide" },
     { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
-    { id: "projects", label: "My Projects", icon: Folder, href: "/projects" },
-    {
-      id: "library",
-      label: "Sources",
-      icon: BookOpen,
-      href: "/dashboard/library",
-    },
-    {
-      id: "pdf-chat",
-      label: "AI Reader",
-      icon: FileText,
-      href: "/dashboard/pdf-chat",
-    },
+    { id: "ai", label: "Notion AI", icon: Sparkles, href: "/ai" },
+    { id: "projects", label: "My Spaces", icon: Folder, href: "/projects" },
   ];
 
   const bottomItems = [
@@ -419,37 +470,6 @@ export default function DashboardLayout({
     );
   };
 
-  // Determine sidebar position classes based on user preference
-  const getSidebarPositionClasses = () => {
-    // Only apply custom sidebar position if user has enabled it for this layout
-    const sidebarPosition = shouldApplyCustomLayout
-      ? settings.sidebarPosition
-      : "left"; // Default to left if not enabled
-
-    if (sidebarPosition === "right") {
-      return {
-        sidebar:
-          "fixed inset-y-0 right-0 z-40 w-64 bg-white border-l border-slate-200",
-        sidebarTransform: sidebarOpen ? "translate-x-0" : "translate-x-full",
-        mainContent: `flex-1 min-h-[calc(100vh-4rem)] transition-all duration-300 ${sidebarCollapsed ? "lg:mr-20" : "lg:mr-64"
-          } pt-16 lg:pt-0`,
-        topNav: `sticky top-0 z-50 bg-background border-b border-border shadow-sm ${sidebarCollapsed ? "lg:mr-20" : "lg:mr-64"
-          }`,
-      };
-    } else {
-      // Default to left position
-      return {
-        sidebar:
-          "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border",
-        sidebarTransform: sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        mainContent: `flex-1 min-h-[calc(100vh-4rem)] transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
-          } pt-16 lg:pt-0`,
-        topNav: `sticky top-0 z-50 bg-background border-b border-border shadow-sm ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
-          }`,
-      };
-    }
-  };
-
   // Determine transition classes based on animation settings
   const getTransitionClasses = () => {
     // Only apply custom animation settings if user has enabled it for this layout
@@ -465,178 +485,72 @@ export default function DashboardLayout({
     return "transition-colors duration-200"; // default
   };
 
-  const positionClasses = getSidebarPositionClasses();
+  // Get sidebar position from settings
+  const sidebarPosition = shouldApplyCustomLayout
+    ? settings.sidebarPosition
+    : "left"; // Default to left if not enabled
+
+  // Update position classes to remove navbar padding
+  const positionClasses = {
+    sidebar: sidebarPosition === "right"
+      ? "fixed inset-y-0 right-0 z-40 w-64 bg-card border-l border-border"
+      : "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border",
+    sidebarTransform: sidebarOpen
+      ? (sidebarPosition === "right" ? "translate-x-0" : "translate-x-0")
+      : (sidebarPosition === "right" ? "translate-x-full lg:translate-x-0" : "-translate-x-full lg:translate-x-0"),
+    mainContent: sidebarPosition === "right"
+      ? `flex-1 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:mr-20" : "lg:mr-64"}`
+      : `flex-1 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"}`,
+  };
+
   const transitionClasses = getTransitionClasses();
 
   return (
     <div className="min-h-screen bg-background text-foreground font-outfit">
-      {/* Top Navigation */}
-      <nav className={positionClasses.topNav}>
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Left side */}
-            <div className="flex items-center space-x-4">
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`lg:hidden p-2 rounded-lg text-muted-foreground hover:bg-muted ${transitionClasses}`}>
-                {sidebarOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
-              </button>
-
-              {/* Desktop collapse/expand button */}
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className={`hidden lg:block p-2 rounded-lg text-muted-foreground hover:bg-muted ${transitionClasses}`}>
-                <Menu className="w-6 h-6" />
-              </button>
-
-              {/* Logo */}
-              <Link href="" className="flex items-center space-x-3 group">
-                <div className="flex items-center">
-                  {/* Removed logo <img> */}
-                  {userPlan &&
-                    userPlan !== "Free Plan" &&
-                    userPlan !== "Free" && (
-                      <span
-                        className={`
-                      ml-0.5 px-2 py-1 text-xs font-bold rounded-full shadow-sm
-                      ${userPlan.includes("Student") || userPlan.includes("Pro")
-                            ? "bg-blue-600 text-white"
-                            : "bg-purple-600 text-white"
-                          }
-                    `}>
-                        {userPlan.includes("Student") ||
-                          userPlan.includes("Pro")
-                          ? "PRO"
-                          : "RESEARCHER"}
-                      </span>
-                    )}
-                </div>
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400 hidden sm:block tracking-tight">
-                  ScholarForge AI
-                </span>
-              </Link>
-            </div>
-
-            {/* Right side */}
-            <div className="flex items-center space-x-4">
-              {/* Theme Toggle */}
-              <ModeToggle />
-
-              {/* Notifications */}
-              {workspaces.length > 0 && <NotificationBell />}
-
-              {/* Profile dropdown */}
-              <div className="relative profile-dropdown">
-                <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className={`flex items-center space-x-3 p-2 rounded-lg hover:bg-muted ${transitionClasses}`}>
-                  <div
-                    className={`
-                    relative w-8 h-8 rounded-full flex items-center justify-center
-                    ${userPlan === "Free Plan" || !userPlan
-                        ? "bg-gradient-to-br from-gray-400 to-gray-600"
-                        : userPlan.includes("Student") ||
-                          userPlan.includes("Pro")
-                          ? "bg-gradient-to-br from-blue-500 to-blue-700"
-                          : "bg-gradient-to-br from-purple-500 to-purple-700"
-                      }
-                  `}>
-                    <span className="text-white font-medium text-sm">
-                      {user?.user_metadata?.full_name
-                        ? user.user_metadata.full_name.charAt(0).toUpperCase()
-                        : user?.email?.charAt(0).toUpperCase() || "U"}
-                    </span>
-                    {userPlan &&
-                      userPlan !== "Free Plan" &&
-                      userPlan !== "Free" && (
-                        <div
-                          className={`
-                        absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center shadow-sm
-                        ${userPlan.includes("Student") ||
-                              userPlan.includes("Pro")
-                              ? "bg-blue-500 border-2 border-white border-white"
-                              : "bg-purple-500 border-2 border-white border-white"
-                            }
-                      `}>
-                          <Crown className="w-2 h-2 text-white" />
-                        </div>
-                      )}
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-gray-700 dark:text-gray-700" />
-                </button>
-
-                {/* Dropdown menu */}
-                {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border py-2 z-50">
-                    {/* User info */}
-                    <div className="px-4 py-3 border-b border-border">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`
-                          relative w-10 h-10 rounded-full flex items-center justify-center
-                          ${userPlan === "Free Plan" || !userPlan
-                              ? "bg-gradient-to-br from-slate-600 to-slate-800"
-                              : "bg-gradient-to-br from-emerald-500 to-emerald-700"
-                            }
-                        `}>
-                          <span className="text-white font-medium">
-                            {user?.user_metadata?.full_name
-                              ? user.user_metadata.full_name
-                                .charAt(0)
-                                .toUpperCase()
-                              : user?.email?.charAt(0).toUpperCase() || "U"}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0 text-slate-900">
-                          <p className="text-sm font-medium truncate">
-                            {user?.user_metadata?.full_name || "User"}
-                          </p>
-                          <p className="text-xs text-slate-400 truncate">
-                            {user?.email}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Menu items */}
-                    <div className="py-2">
-                      <Link
-                        href="/settings/profile"
-                        className={`flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted ${transitionClasses}`}>
-                        <Users className="w-4 h-4 mr-3" />
-                        View Profile
-                      </Link>
-
-                      <button
-                        onClick={handleSignOut}
-                        className={`flex items-center w-full px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 ${transitionClasses}`}>
-                        <LogOut className="w-4 h-4 mr-3" />
-                        Log Out
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="flex">
+      <div className="flex min-h-screen">
         {/* Sidebar */}
         <aside
           className={`
-          ${positionClasses.sidebar
-            } transform transition-all duration-300 ease-in-out lg:translate-x-0
+          ${positionClasses.sidebar}
+          transform transition-all duration-300 ease-in-out
           ${positionClasses.sidebarTransform}
           ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"}
         `}>
-          <div className="flex flex-col h-full pt-16 lg:pt-0">
+          <div className="flex flex-col h-full">
+            {/* Sidebar Header - Notion Style */}
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between">
+                {/* Logo */}
+                <Link href="/dashboard" className="flex items-center gap-2 group">
+                  {userPlan && userPlan !== "Free Plan" && userPlan !== "Free" && (
+                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${userPlan.includes("Student") || userPlan.includes("Pro")
+                      ? "bg-blue-600 text-white"
+                      : "bg-purple-600 text-white"
+                      }`}>
+                      {userPlan.includes("Student") || userPlan.includes("Pro") ? "PRO" : "RESEARCHER"}
+                    </span>
+                  )}
+                  {!sidebarCollapsed && (
+                    <span className="font-bold text-foreground text-lg tracking-tight">
+                      ScholarForge AI
+                    </span>
+                  )}
+                </Link>
+
+                {/* Collapse button */}
+                <button
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className={`p-1.5 rounded-lg text-muted-foreground hover:bg-muted ${transitionClasses}`}
+                  title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {sidebarCollapsed ? (
+                    <ChevronRight className="w-4 h-4" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
             {/* Navigation Sections */}
             <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto custom-scrollbar">
               {/* Private Section */}
@@ -826,20 +740,6 @@ export default function DashboardLayout({
                               `}>
                               <BarChart2 className="w-3.5 h-3.5 flex-shrink-0" />
                               Analytics
-                            </Link>
-                            <Link
-                              href={`/dashboard/workspace/${ws.id}/source-guide`}
-                              className={`
-                                flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(
-                                `/workspace/${ws.id}/source-guide`,
-                              )
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                                }
-                              `}>
-                              <BookMarked className="w-3.5 h-3.5 flex-shrink-0" />
-                              Source Guide
                             </Link>
                             <Link
                               href={`/dashboard/workspace/${ws.id}/chat`}
@@ -1039,9 +939,146 @@ export default function DashboardLayout({
               </div>
             </nav>
 
+            {/* User & Actions Section */}
+            <div className="p-4 border-t border-border mt-auto space-y-3">
+              {/* Mobile menu button (only on mobile) */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className={`lg:hidden w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-muted ${transitionClasses}`}>
+                {sidebarOpen ? (
+                  <X className="w-4 h-4" />
+                ) : (
+                  <Menu className="w-4 h-4" />
+                )}
+                {!sidebarCollapsed && <span className="text-sm">Menu</span>}
+              </button>
+
+              {/* Theme Toggle */}
+              <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2`}>
+                {!sidebarCollapsed && <span className="text-sm text-muted-foreground">Theme</span>}
+                <ModeToggle />
+              </div>
+
+              {/* Notifications */}
+              {workspaces.length > 0 && (
+                <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2`}>
+                  {!sidebarCollapsed && <span className="text-sm text-muted-foreground">Notifications</span>}
+                  <NotificationBell
+                    isPinned={isInboxPinned}
+                    onPinChange={setIsInboxPinned}
+                  />
+                </div>
+              )}
+
+              {/* Profile Section */}
+              <div className="relative profile-dropdown">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted ${transitionClasses}`}>
+                  <div
+                    className={`
+                    relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                    ${userPlan === "Free Plan" || !userPlan
+                        ? "bg-gradient-to-br from-gray-400 to-gray-600"
+                        : userPlan.includes("Student") ||
+                          userPlan.includes("Pro")
+                          ? "bg-gradient-to-br from-blue-500 to-blue-700"
+                          : "bg-gradient-to-br from-purple-500 to-purple-700"
+                      }
+                  `}>
+                    <span className="text-white font-medium text-sm">
+                      {user?.user_metadata?.full_name
+                        ? user.user_metadata.full_name.charAt(0).toUpperCase()
+                        : user?.email?.charAt(0).toUpperCase() || "U"}
+                    </span>
+                    {userPlan &&
+                      userPlan !== "Free Plan" &&
+                      userPlan !== "Free" && (
+                        <div
+                          className={`
+                        absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center
+                        ${userPlan.includes("Student") ||
+                              userPlan.includes("Pro")
+                              ? "bg-blue-500 border border-white"
+                              : "bg-purple-500 border border-white"
+                            }
+                      `}>
+                          <Crown className="w-2 h-2 text-white" />
+                        </div>
+                      )}
+                  </div>
+                  {!sidebarCollapsed && (
+                    <>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-medium truncate">
+                          {user?.user_metadata?.full_name || "User"}
+                        </p>
+                        <p className="text-xs text-slate-400 truncate">
+                          {user?.email}
+                        </p>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </>
+                  )}
+                </button>
+
+                {/* Profile Dropdown */}
+                {profileDropdownOpen && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 w-full bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border py-2 z-50">
+                    {/* User info */}
+                    <div className="px-4 py-3 border-b border-border">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`
+                          relative w-10 h-10 rounded-full flex items-center justify-center
+                          ${userPlan === "Free Plan" || !userPlan
+                              ? "bg-gradient-to-br from-slate-600 to-slate-800"
+                              : "bg-gradient-to-br from-emerald-500 to-emerald-700"
+                            }
+                        `}>
+                          <span className="text-white font-medium">
+                            {user?.user_metadata?.full_name
+                              ? user.user_metadata.full_name
+                                .charAt(0)
+                                .toUpperCase()
+                              : user?.email?.charAt(0).toUpperCase() || "U"}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-sm font-medium truncate">
+                            {user?.user_metadata?.full_name || "User"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user?.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu items */}
+                    <div className="py-2">
+                      <Link
+                        href="/settings/profile"
+                        className={`flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted ${transitionClasses}`}>
+                        <Users className="w-4 h-4 mr-3" />
+                        View Profile
+                      </Link>
+
+                      <button
+                        onClick={handleSignOut}
+                        className={`flex items-center w-full px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 ${transitionClasses}`}>
+                        <LogOut className="w-4 h-4 mr-3" />
+                        Log Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Usage meter */}
             {!sidebarCollapsed && (
-              <div className="p-4 border-t border-border mt-auto">
+              <div className="p-4 border-t border-border">
                 <div className="bg-muted/50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-emerald-400 flex items-center">
@@ -1108,12 +1145,90 @@ export default function DashboardLayout({
           />
         )}
 
-        {/* Main content */}
-        <main className={cn(positionClasses.mainContent, "min-w-0 h-full flex flex-col")}>
+        {/* Main content area - shrinks when AI chat is open or inbox is pinned */}
+        <main
+          className={cn(
+            positionClasses.mainContent,
+            "min-w-0 h-full flex flex-col transition-all duration-300",
+            showAIChat && "lg:mr-[420px]",
+            isInboxPinned && "lg:ml-[calc(16rem+22.5rem)]"
+          )}
+        >
           {children}
         </main>
+
+        {/* AI Chat Side Panel - Desktop: pushes content, Mobile: modal */}
+        {showAIChat && (
+          <>
+            {/* Desktop: Side panel */}
+            <div className="hidden lg:block fixed right-0 top-0 bottom-0 w-[420px] z-40">
+              <AIChatDrawer
+                isOpen={showAIChat}
+                onClose={() => setShowAIChat(false)}
+                isPanel={true}
+              />
+            </div>
+            {/* Mobile: Modal overlay */}
+            <div className="lg:hidden">
+              <AIChatDrawer
+                isOpen={showAIChat}
+                onClose={() => setShowAIChat(false)}
+                isPanel={false}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Floating AI Button - Shows when drawer is closed */}
+        <FloatingAIButton
+          isOpen={showAIChat}
+          onClick={() => setShowAIChat(true)}
+          pathname={pathname}
+        />
+
+        {/* Pinned Inbox Sidebar - Between sidebar and main content */}
+        {isInboxPinned && (
+          <div className="hidden lg:block fixed left-64 top-0 bottom-0 w-[360px] bg-white border-r border-gray-200 shadow-sm z-30">
+            <div className="h-full flex flex-col">
+              {/* Inbox Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
+                <button
+                  onClick={() => setIsInboxPinned(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+                  title="Unpin inbox">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2v10M5 12h14M12 12l-4 8M12 12l4 8" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-4 text-center text-gray-500">
+                Pinned Inbox Panel
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <GlobalTimerWidget />
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+      />
+
+      {/* Quick Task Modal */}
+      <QuickTaskModal
+        isOpen={showQuickTaskModal}
+        onClose={() => setShowQuickTaskModal(false)}
+      />
+
+      {/* Summarize Modal */}
+      <SummarizeModal
+        isOpen={showSummarizeModal}
+        onClose={() => setShowSummarizeModal(false)}
+        workspaceId={summarizeWorkspaceId}
+      />
 
       {/* Create Workspace Modal */}
       <Dialog

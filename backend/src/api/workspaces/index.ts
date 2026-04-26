@@ -20,6 +20,112 @@ router.use("/tasks/subtasks", subtasksRouter);
 router.use("/tasks", tasksRouter);
 router.use("/:workspaceId/views", viewsRouter);
 
+// GET /api/workspaces/:workspaceId/search - Search for mentions
+router.get("/:workspaceId/search", async (req: any, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const query = req.query.q as string || "";
+    const limit = parseInt(req.query.limit as string || "20", 10);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!query.trim()) {
+      return res.json({ results: [] });
+    }
+
+    // Search users in workspace
+    const users = await prisma.workspaceMember.findMany({
+      where: {
+        workspace_id: workspaceId,
+        user: {
+          OR: [
+            { full_name: { contains: query, mode: "insensitive" } },
+            { email: { contains: query, mode: "insensitive" } },
+          ],
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+            bio: true,
+          },
+        },
+      },
+      take: Math.floor(limit / 4),
+    });
+
+    // Search projects (spaces) in workspace
+    const projects = await prisma.project.findMany({
+      where: {
+        workspace_id: workspaceId,
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+      },
+      take: Math.floor(limit / 4),
+    });
+
+    // Search tasks in workspace
+    const tasks = await prisma.workspaceTask.findMany({
+      where: {
+        workspace_id: workspaceId,
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        priority: true,
+      },
+      take: Math.floor(limit / 4),
+    });
+
+    // Format results
+    const results = [
+      ...users.map((member: any) => ({
+        id: member.user.id,
+        type: "user" as const,
+        title: member.user.full_name || member.user.email,
+        subtitle: member.user.bio || member.user.email,
+      })),
+      ...projects.map((project: any) => ({
+        id: project.id,
+        type: "space" as const,
+        title: project.title,
+        subtitle: project.description || project.status,
+      })),
+      ...tasks.map((task: any) => ({
+        id: task.id,
+        type: "task" as const,
+        title: task.title,
+        subtitle: `${task.status} • ${task.priority} priority`,
+      })),
+    ];
+
+    return res.json({ results });
+  } catch (error) {
+    logger.error("Search error:", error);
+    return res.status(500).json({ error: "Failed to search" });
+  }
+});
+
 // GET /api/workspaces/:id/analytics - Get workspace analytics with project metrics
 router.get("/:id/analytics", async (req: any, res) => {
   try {
@@ -80,6 +186,98 @@ router.get("/", async (req: any, res) => {
   }
 });
 
+// GET /api/workspaces/:id/projects - Get projects in workspace
+router.get("/:id/projects", async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Verify user has access to workspace
+    const membership = await prisma.workspaceMember.findFirst({
+      where: {
+        workspace_id: id,
+        user_id: userId,
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const projects = await prisma.project.findMany({
+      where: {
+        workspace_id: id,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        workspace_id: true,
+      },
+      orderBy: { updated_at: "desc" },
+    });
+
+    res.json({ projects });
+  } catch (error) {
+    logger.error("Error fetching workspace projects", error);
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
+
+// GET /api/workspaces/:id/tasks - Get tasks in workspace
+router.get("/:id/tasks", async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Verify user has access to workspace
+    const membership = await prisma.workspaceMember.findFirst({
+      where: {
+        workspace_id: id,
+        user_id: userId,
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const tasks = await prisma.workspaceTask.findMany({
+      where: {
+        workspace_id: id,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        priority: true,
+        created_at: true,
+        updated_at: true,
+        workspace_id: true,
+        project_id: true,
+      },
+      orderBy: { created_at: "desc" },
+    });
+
+    res.json({ tasks });
+  } catch (error) {
+    logger.error("Error fetching workspace tasks", error);
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
 // GET /api/workspaces/:id/metrics - Get recent activity and stats
 router.get("/:id/metrics", async (req: any, res) => {
   try {
@@ -91,7 +289,7 @@ router.get("/:id/metrics", async (req: any, res) => {
 
     const [recentTasks, recentProjects] = await Promise.all([
       WorkspaceTaskService.getRecentActivity(id, 10),
-      ProjectService.getRecentProjects(req.user.id, 5), // Currently limiting to user's projects, could be workspace projects
+      ProjectService.getRecentProjects(req.user.id, 5),
     ]);
 
     res.json({

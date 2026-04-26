@@ -149,7 +149,7 @@ const MobileLandingPage = () => {
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center space-x-2">
               <img
-                src="/images/ScholarForge AI-logo.png"
+                src="/assets/images/ScholarForge-AI-Logo.png"
                 alt="ScholarForge AILogo"
                 className="h-8 w-auto"
               />
@@ -380,11 +380,10 @@ const MobileLandingPage = () => {
                 {/* Status Message */}
                 {submitStatus.type && (
                   <div
-                    className={`mb-4 p-3 rounded-lg text-sm ${
-                      submitStatus.type === "success"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
-                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
-                    }`}>
+                    className={`mb-4 p-3 rounded-lg text-sm ${submitStatus.type === "success"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
+                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
+                      }`}>
                     {submitStatus.message}
                   </div>
                 )}
@@ -402,9 +401,8 @@ const MobileLandingPage = () => {
                   />
                   <button
                     type="submit"
-                    className={`px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center justify-center ${
-                      isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-                    }`}
+                    className={`px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center justify-center ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                      }`}
                     disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>
@@ -463,11 +461,10 @@ const MobileLandingPage = () => {
                       <button
                         onClick={() => handleVote(feature.id, feature.name)}
                         disabled={votedFeatures.includes(feature.id)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm ${
-                          votedFeatures.includes(feature.id)
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200 cursor-not-allowed"
-                            : "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-200 dark:hover:bg-indigo-800"
-                        }`}>
+                        className={`px-4 py-2 rounded-lg font-medium text-sm ${votedFeatures.includes(feature.id)
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200 cursor-not-allowed"
+                          : "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-200 dark:hover:bg-indigo-800"
+                          }`}>
                         {votedFeatures.includes(feature.id) ? "Voted" : "Vote"}
                       </button>
                     </div>
@@ -589,7 +586,7 @@ const MobileLandingPage = () => {
                 href="/"
                 className="inline-flex items-center space-x-2 mb-6">
                 <img
-                  src="/images/ScholarForge AI-logo.png"
+                  src="/assets/images/ScholarForge-AI-Logo.png"
                   alt="ScholarForge AILogo"
                   className="h-8 w-auto"
                 />
