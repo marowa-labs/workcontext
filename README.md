@@ -13,7 +13,7 @@ An open-source, AI-powered academic research and writing platform for students, 
 
 ## ✨ Features
 
-- **AI Research Co-Pilot** — Context-aware writing assistance, autocomplete, and literature gap analysis powered by Claude, GPT-4o, and Gemini
+- **AI Research Co-Pilot** — Context-aware writing assistance, autocomplete, and literature gap analysis powered by Gemini and OpenRouter
 - **250M+ Paper Discovery** — Search across CrossRef, OpenAlex, arXiv, and PubMed with advanced filters
 - **Smart Citation Management** — APA, MLA, Chicago, and more — with confidence scoring and hallucination checks
 - **Real-time Collaboration** — Live multi-user editing powered by Yjs/CRDT (like Google Docs, for research)
@@ -27,14 +27,14 @@ An open-source, AI-powered academic research and writing platform for students, 
 
 ## 🛠️ Tech Stack
 
-| Layer          | Technology                                                 |
-| -------------- | ---------------------------------------------------------- |
-| Frontend       | Next.js 16, TypeScript, Tailwind CSS, TipTap Editor        |
-| Backend        | Node.js, Express.js, TypeScript                            |
-| Database       | PostgreSQL 17 + pgvector, Prisma ORM                       |
-| Auth & Storage | Supabase                                                   |
-| Real-time      | Hocuspocus + Yjs (CRDT)                                    |
-| AI Providers   | Anthropic Claude, OpenAI GPT-4o, Google Gemini, OpenRouter |
+| Layer          | Technology                                          |
+| -------------- | --------------------------------------------------- |
+| Frontend       | Next.js 16, TypeScript, Tailwind CSS, TipTap Editor |
+| Backend        | Node.js, Express.js, TypeScript                     |
+| Database       | PostgreSQL 17 + pgvector, Prisma ORM                |
+| Auth & Storage | Supabase                                            |
+| Real-time      | Hocuspocus + Yjs (CRDT)                             |
+| AI Providers   | Google Gemini, OpenRouter                           |
 
 ---
 
@@ -45,7 +45,7 @@ An open-source, AI-powered academic research and writing platform for students, 
 - Node.js 20+
 - Docker & Docker Compose (for local database)
 - A Supabase account (free tier works)
-- At least one AI provider API key (OpenAI, Anthropic, or Gemini)
+- At least one AI provider API key (Gemini or OpenRouter)
 
 ### 1. Clone the Repository
 
@@ -96,8 +96,6 @@ The app will be running at `http://localhost:3000`.
 DATABASE_URL=postgresql://postgres:password@localhost:5435/scholarforge
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-OPENAI_API_KEY=your_openai_key          # optional
-ANTHROPIC_API_KEY=your_anthropic_key    # optional
 GEMINI_API_KEY=your_gemini_key          # optional
 RESEND_API_KEY=your_resend_key          # for emails
 ```
@@ -119,7 +117,7 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
 ScholarForge uses an intelligent fallback chain so the app works even if one provider is down:
 
 ```
-Request → Claude (Primary) → Gemini → GPT-4o → OpenRouter (Free)
+Request → Gemini (Primary) → OpenRouter (Free)
 ```
 
 You can configure which providers are active via your environment variables.
@@ -204,7 +202,7 @@ You are free to use, modify, and distribute this software — even commercially.
 
 Built with love using:
 
-- [Anthropic Claude](https://anthropic.com) — AI backbone
+- [Google Gemini](https://gemini.google.com) — AI backbone
 - [Supabase](https://supabase.com) — Auth and storage
 - [TipTap](https://tiptap.dev) — Rich text editor
 - [Hocuspocus](https://hocuspocus.dev) — Real-time collaboration

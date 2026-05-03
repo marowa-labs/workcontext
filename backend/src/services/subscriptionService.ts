@@ -23,7 +23,7 @@ export const plans = {
       projects: -1, // unlimited
       plagiarismChecks: 0,
       aiRequests: 25,
-      aiChatMessages: 10,
+      aiChatMessages: 100,
       aiWebSearches: 0,
       aiDeepSearches: 0,
       collaborators: 10,
@@ -53,8 +53,9 @@ export const plans = {
       "Unlimited projects",
       "Basic writing suggestions",
       "Max 25 AI Requests/Month",
-      "GPT-4o-mini",
-      "No Access to Premium Models (Gemini 2.0 Flash Only, GPT-4o, Claude 3.5 Sonnet, Claude 3 Haiku, Gemini 3.1 Flash Lite)",
+      "Max 100 AI Chat Messages/Month",
+      "Gemini 2.5 Flash",
+      "No Access to Premium Models (Gemini 3.1 Flash Lite)",
       "100MB Storage",
       "Community Support",
     ],
@@ -78,7 +79,7 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: -1, // unlimited
-      aiRequests: -1, // unlimited gpt-4o-mini + gemini-2.5-flash
+      aiRequests: -1, // unlimited gemini-2.5-flash
       aiChatMessages: -1, // unlimited
       aiWebSearches: -1, // unlimited
       aiDeepSearches: -1, // unlimited
@@ -105,7 +106,7 @@ export const plans = {
       "$15/session (minimum), usage-based overages",
       "First $15 covers up to 25,000 words",
       "Additional usage billed at $0.0006/word",
-      "Models: GPT-4o-mini + Gemini Flash",
+      "Models: Gemini 2.5 Flash + OpenRouter OSS models",
       "Email support",
       "5GB storage",
     ],
@@ -115,7 +116,7 @@ export const plans = {
       "Unlimited Version History",
       "Research Impact Analytics",
       "Custom Templates",
-      "Premium AI Models (GPT-4o, Claude 3.5 Sonnet, Gemini 3.1 Flash Lite)",
+      "Premium AI Models (Gemini 3.1 Flash Lite)",
       "Institution-grade Plagiarism Detection (1B+ sources)",
       "Custom Citation Formats (journal or publisher-specific)",
       "Advanced Writing Analytics (insights, originality scoring)",
@@ -130,7 +131,7 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: -1, // unlimited
-      aiRequests: 170, // 100 GPT-4o-mini + 20 claude-3-haiku + 50 Gemini Flash = 170 total
+      aiRequests: 170, // 120 Gemini 2.5 Flash + 50 OpenRouter OSS = 170 total
       aiChatMessages: 1000,
       aiWebSearches: 50,
       aiDeepSearches: 10,
@@ -159,9 +160,8 @@ export const plans = {
       "Email support",
       "Writing analytics dashboard",
       "75,000 AI words/month (~450k tokens)",
-      "100 GPT-4o-mini requests",
-      "20 Claude-3-Haiku requests (complex assignments)",
-      "50 Gemini Flash requests",
+      "120 Gemini 2.5 Flash requests",
+      "50 OpenRouter OSS model requests",
       "100GB storage",
     ],
     excludedFeatures: [
@@ -172,7 +172,7 @@ export const plans = {
       "Unlimited Version History",
       "Research Impact Analytics",
       "Custom Templates",
-      "Premium AI Models (Claude 3.5 Sonnet, Gemini 3.1 Flash Lite)",
+      "Premium AI Models (Gemini 3.1 Flash Lite)",
       "Unlimited Custom AI Prompts",
       "Institution-grade Plagiarism Detection (1B+ sources)",
       "Custom Citation Formats (journal or publisher-specific)",
@@ -188,7 +188,7 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: -1, // unlimited
-      aiRequests: 375, // 100 GPT-4o  + 100 Gemini Pro  + 50 Claude Haiku  + 25 Claude Sonnet = 375 total, Unlimited GPT-4o-mini & Gemini Flash requests
+      aiRequests: 375, // 200 Gemini 2.5 Flash + 100 Gemini 3.1 Flash Lite + 75 OpenRouter OSS = 375 total
       aiChatMessages: 5000,
       aiWebSearches: 500,
       aiDeepSearches: 100,
@@ -218,11 +218,9 @@ export const plans = {
       "Phone & chat support",
       "Dedicated account manager",
       "300,000 AI words/month (~1.8M tokens)",
-      "Unlimited GPT-4o-mini & Gemini Flash requests",
-      "100 GPT-4o requests/month",
-      "50 Claude Haiku requests/month",
-      "25 Claude Sonnet requests/month",
-      "100 Gemini Pro requests/month",
+      "Unlimited Gemini 2.5 Flash requests",
+      "200 Gemini 3.1 Flash Lite requests/month",
+      "75 OpenRouter OSS model requests/month",
       "500GB storage",
     ],
     excludedFeatures: [],

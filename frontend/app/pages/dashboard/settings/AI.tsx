@@ -26,7 +26,7 @@ const AISettingsPage = () => {
     useForImprovement: true,
     storeHistory: true,
     anonymousData: true,
-    model: "gpt-4o-mini",
+    model: "gemini-2.5-flash",
     temperature: 0.7,
     maxTokens: 1000,
   });
@@ -227,20 +227,18 @@ const AISettingsPage = () => {
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab("settings")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "settings"
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "settings"
                 ? "border-purple-500 text-purple-600 dark:text-purple-400"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-            }`}>
+              }`}>
             Settings
           </button>
           <button
             onClick={() => setActiveTab("analytics")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "analytics"
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "analytics"
                 ? "border-purple-500 text-purple-600 dark:text-purple-400"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-            }`}>
+              }`}>
             Analytics
           </button>
         </nav>
@@ -330,15 +328,13 @@ const AISettingsPage = () => {
                     onClick={() =>
                       handleChange("autoSuggestions", !settings.autoSuggestions)
                     }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                      settings.autoSuggestions ? "bg-purple-600" : "bg-input"
-                    }`}>
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${settings.autoSuggestions ? "bg-purple-600" : "bg-input"
+                      }`}>
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        settings.autoSuggestions
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.autoSuggestions
                           ? "translate-x-6"
                           : "translate-x-1"
-                      }`}
+                        }`}
                     />
                   </button>
                 </div>
@@ -502,15 +498,13 @@ const AISettingsPage = () => {
                         !settings.useForImprovement,
                       )
                     }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                      settings.useForImprovement ? "bg-purple-600" : "bg-input"
-                    }`}>
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${settings.useForImprovement ? "bg-purple-600" : "bg-input"
+                      }`}>
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        settings.useForImprovement
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.useForImprovement
                           ? "translate-x-6"
                           : "translate-x-1"
-                      }`}
+                        }`}
                     />
                   </button>
                 </div>
@@ -528,15 +522,13 @@ const AISettingsPage = () => {
                     onClick={() =>
                       handleChange("storeHistory", !settings.storeHistory)
                     }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                      settings.storeHistory ? "bg-purple-600" : "bg-input"
-                    }`}>
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${settings.storeHistory ? "bg-purple-600" : "bg-input"
+                      }`}>
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        settings.storeHistory
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.storeHistory
                           ? "translate-x-6"
                           : "translate-x-1"
-                      }`}
+                        }`}
                     />
                   </button>
                 </div>
@@ -554,15 +546,13 @@ const AISettingsPage = () => {
                     onClick={() =>
                       handleChange("anonymousData", !settings.anonymousData)
                     }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                      settings.anonymousData ? "bg-purple-600" : "bg-input"
-                    }`}>
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${settings.anonymousData ? "bg-purple-600" : "bg-input"
+                      }`}>
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        settings.anonymousData
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.anonymousData
                           ? "translate-x-6"
                           : "translate-x-1"
-                      }`}
+                        }`}
                     />
                   </button>
                 </div>
@@ -687,10 +677,10 @@ const AISettingsPage = () => {
                       <p className="text-lg font-semibold text-foreground">
                         {analytics.totalRequests > 0
                           ? Math.round(
-                              (analytics.successfulRequests /
-                                analytics.totalRequests) *
-                                100,
-                            )
+                            (analytics.successfulRequests /
+                              analytics.totalRequests) *
+                            100,
+                          )
                           : 0}
                         %
                       </p>
@@ -738,7 +728,7 @@ const AISettingsPage = () => {
                     Most Used Actions
                   </h3>
                   {analytics.mostUsedActions &&
-                  Object.keys(analytics.mostUsedActions).length > 0 ? (
+                    Object.keys(analytics.mostUsedActions).length > 0 ? (
                     <div className="space-y-2">
                       {Object.entries(analytics.mostUsedActions)
                         .sort(([, a], [, b]) => (b as number) - (a as number))
@@ -767,7 +757,7 @@ const AISettingsPage = () => {
                     Model Usage
                   </h3>
                   {analytics.modelUsage &&
-                  Object.keys(analytics.modelUsage).length > 0 ? (
+                    Object.keys(analytics.modelUsage).length > 0 ? (
                     <div className="space-y-2">
                       {Object.entries(analytics.modelUsage)
                         .sort(([, a], [, b]) => (b as number) - (a as number))
@@ -793,7 +783,7 @@ const AISettingsPage = () => {
                     Favorite Features
                   </h3>
                   {analytics.favoriteFeatures &&
-                  Object.keys(analytics.favoriteFeatures).length > 0 ? (
+                    Object.keys(analytics.favoriteFeatures).length > 0 ? (
                     <div className="space-y-2">
                       {Object.entries(analytics.favoriteFeatures)
                         .sort(([, a], [, b]) => (b as number) - (a as number))
@@ -821,7 +811,7 @@ const AISettingsPage = () => {
                     Peak Usage Hours
                   </h3>
                   {analytics.peakUsageHours &&
-                  Object.keys(analytics.peakUsageHours).length > 0 ? (
+                    Object.keys(analytics.peakUsageHours).length > 0 ? (
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-black dark:text-black">
@@ -866,8 +856,8 @@ const AISettingsPage = () => {
                     <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                       {analytics.averageTokensPerRequest
                         ? Math.round(
-                            analytics.averageTokensPerRequest,
-                          ).toLocaleString()
+                          analytics.averageTokensPerRequest,
+                        ).toLocaleString()
                         : "0"}
                     </p>
                     <p className="text-sm text-black dark:text-black">

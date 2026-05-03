@@ -18,6 +18,10 @@ export interface AIActionRequest {
   userId: string;
   sessionId?: string;
   pageContext?: string;
+  pageDescription?: string;
+  pageRoute?: string;
+  pageSection?: string;
+  entityId?: string;
   currentWorkspaceId?: string;
   currentProjectId?: string;
   userPreferences?: Record<string, any>;
@@ -40,12 +44,18 @@ export class AIActionService {
   /**
    * Process a user message and execute the appropriate action
    */
-  static async processMessage(request: AIActionRequest): Promise<AIActionResponse> {
+  static async processMessage(
+    request: AIActionRequest,
+  ): Promise<AIActionResponse> {
     try {
       const context: AIActionContext = {
         userId: request.userId,
         sessionId: request.sessionId,
         pageContext: request.pageContext,
+        pageDescription: request.pageDescription,
+        pageRoute: request.pageRoute,
+        pageSection: request.pageSection,
+        entityId: request.entityId,
         currentWorkspaceId: request.currentWorkspaceId,
         currentProjectId: request.currentProjectId,
         userPreferences: request.userPreferences,
@@ -55,22 +65,26 @@ export class AIActionService {
       const intent = await AIIntentParser.parseIntent(
         request.message,
         context,
-        request.conversationHistory || []
+        request.conversationHistory || [],
       );
 
-      // Step 2: If no intent detected, treat as general chat
-      if (!intent || AIIntentParser.isGeneralChat(request.message)) {
+      // Step 2: If no intent detected OR intent is "chat" (general conversation), treat as general chat
+      if (!intent || intent.actionType === "chat" || AIIntentParser.isGeneralChat(request.message)) {
         return this.handleGeneralChat(request, context);
       }
 
       // Step 3: Resolve entity references
-      const resolvedIntent = await AIIntentParser.resolveEntityReferences(intent, context, prisma);
+      const resolvedIntent = await AIIntentParser.resolveEntityReferences(
+        intent,
+        context,
+        prisma,
+      );
 
       // Step 4: Execute the action
       const result = await AIActionExecutor.executeAction(
         resolvedIntent,
         context,
-        request.autoConfirm || false
+        request.autoConfirm || false,
       );
 
       // Step 5: Build response based on result
@@ -84,13 +98,18 @@ export class AIActionService {
           data: {
             actionId: result.data.actionId,
             intent: resolvedIntent,
-            confirmationMessage: AIIntentParser.buildActionConfirmationMessage(resolvedIntent),
+            confirmationMessage:
+              AIIntentParser.buildActionConfirmationMessage(resolvedIntent),
           },
         };
       }
 
       // Step 6: Create a natural language response
-      const responseMessage = await this.buildActionResponse(result, resolvedIntent, request);
+      const responseMessage = await this.buildActionResponse(
+        result,
+        resolvedIntent,
+        request,
+      );
 
       return {
         type: result.success ? "action" : "error",
@@ -112,7 +131,10 @@ export class AIActionService {
   /**
    * Confirm a pending action
    */
-  static async confirmAction(actionId: string, userId: string): Promise<AIActionResponse> {
+  static async confirmAction(
+    actionId: string,
+    userId: string,
+  ): Promise<AIActionResponse> {
     try {
       const result = await AIActionExecutor.confirmAndExecute(actionId, userId);
 
@@ -158,39 +180,32 @@ export class AIActionService {
    */
   private static async handleGeneralChat(
     request: AIActionRequest,
-    context: AIActionContext
+    context: AIActionContext,
   ): Promise<AIActionResponse> {
-    // Use the existing AI chat service for general questions
-    const { UnifiedAIService } = await import("./unifiedAIService");
-    
+    // Use AIService directly for general chat, not UnifiedAIService's document QA
+    const { AIService } = await import("./aiService");
+
     try {
-      const result = await UnifiedAIService.processAIRequest({
+      const result = await AIService.processChatMessage({
+        sessionId: request.sessionId || `chat-${Date.now()}`,
         userId: request.userId,
-        capability: "document_qa",
         content: request.message,
-        options: {
-          context: request.pageContext,
-        },
+        model: undefined, // Use default model
       });
 
       return {
         type: "chat",
-        message: result.result,
+        message: result.content,
         data: {
-          tokensUsed: result.tokensUsed,
-          modelUsed: result.modelUsed,
+          tokensUsed: 0,
+          modelUsed: "gemini-2.5-flash",
         },
       };
     } catch (error: any) {
+      logger.error("AI chat error:", error);
       return {
-        type: "chat",
-        message: "I'm here to help! You can ask me to:\n\n" +
-          "• Create workspaces, projects, or tasks\n" +
-          "• Edit your documents\n" +
-          "• Show your projects and tasks\n" +
-          "• Navigate to different pages\n" +
-          "• And much more!\n\n" +
-          "What would you like me to do?",
+        type: "error",
+        message: `I encountered an error processing your request: ${error.message || "Unknown error"}. Please try again or check your API configuration.`,
       };
     }
   }
@@ -201,7 +216,7 @@ export class AIActionService {
   private static async buildActionResponse(
     result: ActionResult,
     intent: ParsedIntent,
-    request: AIActionRequest
+    request: AIActionRequest,
   ): Promise<string> {
     if (!result.success) {
       return result.message;
@@ -216,9 +231,13 @@ export class AIActionService {
     if (actionDef) {
       // Add data summary for list actions
       if (intent.actionType.startsWith("list_") && result.data) {
-        const count = result.data.count || result.data[Object.keys(result.data)[0]]?.length || 0;
+        const count =
+          result.data.count ||
+          result.data[Object.keys(result.data)[0]]?.length ||
+          0;
         if (count === 0) {
-          message += "\n\nYou don't have any items yet. Would you like me to create one?";
+          message +=
+            "\n\nYou don't have any items yet. Would you like me to create one?";
         }
       }
 
@@ -239,7 +258,10 @@ export class AIActionService {
   /**
    * Suggest next actions based on what was just done
    */
-  private static suggestNextActions(intent: ParsedIntent, result: ActionResult): string[] {
+  private static suggestNextActions(
+    intent: ParsedIntent,
+    result: ActionResult,
+  ): string[] {
     const suggestions: string[] = [];
 
     const suggestionMap: Record<string, string[]> = {
@@ -287,10 +309,7 @@ export class AIActionService {
 
     // Add general suggestions
     if (suggestions.length < 3) {
-      suggestions.push(
-        "What else can you do?",
-        "Show my dashboard"
-      );
+      suggestions.push("What else can you do?", "Show my dashboard");
     }
 
     return suggestions.slice(0, 3);

@@ -1,6 +1,4 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import OpenAI from "openai";
-import { Anthropic } from "@anthropic-ai/sdk";
 import fetch from "node-fetch";
 import logger from "../monitoring/logger";
 import { SecretsService } from "./secrets-service";
@@ -15,9 +13,7 @@ export interface MultiAIResponse {
 export class MultiAIService {
   private static instance: MultiAIService;
   private googleAI: any;
-  private openAI: OpenAI | null = null;
-  private anthropic: Anthropic | null = null;
-  private preferredProvider: "gemini" | "openai" | "anthropic" = "gemini"; // Default provider
+  private preferredProvider: "gemini" | "openrouter" = "gemini"; // Default provider
 
   private constructor() {
     // Initialize the preferred provider based on environment or configuration
@@ -28,10 +24,8 @@ export class MultiAIService {
 
   private async initializeProvider() {
     const provider = await SecretsService.getPreferredAiProvider();
-    if (provider === "openai") {
-      this.preferredProvider = "openai";
-    } else if (provider === "anthropic" || provider === "claude") {
-      this.preferredProvider = "anthropic";
+    if (provider === "openrouter") {
+      this.preferredProvider = "openrouter";
     }
   }
 
@@ -53,27 +47,6 @@ export class MultiAIService {
     return this.googleAI;
   }
 
-  private async initializeOpenAI(): Promise<OpenAI> {
-    if (!this.openAI) {
-      const apiKey = await SecretsService.getOpenAiApiKey();
-      if (!apiKey) {
-        throw new Error("OpenAI API key not configured");
-      }
-      this.openAI = new OpenAI({ apiKey });
-    }
-    return this.openAI;
-  }
-
-  private async initializeAnthropic(): Promise<Anthropic> {
-    if (!this.anthropic) {
-      const apiKey = await SecretsService.getSecret("ANTHROPIC_API_KEY");
-      if (!apiKey) {
-        throw new Error("Anthropic API key not configured");
-      }
-      this.anthropic = new Anthropic({ apiKey });
-    }
-    return this.anthropic;
-  }
 
   async generateContent(
     prompt: string,
@@ -81,29 +54,25 @@ export class MultiAIService {
     options: any = {},
   ): Promise<MultiAIResponse> {
     // Smart routing based on model name
-    if (model.startsWith("openai/") || model.includes("gpt-oss")) {
-      return this.generateWithOpenRouter(prompt, model, options);
-    } else if (model.startsWith("gpt-") || model.startsWith("openai")) {
-      return this.generateWithOpenAI(prompt, model, options);
-    } else if (model.includes("claude") || model.startsWith("anthropic")) {
-      return this.generateWithAnthropic(prompt, model, options);
-    } else if (model.includes("gemini") || model.startsWith("google")) {
-      return this.generateWithGemini(prompt, model, options);
-    }
-
-    // Default to preferred provider
-    if (this.preferredProvider === "openai") {
-      return this.generateWithOpenAI(prompt, model, options);
-    } else if (this.preferredProvider === "anthropic") {
-      return this.generateWithAnthropic(prompt, model, options);
+    if (
+      model.startsWith("openai/") ||
+      model.startsWith("nvidia/")
+    ) {
+      return await this.generateWithOpenRouter(prompt, model, options);
+    } else if (
+      model.startsWith("gemini") ||
+      model.startsWith("google")
+    ) {
+      return await this.generateWithGemini(prompt, model, options);
     } else {
-      return this.generateWithGemini(prompt, model, options);
+      // Default to Gemini for any unrecognized model
+      return await this.generateWithGemini(prompt, "gemini-2.5-flash", options);
     }
   }
 
   private async generateWithOpenRouter(
     prompt: string,
-    model: string,
+    model: string = "openai/gpt-oss-120b:free",
     options: any = {},
   ): Promise<MultiAIResponse> {
     try {
@@ -154,8 +123,8 @@ export class MultiAIService {
 
   private async generateWithGemini(
     prompt: string,
-    model: string,
-    options: any,
+    model: string = "gemini-2.5-flash",
+    options: any = {},
   ): Promise<MultiAIResponse> {
     try {
       const client = await this.initializeGoogleAI();
@@ -181,68 +150,6 @@ export class MultiAIService {
     }
   }
 
-  private async generateWithOpenAI(
-    prompt: string,
-    model: string = "gpt-4o-mini",
-    options: any = {},
-  ): Promise<MultiAIResponse> {
-    try {
-      const client = await this.initializeOpenAI();
-
-      const response = await client.chat.completions.create({
-        model: model,
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: options.maxTokens || 1000,
-        temperature: options.temperature || 0.3,
-      });
-
-      const content = response.choices[0].message.content || "";
-      const tokensUsed = response.usage?.total_tokens || content.length;
-
-      return {
-        content,
-        tokensUsed,
-        modelUsed: model,
-      };
-    } catch (error: any) {
-      logger.error("Error generating content with OpenAI:", error);
-      throw new Error(`OpenAI API error: ${error.message || error}`);
-    }
-  }
-
-  private async generateWithAnthropic(
-    prompt: string,
-    model: string = "claude-3-5-sonnet",
-    options: any = {},
-  ): Promise<MultiAIResponse> {
-    try {
-      const client = await this.initializeAnthropic();
-
-      const response = await client.messages.create({
-        model: model,
-        max_tokens: options.maxTokens || 1000,
-        temperature: options.temperature || 0.3,
-        messages: [{ role: "user", content: prompt }],
-      });
-
-      const content =
-        response.content &&
-        Array.isArray(response.content) &&
-        response.content[0]?.type === "text"
-          ? response.content[0].text || ""
-          : "";
-      const tokensUsed = response.usage?.output_tokens || content.length;
-
-      return {
-        content,
-        tokensUsed,
-        modelUsed: model,
-      };
-    } catch (error: any) {
-      logger.error("Error generating content with Anthropic:", error);
-      throw new Error(`Anthropic API error: ${error.message || error}`);
-    }
-  }
 }
 
 export const multiAIService = MultiAIService.getInstance();

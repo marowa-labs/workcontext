@@ -32,7 +32,7 @@ class ComprehensiveUsageTracker {
     this.sessionToken = sessionToken;
   }
 
-  // Track AI usage with GPT-4o support
+  // Track AI usage with Gemini support
   static async trackAIUsage(
     action: string,
     quantity: number = 1,

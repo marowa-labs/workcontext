@@ -223,7 +223,7 @@ export function AIChatPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentModel, setCurrentModel] = useState("gpt-4o-mini");
+  const [currentModel, setCurrentModel] = useState("gemini-2.5-flash");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [showSessions, setShowSessions] = useState(false);
   const [, setAvailableModels] = useState<AIModel[]>([]);
@@ -441,7 +441,7 @@ export function AIChatPanel({
         console.log("Determined userName:", userName);
         const welcomeMessage: ChatMessage = {
           id: "welcome-" + Date.now(),
-          content: `Hello ${userName}! I'm ScholarForge AIai. How can I help you with your research paper today?`,
+          content: `Hello ${userName}! I'm ScholarForge ai. How can I help you with your research paper today?`,
           role: "assistant",
           message_type: "text",
           created_at: new Date().toISOString(),
@@ -1498,8 +1498,8 @@ export function AIChatPanel({
                 onClick={handleConfirmAction}
                 disabled={isConfirming}
                 className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${isDestructiveAction(pendingAction.actionType || '')
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
                   }`}
               >
                 {isConfirming ? (

@@ -1,6 +1,4 @@
 import logger from "../monitoring/logger";
-import { OpenAIService } from "./openaiService";
-import { AnthropicService } from "./anthropicService";
 import { GeminiService } from "./geminiService";
 import { SubscriptionService } from "./subscriptionService";
 import { prisma } from "../lib/prisma";
@@ -45,8 +43,8 @@ export class UnifiedAIService {
       const preferredModel = options.preferredModel;
       if (preferredModel) {
         const planModels: Record<string, string[]> = {
-          free: ["gpt-4o-mini"], // Free plan: GPT-4o-mini only
-          student: ["gpt-4o-mini", "gemini-2.5-flash", "claude-3-haiku"], // Student plan: GPT-4o-mini, Gemini 2.0 Flash, Claude 3.5 Haiku
+          free: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"], // Free plan
+          student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"], // Student plan
           researcher: Object.keys(AIService.getAvailableModels()), // Researcher plan: All models
         };
 
@@ -71,69 +69,68 @@ export class UnifiedAIService {
       // Route to appropriate service based on capability and plan
       switch (capability) {
         case "grammar_check":
-          // Grammar & Style Checking: GPT-4o-mini for grammar checking, chat, and quick tasks
+          // Grammar & Style Checking: Route based on model
           modelUsed = this.selectGrammarModel(planId, options.preferredModel);
-          if (modelUsed.startsWith("gpt")) {
-            result = await OpenAIService.checkGrammarAndStyle(
-              content,
-              modelUsed as any,
-            );
-          } else {
-            // For Claude models, we'll use the Anthropic service
-            result = await AnthropicService.sendMessage(
-              [
-                {
-                  role: "user",
-                  content: `Check the following text for grammar, style, and clarity improvements:\n\n${content}`,
-                },
-              ],
+          if (modelUsed.startsWith("gemini")) {
+            result = await GeminiService.sendMessage(
+              `Check the following text for grammar, style, and clarity improvements:\n\n${content}`,
               modelUsed,
               1500,
               0.3,
             );
+          } else {
+            // For OpenRouter models (openai/*, nvidia/*)
+            result = await AIService.processChatMessage({
+              sessionId: `grammar-${Date.now()}`,
+              userId,
+              content: `Check the following text for grammar, style, and clarity improvements:\n\n${content}`,
+              model: modelUsed,
+            });
           }
           break;
 
         case "summarization":
-          // Document Summarization: Claude 3.5 Sonnet for long documents, research, and summarization tasks
+          // Document Summarization: Route based on model
           modelUsed = this.selectSummarizationModel(
             planId,
             options.preferredModel,
           );
-          result = await AnthropicService.summarizeDocument(
-            content,
-            options.summaryType,
-            modelUsed,
-          );
+          if (modelUsed.startsWith("gemini")) {
+            result = await GeminiService.sendMessage(
+              `Please provide a ${options.summaryType || "concise"} summary of the following content:\n\n${content}`,
+              modelUsed,
+              2000,
+              0.3,
+            );
+          } else {
+            // For OpenRouter models
+            result = await AIService.processChatMessage({
+              sessionId: `summary-${Date.now()}`,
+              userId,
+              content: `Please provide a ${options.summaryType || "concise"} summary of the following content:\n\n${content}`,
+              model: modelUsed,
+            });
+          }
           break;
 
         case "document_qa":
-          // AI Chat Assistant for Document Q&A: GPT-4o for complex writing and deep analysis
+          // AI Chat Assistant for Document Q&A: Route based on model
           modelUsed = this.selectQAModel(planId, options.preferredModel);
-          if (modelUsed.startsWith("gpt")) {
-            // For OpenAI models, we'll adapt the Anthropic service interface
-            const messages = [
-              {
-                role: "user" as const,
-                content: `Document content:
-${options.documentContent}
-
-Question:
-${content}`,
-              },
-            ];
-            result = await OpenAIService.sendCompletion(
-              messages[0].content,
+          if (modelUsed.startsWith("gemini")) {
+            result = await GeminiService.sendMessage(
+              `Document content:\n${options.documentContent}\n\nQuestion:\n${content}`,
               modelUsed,
               2048,
               0.5,
             );
           } else {
-            result = await AnthropicService.answerDocumentQuestion(
-              options.documentContent,
-              content,
-              modelUsed as any,
-            );
+            // For OpenRouter models (openai/*, nvidia/*)
+            result = await AIService.processChatMessage({
+              sessionId: `docqa-${Date.now()}`,
+              userId,
+              content: `Document content:\n${options.documentContent}\n\nQuestion:\n${content}`,
+              model: modelUsed,
+            });
           }
           break;
 
@@ -200,25 +197,16 @@ ${content}`,
   ): string {
     // Define available models per plan
     const planModels: Record<string, string[]> = {
-      free: ["gpt-4o-mini"],
-      onetime: ["gpt-4o-mini", "gemini-2.5-flash"],
-      student: ["gpt-4o-mini", "gemini-2.5-flash", "claude-3-haiku"],
+      free: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-super-120b-a12b:free"],
+      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
+      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
       researcher: [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "claude-3-haiku",
-        "claude-3-5-sonnet",
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
-      // institutional: [
-      //   "gpt-4o-mini",
-      //   "gpt-4o",
-      //   "claude-3-haiku",
-      //   "claude-3-5-sonnet",
-      //   "gemini-2.5-flash",
-      //   "gemini-3.1-flash-lite-preview",
-      // ],
     };
 
     // Filter by actually available models
@@ -237,7 +225,7 @@ ${content}`,
     }
 
     // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gpt-4o-mini";
+    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
   }
 
   // Select appropriate model for document Q&A based on plan
@@ -247,25 +235,15 @@ ${content}`,
   ): string {
     // Define available models per plan
     const planModels: Record<string, string[]> = {
-      free: ["gpt-4o-mini"],
-      onetime: ["gpt-4o-mini", "gemini-2.5-flash"],
-      student: ["gpt-4o-mini", "gemini-2.5-flash", "claude-3-haiku"],
+      free: ["gemini-2.5-flash", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
+      onetime: ["gemini-2.5-flash", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
+      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
       researcher: [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "claude-3-haiku",
-        "claude-3-5-sonnet",
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "openai/gpt-oss-120b:free",
       ],
-      // institutional: [
-      //   "gpt-4o-mini",
-      //   "gpt-4o",
-      //   "claude-3-haiku",
-      //   "claude-3-5-sonnet",
-      //   "gemini-2.5-flash",
-      //   "gemini-3.1-flash-lite-preview",
-      // ],
     };
 
     // Filter by actually available models
@@ -284,7 +262,7 @@ ${content}`,
     }
 
     // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gpt-4o-mini";
+    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
   }
 
   // Select appropriate model for writing project based on plan
@@ -294,25 +272,16 @@ ${content}`,
   ): string {
     // Define available models per plan
     const planModels: Record<string, string[]> = {
-      free: ["gpt-4o-mini"],
-      onetime: ["gpt-4o-mini", "gemini-2.5-flash"],
-      student: ["gpt-4o-mini", "gemini-2.5-flash", "claude-3-haiku"],
+      free: ["gemini-2.5-flash"],
+      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
+      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
       researcher: [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "claude-3-haiku",
-        "claude-3-5-sonnet",
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
-      // institutional: [
-      //   "gpt-4o-mini",
-      //   "gpt-4o",
-      //   "claude-3-haiku",
-      //   "claude-3-5-sonnet",
-      //   "gemini-2.5-flash",
-      //   "gemini-3.1-flash-lite-preview",
-      // ],
     };
 
     // Filter by actually available models
@@ -331,7 +300,7 @@ ${content}`,
     }
 
     // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gpt-4o-mini";
+    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
   }
 
   // Select appropriate model for structured tasks and fast responses
@@ -341,25 +310,16 @@ ${content}`,
   ): string {
     // Define available models per plan
     const planModels: Record<string, string[]> = {
-      free: ["gpt-4o-mini"],
-      onetime: ["gpt-4o-mini", "gemini-2.5-flash"],
-      student: ["gpt-4o-mini", "gemini-2.5-flash", "claude-3-haiku"],
+      free: ["gemini-2.5-flash"],
+      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
+      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
       researcher: [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "claude-3-haiku",
-        "claude-3-5-sonnet",
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
-      // institutional: [
-      //   "gpt-4o-mini",
-      //   "gpt-4o",
-      //   "claude-3-haiku",
-      //   "claude-3-5-sonnet",
-      //   "gemini-2.5-flash",
-      //   "gemini-3.1-flash-lite-preview",
-      // ],
     };
 
     // Filter by actually available models
@@ -378,7 +338,7 @@ ${content}`,
     }
 
     // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gpt-4o-mini";
+    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
   }
 
   // Select appropriate model for summarization based on plan
@@ -388,25 +348,16 @@ ${content}`,
   ): string {
     // Define available models per plan
     const planModels: Record<string, string[]> = {
-      free: ["gpt-4o-mini"],
-      onetime: ["gpt-4o-mini", "gemini-2.5-flash"],
-      student: ["gpt-4o-mini", "gemini-2.5-flash", "claude-3-haiku"],
+      free: ["gemini-2.5-flash"],
+      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
+      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
       researcher: [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "claude-3-haiku",
-        "claude-3-5-sonnet",
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
-      // institutional: [
-      //   "gpt-4o-mini",
-      //   "gpt-4o",
-      //   "claude-3-haiku",
-      //   "claude-3-5-sonnet",
-      //   "gemini-2.5-flash",
-      //   "gemini-3.1-flash-lite-preview",
-      // ],
     };
 
     // Filter by actually available models
@@ -425,7 +376,7 @@ ${content}`,
     }
 
     // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gpt-4o-mini";
+    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
   }
 
   // Track AI usage for billing and analytics

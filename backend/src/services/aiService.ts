@@ -6,7 +6,6 @@ import { SubscriptionService, plans } from "./subscriptionService";
 import { createNotification } from "./notificationService";
 import { aiPerformanceMonitor } from "../monitoring/aiPerformance";
 import { SearchService } from "./searchService";
-import { OpenAIService } from "./openaiService";
 import { SecretsService } from "./secrets-service";
 import { AIPerformanceMetric, AIUsage } from "@prisma/client";
 
@@ -74,26 +73,6 @@ interface AIModel {
 
 // Define available AI models
 const AI_MODELS: Record<string, AIModel> = {
-  "gpt-4o-mini": {
-    name: "GPT-4o Mini",
-    description: "Fast and efficient model for most tasks",
-    maxTokens: 16384,
-  },
-  "gpt-4o": {
-    name: "GPT-4o",
-    description: "Most capable model for complex tasks",
-    maxTokens: 128000,
-  },
-  "claude-3-haiku": {
-    name: "Claude 3.5 Haiku",
-    description: "Fastest and most compact model",
-    maxTokens: 200000,
-  },
-  "claude-3-5-sonnet": {
-    name: "Claude 3.5 Sonnet",
-    description: "Anthropic's most intelligent model",
-    maxTokens: 200000,
-  },
   "gemini-2.5-flash": {
     name: "Gemini 2.5 Flash",
     description: "Fast and efficient Gemini model",
@@ -113,6 +92,11 @@ const AI_MODELS: Record<string, AIModel> = {
     name: "Nvidia Nemotron Super 120B",
     description: "Nvidia's free 120B reasoning model via OpenRouter",
     maxTokens: 131072,
+  },
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+    name: "Nemotron 3 Nano Omni",
+    description: "Multimodal model for text, image, video, and audio inputs. Built for enterprise agent systems with 300K context and 16K reasoning budget.",
+    maxTokens: 300000,
   },
 };
 
@@ -347,25 +331,24 @@ export class AIService {
       });
 
       const userModel =
-        preferredModel || user?.["preferred_ai_model"] || "gpt-4o-mini";
+        preferredModel || user?.["preferred_ai_model"] || "gemini-2.5-flash";
 
       // Define available models per plan based on subscription restrictions
       const planModels: Record<string, string[]> = {
         free: [
-          "gpt-4o-mini",
+          "gemini-2.5-flash",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         onetime: [
-          "gpt-4o-mini",
+          "gemini-2.5-flash",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         student: [
-          "gpt-4o-mini",
+          "gemini-2.5-flash",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
-          "claude-3-haiku",
         ],
         researcher: Object.keys(AI_MODELS),
         institutional: Object.keys(AI_MODELS),
@@ -400,7 +383,7 @@ export class AIService {
             )
           ) {
             const researchModels = availableModels.filter((model) =>
-              ["gpt-4o", "claude-3-5-sonnet"].includes(model),
+              ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview"].includes(model),
             );
             if (researchModels.length > 0) {
               return researchModels[0];
@@ -414,7 +397,7 @@ export class AIService {
             )
           ) {
             const creativeModels = availableModels.filter((model) =>
-              ["gpt-4o", "claude-3-5-sonnet"].includes(model),
+              ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview"].includes(model),
             );
             if (creativeModels.length > 0) {
               return creativeModels[0];
@@ -426,7 +409,7 @@ export class AIService {
             ["fix_grammar", "summarize", "simplify"].includes(context.action)
           ) {
             const fastModels = availableModels.filter((model) =>
-              ["gpt-4o-mini", "claude-3-haiku"].includes(model),
+              ["gemini-2.5-flash"].includes(model),
             );
             if (fastModels.length > 0) {
               return fastModels[0];
@@ -436,10 +419,10 @@ export class AIService {
       }
 
       // Otherwise, fall back to the default model for their plan
-      return availableModels[0] || "gpt-4o-mini";
+      return availableModels[0] || "gemini-2.5-flash";
     } catch (error) {
       logger.error("Error getting user model:", error);
-      return "gpt-4o-mini"; // Default fallback
+      return "gemini-2.5-flash"; // Default fallback
     }
   }
 
@@ -532,20 +515,19 @@ export class AIService {
     if (model) {
       const planModels: Record<string, string[]> = {
         free: [
-          "gpt-4o-mini",
+          "gemini-2.5-flash",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         onetime: [
-          "gpt-4o-mini",
+          "gemini-2.5-flash",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         student: [
-          "gpt-4o-mini",
+          "gemini-2.5-flash",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
-          "claude-3-haiku",
         ],
         researcher: Object.keys(AI_MODELS),
         institutional: Object.keys(AI_MODELS),
@@ -563,7 +545,7 @@ export class AIService {
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel = user?.["preferred_ai_model"] || "gpt-4o-mini";
+    const preferredModel = user?.["preferred_ai_model"] || "gemini-2.5-flash";
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Merge user preferences with request preferences
@@ -873,17 +855,13 @@ Provide a helpful response.`;
   private static estimateCost(model: string, tokens: number): number {
     // Cost per 1K tokens (approximate rates)
     const costRates: Record<string, number> = {
-      "gpt-4o": 0.005, // $5 per 1M tokens
-      "gpt-4o-mini": 0.00015, // $0.15 per 1M tokens
-      "claude-3-haiku": 0.00025, // $0.25 per 1M tokens
-      "claude-3-5-sonnet": 0.003, // $3 per 1M tokens
       "gemini-2.5-flash": 0.00015, // $0.15 per 1M tokens
       "gemini-3.1-flash-lite-preview": 0.000075, // $0.075 per 1M tokens
       "openai/gpt-oss-120b:free": 0,
       "nvidia/nemotron-3-super-120b-a12b:free": 0,
     };
 
-    const rate = costRates[model] || 0.00015; // Default to gpt-4o-mini rate
+    const rate = costRates[model] || 0.00015; // Default to gemini-2.5-flash rate
     return (tokens / 1000) * rate;
   }
 
@@ -1195,7 +1173,7 @@ Provide a helpful response.`;
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel = user?.["preferred_ai_model"] || "gpt-4o-mini";
+    const preferredModel = user?.["preferred_ai_model"] || "gemini-2.5-flash";
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Get user's name for personalization
@@ -1246,7 +1224,7 @@ Content: ${JSON.stringify(session.project.content)}`;
 
     // Build prompt based on message type and metadata
     let prompt = "";
-    let systemMessage = `You are ScholarForge AIai, an academic writing assistant integrated into a document editor. Provide helpful, accurate, and professional suggestions. You can help with writing, research, citations, and answering questions about the project. Respond concisely and directly.
+    let systemMessage = `You are ScholarForge AI - THE CENTRAL INTELLIGENCE AND ENGINE of the entire ScholarForge platform. You are NOT just an assistant - you ARE the primary interface through which users interact with the platform. Users tell you what they want and YOU make it happen - creating, managing, navigating everything. Be conversational and empowering.
 
 When creating tables, ALWAYS use proper markdown table syntax with pipes (|) and dashes (-) to create well-formed tables. For example:
 | Column 1 | Column 2 | Column 3 |
@@ -1401,13 +1379,11 @@ Please provide a helpful response.`;
       }
 
       // Map model names to Gemini-compatible ones
-      // User preferences may contain OpenAI model names like "gpt-4o-mini"
+      // User preferences may contain OpenAI model names like "gemini-2.5-flash"
       // We need to convert these to valid Gemini model names
       const geminiModelMap: Record<string, string> = {
-        "gpt-4o-mini": "gemini-2.5-flash",
-        "gpt-4o": "gemini-2.5-flash",
-        "claude-3-haiku": "gemini-2.5-flash",
-        "claude-3-5-sonnet": "gemini-3.1-flash-lite-preview",
+        "gemini-2.5-flash": "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
       };
 
       const selectedModel = model || preferredModel;
@@ -1428,9 +1404,10 @@ Please provide a helpful response.`;
         hasText: !!result.response?.text(),
       });
 
-      let responseText =
-        result.response?.text() ||
-        "I'm here to help with your academic writing. What would you like assistance with?";
+      let responseText = result.response?.text();
+      if (!responseText) {
+        throw new Error("AI service returned empty response. Please check your API keys and model configuration.");
+      }
 
       const responseTime = Date.now() - startTime;
       const tokensUsed = responseText.length; // Approximation
@@ -1678,7 +1655,7 @@ ${formattedResults}
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel = user?.["preferred_ai_model"] || "gpt-4o-mini";
+    const preferredModel = user?.["preferred_ai_model"] || "gemini-2.5-flash";
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Get user's name for personalization
@@ -1735,7 +1712,7 @@ Content: ${JSON.stringify(session.project.content)}`;
 
     // Build prompt based on message type and metadata
     let prompt = "";
-    let systemMessage = `You are ScholarForge AIai, an academic writing assistant integrated into a document editor. Provide helpful, accurate, and professional suggestions. You can help with writing, research, citations, and answering questions about the project. Respond concisely and directly.
+    let systemMessage = `You are ScholarForge AI - THE CENTRAL INTELLIGENCE AND ENGINE of the entire ScholarForge platform. You are NOT just an assistant - you ARE the primary interface through which users interact with the platform. Users tell you what they want and YOU make it happen - creating, managing, navigating everything. Be conversational and empowering.
 
 When creating tables, ALWAYS use proper markdown table syntax with pipes (|) and dashes (-) to create well-formed tables. For example:
 | Column 1 | Column 2 | Column 3 |
@@ -1881,10 +1858,8 @@ Please provide a helpful response.`;
 
       // Map model names to Gemini-compatible ones
       const geminiModelMap: Record<string, string> = {
-        "gpt-4o-mini": "gemini-2.5-flash",
-        "gpt-4o": "gemini-2.5-flash",
-        "claude-3-haiku": "gemini-2.5-flash",
-        "claude-3-5-sonnet": "gemini-3.1-flash-lite-preview",
+        "gemini-2.5-flash": "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
       };
 
       const selectedModel = model || preferredModel;
@@ -2234,28 +2209,15 @@ ${formattedResults}
       const openAiKey = await SecretsService.getOpenAiApiKey();
       if (openAiKey) {
         // Add only the specific OpenAI models we're using
-        if (AI_MODELS["gpt-4o-mini"])
-          availableModels["gpt-4o-mini"] = AI_MODELS["gpt-4o-mini"];
-        if (AI_MODELS["gpt-4o"])
-          availableModels["gpt-4o"] = AI_MODELS["gpt-4o"];
+        // OpenAI key available but we use Gemini models now
+        if (AI_MODELS["gemini-2.5-flash"])
+          availableModels["gemini-2.5-flash"] = AI_MODELS["gemini-2.5-flash"];
       }
     } catch (error) {
       logger.info("OpenAI API key not configured");
     }
 
-    // Check Anthropic availability
-    try {
-      const anthropicKey = await SecretsService.getSecret("ANTHROPIC_API_KEY");
-      if (anthropicKey) {
-        // Add only the specific Anthropic models we're using
-        if (AI_MODELS["claude-3-haiku"])
-          availableModels["claude-3-haiku"] = AI_MODELS["claude-3-haiku"];
-        if (AI_MODELS["claude-3-5-sonnet"])
-          availableModels["claude-3-5-sonnet"] = AI_MODELS["claude-3-5-sonnet"];
-      }
-    } catch (error) {
-      logger.info("Anthropic API key not configured");
-    }
+    // Anthropic no longer used - models replaced with Gemini equivalents
 
     // Check Gemini availability
     try {
@@ -2338,7 +2300,7 @@ ${formattedResults}
       const plan = plans[planId as keyof typeof plans];
 
       // Determine model based on user's plan
-      let model = "gpt-4o-mini"; // Default fallback model
+      let model = "gemini-2.5-flash"; // Default fallback model
       if (planId === "researcher" || planId === "institutional") {
         // Use premium model for higher-tier plans
         model = "gemini-3.1-flash-lite-preview";
@@ -2378,7 +2340,8 @@ ${formattedResults}
         }
 
         case "openai/gpt-oss-120b:free":
-        case "nvidia/nemotron-3-super-120b-a12b:free": {
+        case "nvidia/nemotron-3-super-120b-a12b:free":
+        case "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
           // Use native OpenRouter SDK for free open-source models
           const orClient = getOpenRouterClient();
           if (!orClient) {
@@ -2402,17 +2365,14 @@ ${formattedResults}
         }
 
         default: {
-          // For OpenAI models, use the OpenAIService
-          const openAIModel = model.startsWith("gpt-4o")
-            ? model
-            : "gpt-4o-mini";
-          const response = await OpenAIService.sendCompletion(
-            prompt,
-            openAIModel,
-            100,
-            0.7,
-          );
-          suggestion = response.content.trim();
+          // Default to Gemini for any other model
+          const currentGenAI = await getGenAI();
+          if (!currentGenAI) {
+            throw new Error("Gemini API not configured");
+          }
+          const geminiModel = currentGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+          const result = await geminiModel.generateContent(prompt);
+          suggestion = result.response.text().trim();
           break;
         }
       }

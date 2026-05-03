@@ -112,7 +112,7 @@ Style ID:`;
 
       const aiResponse = await OpenAIService.sendCompletion(
         prompt,
-        "gpt-4o-mini",
+        "gemini-2.5-flash",
         500,
         0.2,
       );

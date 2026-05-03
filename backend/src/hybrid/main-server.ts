@@ -82,6 +82,8 @@ import dataRouter from "../api/data/index";
 import workspacesRouter from "../api/workspaces/index";
 import backupRouter from "../api/backup/index";
 import searchRouter from "../api/search/index";
+import analyticsRouter from "../api/analytics/route";
+import statsRouter from "../api/stats/route";
 // Additional utility imports
 
 // Import AI routes
@@ -230,6 +232,8 @@ app.use("/api/users", usersRouter);
 app.use("/api/workspaces", workspacesRouter);
 app.use("/api/backup", backupRouter);
 app.use("/api/search", searchRouter);
+app.use("/api/analytics", analyticsRouter);
+app.use("/api/stats", statsRouter);
 
 // Health check endpoint
 app.get("/health", async (req, res) => {

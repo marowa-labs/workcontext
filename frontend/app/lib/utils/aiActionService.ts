@@ -7,6 +7,10 @@ export interface AIActionRequest {
   message: string;
   sessionId?: string;
   pageContext?: string;
+  pageDescription?: string;
+  pageRoute?: string;
+  pageSection?: string;
+  entityId?: string;
   currentWorkspaceId?: string;
   currentProjectId?: string;
   conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
@@ -251,6 +255,10 @@ class AIActionService {
     message: string,
     context: {
       pageContext?: string;
+      pageDescription?: string;
+      pageRoute?: string;
+      pageSection?: string;
+      entityId?: string;
       currentWorkspaceId?: string;
       currentProjectId?: string;
       conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;

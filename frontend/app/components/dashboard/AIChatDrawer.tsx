@@ -14,6 +14,10 @@ import {
   PanelRight,
   Maximize2,
   ChevronRight,
+  Trash2,
+  Edit3,
+  MessageSquare,
+  Clock,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,6 +25,7 @@ import { supabase } from "../../lib/supabase/client";
 import { cn } from "../../lib/utils";
 import { useRouter } from "next/navigation";
 import apiClient from "../../lib/utils/apiClient";
+import AIService from "../../lib/utils/aiService";
 import {
   aiActionService,
   AIActionResult,
@@ -39,36 +44,181 @@ interface PageContext {
   name: string;
   icon: string;
   route: string;
+  description: string;
+  section?: string;
+  entityId?: string;
+  entityName?: string;
 }
+
+// Page descriptions for AI context
+const pageDescriptions: Record<string, string> = {
+  dashboard: "The main dashboard showing quick actions, workspaces overview, popular commands, and getting started guide",
+  projects: "Projects list page showing all user's projects with ability to create, open, or manage them",
+  editor: "The document editor where users write and edit their academic papers, essays, and research documents",
+  tasks: "Task management page showing tasks, to-dos, and assignments for the workspace or project",
+  workspace: "Workspace overview page showing projects, team members, and workspace-specific content",
+  notes: "Notes page for capturing quick ideas, research notes, and personal memos",
+  wiki: "Knowledge base/wiki page for documentation, guides, and shared information",
+  team: "Team management page showing members, roles, and collaboration settings",
+  settings: "Settings page for configuring preferences, account, and application options",
+  guide: "Help and guide page with tutorials, documentation, and how-to instructions",
+  search: "Search results page for finding content across workspaces and projects",
+};
 
 function getPageContext(): PageContext {
   if (typeof window === "undefined") {
-    return { name: "Dashboard", icon: "🏠", route: "/dashboard" };
+    return {
+      name: "Dashboard",
+      icon: "🏠",
+      route: "/dashboard",
+      description: pageDescriptions.dashboard,
+      section: "main"
+    };
   }
 
   const path = window.location.pathname;
+  const searchParams = new URLSearchParams(window.location.search);
+
+  // Extract IDs from path
+  const pathParts = path.split('/');
+  const workspaceId = pathParts.find((_, i) => pathParts[i - 1] === 'workspace');
+  const projectId = pathParts.find((_, i) => pathParts[i - 1] === 'editor' || pathParts[i - 1] === 'project');
 
   // Workspace pages
   if (path.includes("/workspace/")) {
-    if (path.includes("/projects")) return { name: "Projects", icon: "📁", route: path };
-    if (path.includes("/tasks")) return { name: "Tasks", icon: "✓", route: path };
-    if (path.includes("/notes")) return { name: "Notes", icon: "📝", route: path };
-    if (path.includes("/wiki")) return { name: "Wiki", icon: "📚", route: path };
-    if (path.includes("/team")) return { name: "Team", icon: "👥", route: path };
-    if (path.includes("/settings")) return { name: "Settings", icon: "⚙️", route: path };
-    return { name: "Workspace", icon: "🗂️", route: path };
+    const workspaceMatch = path.match(/\/workspace\/([^\/]+)/);
+    const currentWorkspaceId = workspaceMatch ? workspaceMatch[1] : undefined;
+
+    if (path.includes("/projects")) {
+      return {
+        name: "Workspace Projects",
+        icon: "📁",
+        route: path,
+        description: `${pageDescriptions.projects} within a specific workspace`,
+        section: "workspace",
+        entityId: currentWorkspaceId
+      };
+    }
+    if (path.includes("/tasks")) {
+      return {
+        name: "Workspace Tasks",
+        icon: "✓",
+        route: path,
+        description: pageDescriptions.tasks,
+        section: "workspace",
+        entityId: currentWorkspaceId
+      };
+    }
+    if (path.includes("/notes")) {
+      return {
+        name: "Workspace Notes",
+        icon: "📝",
+        route: path,
+        description: pageDescriptions.notes,
+        section: "workspace",
+        entityId: currentWorkspaceId
+      };
+    }
+    if (path.includes("/wiki")) {
+      return {
+        name: "Workspace Wiki",
+        icon: "📚",
+        route: path,
+        description: pageDescriptions.wiki,
+        section: "workspace",
+        entityId: currentWorkspaceId
+      };
+    }
+    if (path.includes("/team")) {
+      return {
+        name: "Workspace Team",
+        icon: "👥",
+        route: path,
+        description: pageDescriptions.team,
+        section: "workspace",
+        entityId: currentWorkspaceId
+      };
+    }
+    if (path.includes("/settings")) {
+      return {
+        name: "Workspace Settings",
+        icon: "⚙️",
+        route: path,
+        description: pageDescriptions.settings,
+        section: "workspace",
+        entityId: currentWorkspaceId
+      };
+    }
+    return {
+      name: "Workspace",
+      icon: "🗂️",
+      route: path,
+      description: pageDescriptions.workspace,
+      section: "workspace",
+      entityId: currentWorkspaceId
+    };
   }
 
   // Editor/Project pages
-  if (path.includes("/editor/")) return { name: "Editor", icon: "📝", route: path };
+  if (path.includes("/editor/")) {
+    const projectMatch = path.match(/\/editor\/([^\/]+)/);
+    const currentProjectId = projectMatch ? projectMatch[1] : undefined;
+    return {
+      name: "Document Editor",
+      icon: "📝",
+      route: path,
+      description: pageDescriptions.editor,
+      section: "editor",
+      entityId: currentProjectId
+    };
+  }
 
   // Main pages
-  if (path.includes("/guide")) return { name: "Guide", icon: "📖", route: path };
-  if (path.includes("/projects")) return { name: "Projects", icon: "📁", route: path };
-  if (path.includes("/search")) return { name: "Search", icon: "🔍", route: path };
-  if (path.includes("/settings")) return { name: "Settings", icon: "⚙️", route: path };
+  if (path.includes("/guide")) {
+    return {
+      name: "Guide",
+      icon: "📖",
+      route: path,
+      description: pageDescriptions.guide,
+      section: "main"
+    };
+  }
+  if (path.includes("/projects")) {
+    return {
+      name: "All Projects",
+      icon: "📁",
+      route: path,
+      description: pageDescriptions.projects,
+      section: "main"
+    };
+  }
+  if (path.includes("/search")) {
+    const query = searchParams.get('q') || '';
+    return {
+      name: "Search",
+      icon: "🔍",
+      route: path,
+      description: `${pageDescriptions.search}${query ? ` - Current search: "${query}"` : ''}`,
+      section: "main"
+    };
+  }
+  if (path.includes("/settings")) {
+    return {
+      name: "Settings",
+      icon: "⚙️",
+      route: path,
+      description: pageDescriptions.settings,
+      section: "main"
+    };
+  }
 
-  return { name: "Dashboard", icon: "🏠", route: "/dashboard" };
+  return {
+    name: "Dashboard",
+    icon: "🏠",
+    route: "/dashboard",
+    description: pageDescriptions.dashboard,
+    section: "main"
+  };
 }
 
 function PageContextPill() {
@@ -113,6 +263,11 @@ interface AIChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   isPanel?: boolean;
+  pendingAction?: {
+    type: "summarize";
+    workspaceId?: string;
+    message?: string;
+  } | null;
 }
 
 // ── Shared inner content (used by both panel and drawer modes) ───────────────
@@ -125,7 +280,7 @@ function ChatContent({
   handleKeyDown,
   textareaRef,
   messagesEndRef,
-  pendingAction,
+  internalPendingAction,
   isConfirming,
   onConfirmAction,
   onCancelAction,
@@ -138,7 +293,7 @@ function ChatContent({
   handleKeyDown: (e: React.KeyboardEvent) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  pendingAction: AIActionResult | null;
+  internalPendingAction: AIActionResult | null;
   isConfirming: boolean;
   onConfirmAction: () => void;
   onCancelAction: () => void;
@@ -269,26 +424,26 @@ function ChatContent({
       <div className="p-4 bg-white border-t border-gray-100">
         <div className="relative bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-gray-100 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow">
           {/* AI Action Confirmation Dialog */}
-          {pendingAction && (
+          {internalPendingAction && (
             <div className="mx-4 mt-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className={`p-3 ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-50 border-b border-red-100' : 'bg-blue-50 border-b border-blue-100'}`}>
+              <div className={`p-3 ${isDestructiveAction(internalPendingAction.actionType || '') ? 'bg-red-50 border-b border-red-100' : 'bg-blue-50 border-b border-blue-100'}`}>
                 <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-full ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                    {isDestructiveAction(pendingAction.actionType || '') ? (
+                  <div className={`p-1.5 rounded-full ${isDestructiveAction(internalPendingAction.actionType || '') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                    {isDestructiveAction(internalPendingAction.actionType || '') ? (
                       <AlertTriangle size={16} />
                     ) : (
-                      <span className="text-base">{getActionIcon(pendingAction.actionType || '')}</span>
+                      <span className="text-base">{getActionIcon(internalPendingAction.actionType || '')}</span>
                     )}
                   </div>
                   <div>
                     <h4 className="font-semibold text-sm text-gray-900">Confirm Action</h4>
-                    <p className="text-xs text-gray-600">{formatActionType(pendingAction.actionType || '')}</p>
+                    <p className="text-xs text-gray-600">{formatActionType(internalPendingAction.actionType || '')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="p-3">
-                <p className="text-sm text-gray-700 mb-3 break-words">{pendingAction.message}</p>
+                <p className="text-sm text-gray-700 mb-3 break-words">{internalPendingAction.message}</p>
 
                 <div className="flex gap-2">
                   <button
@@ -296,12 +451,12 @@ function ChatContent({
                     disabled={isConfirming}
                     className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                   >
-                    {getConfirmationButtonText(pendingAction.actionType || '').cancel}
+                    {getConfirmationButtonText(internalPendingAction.actionType || '').cancel}
                   </button>
                   <button
                     onClick={onConfirmAction}
                     disabled={isConfirming}
-                    className={`flex-1 px-3 py-1.5 rounded-lg text-white text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1 ${isDestructiveAction(pendingAction.actionType || '')
+                    className={`flex-1 px-3 py-1.5 rounded-lg text-white text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1 ${isDestructiveAction(internalPendingAction.actionType || '')
                       ? 'bg-red-600 hover:bg-red-700'
                       : 'bg-blue-600 hover:bg-blue-700'
                       }`}
@@ -313,7 +468,7 @@ function ChatContent({
                       </>
                     ) : (
                       <>
-                        {getConfirmationButtonText(pendingAction.actionType || '').confirm}
+                        {getConfirmationButtonText(internalPendingAction.actionType || '').confirm}
                         <ArrowRight size={14} />
                       </>
                     )}
@@ -388,6 +543,7 @@ export function AIChatDrawer({
   isOpen,
   onClose,
   isPanel = false,
+  pendingAction: externalPendingAction,
 }: AIChatDrawerProps) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -395,11 +551,13 @@ export function AIChatDrawer({
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<{ id: string; title: string }[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<AIActionResult | null>(null);
+  const [internalPendingAction, setInternalPendingAction] = useState<AIActionResult | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [viewMode, setViewMode] = useState<"sidebar" | "fullscreen">("sidebar");
   const [showViewDropdown, setShowViewDropdown] = useState(false);
+  const [showSessionsDropdown, setShowSessionsDropdown] = useState(false);
   const viewDropdownRef = useRef<HTMLDivElement>(null);
+  const sessionsDropdownRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -424,6 +582,12 @@ export function AIChatDrawer({
       ) {
         setShowViewDropdown(false);
       }
+      if (
+        sessionsDropdownRef.current &&
+        !sessionsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowSessionsDropdown(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -438,19 +602,138 @@ export function AIChatDrawer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Handle external pending action (e.g., summarize command from command palette)
+  useEffect(() => {
+    if (isOpen && externalPendingAction?.type === "summarize") {
+      // Auto-send a summary message after a short delay to ensure session is loaded
+      const timer = setTimeout(() => {
+        const workspaceId = externalPendingAction.workspaceId;
+        const summaryMessage = workspaceId
+          ? `Please summarize the workspace content for workspace ID: ${workspaceId}. Provide a comprehensive overview of the research, key findings, and main points.`
+          : "Please summarize the current workspace content. Provide a comprehensive overview of the research, key findings, and main points.";
+
+        // Add user message
+        const userMessage: Message = {
+          id: `user-${Date.now()}`,
+          role: "user",
+          content: summaryMessage,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, userMessage]);
+
+        // Send to AI
+        setLoading(true);
+        sendAIMessage(summaryMessage);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, externalPendingAction]);
+
+  const sendAIMessage = async (messageContent: string) => {
+    try {
+      const pageContext = getPageContext();
+      const result = await aiActionService.sendMessage(
+        messageContent,
+        {
+          pageContext: pageContext.name,
+          pageDescription: pageContext.description,
+          pageRoute: pageContext.route,
+          pageSection: pageContext.section,
+          entityId: pageContext.entityId,
+          conversationHistory: messages.slice(-10).map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+        },
+        {
+          onConfirmationRequired: (action, confirm, cancel) => {
+            setInternalPendingAction(action);
+            (window as any).__aiDrawerConfirm = confirm;
+            (window as any).__aiDrawerCancel = cancel;
+          },
+          onResult: (result) => {
+            const assistantMessage: Message = {
+              id: `assistant-${Date.now()}`,
+              role: "assistant",
+              content: result.message,
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+          },
+          onError: (error) => {
+            const errorMessage: Message = {
+              id: `assistant-${Date.now()}`,
+              role: "assistant",
+              content: `Sorry, I encountered an error: ${error || "Unknown error"}`,
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, errorMessage]);
+          },
+        }
+      );
+    } catch (error: any) {
+      const errorMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: `Sorry, I encountered an error: ${error.message || "Unknown error"}`,
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadSessions = async () => {
     try {
       const data = await apiClient.get("/api/ai/chat/sessions");
-      setSessions(data.sessions || []);
+      const loadedSessions = data.sessions || [];
+      setSessions(loadedSessions);
 
-      if (!data.sessions?.length) {
-        createNewSession();
+      if (!loadedSessions.length) {
+        await createNewSession();
       } else {
-        setCurrentSession(data.sessions[0].id);
-        loadMessages(data.sessions[0].id);
+        // Find the most recent session (first in list since sorted by last_message_at desc)
+        const mostRecent = loadedSessions[0];
+        setCurrentSession(mostRecent.id);
+        await loadMessages(mostRecent.id);
       }
     } catch (error) {
       console.error("Failed to load sessions:", error);
+    }
+  };
+
+  // Generate a title from the first user message
+  const generateChatTitle = (content: string): string => {
+    // Remove extra whitespace and truncate to first 50 chars
+    const cleaned = content.trim().replace(/\s+/g, ' ');
+    if (cleaned.length <= 50) return cleaned;
+    return cleaned.substring(0, 50).trim() + '...';
+  };
+
+  // Update session title in backend
+  const updateSessionTitle = async (sessionId: string, title: string) => {
+    try {
+      await apiClient.patch(`/api/ai/chat/session/${sessionId}`, { title });
+      // Update local state
+      setSessions(prev => prev.map(s =>
+        s.id === sessionId ? { ...s, title } : s
+      ));
+    } catch (error) {
+      console.error("Failed to update session title:", error);
+    }
+  };
+
+  // Switch to a different session
+  const switchSession = async (sessionId: string) => {
+    try {
+      setCurrentSession(sessionId);
+      await loadMessages(sessionId);
+      setShowSessionsDropdown(false);
+    } catch (error) {
+      console.error("Failed to switch session:", error);
     }
   };
 
@@ -469,34 +752,107 @@ export function AIChatDrawer({
       setCurrentSession(data.session.id);
       setMessages([]);
       setSessions((prev) => [data.session, ...prev]);
+      setShowSessionsDropdown(false);
     } catch (error) {
       console.error("Failed to create session:", error);
     }
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+  // Delete a chat session
+  const deleteSession = async (sessionIdToDelete: string) => {
+    try {
+      await apiClient.delete(`/api/ai/chat/session/${sessionIdToDelete}`, null);
 
-    const userMessage: Message = {
+      // Remove from local state
+      const updatedSessions = sessions.filter(s => s.id !== sessionIdToDelete);
+      setSessions(updatedSessions);
+
+      // If we deleted the current session, switch to another one or create new
+      if (sessionIdToDelete === currentSession) {
+        if (updatedSessions.length > 0) {
+          const nextSession = updatedSessions[0];
+          setCurrentSession(nextSession.id);
+          await loadMessages(nextSession.id);
+        } else {
+          setCurrentSession(null);
+          setMessages([]);
+          await createNewSession();
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+    }
+  };
+
+  // Helper to save user message to database
+  const saveUserMessage = async (content: string): Promise<Message | null> => {
+    if (!currentSession) return null;
+    try {
+      const response = await apiClient.post("/api/ai/chat/message", {
+        sessionId: currentSession,
+        content,
+        messageType: "text",
+      });
+      return response.userMessage || null;
+    } catch (error) {
+      console.error("Failed to save user message:", error);
+      return null;
+    }
+  };
+
+  // Helper to save AI message to database
+  const saveAIMessage = async (content: string): Promise<Message | null> => {
+    if (!currentSession) return null;
+    try {
+      // Use a direct API call to save assistant message without triggering AI processing
+      const response = await apiClient.post("/api/ai/chat/message/direct", {
+        sessionId: currentSession,
+        content,
+        role: "assistant",
+        messageType: "text",
+      });
+      return response.message || null;
+    } catch (error) {
+      console.error("Failed to save AI message:", error);
+      return null;
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading || !currentSession) return;
+
+    const userMessageContent = input.trim();
+    const tempUserMessage: Message = {
       id: `temp-${Date.now()}`,
       role: "user",
-      content: input.trim(),
+      content: userMessageContent,
       created_at: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, tempUserMessage]);
     setInput("");
     setLoading(true);
 
     try {
-      // Get current page context
+      // Auto-generate title if this is the first user message and session has default title
+      // Note: messages.length is 0 here because setMessages hasn't updated state yet
+      const currentSessionData = sessions.find(s => s.id === currentSession);
+      if (currentSessionData && currentSessionData.title === "New Chat" && messages.length === 0) {
+        const autoTitle = generateChatTitle(userMessageContent);
+        await updateSessionTitle(currentSession, autoTitle);
+      }
+
+      // First, try to process as an action using AI Action Service
       const pageContext = getPageContext();
 
-      // Use AI Action Service for intelligent action processing
       await aiActionService.sendMessage(
-        userMessage.content,
+        userMessageContent,
         {
           pageContext: pageContext.name,
+          pageDescription: pageContext.description,
+          pageRoute: pageContext.route,
+          pageSection: pageContext.section,
+          entityId: pageContext.entityId,
           conversationHistory: messages.slice(-10).map(m => ({
             role: m.role,
             content: m.content,
@@ -504,12 +860,21 @@ export function AIChatDrawer({
         },
         {
           onConfirmationRequired: (action, confirm, cancel) => {
-            setPendingAction(action);
-            // Store callbacks in window for access from handlers
+            setInternalPendingAction(action);
             (window as any).__aiDrawerConfirm = confirm;
             (window as any).__aiDrawerCancel = cancel;
+            // Save the pending action state to chat
+            const actionType = action?.actionType || "perform this action";
+            const pendingMsg: Message = {
+              id: `pending-${Date.now()}`,
+              role: "assistant",
+              content: `I'll ${actionType.replace(/_/g, ' ')}. Please confirm to proceed.`,
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, pendingMsg]);
+            setLoading(false);
           },
-          onResult: (result) => {
+          onResult: async (result) => {
             // Add AI response to messages
             const assistantMessage: Message = {
               id: `assistant-${Date.now()}`,
@@ -519,9 +884,15 @@ export function AIChatDrawer({
             };
             setMessages((prev) => [...prev, assistantMessage]);
 
+            // Save user message to database
+            await saveUserMessage(userMessageContent);
+
+            // Save AI response to database
+            await saveAIMessage(result.message);
+
             // Add suggested actions if available
             if (result.suggestedActions && result.suggestedActions.length > 0) {
-              const suggestionContent = `\n\n**You can also ask me to:**\n${result.suggestedActions.map((a: string) => `- ${a}`).join('\n')}`;
+              const suggestionContent = `**You can also ask me to:**\n${result.suggestedActions.map((a: string) => `- ${a}`).join('\n')}`;
               const suggestionMessage: Message = {
                 id: `suggestion-${Date.now()}`,
                 role: "assistant",
@@ -529,9 +900,11 @@ export function AIChatDrawer({
                 created_at: new Date().toISOString(),
               };
               setMessages((prev) => [...prev, suggestionMessage]);
+              await saveAIMessage(suggestionContent);
             }
+            setLoading(false);
           },
-          onError: (errorMsg) => {
+          onError: async (errorMsg) => {
             const errorMessage: Message = {
               id: `error-${Date.now()}`,
               role: "assistant",
@@ -539,40 +912,78 @@ export function AIChatDrawer({
               created_at: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, errorMessage]);
+
+            // Save user message to database
+            await saveUserMessage(userMessageContent);
+            // Save error response to database
+            await saveAIMessage(`Sorry, I encountered an error: ${errorMsg}`);
+            setLoading(false);
           },
           onNavigation: (page, params) => {
-            // Handle navigation from AI actions
+            // Handle navigation from AI actions - comprehensive route support
+            const workspaceId = params?.workspaceId || pageContext.entityId;
+
             if (page === "editor" && params?.projectId) {
               router.push(`/editor/${params.projectId}`);
             } else if (page === "dashboard") {
               router.push("/dashboard");
-            } else if (page === "workspaces") {
+            } else if (page === "workspaces" || page === "workspace_list") {
               router.push("/workspaces");
             } else if (page === "projects") {
               router.push("/projects");
             } else if (page === "tasks") {
               router.push("/tasks");
+            } else if (page === "settings" || page === "preferences") {
+              router.push("/settings");
+            } else if (page === "guide" || page === "help") {
+              router.push("/guide");
+            } else if (page === "search") {
+              router.push(params?.query ? `/search?q=${encodeURIComponent(params.query)}` : "/search");
+            }
+            // Workspace-specific routes
+            else if (page === "workspace" && workspaceId) {
+              router.push(`/workspace/${workspaceId}`);
+            } else if (page === "workspace_projects" && workspaceId) {
+              router.push(`/workspace/${workspaceId}/projects`);
+            } else if (page === "workspace_tasks" && workspaceId) {
+              router.push(`/workspace/${workspaceId}/tasks`);
+            } else if (page === "workspace_notes" && workspaceId) {
+              router.push(`/workspace/${workspaceId}/notes`);
+            } else if (page === "workspace_wiki" && workspaceId) {
+              router.push(`/workspace/${workspaceId}/wiki`);
+            } else if (page === "workspace_team" && workspaceId) {
+              router.push(`/workspace/${workspaceId}/team`);
+            } else if (page === "workspace_settings" && workspaceId) {
+              router.push(`/workspace/${workspaceId}/settings`);
+            }
+            // Navigation with full path
+            else if (params?.path) {
+              router.push(params.path);
             }
           },
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send message:", error);
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: "assistant",
-        content: "I'm sorry, I encountered an error. Please try again.",
+        content: `I'm sorry, I encountered an error: ${error.message || "Please try again."}`,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
-    } finally {
+
+      // Try to save user message even on error
+      await saveUserMessage(userMessageContent);
+      await saveAIMessage(`I'm sorry, I encountered an error: ${error.message || "Please try again."}`);
+
       setLoading(false);
     }
   };
 
   // Handle action confirmation
   const handleConfirmAction = async () => {
-    if (!pendingAction?.actionId) return;
+    if (!internalPendingAction?.actionId) return;
 
     setIsConfirming(true);
     try {
@@ -580,7 +991,7 @@ export function AIChatDrawer({
       if (confirm) {
         await confirm();
       }
-      setPendingAction(null);
+      setInternalPendingAction(null);
     } catch (error) {
       console.error("Confirm action error:", error);
     } finally {
@@ -590,14 +1001,14 @@ export function AIChatDrawer({
 
   // Handle action cancellation
   const handleCancelAction = async () => {
-    if (!pendingAction?.actionId) return;
+    if (!internalPendingAction?.actionId) return;
 
     try {
       const cancel = (window as any).__aiDrawerCancel;
       if (cancel) {
         await cancel();
       }
-      setPendingAction(null);
+      setInternalPendingAction(null);
     } catch (error) {
       console.error("Cancel action error:", error);
     }
@@ -630,7 +1041,7 @@ export function AIChatDrawer({
     handleKeyDown,
     textareaRef,
     messagesEndRef,
-    pendingAction,
+    internalPendingAction,
     isConfirming,
     onConfirmAction: handleConfirmAction,
     onCancelAction: handleCancelAction,
@@ -643,19 +1054,10 @@ export function AIChatDrawer({
       <div className="w-full h-full bg-white border-l border-gray-200 flex flex-col overflow-hidden">
         {/* Panel Header */}
         <div className="h-14 flex-none flex items-center justify-between px-4 border-b border-gray-100 bg-white shrink-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" ref={sessionsDropdownRef}>
+            {/* Sessions Dropdown Button */}
             <button
-              onClick={() => {
-                if (sessions.length > 0) {
-                  const currentIdx = sessions.findIndex(
-                    (s) => s.id === currentSession
-                  );
-                  const nextIdx = (currentIdx + 1) % sessions.length;
-                  const nextId = sessions[nextIdx].id;
-                  setCurrentSession(nextId);
-                  loadMessages(nextId);
-                }
-              }}
+              onClick={() => setShowSessionsDropdown(!showSessionsDropdown)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
             >
               <svg
@@ -669,9 +1071,89 @@ export function AIChatDrawer({
                 <circle cx="19" cy="12" r="3" />
                 <circle cx="5" cy="12" r="3" />
               </svg>
-              <span>New AI chat</span>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              <span className="max-w-[150px] truncate">
+                {sessions.find(s => s.id === currentSession)?.title || "New AI chat"}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showSessionsDropdown ? 'rotate-180' : ''}`} />
             </button>
+
+            {/* Sessions Dropdown Menu */}
+            {showSessionsDropdown && (
+              <div className="absolute top-12 left-4 w-72 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 max-h-80 overflow-y-auto">
+                {/* New Chat Option */}
+                <button
+                  onClick={() => {
+                    createNewSession();
+                    setShowSessionsDropdown(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Start new chat</p>
+                    <p className="text-xs text-gray-400">Create a fresh conversation</p>
+                  </div>
+                </button>
+
+                {/* Previous Sessions */}
+                {sessions.length > 0 && (
+                  <div className="py-1">
+                    <p className="px-4 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+                      Previous conversations
+                    </p>
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className={`group flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors ${session.id === currentSession ? 'bg-blue-50/50' : ''
+                          }`}
+                      >
+                        <button
+                          onClick={() => switchSession(session.id)}
+                          className="flex-1 flex items-center gap-3 text-left min-w-0"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <MessageSquare className="w-4 h-4 text-gray-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${session.id === currentSession ? 'text-blue-700' : 'text-gray-700'
+                              }`}>
+                              {session.title}
+                            </p>
+                            <p className="text-xs text-gray-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Today
+                            </p>
+                          </div>
+                          {session.id === currentSession && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                          )}
+                        </button>
+
+                        {/* Delete button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteSession(session.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex-shrink-0"
+                          title="Delete chat"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {sessions.length === 0 && (
+                  <div className="px-4 py-4 text-center">
+                    <p className="text-sm text-gray-400">No previous conversations</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Action Icons */}
@@ -713,19 +1195,10 @@ export function AIChatDrawer({
       <div className="relative w-[420px] bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col h-full animate-in slide-in-from-right duration-200 overflow-hidden">
         {/* Header - Fixed height, always visible */}
         <div className="h-14 flex-none flex items-center justify-between px-4 border-b border-gray-100 bg-white shrink-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" ref={sessionsDropdownRef}>
+            {/* Sessions Dropdown Button */}
             <button
-              onClick={() => {
-                if (sessions.length > 0) {
-                  const currentIdx = sessions.findIndex(
-                    (s) => s.id === currentSession
-                  );
-                  const nextIdx = (currentIdx + 1) % sessions.length;
-                  const nextId = sessions[nextIdx].id;
-                  setCurrentSession(nextId);
-                  loadMessages(nextId);
-                }
-              }}
+              onClick={() => setShowSessionsDropdown(!showSessionsDropdown)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
             >
               <svg
@@ -739,9 +1212,89 @@ export function AIChatDrawer({
                 <circle cx="19" cy="12" r="3" />
                 <circle cx="5" cy="12" r="3" />
               </svg>
-              <span>New AI chat</span>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              <span className="max-w-[150px] truncate">
+                {sessions.find(s => s.id === currentSession)?.title || "New AI chat"}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showSessionsDropdown ? 'rotate-180' : ''}`} />
             </button>
+
+            {/* Sessions Dropdown Menu */}
+            {showSessionsDropdown && (
+              <div className="absolute top-12 left-4 w-72 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 max-h-80 overflow-y-auto">
+                {/* New Chat Option */}
+                <button
+                  onClick={() => {
+                    createNewSession();
+                    setShowSessionsDropdown(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Start new chat</p>
+                    <p className="text-xs text-gray-400">Create a fresh conversation</p>
+                  </div>
+                </button>
+
+                {/* Previous Sessions */}
+                {sessions.length > 0 && (
+                  <div className="py-1">
+                    <p className="px-4 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+                      Previous conversations
+                    </p>
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className={`group flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors ${session.id === currentSession ? 'bg-blue-50/50' : ''
+                          }`}
+                      >
+                        <button
+                          onClick={() => switchSession(session.id)}
+                          className="flex-1 flex items-center gap-3 text-left min-w-0"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <MessageSquare className="w-4 h-4 text-gray-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${session.id === currentSession ? 'text-blue-700' : 'text-gray-700'
+                              }`}>
+                              {session.title}
+                            </p>
+                            <p className="text-xs text-gray-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Today
+                            </p>
+                          </div>
+                          {session.id === currentSession && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                          )}
+                        </button>
+
+                        {/* Delete button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteSession(session.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex-shrink-0"
+                          title="Delete chat"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {sessions.length === 0 && (
+                  <div className="px-4 py-4 text-center">
+                    <p className="text-sm text-gray-400">No previous conversations</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Action Icons */}

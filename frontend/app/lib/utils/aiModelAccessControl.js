@@ -9,82 +9,53 @@ class AIModelAccessControl {
   // Define available models per plan
   static PLAN_MODELS = {
     free: [
-      "gpt-4o-mini",
+      "gemini-2.5-flash",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
+      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     onetime: [
-      "gpt-4o-mini",
-      "claude-3-haiku",
+      "gemini-2.5-flash",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
+      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     student: [
-      "gpt-4o-mini",
+      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
-      "gpt-4o",
-      "claude-3-haiku",
+      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     researcher: [
-      "gpt-4o-mini",
-      "gpt-4o",
-      "claude-3-haiku",
-      "claude-3-5-sonnet",
       "gemini-2.5-flash",
       "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
+      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     institutional: [
-      "gpt-4o-mini",
-      "gpt-4o",
-      "claude-3-haiku",
-      "claude-3-5-sonnet",
       "gemini-2.5-flash",
       "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
+      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
   };
 
   // Model details for UI display
   static MODEL_DETAILS = {
-    "gpt-4o-mini": {
-      name: "GPT-4o Mini",
-      description: "Fast and efficient model for most tasks",
-      maxTokens: 16384,
-      planRequired: "free",
-    },
-    "gpt-4o": {
-      name: "GPT-4o",
-      description: "Most capable model for complex tasks",
-      maxTokens: 128000,
-      planRequired: "student",
-    },
-    "claude-3-haiku": {
-      name: "Claude 3.5 Haiku",
-      description: "Fastest and most compact model",
-      maxTokens: 200000,
-      planRequired: "student",
-    },
-    "claude-3-5-sonnet": {
-      name: "Claude 3.5 Sonnet",
-      description: "Anthropic's most intelligent model",
-      maxTokens: 200000,
-      planRequired: "researcher",
-    },
     "gemini-2.5-flash": {
       name: "Gemini 2.5 Flash",
       description: "Fast and efficient Gemini model",
       maxTokens: 1048576,
-      planRequired: "researcher",
+      planRequired: "free",
     },
     "gemini-3.1-flash-lite-preview": {
       name: "Gemini 3.1 Flash Lite",
       description: "Google's advanced multimodal model",
       maxTokens: 1048576,
-      planRequired: "researcher",
+      planRequired: "student",
     },
     "openai/gpt-oss-120b:free": {
       name: "GPT OSS 120B",
@@ -96,6 +67,12 @@ class AIModelAccessControl {
       name: "Nvidia Nemotron Super 120B",
       description: "Nvidia's free 120B reasoning model via OpenRouter",
       maxTokens: 131072,
+      planRequired: "free",
+    },
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+      name: "Nemotron 3 Nano Omni",
+      description: "Multimodal model for text, image, video, and audio inputs. Built for enterprise agent systems with 300K context and 16K reasoning budget.",
+      maxTokens: 300000,
       planRequired: "free",
     },
   };

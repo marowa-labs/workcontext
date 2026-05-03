@@ -7,7 +7,6 @@ CREATE TABLE "documents" (
     "content" TEXT NOT NULL,
     "metadata" JSONB,
     "embedding" vector,
-
     CONSTRAINT "documents_pkey" PRIMARY KEY ("id")
 );
 
@@ -25,7 +24,7 @@ CREATE TABLE "User" (
     "affiliate_ref" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "preferred_ai_model" TEXT DEFAULT 'gpt-4o-mini',
+    "preferred_ai_model" TEXT DEFAULT 'gemini-2.5-flash',
     "storage_used" DOUBLE PRECISION DEFAULT 0,
     "storage_limit" DOUBLE PRECISION DEFAULT 5,
     "last_backup" TIMESTAMP(3),
@@ -38,7 +37,6 @@ CREATE TABLE "User" (
     "user_goal" TEXT,
     "main_job" TEXT,
     "survey_completed" BOOLEAN DEFAULT false,
-
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
@@ -51,7 +49,6 @@ CREATE TABLE "Workspace" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "owner_id" TEXT NOT NULL,
-
     CONSTRAINT "Workspace_pkey" PRIMARY KEY ("id")
 );
 
@@ -63,7 +60,6 @@ CREATE TABLE "WorkspaceView" (
     "filters" JSONB NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "WorkspaceView_pkey" PRIMARY KEY ("id")
 );
 
@@ -74,7 +70,6 @@ CREATE TABLE "WorkspaceMember" (
     "user_id" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'viewer',
     "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "WorkspaceMember_pkey" PRIMARY KEY ("id")
 );
 
@@ -90,7 +85,6 @@ CREATE TABLE "WorkspaceInvitation" (
     "invited_by" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "WorkspaceInvitation_pkey" PRIMARY KEY ("id")
 );
 
@@ -107,7 +101,6 @@ CREATE TABLE "Note" (
     "metadata" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "Note_pkey" PRIMARY KEY ("id")
 );
 
@@ -118,7 +111,6 @@ CREATE TABLE "PushNotificationToken" (
     "token" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "PushNotificationToken_pkey" PRIMARY KEY ("id")
 );
 
@@ -138,7 +130,6 @@ CREATE TABLE "Project" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "template_id" TEXT,
     "workspace_id" TEXT,
-
     CONSTRAINT "Project_pkey" PRIMARY KEY ("id")
 );
 
@@ -150,7 +141,6 @@ CREATE TABLE "pdf_documents" (
     "status" TEXT NOT NULL DEFAULT 'processing',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "pdf_documents_pkey" PRIMARY KEY ("id")
 );
 
@@ -164,7 +154,6 @@ CREATE TABLE "CollaboratorPresence" (
     "last_active_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "CollaboratorPresence_pkey" PRIMARY KEY ("id")
 );
 
@@ -180,7 +169,6 @@ CREATE TABLE "DocumentShareSettings" (
     "expiration" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "DocumentShareSettings_pkey" PRIMARY KEY ("id")
 );
 
@@ -209,7 +197,6 @@ CREATE TABLE "Citation" (
     "metadata" JSONB NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "Citation_pkey" PRIMARY KEY ("id")
 );
 
@@ -222,7 +209,6 @@ CREATE TABLE "CitationActivity" (
     "action" TEXT NOT NULL,
     "details" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "CitationActivity_pkey" PRIMARY KEY ("id")
 );
 
@@ -238,7 +224,6 @@ CREATE TABLE "RecycledItem" (
     "restored_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "RecycledItem_pkey" PRIMARY KEY ("id")
 );
 
@@ -251,7 +236,6 @@ CREATE TABLE "DocumentVersion" (
     "version" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "word_count" INTEGER NOT NULL DEFAULT 0,
-
     CONSTRAINT "DocumentVersion_pkey" PRIMARY KEY ("id")
 );
 
@@ -276,7 +260,6 @@ CREATE TABLE "AIUsage" (
     "success_rate" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "total_cost_estimate" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "total_tokens_used" INTEGER NOT NULL DEFAULT 0,
-
     CONSTRAINT "AIUsage_pkey" PRIMARY KEY ("id")
 );
 
@@ -290,7 +273,6 @@ CREATE TABLE "Subscription" (
     "current_period_end" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id")
 );
 
@@ -303,7 +285,6 @@ CREATE TABLE "OTPCode" (
     "expires_at" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "phone_number" VARCHAR(20),
-
     CONSTRAINT "OTPCode_pkey" PRIMARY KEY ("id")
 );
 
@@ -320,7 +301,6 @@ CREATE TABLE "Notification" (
     "data" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
 );
 
@@ -390,7 +370,6 @@ CREATE TABLE "NotificationSettings" (
     "account_billing_subscription_expired" BOOLEAN NOT NULL DEFAULT true,
     "account_billing_subscription_resumed" BOOLEAN NOT NULL DEFAULT true,
     "account_billing_subscription_updated" BOOLEAN NOT NULL DEFAULT true,
-
     CONSTRAINT "NotificationSettings_pkey" PRIMARY KEY ("id")
 );
 
@@ -403,7 +382,6 @@ CREATE TABLE "FailedWebhook" (
     "last_error" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "FailedWebhook_pkey" PRIMARY KEY ("id")
 );
 
@@ -416,7 +394,6 @@ CREATE TABLE "IdempotencyRecord" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "expires_at" TIMESTAMP(3),
-
     CONSTRAINT "IdempotencyRecord_pkey" PRIMARY KEY ("idempotency_key")
 );
 
@@ -429,7 +406,6 @@ CREATE TABLE "SubscriptionEventLog" (
     "metadata" TEXT,
     "processing_time_ms" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "SubscriptionEventLog_pkey" PRIMARY KEY ("id")
 );
 
@@ -441,7 +417,6 @@ CREATE TABLE "AlertLog" (
     "data" TEXT,
     "severity" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "AlertLog_pkey" PRIMARY KEY ("id")
 );
 
@@ -455,7 +430,6 @@ CREATE TABLE "AIHistory" (
     "is_favorite" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "AIHistory_pkey" PRIMARY KEY ("id")
 );
 
@@ -469,7 +443,6 @@ CREATE TABLE "AIChatSession" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "last_message_at" TIMESTAMP(3),
     "is_active" BOOLEAN NOT NULL DEFAULT true,
-
     CONSTRAINT "AIChatSession_pkey" PRIMARY KEY ("id")
 );
 
@@ -491,7 +464,6 @@ CREATE TABLE "AIChatMessage" (
     "context_used" JSONB,
     "mode" TEXT NOT NULL DEFAULT 'general',
     "sources" JSONB,
-
     CONSTRAINT "AIChatMessage_pkey" PRIMARY KEY ("id")
 );
 
@@ -504,7 +476,6 @@ CREATE TABLE "PaymentMethod" (
     "relevance" INTEGER NOT NULL DEFAULT 1,
     "title" TEXT NOT NULL,
     "user_id" TEXT,
-
     CONSTRAINT "PaymentMethod_pkey" PRIMARY KEY ("id")
 );
 
@@ -518,7 +489,6 @@ CREATE TABLE "TeamChatMessage" (
     "parent_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "TeamChatMessage_pkey" PRIMARY KEY ("id")
 );
 
@@ -546,7 +516,6 @@ CREATE TABLE "WorkspaceTask" (
     "is_template" BOOLEAN NOT NULL DEFAULT false,
     "template_name" TEXT,
     "template_category" TEXT,
-
     CONSTRAINT "WorkspaceTask_pkey" PRIMARY KEY ("id")
 );
 
@@ -557,7 +526,6 @@ CREATE TABLE "TaskDependency" (
     "depends_on_id" TEXT NOT NULL,
     "type" TEXT NOT NULL DEFAULT 'blocks',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "TaskDependency_pkey" PRIMARY KEY ("id")
 );
 
@@ -570,7 +538,6 @@ CREATE TABLE "WorkspaceSubtask" (
     "order" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "WorkspaceSubtask_pkey" PRIMARY KEY ("id")
 );
 
@@ -582,7 +549,6 @@ CREATE TABLE "WorkspaceLabel" (
     "color" TEXT NOT NULL DEFAULT '#94a3b8',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "WorkspaceLabel_pkey" PRIMARY KEY ("id")
 );
 
@@ -596,7 +562,6 @@ CREATE TABLE "TaskAttachment" (
     "file_size" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "TaskAttachment_pkey" PRIMARY KEY ("id")
 );
 
@@ -609,7 +574,6 @@ CREATE TABLE "WorkspaceCustomField" (
     "options" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "WorkspaceCustomField_pkey" PRIMARY KEY ("id")
 );
 
@@ -621,7 +585,6 @@ CREATE TABLE "TaskCustomFieldValue" (
     "text_value" TEXT,
     "number_value" DOUBLE PRECISION,
     "date_value" TIMESTAMP(3),
-
     CONSTRAINT "TaskCustomFieldValue_pkey" PRIMARY KEY ("id")
 );
 
@@ -636,7 +599,6 @@ CREATE TABLE "TaskTimeEntry" (
     "description" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "TaskTimeEntry_pkey" PRIMARY KEY ("id")
 );
 
@@ -648,7 +610,6 @@ CREATE TABLE "TaskAssignee" (
     "assigned_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "last_notified_soon_at" TIMESTAMP(3),
     "last_notified_overdue_at" TIMESTAMP(3),
-
     CONSTRAINT "TaskAssignee_pkey" PRIMARY KEY ("id")
 );
 
@@ -660,7 +621,6 @@ CREATE TABLE "TaskComment" (
     "content" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "TaskComment_pkey" PRIMARY KEY ("id")
 );
 
@@ -679,7 +639,6 @@ CREATE TABLE "Invoice" (
     "receipt_url" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "Invoice_pkey" PRIMARY KEY ("id")
 );
 
@@ -700,7 +659,6 @@ CREATE TABLE "UserAppearanceSettings" (
     "reduce_motion" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "UserAppearanceSettings_pkey" PRIMARY KEY ("id")
 );
 
@@ -721,7 +679,6 @@ CREATE TABLE "AIPerformanceMetric" (
     "feature_category" TEXT,
     "input_tokens" INTEGER NOT NULL DEFAULT 0,
     "output_tokens" INTEGER NOT NULL DEFAULT 0,
-
     CONSTRAINT "AIPerformanceMetric_pkey" PRIMARY KEY ("id")
 );
 
@@ -735,7 +692,6 @@ CREATE TABLE "AIFeedback" (
     "is_helpful" BOOLEAN NOT NULL,
     "feedback_text" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "AIFeedback_pkey" PRIMARY KEY ("id")
 );
 
@@ -768,7 +724,6 @@ CREATE TABLE "UserPrivacySettings" (
     "data_retention_period" INTEGER NOT NULL DEFAULT 28,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "UserPrivacySettings_pkey" PRIMARY KEY ("id")
 );
 
@@ -783,7 +738,6 @@ CREATE TABLE "AuditLog" (
     "device_info" TEXT,
     "payload" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
 );
 
@@ -798,7 +752,6 @@ CREATE TABLE "UserSession" (
     "is_current" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expires_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "UserSession_pkey" PRIMARY KEY ("id")
 );
 
@@ -812,7 +765,6 @@ CREATE TABLE "LoginHistory" (
     "status" TEXT NOT NULL,
     "error_code" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "LoginHistory_pkey" PRIMARY KEY ("id")
 );
 
@@ -833,7 +785,6 @@ CREATE TABLE "EditorSettings" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "page_color" TEXT NOT NULL DEFAULT '#FFFFFF',
-
     CONSTRAINT "EditorSettings_pkey" PRIMARY KEY ("id")
 );
 
@@ -845,7 +796,6 @@ CREATE TABLE "EditorActivity" (
     "activity_type" TEXT NOT NULL,
     "details" JSONB,
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "EditorActivity_pkey" PRIMARY KEY ("id")
 );
 
@@ -857,11 +807,11 @@ CREATE TABLE "EditorEvent" (
     "event_type" TEXT NOT NULL,
     "metadata" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "EditorEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
+
 CREATE TABLE "UserFeedback" (
     "id" TEXT NOT NULL,
     "user_id" TEXT,
@@ -893,7 +843,6 @@ CREATE TABLE "FeedbackComment" (
     "is_internal" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "FeedbackComment_pkey" PRIMARY KEY ("id")
 );
 
@@ -911,7 +860,6 @@ CREATE TABLE "Backup" (
     "completed_at" TIMESTAMP(3),
     "failed_at" TIMESTAMP(3),
     "error_message" TEXT,
-
     CONSTRAINT "Backup_pkey" PRIMARY KEY ("id")
 );
 
@@ -926,7 +874,6 @@ CREATE TABLE "SearchAlert" (
     "new_matches_count" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "SearchAlert_pkey" PRIMARY KEY ("id")
 );
 
@@ -940,7 +887,6 @@ CREATE TABLE "Restore" (
     "completed_at" TIMESTAMP(3),
     "failed_at" TIMESTAMP(3),
     "error_message" TEXT,
-
     CONSTRAINT "Restore_pkey" PRIMARY KEY ("id")
 );
 
@@ -957,7 +903,6 @@ CREATE TABLE "BackupSchedule" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "destination" TEXT NOT NULL DEFAULT 'ScholarForge AI',
-
     CONSTRAINT "BackupSchedule_pkey" PRIMARY KEY ("id")
 );
 
@@ -976,7 +921,6 @@ CREATE TABLE "Export" (
     "collaboration_export" BOOLEAN NOT NULL DEFAULT false,
     "export_options" JSONB,
     "exported_by" TEXT,
-
     CONSTRAINT "Export_pkey" PRIMARY KEY ("id")
 );
 
@@ -993,7 +937,6 @@ CREATE TABLE "ContactRequest" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "replied_at" TIMESTAMP(3),
-
     CONSTRAINT "ContactRequest_pkey" PRIMARY KEY ("id")
 );
 
@@ -1014,7 +957,6 @@ CREATE TABLE "SupportTicket" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "resolved_at" TIMESTAMP(3),
-
     CONSTRAINT "SupportTicket_pkey" PRIMARY KEY ("id")
 );
 
@@ -1028,7 +970,6 @@ CREATE TABLE "ResearchTopic" (
     "last_updated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "ResearchTopic_pkey" PRIMARY KEY ("id")
 );
 
@@ -1047,11 +988,11 @@ CREATE TABLE "ResearchSource" (
     "relevance" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "ResearchSource_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
+
 CREATE TABLE "ResearchPaper" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -1080,7 +1021,6 @@ CREATE TABLE "SavedPaper" (
     "tags" JSONB DEFAULT '[]',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "SavedPaper_pkey" PRIMARY KEY ("id")
 );
 
@@ -1093,7 +1033,6 @@ CREATE TABLE "VersionSchedule" (
     "enabled" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "VersionSchedule_pkey" PRIMARY KEY ("id")
 );
 
@@ -1108,7 +1047,6 @@ CREATE TABLE "TaskTracking" (
     "metadata" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "TaskTracking_pkey" PRIMARY KEY ("id")
 );
 
@@ -1124,7 +1062,6 @@ CREATE TABLE "WaitlistEntry" (
     "priority" INTEGER NOT NULL DEFAULT 0,
     "notes" TEXT,
     "user_id" TEXT,
-
     CONSTRAINT "WaitlistEntry_pkey" PRIMARY KEY ("id")
 );
 
@@ -1142,7 +1079,6 @@ CREATE TABLE "DemoRequest" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "ip_address" TEXT,
     "user_agent" TEXT,
-
     CONSTRAINT "DemoRequest_pkey" PRIMARY KEY ("id")
 );
 
@@ -1159,11 +1095,11 @@ CREATE TABLE "FeatureRequest" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "ip_address" TEXT,
     "user_agent" TEXT,
-
     CONSTRAINT "FeatureRequest_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
+
 CREATE TABLE "DocumentTemplate" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -1202,7 +1138,6 @@ CREATE TABLE "ResearchAnalysis" (
     "sources_used" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "ResearchAnalysis_pkey" PRIMARY KEY ("id")
 );
 
@@ -1218,7 +1153,6 @@ CREATE TABLE "GeneratedAudio" (
     "failure_reason" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "GeneratedAudio_pkey" PRIMARY KEY ("id")
 );
 
@@ -1226,999 +1160,1093 @@ CREATE TABLE "GeneratedAudio" (
 CREATE TABLE "_TaskLabels" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
-
-    CONSTRAINT "_TaskLabels_AB_pkey" PRIMARY KEY ("A","B")
+    CONSTRAINT "_TaskLabels_AB_pkey" PRIMARY KEY ("A", "B")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "User_email_key" ON "User" ("email");
 
 -- CreateIndex
-CREATE INDEX "Workspace_owner_id_idx" ON "Workspace"("owner_id");
+CREATE INDEX "Workspace_owner_id_idx" ON "Workspace" ("owner_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceView_workspace_id_idx" ON "WorkspaceView"("workspace_id");
+CREATE INDEX "WorkspaceView_workspace_id_idx" ON "WorkspaceView" ("workspace_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceMember_workspace_id_idx" ON "WorkspaceMember"("workspace_id");
+CREATE INDEX "WorkspaceMember_workspace_id_idx" ON "WorkspaceMember" ("workspace_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceMember_user_id_idx" ON "WorkspaceMember"("user_id");
+CREATE INDEX "WorkspaceMember_user_id_idx" ON "WorkspaceMember" ("user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WorkspaceMember_workspace_id_user_id_key" ON "WorkspaceMember"("workspace_id", "user_id");
+CREATE UNIQUE INDEX "WorkspaceMember_workspace_id_user_id_key" ON "WorkspaceMember" ("workspace_id", "user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WorkspaceInvitation_token_key" ON "WorkspaceInvitation"("token");
+CREATE UNIQUE INDEX "WorkspaceInvitation_token_key" ON "WorkspaceInvitation" ("token");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceInvitation_token_idx" ON "WorkspaceInvitation"("token");
+CREATE INDEX "WorkspaceInvitation_token_idx" ON "WorkspaceInvitation" ("token");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceInvitation_email_idx" ON "WorkspaceInvitation"("email");
+CREATE INDEX "WorkspaceInvitation_email_idx" ON "WorkspaceInvitation" ("email");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceInvitation_status_idx" ON "WorkspaceInvitation"("status");
+CREATE INDEX "WorkspaceInvitation_status_idx" ON "WorkspaceInvitation" ("status");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceInvitation_expires_at_idx" ON "WorkspaceInvitation"("expires_at");
+CREATE INDEX "WorkspaceInvitation_expires_at_idx" ON "WorkspaceInvitation" ("expires_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WorkspaceInvitation_workspace_id_email_key" ON "WorkspaceInvitation"("workspace_id", "email");
+CREATE UNIQUE INDEX "WorkspaceInvitation_workspace_id_email_key" ON "WorkspaceInvitation" ("workspace_id", "email");
 
 -- CreateIndex
-CREATE INDEX "Note_user_id_idx" ON "Note"("user_id");
+CREATE INDEX "Note_user_id_idx" ON "Note" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Note_project_id_idx" ON "Note"("project_id");
+CREATE INDEX "Note_project_id_idx" ON "Note" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "Note_category_idx" ON "Note"("category");
+CREATE INDEX "Note_category_idx" ON "Note" ("category");
 
 -- CreateIndex
-CREATE INDEX "Note_created_at_idx" ON "Note"("created_at");
+CREATE INDEX "Note_created_at_idx" ON "Note" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "PushNotificationToken_user_id_idx" ON "PushNotificationToken"("user_id");
+CREATE INDEX "PushNotificationToken_user_id_idx" ON "PushNotificationToken" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "PushNotificationToken_token_idx" ON "PushNotificationToken"("token");
+CREATE INDEX "PushNotificationToken_token_idx" ON "PushNotificationToken" ("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PushNotificationToken_user_id_token_key" ON "PushNotificationToken"("user_id", "token");
+CREATE UNIQUE INDEX "PushNotificationToken_user_id_token_key" ON "PushNotificationToken" ("user_id", "token");
 
 -- CreateIndex
-CREATE INDEX "Project_user_id_idx" ON "Project"("user_id");
+CREATE INDEX "Project_user_id_idx" ON "Project" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "pdf_documents_user_id_idx" ON "pdf_documents"("user_id");
+CREATE INDEX "pdf_documents_user_id_idx" ON "pdf_documents" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "CollaboratorPresence_project_id_idx" ON "CollaboratorPresence"("project_id");
+CREATE INDEX "CollaboratorPresence_project_id_idx" ON "CollaboratorPresence" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "CollaboratorPresence_user_id_idx" ON "CollaboratorPresence"("user_id");
+CREATE INDEX "CollaboratorPresence_user_id_idx" ON "CollaboratorPresence" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "CollaboratorPresence_last_active_at_idx" ON "CollaboratorPresence"("last_active_at");
+CREATE INDEX "CollaboratorPresence_last_active_at_idx" ON "CollaboratorPresence" ("last_active_at");
 
 -- CreateIndex
-CREATE INDEX "CollaboratorPresence_join_method_idx" ON "CollaboratorPresence"("join_method");
+CREATE INDEX "CollaboratorPresence_join_method_idx" ON "CollaboratorPresence" ("join_method");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CollaboratorPresence_project_id_user_id_key" ON "CollaboratorPresence"("project_id", "user_id");
+CREATE UNIQUE INDEX "CollaboratorPresence_project_id_user_id_key" ON "CollaboratorPresence" ("project_id", "user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "DocumentShareSettings_project_id_key" ON "DocumentShareSettings"("project_id");
+CREATE UNIQUE INDEX "DocumentShareSettings_project_id_key" ON "DocumentShareSettings" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "DocumentShareSettings_project_id_idx" ON "DocumentShareSettings"("project_id");
+CREATE INDEX "DocumentShareSettings_project_id_idx" ON "DocumentShareSettings" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "DocumentShareSettings_link_sharing_enabled_idx" ON "DocumentShareSettings"("link_sharing_enabled");
+CREATE INDEX "DocumentShareSettings_link_sharing_enabled_idx" ON "DocumentShareSettings" ("link_sharing_enabled");
 
 -- CreateIndex
-CREATE INDEX "Citation_project_id_idx" ON "Citation"("project_id");
+CREATE INDEX "Citation_project_id_idx" ON "Citation" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "Citation_type_idx" ON "Citation"("type");
+CREATE INDEX "Citation_type_idx" ON "Citation" ("type");
 
 -- CreateIndex
-CREATE INDEX "Citation_year_idx" ON "Citation"("year");
+CREATE INDEX "Citation_year_idx" ON "Citation" ("year");
 
 -- CreateIndex
-CREATE INDEX "CitationActivity_user_id_idx" ON "CitationActivity"("user_id");
+CREATE INDEX "CitationActivity_user_id_idx" ON "CitationActivity" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "CitationActivity_project_id_idx" ON "CitationActivity"("project_id");
+CREATE INDEX "CitationActivity_project_id_idx" ON "CitationActivity" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "CitationActivity_citation_id_idx" ON "CitationActivity"("citation_id");
+CREATE INDEX "CitationActivity_citation_id_idx" ON "CitationActivity" ("citation_id");
 
 -- CreateIndex
-CREATE INDEX "CitationActivity_action_idx" ON "CitationActivity"("action");
+CREATE INDEX "CitationActivity_action_idx" ON "CitationActivity" ("action");
 
 -- CreateIndex
-CREATE INDEX "CitationActivity_created_at_idx" ON "CitationActivity"("created_at");
+CREATE INDEX "CitationActivity_created_at_idx" ON "CitationActivity" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "RecycledItem_user_id_idx" ON "RecycledItem"("user_id");
+CREATE INDEX "RecycledItem_user_id_idx" ON "RecycledItem" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "RecycledItem_item_type_idx" ON "RecycledItem"("item_type");
+CREATE INDEX "RecycledItem_item_type_idx" ON "RecycledItem" ("item_type");
 
 -- CreateIndex
-CREATE INDEX "RecycledItem_deleted_at_idx" ON "RecycledItem"("deleted_at");
+CREATE INDEX "RecycledItem_deleted_at_idx" ON "RecycledItem" ("deleted_at");
 
 -- CreateIndex
-CREATE INDEX "RecycledItem_expires_at_idx" ON "RecycledItem"("expires_at");
+CREATE INDEX "RecycledItem_expires_at_idx" ON "RecycledItem" ("expires_at");
 
 -- CreateIndex
-CREATE INDEX "RecycledItem_restored_at_idx" ON "RecycledItem"("restored_at");
+CREATE INDEX "RecycledItem_restored_at_idx" ON "RecycledItem" ("restored_at");
 
 -- CreateIndex
-CREATE INDEX "DocumentVersion_project_id_idx" ON "DocumentVersion"("project_id");
+CREATE INDEX "DocumentVersion_project_id_idx" ON "DocumentVersion" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "DocumentVersion_user_id_idx" ON "DocumentVersion"("user_id");
+CREATE INDEX "DocumentVersion_user_id_idx" ON "DocumentVersion" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "DocumentVersion_created_at_idx" ON "DocumentVersion"("created_at");
+CREATE INDEX "DocumentVersion_created_at_idx" ON "DocumentVersion" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "AIUsage_user_id_idx" ON "AIUsage"("user_id");
+CREATE INDEX "AIUsage_user_id_idx" ON "AIUsage" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AIUsage_month_year_idx" ON "AIUsage"("month", "year");
+CREATE INDEX "AIUsage_month_year_idx" ON "AIUsage" ("month", "year");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AIUsage_user_id_month_year_key" ON "AIUsage"("user_id", "month", "year");
+CREATE UNIQUE INDEX "AIUsage_user_id_month_year_key" ON "AIUsage" ("user_id", "month", "year");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Subscription_user_id_key" ON "Subscription"("user_id");
+CREATE UNIQUE INDEX "Subscription_user_id_key" ON "Subscription" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Subscription_user_id_idx" ON "Subscription"("user_id");
+CREATE INDEX "Subscription_user_id_idx" ON "Subscription" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Subscription_plan_idx" ON "Subscription"("plan");
+CREATE INDEX "Subscription_plan_idx" ON "Subscription" ("plan");
 
 -- CreateIndex
-CREATE INDEX "Subscription_status_idx" ON "Subscription"("status");
+CREATE INDEX "Subscription_status_idx" ON "Subscription" ("status");
 
 -- CreateIndex
-CREATE INDEX "Subscription_lemonsqueezy_subscription_id_idx" ON "Subscription"("lemonsqueezy_subscription_id");
+CREATE INDEX "Subscription_lemonsqueezy_subscription_id_idx" ON "Subscription" (
+    "lemonsqueezy_subscription_id"
+);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OTPCode_user_id_key" ON "OTPCode"("user_id");
+CREATE UNIQUE INDEX "OTPCode_user_id_key" ON "OTPCode" ("user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OTPCode_phone_number_key" ON "OTPCode"("phone_number");
+CREATE UNIQUE INDEX "OTPCode_phone_number_key" ON "OTPCode" ("phone_number");
 
 -- CreateIndex
-CREATE INDEX "OTPCode_user_id_idx" ON "OTPCode"("user_id");
+CREATE INDEX "OTPCode_user_id_idx" ON "OTPCode" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "OTPCode_phone_number_idx" ON "OTPCode"("phone_number");
+CREATE INDEX "OTPCode_phone_number_idx" ON "OTPCode" ("phone_number");
 
 -- CreateIndex
-CREATE INDEX "OTPCode_expires_at_idx" ON "OTPCode"("expires_at");
+CREATE INDEX "OTPCode_expires_at_idx" ON "OTPCode" ("expires_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OTPCode_user_id_method_key" ON "OTPCode"("user_id", "method");
+CREATE UNIQUE INDEX "OTPCode_user_id_method_key" ON "OTPCode" ("user_id", "method");
 
 -- CreateIndex
-CREATE INDEX "Notification_user_id_idx" ON "Notification"("user_id");
+CREATE INDEX "Notification_user_id_idx" ON "Notification" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Notification_read_idx" ON "Notification"("read");
+CREATE INDEX "Notification_read_idx" ON "Notification" ("read");
 
 -- CreateIndex
-CREATE INDEX "Notification_dismissed_idx" ON "Notification"("dismissed");
+CREATE INDEX "Notification_dismissed_idx" ON "Notification" ("dismissed");
 
 -- CreateIndex
-CREATE INDEX "Notification_created_at_idx" ON "Notification"("created_at");
+CREATE INDEX "Notification_created_at_idx" ON "Notification" ("created_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "NotificationSettings_user_id_key" ON "NotificationSettings"("user_id");
+CREATE UNIQUE INDEX "NotificationSettings_user_id_key" ON "NotificationSettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "NotificationSettings_user_id_idx" ON "NotificationSettings"("user_id");
+CREATE INDEX "NotificationSettings_user_id_idx" ON "NotificationSettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "FailedWebhook_event_name_idx" ON "FailedWebhook"("event_name");
+CREATE INDEX "FailedWebhook_event_name_idx" ON "FailedWebhook" ("event_name");
 
 -- CreateIndex
-CREATE INDEX "FailedWebhook_created_at_idx" ON "FailedWebhook"("created_at");
+CREATE INDEX "FailedWebhook_created_at_idx" ON "FailedWebhook" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "FailedWebhook_retry_count_idx" ON "FailedWebhook"("retry_count");
+CREATE INDEX "FailedWebhook_retry_count_idx" ON "FailedWebhook" ("retry_count");
 
 -- CreateIndex
-CREATE INDEX "IdempotencyRecord_status_idx" ON "IdempotencyRecord"("status");
+CREATE INDEX "IdempotencyRecord_status_idx" ON "IdempotencyRecord" ("status");
 
 -- CreateIndex
-CREATE INDEX "IdempotencyRecord_expires_at_idx" ON "IdempotencyRecord"("expires_at");
+CREATE INDEX "IdempotencyRecord_expires_at_idx" ON "IdempotencyRecord" ("expires_at");
 
 -- CreateIndex
-CREATE INDEX "SubscriptionEventLog_event_type_idx" ON "SubscriptionEventLog"("event_type");
+CREATE INDEX "SubscriptionEventLog_event_type_idx" ON "SubscriptionEventLog" ("event_type");
 
 -- CreateIndex
-CREATE INDEX "SubscriptionEventLog_user_id_idx" ON "SubscriptionEventLog"("user_id");
+CREATE INDEX "SubscriptionEventLog_user_id_idx" ON "SubscriptionEventLog" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "SubscriptionEventLog_status_idx" ON "SubscriptionEventLog"("status");
+CREATE INDEX "SubscriptionEventLog_status_idx" ON "SubscriptionEventLog" ("status");
 
 -- CreateIndex
-CREATE INDEX "SubscriptionEventLog_created_at_idx" ON "SubscriptionEventLog"("created_at");
+CREATE INDEX "SubscriptionEventLog_created_at_idx" ON "SubscriptionEventLog" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "AlertLog_alert_type_idx" ON "AlertLog"("alert_type");
+CREATE INDEX "AlertLog_alert_type_idx" ON "AlertLog" ("alert_type");
 
 -- CreateIndex
-CREATE INDEX "AlertLog_severity_idx" ON "AlertLog"("severity");
+CREATE INDEX "AlertLog_severity_idx" ON "AlertLog" ("severity");
 
 -- CreateIndex
-CREATE INDEX "AlertLog_created_at_idx" ON "AlertLog"("created_at");
+CREATE INDEX "AlertLog_created_at_idx" ON "AlertLog" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "AIHistory_user_id_idx" ON "AIHistory"("user_id");
+CREATE INDEX "AIHistory_user_id_idx" ON "AIHistory" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AIHistory_action_idx" ON "AIHistory"("action");
+CREATE INDEX "AIHistory_action_idx" ON "AIHistory" ("action");
 
 -- CreateIndex
-CREATE INDEX "AIHistory_is_favorite_idx" ON "AIHistory"("is_favorite");
+CREATE INDEX "AIHistory_is_favorite_idx" ON "AIHistory" ("is_favorite");
 
 -- CreateIndex
-CREATE INDEX "AIHistory_created_at_idx" ON "AIHistory"("created_at");
+CREATE INDEX "AIHistory_created_at_idx" ON "AIHistory" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "AIChatSession_user_id_idx" ON "AIChatSession"("user_id");
+CREATE INDEX "AIChatSession_user_id_idx" ON "AIChatSession" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AIChatSession_project_id_idx" ON "AIChatSession"("project_id");
+CREATE INDEX "AIChatSession_project_id_idx" ON "AIChatSession" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "AIChatSession_is_active_idx" ON "AIChatSession"("is_active");
+CREATE INDEX "AIChatSession_is_active_idx" ON "AIChatSession" ("is_active");
 
 -- CreateIndex
-CREATE INDEX "AIChatSession_created_at_idx" ON "AIChatSession"("created_at");
+CREATE INDEX "AIChatSession_created_at_idx" ON "AIChatSession" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "AIChatSession_last_message_at_idx" ON "AIChatSession"("last_message_at");
+CREATE INDEX "AIChatSession_last_message_at_idx" ON "AIChatSession" ("last_message_at");
 
 -- CreateIndex
-CREATE INDEX "AIChatMessage_session_id_idx" ON "AIChatMessage"("session_id");
+CREATE INDEX "AIChatMessage_session_id_idx" ON "AIChatMessage" ("session_id");
 
 -- CreateIndex
-CREATE INDEX "AIChatMessage_user_id_idx" ON "AIChatMessage"("user_id");
+CREATE INDEX "AIChatMessage_user_id_idx" ON "AIChatMessage" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AIChatMessage_role_idx" ON "AIChatMessage"("role");
+CREATE INDEX "AIChatMessage_role_idx" ON "AIChatMessage" ("role");
 
 -- CreateIndex
-CREATE INDEX "AIChatMessage_created_at_idx" ON "AIChatMessage"("created_at");
+CREATE INDEX "AIChatMessage_created_at_idx" ON "AIChatMessage" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "AIChatMessage_mode_idx" ON "AIChatMessage"("mode");
+CREATE INDEX "AIChatMessage_mode_idx" ON "AIChatMessage" ("mode");
 
 -- CreateIndex
-CREATE INDEX "PaymentMethod_title_idx" ON "PaymentMethod"("title");
+CREATE INDEX "PaymentMethod_title_idx" ON "PaymentMethod" ("title");
 
 -- CreateIndex
-CREATE INDEX "PaymentMethod_relevance_idx" ON "PaymentMethod"("relevance");
+CREATE INDEX "PaymentMethod_relevance_idx" ON "PaymentMethod" ("relevance");
 
 -- CreateIndex
-CREATE INDEX "PaymentMethod_created_at_idx" ON "PaymentMethod"("created_at");
+CREATE INDEX "PaymentMethod_created_at_idx" ON "PaymentMethod" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "TeamChatMessage_workspace_id_idx" ON "TeamChatMessage"("workspace_id");
+CREATE INDEX "TeamChatMessage_workspace_id_idx" ON "TeamChatMessage" ("workspace_id");
 
 -- CreateIndex
-CREATE INDEX "TeamChatMessage_project_id_idx" ON "TeamChatMessage"("project_id");
+CREATE INDEX "TeamChatMessage_project_id_idx" ON "TeamChatMessage" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "TeamChatMessage_parent_id_idx" ON "TeamChatMessage"("parent_id");
+CREATE INDEX "TeamChatMessage_parent_id_idx" ON "TeamChatMessage" ("parent_id");
 
 -- CreateIndex
-CREATE INDEX "TeamChatMessage_created_at_idx" ON "TeamChatMessage"("created_at");
+CREATE INDEX "TeamChatMessage_created_at_idx" ON "TeamChatMessage" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_workspace_id_idx" ON "WorkspaceTask"("workspace_id");
+CREATE INDEX "WorkspaceTask_workspace_id_idx" ON "WorkspaceTask" ("workspace_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_creator_id_idx" ON "WorkspaceTask"("creator_id");
+CREATE INDEX "WorkspaceTask_creator_id_idx" ON "WorkspaceTask" ("creator_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_status_idx" ON "WorkspaceTask"("status");
+CREATE INDEX "WorkspaceTask_status_idx" ON "WorkspaceTask" ("status");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_parent_recurring_task_id_idx" ON "WorkspaceTask"("parent_recurring_task_id");
+CREATE INDEX "WorkspaceTask_parent_recurring_task_id_idx" ON "WorkspaceTask" ("parent_recurring_task_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_is_recurring_idx" ON "WorkspaceTask"("is_recurring");
+CREATE INDEX "WorkspaceTask_is_recurring_idx" ON "WorkspaceTask" ("is_recurring");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_due_date_idx" ON "WorkspaceTask"("due_date");
+CREATE INDEX "WorkspaceTask_due_date_idx" ON "WorkspaceTask" ("due_date");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_project_id_idx" ON "WorkspaceTask"("project_id");
+CREATE INDEX "WorkspaceTask_project_id_idx" ON "WorkspaceTask" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceTask_is_template_idx" ON "WorkspaceTask"("is_template");
+CREATE INDEX "WorkspaceTask_is_template_idx" ON "WorkspaceTask" ("is_template");
 
 -- CreateIndex
-CREATE INDEX "TaskDependency_task_id_idx" ON "TaskDependency"("task_id");
+CREATE INDEX "TaskDependency_task_id_idx" ON "TaskDependency" ("task_id");
 
 -- CreateIndex
-CREATE INDEX "TaskDependency_depends_on_id_idx" ON "TaskDependency"("depends_on_id");
+CREATE INDEX "TaskDependency_depends_on_id_idx" ON "TaskDependency" ("depends_on_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "TaskDependency_task_id_depends_on_id_key" ON "TaskDependency"("task_id", "depends_on_id");
+CREATE UNIQUE INDEX "TaskDependency_task_id_depends_on_id_key" ON "TaskDependency" ("task_id", "depends_on_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceSubtask_task_id_idx" ON "WorkspaceSubtask"("task_id");
+CREATE INDEX "WorkspaceSubtask_task_id_idx" ON "WorkspaceSubtask" ("task_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceLabel_workspace_id_idx" ON "WorkspaceLabel"("workspace_id");
+CREATE INDEX "WorkspaceLabel_workspace_id_idx" ON "WorkspaceLabel" ("workspace_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WorkspaceLabel_workspace_id_name_key" ON "WorkspaceLabel"("workspace_id", "name");
+CREATE UNIQUE INDEX "WorkspaceLabel_workspace_id_name_key" ON "WorkspaceLabel" ("workspace_id", "name");
 
 -- CreateIndex
-CREATE INDEX "TaskAttachment_task_id_idx" ON "TaskAttachment"("task_id");
+CREATE INDEX "TaskAttachment_task_id_idx" ON "TaskAttachment" ("task_id");
 
 -- CreateIndex
-CREATE INDEX "WorkspaceCustomField_workspace_id_idx" ON "WorkspaceCustomField"("workspace_id");
+CREATE INDEX "WorkspaceCustomField_workspace_id_idx" ON "WorkspaceCustomField" ("workspace_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WorkspaceCustomField_workspace_id_name_key" ON "WorkspaceCustomField"("workspace_id", "name");
+CREATE UNIQUE INDEX "WorkspaceCustomField_workspace_id_name_key" ON "WorkspaceCustomField" ("workspace_id", "name");
 
 -- CreateIndex
-CREATE INDEX "TaskCustomFieldValue_task_id_idx" ON "TaskCustomFieldValue"("task_id");
+CREATE INDEX "TaskCustomFieldValue_task_id_idx" ON "TaskCustomFieldValue" ("task_id");
 
 -- CreateIndex
-CREATE INDEX "TaskCustomFieldValue_field_id_idx" ON "TaskCustomFieldValue"("field_id");
+CREATE INDEX "TaskCustomFieldValue_field_id_idx" ON "TaskCustomFieldValue" ("field_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "TaskCustomFieldValue_task_id_field_id_key" ON "TaskCustomFieldValue"("task_id", "field_id");
+CREATE UNIQUE INDEX "TaskCustomFieldValue_task_id_field_id_key" ON "TaskCustomFieldValue" ("task_id", "field_id");
 
 -- CreateIndex
-CREATE INDEX "TaskTimeEntry_task_id_idx" ON "TaskTimeEntry"("task_id");
+CREATE INDEX "TaskTimeEntry_task_id_idx" ON "TaskTimeEntry" ("task_id");
 
 -- CreateIndex
-CREATE INDEX "TaskTimeEntry_user_id_idx" ON "TaskTimeEntry"("user_id");
+CREATE INDEX "TaskTimeEntry_user_id_idx" ON "TaskTimeEntry" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "TaskAssignee_task_id_idx" ON "TaskAssignee"("task_id");
+CREATE INDEX "TaskAssignee_task_id_idx" ON "TaskAssignee" ("task_id");
 
 -- CreateIndex
-CREATE INDEX "TaskAssignee_user_id_idx" ON "TaskAssignee"("user_id");
+CREATE INDEX "TaskAssignee_user_id_idx" ON "TaskAssignee" ("user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "TaskAssignee_task_id_user_id_key" ON "TaskAssignee"("task_id", "user_id");
+CREATE UNIQUE INDEX "TaskAssignee_task_id_user_id_key" ON "TaskAssignee" ("task_id", "user_id");
 
 -- CreateIndex
-CREATE INDEX "TaskComment_task_id_idx" ON "TaskComment"("task_id");
+CREATE INDEX "TaskComment_task_id_idx" ON "TaskComment" ("task_id");
 
 -- CreateIndex
-CREATE INDEX "TaskComment_user_id_idx" ON "TaskComment"("user_id");
+CREATE INDEX "TaskComment_user_id_idx" ON "TaskComment" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Invoice_user_id_idx" ON "Invoice"("user_id");
+CREATE INDEX "Invoice_user_id_idx" ON "Invoice" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Invoice_status_idx" ON "Invoice"("status");
+CREATE INDEX "Invoice_status_idx" ON "Invoice" ("status");
 
 -- CreateIndex
-CREATE INDEX "Invoice_issued_at_idx" ON "Invoice"("issued_at");
+CREATE INDEX "Invoice_issued_at_idx" ON "Invoice" ("issued_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "UserAppearanceSettings_user_id_key" ON "UserAppearanceSettings"("user_id");
+CREATE UNIQUE INDEX "UserAppearanceSettings_user_id_key" ON "UserAppearanceSettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "UserAppearanceSettings_user_id_idx" ON "UserAppearanceSettings"("user_id");
+CREATE INDEX "UserAppearanceSettings_user_id_idx" ON "UserAppearanceSettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AIPerformanceMetric_user_id_idx" ON "AIPerformanceMetric"("user_id");
+CREATE INDEX "AIPerformanceMetric_user_id_idx" ON "AIPerformanceMetric" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AIPerformanceMetric_model_idx" ON "AIPerformanceMetric"("model");
+CREATE INDEX "AIPerformanceMetric_model_idx" ON "AIPerformanceMetric" ("model");
 
 -- CreateIndex
-CREATE INDEX "AIPerformanceMetric_action_idx" ON "AIPerformanceMetric"("action");
+CREATE INDEX "AIPerformanceMetric_action_idx" ON "AIPerformanceMetric" ("action");
 
 -- CreateIndex
-CREATE INDEX "AIPerformanceMetric_timestamp_idx" ON "AIPerformanceMetric"("timestamp");
+CREATE INDEX "AIPerformanceMetric_timestamp_idx" ON "AIPerformanceMetric" ("timestamp");
 
 -- CreateIndex
-CREATE INDEX "AIFeedback_user_id_idx" ON "AIFeedback"("user_id");
+CREATE INDEX "AIFeedback_user_id_idx" ON "AIFeedback" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AIFeedback_action_idx" ON "AIFeedback"("action");
+CREATE INDEX "AIFeedback_action_idx" ON "AIFeedback" ("action");
 
 -- CreateIndex
-CREATE INDEX "AIFeedback_is_helpful_idx" ON "AIFeedback"("is_helpful");
+CREATE INDEX "AIFeedback_is_helpful_idx" ON "AIFeedback" ("is_helpful");
 
 -- CreateIndex
-CREATE INDEX "AIFeedback_created_at_idx" ON "AIFeedback"("created_at");
+CREATE INDEX "AIFeedback_created_at_idx" ON "AIFeedback" ("created_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "UserPrivacySettings_user_id_key" ON "UserPrivacySettings"("user_id");
+CREATE UNIQUE INDEX "UserPrivacySettings_user_id_key" ON "UserPrivacySettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "UserPrivacySettings_user_id_idx" ON "UserPrivacySettings"("user_id");
+CREATE INDEX "UserPrivacySettings_user_id_idx" ON "UserPrivacySettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "UserPrivacySettings_gdpr_consent_given_idx" ON "UserPrivacySettings"("gdpr_consent_given");
+CREATE INDEX "UserPrivacySettings_gdpr_consent_given_idx" ON "UserPrivacySettings" ("gdpr_consent_given");
 
 -- CreateIndex
-CREATE INDEX "UserPrivacySettings_ferpa_consent_given_idx" ON "UserPrivacySettings"("ferpa_consent_given");
+CREATE INDEX "UserPrivacySettings_ferpa_consent_given_idx" ON "UserPrivacySettings" ("ferpa_consent_given");
 
 -- CreateIndex
-CREATE INDEX "UserPrivacySettings_hipaa_consent_given_idx" ON "UserPrivacySettings"("hipaa_consent_given");
+CREATE INDEX "UserPrivacySettings_hipaa_consent_given_idx" ON "UserPrivacySettings" ("hipaa_consent_given");
 
 -- CreateIndex
-CREATE INDEX "UserPrivacySettings_created_at_idx" ON "UserPrivacySettings"("created_at");
+CREATE INDEX "UserPrivacySettings_created_at_idx" ON "UserPrivacySettings" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "AuditLog_user_id_idx" ON "AuditLog"("user_id");
+CREATE INDEX "AuditLog_user_id_idx" ON "AuditLog" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "AuditLog_action_idx" ON "AuditLog"("action");
+CREATE INDEX "AuditLog_action_idx" ON "AuditLog" ("action");
 
 -- CreateIndex
-CREATE INDEX "AuditLog_resource_idx" ON "AuditLog"("resource");
+CREATE INDEX "AuditLog_resource_idx" ON "AuditLog" ("resource");
 
 -- CreateIndex
-CREATE INDEX "AuditLog_created_at_idx" ON "AuditLog"("created_at");
+CREATE INDEX "AuditLog_created_at_idx" ON "AuditLog" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "UserSession_user_id_idx" ON "UserSession"("user_id");
+CREATE INDEX "UserSession_user_id_idx" ON "UserSession" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "UserSession_last_active_idx" ON "UserSession"("last_active");
+CREATE INDEX "UserSession_last_active_idx" ON "UserSession" ("last_active");
 
 -- CreateIndex
-CREATE INDEX "UserSession_is_current_idx" ON "UserSession"("is_current");
+CREATE INDEX "UserSession_is_current_idx" ON "UserSession" ("is_current");
 
 -- CreateIndex
-CREATE INDEX "LoginHistory_user_id_idx" ON "LoginHistory"("user_id");
+CREATE INDEX "LoginHistory_user_id_idx" ON "LoginHistory" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "LoginHistory_created_at_idx" ON "LoginHistory"("created_at");
+CREATE INDEX "LoginHistory_created_at_idx" ON "LoginHistory" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "LoginHistory_status_idx" ON "LoginHistory"("status");
+CREATE INDEX "LoginHistory_status_idx" ON "LoginHistory" ("status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EditorSettings_user_id_key" ON "EditorSettings"("user_id");
+CREATE UNIQUE INDEX "EditorSettings_user_id_key" ON "EditorSettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "EditorSettings_user_id_idx" ON "EditorSettings"("user_id");
+CREATE INDEX "EditorSettings_user_id_idx" ON "EditorSettings" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "EditorActivity_user_id_idx" ON "EditorActivity"("user_id");
+CREATE INDEX "EditorActivity_user_id_idx" ON "EditorActivity" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "EditorActivity_project_id_idx" ON "EditorActivity"("project_id");
+CREATE INDEX "EditorActivity_project_id_idx" ON "EditorActivity" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "EditorActivity_activity_type_idx" ON "EditorActivity"("activity_type");
+CREATE INDEX "EditorActivity_activity_type_idx" ON "EditorActivity" ("activity_type");
 
 -- CreateIndex
-CREATE INDEX "EditorActivity_timestamp_idx" ON "EditorActivity"("timestamp");
+CREATE INDEX "EditorActivity_timestamp_idx" ON "EditorActivity" ("timestamp");
 
 -- CreateIndex
-CREATE INDEX "EditorEvent_user_id_idx" ON "EditorEvent"("user_id");
+CREATE INDEX "EditorEvent_user_id_idx" ON "EditorEvent" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "EditorEvent_project_id_idx" ON "EditorEvent"("project_id");
+CREATE INDEX "EditorEvent_project_id_idx" ON "EditorEvent" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "EditorEvent_event_type_idx" ON "EditorEvent"("event_type");
+CREATE INDEX "EditorEvent_event_type_idx" ON "EditorEvent" ("event_type");
 
 -- CreateIndex
-CREATE INDEX "EditorEvent_created_at_idx" ON "EditorEvent"("created_at");
+CREATE INDEX "EditorEvent_created_at_idx" ON "EditorEvent" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "UserFeedback_user_id_idx" ON "UserFeedback"("user_id");
+CREATE INDEX "UserFeedback_user_id_idx" ON "UserFeedback" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "UserFeedback_type_idx" ON "UserFeedback"("type");
+CREATE INDEX "UserFeedback_type_idx" ON "UserFeedback" ("type");
 
 -- CreateIndex
-CREATE INDEX "UserFeedback_category_idx" ON "UserFeedback"("category");
+CREATE INDEX "UserFeedback_category_idx" ON "UserFeedback" ("category");
 
 -- CreateIndex
-CREATE INDEX "UserFeedback_priority_idx" ON "UserFeedback"("priority");
+CREATE INDEX "UserFeedback_priority_idx" ON "UserFeedback" ("priority");
 
 -- CreateIndex
-CREATE INDEX "UserFeedback_status_idx" ON "UserFeedback"("status");
+CREATE INDEX "UserFeedback_status_idx" ON "UserFeedback" ("status");
 
 -- CreateIndex
-CREATE INDEX "UserFeedback_created_at_idx" ON "UserFeedback"("created_at");
+CREATE INDEX "UserFeedback_created_at_idx" ON "UserFeedback" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "FeedbackComment_feedback_id_idx" ON "FeedbackComment"("feedback_id");
+CREATE INDEX "FeedbackComment_feedback_id_idx" ON "FeedbackComment" ("feedback_id");
 
 -- CreateIndex
-CREATE INDEX "FeedbackComment_user_id_idx" ON "FeedbackComment"("user_id");
+CREATE INDEX "FeedbackComment_user_id_idx" ON "FeedbackComment" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "FeedbackComment_is_internal_idx" ON "FeedbackComment"("is_internal");
+CREATE INDEX "FeedbackComment_is_internal_idx" ON "FeedbackComment" ("is_internal");
 
 -- CreateIndex
-CREATE INDEX "FeedbackComment_created_at_idx" ON "FeedbackComment"("created_at");
+CREATE INDEX "FeedbackComment_created_at_idx" ON "FeedbackComment" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "Backup_user_id_idx" ON "Backup"("user_id");
+CREATE INDEX "Backup_user_id_idx" ON "Backup" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Backup_status_idx" ON "Backup"("status");
+CREATE INDEX "Backup_status_idx" ON "Backup" ("status");
 
 -- CreateIndex
-CREATE INDEX "Backup_type_idx" ON "Backup"("type");
+CREATE INDEX "Backup_type_idx" ON "Backup" ("type");
 
 -- CreateIndex
-CREATE INDEX "Backup_created_at_idx" ON "Backup"("created_at");
+CREATE INDEX "Backup_created_at_idx" ON "Backup" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "SearchAlert_user_id_idx" ON "SearchAlert"("user_id");
+CREATE INDEX "SearchAlert_user_id_idx" ON "SearchAlert" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Restore_user_id_idx" ON "Restore"("user_id");
+CREATE INDEX "Restore_user_id_idx" ON "Restore" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Restore_status_idx" ON "Restore"("status");
+CREATE INDEX "Restore_status_idx" ON "Restore" ("status");
 
 -- CreateIndex
-CREATE INDEX "Restore_started_at_idx" ON "Restore"("started_at");
+CREATE INDEX "Restore_started_at_idx" ON "Restore" ("started_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "BackupSchedule_user_id_key" ON "BackupSchedule"("user_id");
+CREATE UNIQUE INDEX "BackupSchedule_user_id_key" ON "BackupSchedule" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "BackupSchedule_user_id_idx" ON "BackupSchedule"("user_id");
+CREATE INDEX "BackupSchedule_user_id_idx" ON "BackupSchedule" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "BackupSchedule_enabled_idx" ON "BackupSchedule"("enabled");
+CREATE INDEX "BackupSchedule_enabled_idx" ON "BackupSchedule" ("enabled");
 
 -- CreateIndex
-CREATE INDEX "BackupSchedule_next_run_idx" ON "BackupSchedule"("next_run");
+CREATE INDEX "BackupSchedule_next_run_idx" ON "BackupSchedule" ("next_run");
 
 -- CreateIndex
-CREATE INDEX "Export_user_id_idx" ON "Export"("user_id");
+CREATE INDEX "Export_user_id_idx" ON "Export" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "Export_project_id_idx" ON "Export"("project_id");
+CREATE INDEX "Export_project_id_idx" ON "Export" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "Export_file_type_idx" ON "Export"("file_type");
+CREATE INDEX "Export_file_type_idx" ON "Export" ("file_type");
 
 -- CreateIndex
-CREATE INDEX "Export_status_idx" ON "Export"("status");
+CREATE INDEX "Export_status_idx" ON "Export" ("status");
 
 -- CreateIndex
-CREATE INDEX "Export_created_at_idx" ON "Export"("created_at");
+CREATE INDEX "Export_created_at_idx" ON "Export" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "Export_collaboration_export_idx" ON "Export"("collaboration_export");
+CREATE INDEX "Export_collaboration_export_idx" ON "Export" ("collaboration_export");
 
 -- CreateIndex
-CREATE INDEX "ContactRequest_email_idx" ON "ContactRequest"("email");
+CREATE INDEX "ContactRequest_email_idx" ON "ContactRequest" ("email");
 
 -- CreateIndex
-CREATE INDEX "ContactRequest_status_idx" ON "ContactRequest"("status");
+CREATE INDEX "ContactRequest_status_idx" ON "ContactRequest" ("status");
 
 -- CreateIndex
-CREATE INDEX "ContactRequest_created_at_idx" ON "ContactRequest"("created_at");
+CREATE INDEX "ContactRequest_created_at_idx" ON "ContactRequest" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "SupportTicket_user_id_idx" ON "SupportTicket"("user_id");
+CREATE INDEX "SupportTicket_user_id_idx" ON "SupportTicket" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "SupportTicket_priority_idx" ON "SupportTicket"("priority");
+CREATE INDEX "SupportTicket_priority_idx" ON "SupportTicket" ("priority");
 
 -- CreateIndex
-CREATE INDEX "SupportTicket_status_idx" ON "SupportTicket"("status");
+CREATE INDEX "SupportTicket_status_idx" ON "SupportTicket" ("status");
 
 -- CreateIndex
-CREATE INDEX "SupportTicket_created_at_idx" ON "SupportTicket"("created_at");
+CREATE INDEX "SupportTicket_created_at_idx" ON "SupportTicket" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "ResearchTopic_user_id_idx" ON "ResearchTopic"("user_id");
+CREATE INDEX "ResearchTopic_user_id_idx" ON "ResearchTopic" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "ResearchTopic_title_idx" ON "ResearchTopic"("title");
+CREATE INDEX "ResearchTopic_title_idx" ON "ResearchTopic" ("title");
 
 -- CreateIndex
-CREATE INDEX "ResearchTopic_created_at_idx" ON "ResearchTopic"("created_at");
+CREATE INDEX "ResearchTopic_created_at_idx" ON "ResearchTopic" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "ResearchSource_user_id_idx" ON "ResearchSource"("user_id");
+CREATE INDEX "ResearchSource_user_id_idx" ON "ResearchSource" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "ResearchSource_topic_id_idx" ON "ResearchSource"("topic_id");
+CREATE INDEX "ResearchSource_topic_id_idx" ON "ResearchSource" ("topic_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ResearchPaper_externalId_key" ON "ResearchPaper"("externalId");
+CREATE UNIQUE INDEX "ResearchPaper_externalId_key" ON "ResearchPaper" ("externalId");
 
 -- CreateIndex
-CREATE INDEX "ResearchPaper_title_idx" ON "ResearchPaper"("title");
+CREATE INDEX "ResearchPaper_title_idx" ON "ResearchPaper" ("title");
 
 -- CreateIndex
-CREATE INDEX "ResearchPaper_year_idx" ON "ResearchPaper"("year");
+CREATE INDEX "ResearchPaper_year_idx" ON "ResearchPaper" ("year");
 
 -- CreateIndex
-CREATE INDEX "ResearchPaper_externalId_idx" ON "ResearchPaper"("externalId");
+CREATE INDEX "ResearchPaper_externalId_idx" ON "ResearchPaper" ("externalId");
 
 -- CreateIndex
-CREATE INDEX "SavedPaper_user_id_idx" ON "SavedPaper"("user_id");
+CREATE INDEX "SavedPaper_user_id_idx" ON "SavedPaper" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "SavedPaper_paper_id_idx" ON "SavedPaper"("paper_id");
+CREATE INDEX "SavedPaper_paper_id_idx" ON "SavedPaper" ("paper_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "SavedPaper_user_id_paper_id_key" ON "SavedPaper"("user_id", "paper_id");
+CREATE UNIQUE INDEX "SavedPaper_user_id_paper_id_key" ON "SavedPaper" ("user_id", "paper_id");
 
 -- CreateIndex
-CREATE INDEX "VersionSchedule_project_id_idx" ON "VersionSchedule"("project_id");
+CREATE INDEX "VersionSchedule_project_id_idx" ON "VersionSchedule" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "VersionSchedule_enabled_idx" ON "VersionSchedule"("enabled");
+CREATE INDEX "VersionSchedule_enabled_idx" ON "VersionSchedule" ("enabled");
 
 -- CreateIndex
-CREATE INDEX "VersionSchedule_next_run_idx" ON "VersionSchedule"("next_run");
+CREATE INDEX "VersionSchedule_next_run_idx" ON "VersionSchedule" ("next_run");
 
 -- CreateIndex
-CREATE INDEX "TaskTracking_user_id_idx" ON "TaskTracking"("user_id");
+CREATE INDEX "TaskTracking_user_id_idx" ON "TaskTracking" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "TaskTracking_service_type_idx" ON "TaskTracking"("service_type");
+CREATE INDEX "TaskTracking_service_type_idx" ON "TaskTracking" ("service_type");
 
 -- CreateIndex
-CREATE INDEX "TaskTracking_action_idx" ON "TaskTracking"("action");
+CREATE INDEX "TaskTracking_action_idx" ON "TaskTracking" ("action");
 
 -- CreateIndex
-CREATE INDEX "TaskTracking_created_at_idx" ON "TaskTracking"("created_at");
+CREATE INDEX "TaskTracking_created_at_idx" ON "TaskTracking" ("created_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WaitlistEntry_email_key" ON "WaitlistEntry"("email");
+CREATE UNIQUE INDEX "WaitlistEntry_email_key" ON "WaitlistEntry" ("email");
 
 -- CreateIndex
-CREATE INDEX "WaitlistEntry_email_idx" ON "WaitlistEntry"("email");
+CREATE INDEX "WaitlistEntry_email_idx" ON "WaitlistEntry" ("email");
 
 -- CreateIndex
-CREATE INDEX "WaitlistEntry_created_at_idx" ON "WaitlistEntry"("created_at");
+CREATE INDEX "WaitlistEntry_created_at_idx" ON "WaitlistEntry" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "WaitlistEntry_priority_idx" ON "WaitlistEntry"("priority");
+CREATE INDEX "WaitlistEntry_priority_idx" ON "WaitlistEntry" ("priority");
 
 -- CreateIndex
-CREATE INDEX "WaitlistEntry_converted_idx" ON "WaitlistEntry"("converted");
+CREATE INDEX "WaitlistEntry_converted_idx" ON "WaitlistEntry" ("converted");
 
 -- CreateIndex
-CREATE INDEX "DemoRequest_email_idx" ON "DemoRequest"("email");
+CREATE INDEX "DemoRequest_email_idx" ON "DemoRequest" ("email");
 
 -- CreateIndex
-CREATE INDEX "DemoRequest_created_at_idx" ON "DemoRequest"("created_at");
+CREATE INDEX "DemoRequest_created_at_idx" ON "DemoRequest" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "FeatureRequest_category_idx" ON "FeatureRequest"("category");
+CREATE INDEX "FeatureRequest_category_idx" ON "FeatureRequest" ("category");
 
 -- CreateIndex
-CREATE INDEX "FeatureRequest_priority_idx" ON "FeatureRequest"("priority");
+CREATE INDEX "FeatureRequest_priority_idx" ON "FeatureRequest" ("priority");
 
 -- CreateIndex
-CREATE INDEX "FeatureRequest_created_at_idx" ON "FeatureRequest"("created_at");
+CREATE INDEX "FeatureRequest_created_at_idx" ON "FeatureRequest" ("created_at");
 
 -- CreateIndex
-CREATE INDEX "DocumentTemplate_type_idx" ON "DocumentTemplate"("type");
+CREATE INDEX "DocumentTemplate_type_idx" ON "DocumentTemplate" ("type");
 
 -- CreateIndex
-CREATE INDEX "DocumentTemplate_is_public_idx" ON "DocumentTemplate"("is_public");
+CREATE INDEX "DocumentTemplate_is_public_idx" ON "DocumentTemplate" ("is_public");
 
 -- CreateIndex
-CREATE INDEX "DocumentTemplate_user_id_idx" ON "DocumentTemplate"("user_id");
+CREATE INDEX "DocumentTemplate_user_id_idx" ON "DocumentTemplate" ("user_id");
 
 -- CreateIndex
-CREATE INDEX "DocumentTemplate_category_id_idx" ON "DocumentTemplate"("category_id");
+CREATE INDEX "DocumentTemplate_category_id_idx" ON "DocumentTemplate" ("category_id");
 
 -- CreateIndex
-CREATE INDEX "DocumentTemplate_rating_idx" ON "DocumentTemplate"("rating");
+CREATE INDEX "DocumentTemplate_rating_idx" ON "DocumentTemplate" ("rating");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ResearchAnalysis_project_id_key" ON "ResearchAnalysis"("project_id");
+CREATE UNIQUE INDEX "ResearchAnalysis_project_id_key" ON "ResearchAnalysis" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "ResearchAnalysis_project_id_idx" ON "ResearchAnalysis"("project_id");
+CREATE INDEX "ResearchAnalysis_project_id_idx" ON "ResearchAnalysis" ("project_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "GeneratedAudio_project_id_key" ON "GeneratedAudio"("project_id");
+CREATE UNIQUE INDEX "GeneratedAudio_project_id_key" ON "GeneratedAudio" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "GeneratedAudio_project_id_idx" ON "GeneratedAudio"("project_id");
+CREATE INDEX "GeneratedAudio_project_id_idx" ON "GeneratedAudio" ("project_id");
 
 -- CreateIndex
-CREATE INDEX "_TaskLabels_B_index" ON "_TaskLabels"("B");
+CREATE INDEX "_TaskLabels_B_index" ON "_TaskLabels" ("B");
 
 -- AddForeignKey
-ALTER TABLE "Workspace" ADD CONSTRAINT "Workspace_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Workspace"
+ADD CONSTRAINT "Workspace_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceView" ADD CONSTRAINT "WorkspaceView_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceView"
+ADD CONSTRAINT "WorkspaceView_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceMember" ADD CONSTRAINT "WorkspaceMember_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceMember"
+ADD CONSTRAINT "WorkspaceMember_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceMember" ADD CONSTRAINT "WorkspaceMember_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceMember"
+ADD CONSTRAINT "WorkspaceMember_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceInvitation" ADD CONSTRAINT "WorkspaceInvitation_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceInvitation"
+ADD CONSTRAINT "WorkspaceInvitation_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceInvitation" ADD CONSTRAINT "WorkspaceInvitation_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceInvitation"
+ADD CONSTRAINT "WorkspaceInvitation_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Note" ADD CONSTRAINT "Note_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Note"
+ADD CONSTRAINT "Note_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Note" ADD CONSTRAINT "Note_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Note"
+ADD CONSTRAINT "Note_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PushNotificationToken" ADD CONSTRAINT "PushNotificationToken_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PushNotificationToken"
+ADD CONSTRAINT "PushNotificationToken_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Project" ADD CONSTRAINT "Project_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Project"
+ADD CONSTRAINT "Project_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Project" ADD CONSTRAINT "ProjectToUser" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Project"
+ADD CONSTRAINT "ProjectToUser" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Project" ADD CONSTRAINT "Project_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "DocumentTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Project"
+ADD CONSTRAINT "Project_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "DocumentTemplate" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "pdf_documents" ADD CONSTRAINT "pdf_documents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "pdf_documents"
+ADD CONSTRAINT "pdf_documents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CollaboratorPresence" ADD CONSTRAINT "CollaboratorPresence_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CollaboratorPresence"
+ADD CONSTRAINT "CollaboratorPresence_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CollaboratorPresence" ADD CONSTRAINT "CollaboratorPresence_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CollaboratorPresence"
+ADD CONSTRAINT "CollaboratorPresence_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "DocumentShareSettings" ADD CONSTRAINT "DocumentShareSettings_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DocumentShareSettings"
+ADD CONSTRAINT "DocumentShareSettings_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Citation" ADD CONSTRAINT "Citation_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Citation"
+ADD CONSTRAINT "Citation_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CitationActivity" ADD CONSTRAINT "CitationActivity_citation_id_fkey" FOREIGN KEY ("citation_id") REFERENCES "Citation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "CitationActivity"
+ADD CONSTRAINT "CitationActivity_citation_id_fkey" FOREIGN KEY ("citation_id") REFERENCES "Citation" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CitationActivity" ADD CONSTRAINT "CitationActivity_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "CitationActivity"
+ADD CONSTRAINT "CitationActivity_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CitationActivity" ADD CONSTRAINT "CitationActivity_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CitationActivity"
+ADD CONSTRAINT "CitationActivity_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "RecycledItem" ADD CONSTRAINT "RecycledItem_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "RecycledItem"
+ADD CONSTRAINT "RecycledItem_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "DocumentVersion" ADD CONSTRAINT "DocumentVersion_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DocumentVersion"
+ADD CONSTRAINT "DocumentVersion_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "DocumentVersion" ADD CONSTRAINT "DocumentVersion_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DocumentVersion"
+ADD CONSTRAINT "DocumentVersion_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIUsage" ADD CONSTRAINT "AIUsage_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AIUsage"
+ADD CONSTRAINT "AIUsage_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "SubscriptionToUser" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Subscription"
+ADD CONSTRAINT "SubscriptionToUser" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OTPCode" ADD CONSTRAINT "OTPCode_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OTPCode"
+ADD CONSTRAINT "OTPCode_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Notification"
+ADD CONSTRAINT "Notification_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "NotificationSettings" ADD CONSTRAINT "NotificationSettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "NotificationSettings"
+ADD CONSTRAINT "NotificationSettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIHistory" ADD CONSTRAINT "AIHistory_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AIHistory"
+ADD CONSTRAINT "AIHistory_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIChatSession" ADD CONSTRAINT "AIChatSession_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "AIChatSession"
+ADD CONSTRAINT "AIChatSession_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIChatSession" ADD CONSTRAINT "AIChatSession_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AIChatSession"
+ADD CONSTRAINT "AIChatSession_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIChatMessage" ADD CONSTRAINT "AIChatMessage_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "AIChatSession"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AIChatMessage"
+ADD CONSTRAINT "AIChatMessage_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "AIChatSession" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIChatMessage" ADD CONSTRAINT "AIChatMessage_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AIChatMessage"
+ADD CONSTRAINT "AIChatMessage_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentMethod" ADD CONSTRAINT "PaymentMethod_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "PaymentMethod"
+ADD CONSTRAINT "PaymentMethod_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamChatMessage" ADD CONSTRAINT "TeamChatMessage_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TeamChatMessage"
+ADD CONSTRAINT "TeamChatMessage_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamChatMessage" ADD CONSTRAINT "TeamChatMessage_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TeamChatMessage"
+ADD CONSTRAINT "TeamChatMessage_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamChatMessage" ADD CONSTRAINT "TeamChatMessage_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TeamChatMessage"
+ADD CONSTRAINT "TeamChatMessage_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamChatMessage" ADD CONSTRAINT "TeamChatMessage_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "TeamChatMessage"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "TeamChatMessage"
+ADD CONSTRAINT "TeamChatMessage_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "TeamChatMessage" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceTask" ADD CONSTRAINT "WorkspaceTask_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceTask"
+ADD CONSTRAINT "WorkspaceTask_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceTask" ADD CONSTRAINT "WorkspaceTask_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceTask"
+ADD CONSTRAINT "WorkspaceTask_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceTask" ADD CONSTRAINT "WorkspaceTask_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceTask"
+ADD CONSTRAINT "WorkspaceTask_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceTask" ADD CONSTRAINT "WorkspaceTask_parent_recurring_task_id_fkey" FOREIGN KEY ("parent_recurring_task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceTask"
+ADD CONSTRAINT "WorkspaceTask_parent_recurring_task_id_fkey" FOREIGN KEY ("parent_recurring_task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskDependency" ADD CONSTRAINT "TaskDependency_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskDependency"
+ADD CONSTRAINT "TaskDependency_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskDependency" ADD CONSTRAINT "TaskDependency_depends_on_id_fkey" FOREIGN KEY ("depends_on_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskDependency"
+ADD CONSTRAINT "TaskDependency_depends_on_id_fkey" FOREIGN KEY ("depends_on_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceSubtask" ADD CONSTRAINT "WorkspaceSubtask_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceSubtask"
+ADD CONSTRAINT "WorkspaceSubtask_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceLabel" ADD CONSTRAINT "WorkspaceLabel_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceLabel"
+ADD CONSTRAINT "WorkspaceLabel_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskAttachment" ADD CONSTRAINT "TaskAttachment_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskAttachment"
+ADD CONSTRAINT "TaskAttachment_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WorkspaceCustomField" ADD CONSTRAINT "WorkspaceCustomField_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WorkspaceCustomField"
+ADD CONSTRAINT "WorkspaceCustomField_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "Workspace" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskCustomFieldValue" ADD CONSTRAINT "TaskCustomFieldValue_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskCustomFieldValue"
+ADD CONSTRAINT "TaskCustomFieldValue_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskCustomFieldValue" ADD CONSTRAINT "TaskCustomFieldValue_field_id_fkey" FOREIGN KEY ("field_id") REFERENCES "WorkspaceCustomField"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskCustomFieldValue"
+ADD CONSTRAINT "TaskCustomFieldValue_field_id_fkey" FOREIGN KEY ("field_id") REFERENCES "WorkspaceCustomField" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskTimeEntry" ADD CONSTRAINT "TaskTimeEntry_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskTimeEntry"
+ADD CONSTRAINT "TaskTimeEntry_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskTimeEntry" ADD CONSTRAINT "TaskTimeEntry_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TaskTimeEntry"
+ADD CONSTRAINT "TaskTimeEntry_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskAssignee" ADD CONSTRAINT "TaskAssignee_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskAssignee"
+ADD CONSTRAINT "TaskAssignee_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskAssignee" ADD CONSTRAINT "TaskAssignee_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskAssignee"
+ADD CONSTRAINT "TaskAssignee_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskComment" ADD CONSTRAINT "TaskComment_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskComment"
+ADD CONSTRAINT "TaskComment_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskComment" ADD CONSTRAINT "TaskComment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskComment"
+ADD CONSTRAINT "TaskComment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Invoice"
+ADD CONSTRAINT "Invoice_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserAppearanceSettings" ADD CONSTRAINT "UserAppearanceSettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "UserAppearanceSettings"
+ADD CONSTRAINT "UserAppearanceSettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIPerformanceMetric" ADD CONSTRAINT "AIPerformanceMetric_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AIPerformanceMetric"
+ADD CONSTRAINT "AIPerformanceMetric_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AIFeedback" ADD CONSTRAINT "AIFeedback_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AIFeedback"
+ADD CONSTRAINT "AIFeedback_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserPrivacySettings" ADD CONSTRAINT "UserPrivacySettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "UserPrivacySettings"
+ADD CONSTRAINT "UserPrivacySettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AuditLog"
+ADD CONSTRAINT "AuditLog_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserSession" ADD CONSTRAINT "UserSession_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "UserSession"
+ADD CONSTRAINT "UserSession_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "LoginHistory" ADD CONSTRAINT "LoginHistory_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "LoginHistory"
+ADD CONSTRAINT "LoginHistory_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EditorSettings" ADD CONSTRAINT "EditorSettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "EditorSettings"
+ADD CONSTRAINT "EditorSettings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EditorActivity" ADD CONSTRAINT "EditorActivity_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "EditorActivity"
+ADD CONSTRAINT "EditorActivity_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EditorActivity" ADD CONSTRAINT "EditorActivity_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "EditorActivity"
+ADD CONSTRAINT "EditorActivity_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EditorEvent" ADD CONSTRAINT "EditorEvent_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "EditorEvent"
+ADD CONSTRAINT "EditorEvent_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EditorEvent" ADD CONSTRAINT "EditorEvent_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "EditorEvent"
+ADD CONSTRAINT "EditorEvent_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserFeedback" ADD CONSTRAINT "UserFeedback_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "UserFeedback"
+ADD CONSTRAINT "UserFeedback_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FeedbackComment" ADD CONSTRAINT "FeedbackComment_feedback_id_fkey" FOREIGN KEY ("feedback_id") REFERENCES "UserFeedback"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "FeedbackComment"
+ADD CONSTRAINT "FeedbackComment_feedback_id_fkey" FOREIGN KEY ("feedback_id") REFERENCES "UserFeedback" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FeedbackComment" ADD CONSTRAINT "FeedbackComment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "FeedbackComment"
+ADD CONSTRAINT "FeedbackComment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Backup" ADD CONSTRAINT "Backup_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Backup"
+ADD CONSTRAINT "Backup_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SearchAlert" ADD CONSTRAINT "SearchAlert_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SearchAlert"
+ADD CONSTRAINT "SearchAlert_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Restore" ADD CONSTRAINT "Restore_backup_id_fkey" FOREIGN KEY ("backup_id") REFERENCES "Backup"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Restore"
+ADD CONSTRAINT "Restore_backup_id_fkey" FOREIGN KEY ("backup_id") REFERENCES "Backup" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Restore" ADD CONSTRAINT "Restore_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Restore"
+ADD CONSTRAINT "Restore_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "BackupSchedule" ADD CONSTRAINT "BackupSchedule_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "BackupSchedule"
+ADD CONSTRAINT "BackupSchedule_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Export" ADD CONSTRAINT "Export_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Export"
+ADD CONSTRAINT "Export_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Export" ADD CONSTRAINT "Export_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Export"
+ADD CONSTRAINT "Export_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SupportTicket" ADD CONSTRAINT "SupportTicketToUser" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "SupportTicket"
+ADD CONSTRAINT "SupportTicketToUser" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ResearchTopic" ADD CONSTRAINT "ResearchTopic_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ResearchTopic"
+ADD CONSTRAINT "ResearchTopic_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ResearchSource" ADD CONSTRAINT "ResearchSource_topic_id_fkey" FOREIGN KEY ("topic_id") REFERENCES "ResearchTopic"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ResearchSource"
+ADD CONSTRAINT "ResearchSource_topic_id_fkey" FOREIGN KEY ("topic_id") REFERENCES "ResearchTopic" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ResearchSource" ADD CONSTRAINT "ResearchSource_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ResearchSource"
+ADD CONSTRAINT "ResearchSource_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SavedPaper" ADD CONSTRAINT "SavedPaper_paper_id_fkey" FOREIGN KEY ("paper_id") REFERENCES "ResearchPaper"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SavedPaper"
+ADD CONSTRAINT "SavedPaper_paper_id_fkey" FOREIGN KEY ("paper_id") REFERENCES "ResearchPaper" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SavedPaper" ADD CONSTRAINT "SavedPaper_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SavedPaper"
+ADD CONSTRAINT "SavedPaper_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "VersionSchedule" ADD CONSTRAINT "VersionSchedule_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "VersionSchedule"
+ADD CONSTRAINT "VersionSchedule_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TaskTracking" ADD CONSTRAINT "TaskTracking_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TaskTracking"
+ADD CONSTRAINT "TaskTracking_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WaitlistEntry" ADD CONSTRAINT "WaitlistEntry_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "WaitlistEntry"
+ADD CONSTRAINT "WaitlistEntry_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "DocumentTemplate" ADD CONSTRAINT "DocumentTemplate_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DocumentTemplate"
+ADD CONSTRAINT "DocumentTemplate_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ResearchAnalysis" ADD CONSTRAINT "ResearchAnalysis_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ResearchAnalysis"
+ADD CONSTRAINT "ResearchAnalysis_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "GeneratedAudio" ADD CONSTRAINT "GeneratedAudio_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "GeneratedAudio"
+ADD CONSTRAINT "GeneratedAudio_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_TaskLabels" ADD CONSTRAINT "_TaskLabels_A_fkey" FOREIGN KEY ("A") REFERENCES "WorkspaceLabel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_TaskLabels"
+ADD CONSTRAINT "_TaskLabels_A_fkey" FOREIGN KEY ("A") REFERENCES "WorkspaceLabel" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_TaskLabels" ADD CONSTRAINT "_TaskLabels_B_fkey" FOREIGN KEY ("B") REFERENCES "WorkspaceTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_TaskLabels"
+ADD CONSTRAINT "_TaskLabels_B_fkey" FOREIGN KEY ("B") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -749,4 +749,65 @@ router.get(
   handleGetChatHistory
 );
 
+// Save a message directly without AI processing (used for action responses)
+async function handlePostDirectMessage(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { sessionId, content, role, messageType, metadata } = req.body;
+
+    if (!userId || !sessionId || !content || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID, session ID, content, and role are required",
+      });
+    }
+
+    // Verify session belongs to user
+    const session = await prisma.aIChatSession.findUnique({
+      where: {
+        id: sessionId,
+        user_id: userId,
+      },
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat session not found",
+      });
+    }
+
+    // Save the message directly
+    const message = await prisma.aIChatMessage.create({
+      data: {
+        session_id: sessionId,
+        user_id: userId,
+        content,
+        role,
+        message_type: messageType || "text",
+        metadata: metadata || undefined,
+      },
+    });
+
+    // Update session last message timestamp
+    await prisma.aIChatSession.update({
+      where: { id: sessionId },
+      data: { last_message_at: new Date() },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message,
+    });
+  } catch (error: any) {
+    logger.error("Error saving direct message:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+router.post("/message/direct", authenticateExpressRequest, handlePostDirectMessage);
+
 export default router;

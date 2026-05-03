@@ -1,6 +1,7 @@
 # ScholarForge AI - Comprehensive Codebase Analysis
 
 ## Table of Contents
+
 1. [Executive Summary](#executive-summary)
 2. [What is ScholarForge AI?](#what-is-scholarforge-ai)
 3. [Architecture Overview](#architecture-overview)
@@ -28,7 +29,9 @@
 ## What is ScholarForge AI?
 
 ### Primary Purpose
+
 ScholarForge AI is an **AI Research Co-Pilot** that helps academics:
+
 - Discover relevant research papers from a database of 250M+ papers
 - Generate accurate summaries and identify research gaps
 - Manage citations with confidence scoring
@@ -36,12 +39,14 @@ ScholarForge AI is an **AI Research Co-Pilot** that helps academics:
 - Export publication-ready documents in multiple formats
 
 ### Target Audience
+
 - **PhD Candidates** - Thesis and dissertation writing
 - **Graduate Students** - Research papers and literature reviews
 - **Professors** - Publication management and collaboration
 - **Research Teams** - Collaborative research projects
 
 ### Core Philosophy
+
 1. **Accuracy & Ethics First** - Built-in citation verification and human-in-the-loop safeguards
 2. **Focus on Writing** - Everything needed in one place
 3. **Made for Collaboration** - Real-time editing, comments, and version control
@@ -51,6 +56,7 @@ ScholarForge AI is an **AI Research Co-Pilot** that helps academics:
 ## Architecture Overview
 
 ### System Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    CLIENT LAYER                             │
@@ -86,6 +92,7 @@ ScholarForge AI is an **AI Research Co-Pilot** that helps academics:
 ```
 
 ### Project Structure
+
 ```
 scholarforge-ai/
 ├── backend/                    # Express.js + Next.js hybrid server
@@ -114,47 +121,51 @@ scholarforge-ai/
 ## Technology Stack
 
 ### Backend Technologies
-| Component | Technology | Version | Purpose |
-|-----------|------------|---------|---------|
-| Runtime | Node.js | 20+ | Server runtime |
-| Framework | Express.js | 5.2.1 | API server |
-| Framework | Next.js | 16.1.6 | Hybrid rendering |
-| Language | TypeScript | 5.x | Type safety |
-| Database | PostgreSQL | 17 + pgvector | Primary database |
-| ORM | Prisma | 7.7.0 | Database access |
-| Auth | Supabase Auth | 2.91.0 | Authentication |
-| Storage | Supabase Storage | 2.91.0 | File storage |
-| Real-time | Hocuspocus/Yjs | 3.4.4 | Collaboration |
-| AI/ML | Multiple | Various | AI processing |
+
+| Component | Technology       | Version       | Purpose          |
+| --------- | ---------------- | ------------- | ---------------- |
+| Runtime   | Node.js          | 20+           | Server runtime   |
+| Framework | Express.js       | 5.2.1         | API server       |
+| Framework | Next.js          | 16.1.6        | Hybrid rendering |
+| Language  | TypeScript       | 5.x           | Type safety      |
+| Database  | PostgreSQL       | 17 + pgvector | Primary database |
+| ORM       | Prisma           | 7.7.0         | Database access  |
+| Auth      | Supabase Auth    | 2.91.0        | Authentication   |
+| Storage   | Supabase Storage | 2.91.0        | File storage     |
+| Real-time | Hocuspocus/Yjs   | 3.4.4         | Collaboration    |
+| AI/ML     | Multiple         | Various       | AI processing    |
 
 ### Frontend Technologies
-| Component | Technology | Version | Purpose |
-|-----------|------------|---------|---------|
-| Framework | Next.js | 16.1.6 | React framework |
-| Language | TypeScript | 5.x | Type safety |
-| Styling | Tailwind CSS | 4.x | CSS framework |
-| UI Components | Radix UI | 1.x | Headless components |
-| Editor | TipTap | 3.19.0 | Rich text editor |
-| Icons | Lucide React | 0.562.0 | Icon library |
-| Forms | React Hook Form | 7.71.1 | Form management |
-| Validation | Zod | 4.3.5 | Schema validation |
+
+| Component     | Technology      | Version | Purpose             |
+| ------------- | --------------- | ------- | ------------------- |
+| Framework     | Next.js         | 16.1.6  | React framework     |
+| Language      | TypeScript      | 5.x     | Type safety         |
+| Styling       | Tailwind CSS    | 4.x     | CSS framework       |
+| UI Components | Radix UI        | 1.x     | Headless components |
+| Editor        | TipTap          | 3.19.0  | Rich text editor    |
+| Icons         | Lucide React    | 0.562.0 | Icon library        |
+| Forms         | React Hook Form | 7.71.1  | Form management     |
+| Validation    | Zod             | 4.3.5   | Schema validation   |
 
 ### AI/ML Providers
-| Provider | Models | Use Case |
-|----------|--------|----------|
-| OpenAI | GPT-4o, GPT-4o-mini | General AI tasks |
-| Anthropic | Claude 3.5 Sonnet, Claude 3 Haiku | Complex reasoning |
-| Google | Gemini 2.5 Flash, Gemini 3.1 Flash | Multimodal tasks |
-| OpenRouter | Multiple free models | Cost optimization |
+
+| Provider   | Models                             | Use Case          |
+| ---------- | ---------------------------------- | ----------------- |
+| Google     | Gemini 2.5 Flash                   | General AI tasks  |
+| Google     | Gemini 2.5 Flash, Gemini 3.1 Flash | Multimodal tasks  |
+| OpenRouter | Multiple free models               | Cost optimization |
 
 ---
 
 ## Core Features
 
 ### 1. AI Research Co-Pilot
+
 **Location**: `backend/src/services/researchCoPilotService.ts`
 
 Intelligent research assistance with:
+
 - **Document Context Awareness** - Understands your entire document
 - **Citation Suggestions** - Recommends relevant papers
 - **Paper Recommendations** - Personalized based on research history
@@ -162,11 +173,13 @@ Intelligent research assistance with:
 - **Plagiarism-Free Generation** - Original content creation
 
 **Supported Modes**:
+
 - `general` - General assistance
 - `research` - Deep research mode
 - `autocomplete` - Smart text completion
 
 ### 2. Intelligent Paper Discovery
+
 **Location**: `backend/src/services/paperDiscoveryService.ts`
 
 - Scans 250M+ academic papers
@@ -175,9 +188,11 @@ Intelligent research assistance with:
 - CrossRef, OpenAlex, arXiv, PubMed integration
 
 ### 3. Citation Management System
+
 **Location**: `backend/src/services/citationService.ts`
 
 **Features**:
+
 - Multiple citation styles (APA, MLA, Chicago, etc.)
 - Automatic citation formatting via Citation.js
 - Confidence scoring for citations
@@ -190,6 +205,7 @@ Intelligent research assistance with:
   - Reports
 
 ### 4. Smart Summarization
+
 **Location**: `backend/src/services/aiService.ts`
 
 - Multi-model verification for accuracy
@@ -198,18 +214,22 @@ Intelligent research assistance with:
 - Key finding extraction
 
 ### 5. Real-time Collaboration
+
 **Location**: `backend/src/hybrid/websockets/hocuspocus-server.ts`
 
 Powered by **Hocuspocus** (Yjs-based):
+
 - Live multi-user editing
 - Cursor presence indicators
 - Conflict-free replicated data types (CRDT)
 - Offline support
 
 ### 6. Document Export System
+
 **Location**: `backend/src/services/exportService.ts`
 
 **Supported Formats**:
+
 - PDF (standard & journal-ready)
 - DOCX (Microsoft Word)
 - LaTeX (academic publications)
@@ -223,9 +243,11 @@ Powered by **Hocuspocus** (Yjs-based):
 - OneDrive integration
 
 ### 7. Workspace & Project Management
+
 **Location**: `backend/src/api/workspaces/`
 
 **Features**:
+
 - Multiple workspaces per user
 - Role-based access control (admin, editor, viewer)
 - Team invitations
@@ -233,6 +255,7 @@ Powered by **Hocuspocus** (Yjs-based):
 - Custom views and filters
 
 ### 8. Task Management
+
 **Location**: `backend/src/services/workspaceTaskService.ts`
 
 - Task creation and assignment
@@ -244,6 +267,7 @@ Powered by **Hocuspocus** (Yjs-based):
 - Comments and attachments
 
 ### 9. Team Chat
+
 **Location**: `backend/src/api/team-chat/`
 
 - Workspace-based chat rooms
@@ -252,6 +276,7 @@ Powered by **Hocuspocus** (Yjs-based):
 - File sharing
 
 ### 10. Backup & Version Control
+
 **Location**: `backend/src/services/`
 
 - Automatic version history
@@ -261,15 +286,18 @@ Powered by **Hocuspocus** (Yjs-based):
 - Configurable retention periods
 
 ### 11. Notification System
+
 **Location**: `backend/src/services/notificationService.ts`
 
 **Channels**:
+
 - In-app notifications
 - Email notifications (Resend)
 - Push notifications
 - SMS notifications (Twilio)
 
 **Categories**:
+
 - Project activity
 - Collaboration events
 - AI feature completions
@@ -277,11 +305,13 @@ Powered by **Hocuspocus** (Yjs-based):
 - Security notifications
 
 ### 12. Subscription & Billing
+
 **Location**: `backend/src/services/subscriptionService.ts`
 
 **Payment Provider**: LemonSqueezy
 
 **Plans**:
+
 - **Free** - 100MB storage, basic features
 - **Student** - 5GB storage, advanced AI
 - **Researcher** - 100GB storage, full features
@@ -291,6 +321,7 @@ Powered by **Hocuspocus** (Yjs-based):
 ## Backend Deep Dive
 
 ### API Structure
+
 ```
 backend/src/api/
 ├── ai/                      # AI-related endpoints
@@ -318,16 +349,19 @@ backend/src/api/
 ### Key Services
 
 #### 1. AIService (`aiService.ts`)
+
 **Size**: 2,580 lines
 
 **Capabilities**:
-- Multi-provider AI handling (OpenAI, Anthropic, Google, OpenRouter)
+
+- Multi-provider AI handling (Google Gemini, OpenRouter)
 - Usage tracking and rate limiting
 - Cost estimation and monitoring
 - Model selection based on task complexity
 - Session-based autocomplete restrictions
 
 **Supported Actions**:
+
 - `improve` - Enhance writing quality
 - `summarize` - Create concise summaries
 - `expand` - Elaborate on ideas
@@ -338,9 +372,11 @@ backend/src/api/
 - `brainstorm` - Idea generation
 
 #### 2. EditorService (`editorService.ts`)
+
 **Size**: 1,817 lines
 
 **Features**:
+
 - TipTap JSON content validation
 - Document version management
 - Word count tracking
@@ -348,9 +384,11 @@ backend/src/api/
 - Content sanitization
 
 #### 3. ExportService (`exportService.ts`)
+
 **Size**: 1,898 lines
 
 **Features**:
+
 - 13+ export formats
 - Citation inclusion
 - Cover page generation
@@ -358,9 +396,11 @@ backend/src/api/
 - Journal-ready formatting
 
 #### 4. CitationService (`citationService.ts`)
+
 **Size**: 1,313 lines
 
 **Features**:
+
 - Citation CRUD operations
 - CrossRef integration for DOI lookup
 - BibTeX, RIS, CSL export
@@ -368,6 +408,7 @@ backend/src/api/
 - Plagiarism detection
 
 ### Scheduled Tasks
+
 Located in `backend/src/scheduledTasks/`:
 
 1. **cleanupExpiredItems.ts** - Removes expired data
@@ -381,6 +422,7 @@ Located in `backend/src/scheduledTasks/`:
 ## Frontend Deep Dive
 
 ### Application Structure
+
 ```
 frontend/app/
 ├── (auth)/                  # Auth route group
@@ -407,6 +449,7 @@ frontend/app/
 ```
 
 ### Research Interface Components
+
 Located in `frontend/app/research/`:
 
 1. **ResearchInterface.tsx** - Main research UI
@@ -423,9 +466,11 @@ Located in `frontend/app/research/`:
 ### Key Features
 
 #### Rich Text Editor
+
 **Technology**: TipTap + Yjs for collaboration
 
 **Extensions**:
+
 - Basic formatting (bold, italic, underline)
 - Headings (H1-H6)
 - Lists (ordered, unordered, task)
@@ -440,6 +485,7 @@ Located in `frontend/app/research/`:
 - Character counting
 
 #### Theme System
+
 **Technology**: Next Themes + Tailwind CSS
 
 - Dark/Light mode support
@@ -451,9 +497,11 @@ Located in `frontend/app/research/`:
 ## Database Schema
 
 ### Core Models
+
 The database schema (`backend/prisma/schema.prisma`) contains **70+ models**:
 
 #### User Management
+
 - `User` - Core user entity
 - `UserSession` - Active sessions
 - `LoginHistory` - Authentication audit
@@ -463,6 +511,7 @@ The database schema (`backend/prisma/schema.prisma`) contains **70+ models**:
 - `UserPrivacySettings` - Privacy controls
 
 #### Workspace & Collaboration
+
 - `Workspace` - Team workspaces
 - `WorkspaceMember` - Membership records
 - `WorkspaceInvitation` - Pending invites
@@ -470,6 +519,7 @@ The database schema (`backend/prisma/schema.prisma`) contains **70+ models**:
 - `CollaboratorPresence` - Real-time presence
 
 #### Project & Content
+
 - `Project` - Research projects
 - `DocumentVersion` - Version history
 - `Citation` - Bibliographic entries
@@ -477,6 +527,7 @@ The database schema (`backend/prisma/schema.prisma`) contains **70+ models**:
 - `PdfDocument` - Uploaded PDFs
 
 #### Task Management
+
 - `WorkspaceTask` - Task entities
 - `WorkspaceSubtask` - Sub-tasks
 - `TaskAssignee` - Assignment records
@@ -488,6 +539,7 @@ The database schema (`backend/prisma/schema.prisma`) contains **70+ models**:
 - `WorkspaceCustomField` - Custom attributes
 
 #### AI & Research
+
 - `AIChatSession` - Chat history
 - `AIChatMessage` - Individual messages
 - `AIUsage` - Usage tracking
@@ -498,12 +550,14 @@ The database schema (`backend/prisma/schema.prisma`) contains **70+ models**:
 - `SearchAlert` - Saved searches
 
 #### Billing & Subscriptions
+
 - `Subscription` - Subscription records
 - `Invoice` - Billing invoices
 - `PaymentMethod` - Saved payment methods
 - `FailedWebhook` - Failed webhook tracking
 
 #### System
+
 - `Notification` - System notifications
 - `Backup` - Backup records
 - `Restore` - Restore operations
@@ -515,23 +569,20 @@ The database schema (`backend/prisma/schema.prisma`) contains **70+ models**:
 ## AI Integration
 
 ### Multi-Provider Architecture
+
 The platform uses a fallback system across multiple AI providers:
 
 ```
-Request → Primary (Claude) → Fallback 1 (Gemini) → Fallback 2 (OpenAI) → Fallback 3 (OpenRouter)
+Request → Primary (Gemini) → Fallback 1 (OpenRouter)
 ```
 
 ### AI Models Available
 
-| Model | Provider | Max Tokens | Best For |
-|-------|----------|------------|----------|
-| GPT-4o | OpenAI | 128,000 | Complex reasoning |
-| GPT-4o-mini | OpenAI | 16,384 | Fast responses |
-| Claude 3.5 Sonnet | Anthropic | 200,000 | Long documents |
-| Claude 3 Haiku | Anthropic | 200,000 | Quick tasks |
-| Gemini 2.5 Flash | Google | 1,048,576 | Multimodal |
-| GPT OSS 120B | OpenRouter | 131,072 | Free tier |
-| Nemotron Super 120B | OpenRouter | 131,072 | Free reasoning |
+| Model               | Provider   | Max Tokens | Best For       |
+| ------------------- | ---------- | ---------- | -------------- |
+| Gemini 2.5 Flash    | Google     | 1,048,576  | General tasks  |
+| GPT OSS 120B        | OpenRouter | 131,072    | Free tier      |
+| Nemotron Super 120B | OpenRouter | 131,072    | Free reasoning |
 
 ### AI Features
 
@@ -601,6 +652,7 @@ Request → Primary (Claude) → Fallback 1 (Gemini) → Fallback 2 (OpenAI) →
 ## Deployment & Infrastructure
 
 ### Local Development
+
 ```yaml
 # docker-compose.yml
 - PostgreSQL 17 with pgvector extension
@@ -611,6 +663,7 @@ Request → Primary (Claude) → Fallback 1 (Gemini) → Fallback 2 (OpenAI) →
 ### Environment Configuration
 
 **Backend** (`.env`):
+
 ```
 DATABASE_URL=postgresql://...
 SUPABASE_URL=...
@@ -624,6 +677,7 @@ TWILIO_ACCOUNT_SID=...
 ```
 
 **Frontend** (`.env`):
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
@@ -632,7 +686,9 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...
 ```
 
 ### Secret Management
+
 The `SecretsService` (`backend/src/services/secrets-service.ts`) provides:
+
 - Environment variable abstraction
 - Secure secret rotation
 - Fallback to environment variables
@@ -643,17 +699,18 @@ The `SecretsService` (`backend/src/services/secrets-service.ts`) provides:
 
 ### Subscription Tiers
 
-| Feature | Free | Student ($9/mo) | Researcher ($19/mo) |
-|---------|------|-----------------|---------------------|
-| Storage | 100MB | 5GB | 100GB |
-| AI Requests | 50/mo | 500/mo | Unlimited |
-| Export Formats | Basic | All | All + Journal-ready |
-| Collaboration | 2 users | 10 users | Unlimited |
-| Workspaces | 1 | 5 | Unlimited |
-| Citation Styles | 3 | All | All + Custom |
-| Support | Community | Email | Priority |
+| Feature         | Free      | Student ($9/mo) | Researcher ($19/mo) |
+| --------------- | --------- | --------------- | ------------------- |
+| Storage         | 100MB     | 5GB             | 100GB               |
+| AI Requests     | 50/mo     | 500/mo          | Unlimited           |
+| Export Formats  | Basic     | All             | All + Journal-ready |
+| Collaboration   | 2 users   | 10 users        | Unlimited           |
+| Workspaces      | 1         | 5               | Unlimited           |
+| Citation Styles | 3         | All             | All + Custom        |
+| Support         | Community | Email           | Priority            |
 
 ### Payment Integration
+
 - **Provider**: LemonSqueezy
 - **Features**:
   - Subscription management
@@ -663,6 +720,7 @@ The `SecretsService` (`backend/src/services/secrets-service.ts`) provides:
   - Trial periods
 
 ### Affiliate Program
+
 - Referral tracking (`affiliate_ref` field)
 - Commission-based rewards
 - Attribution tracking
@@ -672,6 +730,7 @@ The `SecretsService` (`backend/src/services/secrets-service.ts`) provides:
 ## Development Workflow
 
 ### Backend Scripts
+
 ```json
 {
   "start": "npx tsx src/hybrid/main-server.ts",
@@ -682,6 +741,7 @@ The `SecretsService` (`backend/src/services/secrets-service.ts`) provides:
 ```
 
 ### Frontend Scripts
+
 ```json
 {
   "start": "next start",
@@ -692,6 +752,7 @@ The `SecretsService` (`backend/src/services/secrets-service.ts`) provides:
 ```
 
 ### Database Management
+
 ```bash
 # Generate Prisma client
 npx prisma generate
@@ -707,6 +768,7 @@ npx prisma db seed
 ```
 
 ### Code Quality
+
 - **ESLint** - Code linting
 - **TypeScript** - Type checking
 - **Winston** - Structured logging
@@ -717,31 +779,34 @@ npx prisma db seed
 ## Key Files Reference
 
 ### Configuration Files
-| File | Purpose |
-|------|---------|
-| `backend/.env` | Backend environment variables |
-| `frontend/.env` | Frontend environment variables |
-| `backend/prisma/schema.prisma` | Database schema |
-| `docker-compose.yml` | Local database setup |
-| `backend/nodemon.json` | Development server config |
+
+| File                           | Purpose                        |
+| ------------------------------ | ------------------------------ |
+| `backend/.env`                 | Backend environment variables  |
+| `frontend/.env`                | Frontend environment variables |
+| `backend/prisma/schema.prisma` | Database schema                |
+| `docker-compose.yml`           | Local database setup           |
+| `backend/nodemon.json`         | Development server config      |
 
 ### Entry Points
-| File | Purpose |
-|------|---------|
+
+| File                                | Purpose              |
+| ----------------------------------- | -------------------- |
 | `backend/src/hybrid/main-server.ts` | Backend server entry |
-| `frontend/app/page.tsx` | Frontend entry |
-| `frontend/middleware.ts` | Next.js middleware |
+| `frontend/app/page.tsx`             | Frontend entry       |
+| `frontend/middleware.ts`            | Next.js middleware   |
 
 ### Core Services
-| File | Lines | Purpose |
-|------|-------|---------|
-| `aiService.ts` | 2,580 | Main AI orchestration |
-| `subscriptionService.ts` | 2,953 | Billing & subscriptions |
-| `editorService.ts` | 1,817 | Document management |
-| `exportService.ts` | 1,898 | Export functionality |
-| `citationService.ts` | 1,313 | Citation management |
-| `notificationService.ts` | 1,053 | Notifications |
-| `researchCoPilotService.ts` | 1,268 | Research AI |
+
+| File                        | Lines | Purpose                 |
+| --------------------------- | ----- | ----------------------- |
+| `aiService.ts`              | 2,580 | Main AI orchestration   |
+| `subscriptionService.ts`    | 2,953 | Billing & subscriptions |
+| `editorService.ts`          | 1,817 | Document management     |
+| `exportService.ts`          | 1,898 | Export functionality    |
+| `citationService.ts`        | 1,313 | Citation management     |
+| `notificationService.ts`    | 1,053 | Notifications           |
+| `researchCoPilotService.ts` | 1,268 | Research AI             |
 
 ---
 
@@ -757,7 +822,7 @@ ScholarForge AI is a **production-ready, enterprise-grade academic research plat
 ✅ **Task Management** - Full project management capabilities  
 ✅ **Subscription Billing** - LemonSqueezy integration  
 ✅ **Security First** - OTP, RLS, audit logging  
-✅ **Scalable Architecture** - Microservices-ready, typed codebase  
+✅ **Scalable Architecture** - Microservices-ready, typed codebase
 
 **Total Codebase Size**: ~150,000+ lines of TypeScript  
 **Database Models**: 70+ entities  

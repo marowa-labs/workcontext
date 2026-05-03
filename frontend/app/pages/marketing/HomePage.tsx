@@ -33,8 +33,8 @@ function HeroSection() {
       gradientWord: "Truly Understood.",
     },
     {
-      text: "Connect Ideas, Get Things Done",
-      gradientWord: "Get Things Done",
+      text: "Connect Ideas, Get Things Done.",
+      gradientWord: "Get Things Done.",
     },
   ];
 

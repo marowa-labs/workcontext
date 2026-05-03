@@ -849,7 +849,7 @@ ${currentContent}
 
 Provide the updated content in the same JSON format. Only return the JSON, no other text.`;
 
-    const result = await OpenAIService.sendCompletion(prompt, "gpt-4o-mini", 4000, 0.3);
+    const result = await OpenAIService.sendCompletion(prompt, "gemini-2.5-flash", 4000, 0.3);
 
     // Try to parse the result
     let newContent;
@@ -909,7 +909,7 @@ ${content}
 
 Summary:`;
 
-    const result = await OpenAIService.sendCompletion(prompt, "gpt-4o-mini", 1500, 0.3);
+    const result = await OpenAIService.sendCompletion(prompt, "gemini-2.5-flash", 1500, 0.3);
 
     return {
       success: true,

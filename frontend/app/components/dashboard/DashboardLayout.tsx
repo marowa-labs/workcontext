@@ -119,9 +119,12 @@ export default function DashboardLayout({
   // Inbox Pinned State
   const [isInboxPinned, setIsInboxPinned] = useState(false);
 
-  // Summarize Modal State
-  const [showSummarizeModal, setShowSummarizeModal] = useState(false);
-  const [summarizeWorkspaceId, setSummarizeWorkspaceId] = useState<string | undefined>();
+  // Pending AI Action State (for auto-sending messages from command palette)
+  const [pendingAIAction, setPendingAIAction] = useState<{
+    type: "summarize";
+    workspaceId?: string;
+    message?: string;
+  } | null>(null);
 
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [newWorkspaceDesc, setNewWorkspaceDesc] = useState("");
@@ -184,6 +187,8 @@ export default function DashboardLayout({
     if (path.startsWith("/billing/")) return "billing";
     if (path.startsWith("/help")) return "help";
     if (path.startsWith("/dashboard/workspace/")) return "workspace";
+    if (path === "/analytics") return "analytics";
+    if (path === "/stats") return "stats";
 
     // Default fallback
     return "dashboard";
@@ -333,8 +338,12 @@ export default function DashboardLayout({
     const handleCreateQuickTask = () => setShowQuickTaskModal(true);
     const handleOpenAIChat = () => setShowAIChat(true);
     const handleSummarizeWorkspace = (e: any) => {
-      setSummarizeWorkspaceId(e?.detail?.workspaceId);
-      setShowSummarizeModal(true);
+      // Open AIChatDrawer and set pending action to auto-send summary
+      setPendingAIAction({
+        type: "summarize",
+        workspaceId: e?.detail?.workspaceId,
+      });
+      setShowAIChat(true);
     };
 
     window.addEventListener("open-search", handleOpenSearch);
@@ -1164,16 +1173,24 @@ export default function DashboardLayout({
             <div className="hidden lg:block fixed right-0 top-0 bottom-0 w-[420px] z-40">
               <AIChatDrawer
                 isOpen={showAIChat}
-                onClose={() => setShowAIChat(false)}
+                onClose={() => {
+                  setShowAIChat(false);
+                  setPendingAIAction(null);
+                }}
                 isPanel={true}
+                pendingAction={pendingAIAction}
               />
             </div>
             {/* Mobile: Modal overlay */}
             <div className="lg:hidden">
               <AIChatDrawer
                 isOpen={showAIChat}
-                onClose={() => setShowAIChat(false)}
+                onClose={() => {
+                  setShowAIChat(false);
+                  setPendingAIAction(null);
+                }}
                 isPanel={false}
+                pendingAction={pendingAIAction}
               />
             </div>
           </>
@@ -1223,12 +1240,6 @@ export default function DashboardLayout({
         onClose={() => setShowQuickTaskModal(false)}
       />
 
-      {/* Summarize Modal */}
-      <SummarizeModal
-        isOpen={showSummarizeModal}
-        onClose={() => setShowSummarizeModal(false)}
-        workspaceId={summarizeWorkspaceId}
-      />
 
       {/* Create Workspace Modal */}
       <Dialog

@@ -9,6 +9,7 @@ import { createNotification } from "../../services/notificationService";
 import researchRouter from "./research-route";
 import searchRouter from "./search-route";
 import chatRouter from "./chat-route";
+import actionsRouter from "./actions/route";
 
 const router: ExpressRouter = Router();
 
@@ -382,7 +383,7 @@ async function handlePutAIUserPreferences(req: any, res: any) {
       where: { id: userId },
       data: {
         preferred_ai_model:
-          preferences.preferredModel || preferences.model || "gpt-4o-mini",
+          preferences.preferredModel || preferences.model || "gemini-2.5-flash",
         ai_preferences: preferences,
       },
     });
@@ -431,7 +432,7 @@ async function handleGetAIUserPreferences(req: any, res: any) {
     return res.status(200).json({
       success: true,
       preferences: {
-        preferredModel: user?.preferred_ai_model || "gpt-4o-mini",
+        preferredModel: user?.preferred_ai_model || "gemini-2.5-flash",
         ...user?.ai_preferences,
       },
     });
@@ -473,7 +474,7 @@ async function handleGetAvailableModels(req: any, res: any) {
       where: { id: userId },
     });
 
-    const currentModel = user?.preferred_ai_model || "gpt-4o-mini";
+    const currentModel = user?.preferred_ai_model || "gemini-2.5-flash";
 
     // Get user's subscription to determine available models
     const subscription = await prisma.subscription.findUnique({
@@ -490,37 +491,27 @@ async function handleGetAvailableModels(req: any, res: any) {
     // Define available models per plan, filtered by actually available models
     const planModels: Record<string, string[]> = {
       free: [
-        "gpt-4o-mini",
+        "gemini-2.5-flash",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
       ],
       onetime: [
-        "gpt-4o-mini",
+        "gemini-2.5-flash",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
       ],
       student: [
-        "gpt-4o-mini",
+        "gemini-2.5-flash",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
-        "gpt-4o",
-        "claude-3-haiku",
       ],
       researcher: [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "claude-3-haiku",
-        "claude-3-5-sonnet",
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
       ],
       institutional: [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "claude-3-haiku",
-        "claude-3-5-sonnet",
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
         "openai/gpt-oss-120b:free",
@@ -528,7 +519,9 @@ async function handleGetAvailableModels(req: any, res: any) {
       ],
     };
 
-    const availableModels = planModels[planId] || planModels.free;
+    const availableModels = (planModels[planId] || planModels.free).filter(
+      (modelId) => actuallyAvailableModels[modelId],
+    );
 
     // Get model details for actually available models
     const models = availableModels.map((modelId) => {
@@ -1050,6 +1043,9 @@ async function handleGetAIAnalytics(req: any, res: any) {
 }
 
 router.get("/analytics", authenticateExpressRequest, handleGetAIAnalytics);
+
+// Mount action routes
+router.use("/actions", actionsRouter);
 
 // Mount chat routes
 router.use("/chat", chatRouter);

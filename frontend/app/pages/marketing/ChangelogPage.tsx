@@ -57,7 +57,7 @@ const releases: ReleaseEntry[] = [
     description:
       "Introduced powerful verification tools to cross-check claims against multiple AI models, ensuring academic defensibility.",
     improvements: [
-      "Added Verification Panel with Multi-LLM consensus (GPT-4 vs Claude vs Gemini)",
+      "Added Verification Panel with Multi-LLM consensus (Gemini vs OpenRouter)",
       "Added Gap Analysis Panel to identify missing research perspectives",
       "Added 'Translate Abstract' feature for multi-language support",
     ],

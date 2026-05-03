@@ -40,22 +40,22 @@ export function SummarizeModal({ isOpen, onClose, workspaceId }: SummarizeModalP
   // Load workspaces
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const fetchWorkspaces = async () => {
       setLoadingWorkspaces(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        
+
         const response = await fetch("/api/workspaces", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           const workspaceList = data.workspaces || data || [];
           setWorkspaces(workspaceList);
-          
+
           // Auto-select first workspace if none selected
           if (workspaceList.length > 0 && !selectedWorkspace) {
             setSelectedWorkspace(workspaceList[0].id);
@@ -67,7 +67,7 @@ export function SummarizeModal({ isOpen, onClose, workspaceId }: SummarizeModalP
         setLoadingWorkspaces(false);
       }
     };
-    
+
     fetchWorkspaces();
   }, [isOpen, selectedWorkspace]);
 
@@ -133,11 +133,11 @@ Summary statistics:
 - Total projects: ${projects.length}
 - Total tasks: ${tasks.length}
 - Tasks by status: ${Object.entries(
-  tasks.reduce((acc: any, t: any) => {
-    acc[t.status] = (acc[t.status] || 0) + 1;
-    return acc;
-  }, {})
-).map(([status, count]) => `${status}: ${count}`).join(", ")}
+        tasks.reduce((acc: any, t: any) => {
+          acc[t.status] = (acc[t.status] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([status, count]) => `${status}: ${count}`).join(", ")}
 - High priority tasks: ${tasks.filter((t: any) => t.priority === "high").length}
 `;
 
@@ -151,7 +151,7 @@ Summary statistics:
         body: JSON.stringify({
           content,
           summaryType: "workspace_analysis",
-          model: "claude-3-5-sonnet",
+          model: "gemini-2.5-flash",
         }),
       });
 
@@ -186,10 +186,10 @@ Summary statistics:
 This workspace contains **${projects.length} projects** and **${tasks.length} tasks**.
 
 ## Project Status
-${projects.length > 0 
-  ? projects.map((p) => `- **${p.title}**: ${p.status || "In progress"}`).join("\n")
-  : "No projects yet."
-}
+${projects.length > 0
+        ? projects.map((p) => `- **${p.title}**: ${p.status || "In progress"}`).join("\n")
+        : "No projects yet."
+      }
 
 ## Task Summary
 - **${pendingTasks.length}** tasks pending
@@ -197,15 +197,15 @@ ${projects.length > 0
 - **${completedTasks.length}** tasks completed
 
 ## Recommendations
-${highPriorityTasks.length > 0 
-  ? `⚠️ Focus on ${highPriorityTasks.length} high priority tasks first.` 
-  : "✅ No urgent high priority tasks."
-}
+${highPriorityTasks.length > 0
+        ? `⚠️ Focus on ${highPriorityTasks.length} high priority tasks first.`
+        : "✅ No urgent high priority tasks."
+      }
 
-${pendingTasks.length > 10 
-  ? `📊 You have ${pendingTasks.length} pending tasks. Consider prioritizing or delegating.` 
-  : "📊 Task load looks manageable."
-}
+${pendingTasks.length > 10
+        ? `📊 You have ${pendingTasks.length} pending tasks. Consider prioritizing or delegating.`
+        : "📊 Task load looks manageable."
+      }
 `;
   };
 

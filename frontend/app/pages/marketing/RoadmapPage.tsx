@@ -89,7 +89,7 @@ const roadmapData: RoadmapItem[] = [
     description:
       "Introducing powerful cross-checking and analysis tools for academic rigor.",
     items: [
-      "Multi-Model Verification Panel (GPT-4 vs Claude)",
+      "Multi-Model Verification Panel (Gemini vs OpenRouter)",
       "Gap Analysis for Missing Perspectives",
       "Multi-language Abstract Translation",
     ],

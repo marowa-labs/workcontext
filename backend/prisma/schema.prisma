@@ -30,7 +30,7 @@ model User {
   affiliate_ref            String?
   created_at               DateTime                @default(now())
   updated_at               DateTime                @updatedAt
-  preferred_ai_model       String?                 @default("gpt-4o-mini")
+  preferred_ai_model       String?                 @default("gemini-2.5-flash")
   storage_used             Float?                  @default(0)
   storage_limit            Float?                  @default(5)
   last_backup              DateTime?

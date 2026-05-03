@@ -66,7 +66,7 @@ export const defaultSettings: EditorSettings = {
   autoSaveInterval: 30,
   spellCheck: false,
   aiSuggestions: false,
-  aiModel: "gpt-4o-mini",
+  aiModel: "gemini-2.5-flash",
   aiTone: "professional",
   notifications: false,
   soundEffects: false,
@@ -422,11 +422,10 @@ export function SettingsModal({
                     {aiModels.map((model) => (
                       <div
                         key={model.id}
-                        className={`p-4 rounded-lg border cursor-pointer ${
-                          model.isCurrent
+                        className={`p-4 rounded-lg border cursor-pointer ${model.isCurrent
                             ? "border-blue-500 bg-blue-50"
                             : "border-gray-200 hover:bg-gray-50"
-                        }`}
+                          }`}
                         onClick={() => updateSetting("aiModel", model.id)}>
                         <div className="flex items-center justify-between">
                           <div>

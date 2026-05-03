@@ -30,6 +30,10 @@ export interface AIActionContext {
   userId: string;
   sessionId?: string;
   pageContext?: string;
+  pageDescription?: string;
+  pageRoute?: string;
+  pageSection?: string;
+  entityId?: string;
   currentWorkspaceId?: string;
   currentProjectId?: string;
   userPreferences?: Record<string, any>;
@@ -304,10 +308,17 @@ export const ACTION_DEFINITIONS: Record<string, Partial<ActionDefinition>> = {
     type: "navigate_to_page",
     category: "navigate",
     targetEntity: "page",
-    description: "Navigate to a specific page",
+    description: "Navigate to any page in the platform - use this when user asks to go somewhere or see something",
     parameters: [
-      { name: "page", type: "string", required: true, description: "Page name/path", enum: ["dashboard", "workspaces", "projects", "tasks", "editor", "settings", "profile"] },
-      { name: "params", type: "object", required: false, description: "Page parameters (ID, etc.)" },
+      { name: "page", type: "string", required: true, description: "Page identifier", enum: [
+        // Main pages
+        "dashboard", "workspaces", "projects", "tasks", "editor", "settings", "guide", "search", 
+        // Workspace pages
+        "workspace", "workspace_projects", "workspace_tasks", "workspace_notes", "workspace_wiki", "workspace_team", "workspace_settings",
+        // Additional aliases
+        "workspace_list", "help", "preferences"
+      ]},
+      { name: "params", type: "object", required: false, description: "Page parameters like { projectId, workspaceId, query, path }" },
     ],
     requiresConfirmation: false,
   },

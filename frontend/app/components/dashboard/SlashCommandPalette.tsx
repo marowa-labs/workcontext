@@ -15,6 +15,7 @@ import {
   HelpCircle,
   X,
   ChevronRight,
+  Activity,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -125,33 +126,23 @@ export function SlashCommandPalette({
     {
       id: "analytics",
       title: "View Analytics",
-      description: "See workspace insights and metrics",
+      description: "Platform-wide analytics and insights",
       icon: <BarChart3 className="w-4 h-4" />,
       category: "analyze",
       action: () => {
         onClose();
-        if (workspaceId) {
-          router.push(`/dashboard/workspace/${workspaceId}/analytics`);
-        } else {
-          // If no workspace context, go to projects page
-          router.push("/projects");
-        }
+        router.push("/analytics");
       },
     },
     {
       id: "stats",
       title: "View Stats",
-      description: "See workspace statistics and metrics",
-      icon: <BarChart3 className="w-4 h-4" />,
+      description: "Your personal KPIs and performance metrics",
+      icon: <Activity className="w-4 h-4" />,
       category: "analyze",
       action: () => {
         onClose();
-        if (workspaceId) {
-          router.push(`/dashboard/workspace/${workspaceId}/analytics`);
-        } else {
-          // If no workspace context, go to projects page
-          router.push("/projects");
-        }
+        router.push("/stats");
       },
     },
     {

@@ -189,10 +189,10 @@ class AIPerformanceMonitor {
         // Skip model metrics if requested (for action extraction)
         if (
           skipModel &&
-          (metricName.includes("gpt") ||
-            metricName.includes("claude") ||
-            metricName.includes("gemini") ||
-            metricName.includes("llama"))
+          (metricName.includes("gemini") ||
+            metricName.includes("openrouter") ||
+            metricName.includes("nemotron") ||
+            metricName.includes("gpt-oss"))
         ) {
           continue;
         }

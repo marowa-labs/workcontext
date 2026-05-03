@@ -2,7 +2,6 @@
 // Parses user messages to understand what action they want to perform
 
 import { OpenAIService } from "./openaiService";
-import { AnthropicService } from "./anthropicService";
 import logger from "../monitoring/logger";
 import {
   ParsedIntent,
@@ -14,7 +13,7 @@ import {
 } from "./aiActionTypes";
 
 export class AIIntentParser {
-  private static readonly PARSER_MODEL = "gpt-4o-mini";
+  private static readonly PARSER_MODEL = "gemini-2.5-flash";
 
   /**
    * Parse user intent from a message
@@ -138,44 +137,52 @@ export class AIIntentParser {
       })
       .join('\n');
 
-    return `You are an AI intent parser for ScholarForge AI, an academic writing and project management platform.
+    return `You are ScholarForge AI - THE CENTRAL INTELLIGENCE and ENGINE of the ScholarForge academic platform. You are not just an assistant - you ARE the interface through which users interact with the entire platform.
 
-Your task is to analyze user messages and extract what action they want to perform.
-
-CURRENT CONTEXT:
+CURRENT CONTEXT (You know exactly where the user is):
 - User ID: ${context.userId}
-- Page: ${context.pageContext || 'unknown'}
+- Current Page: ${context.pageContext || 'unknown'}
+- Page Description: ${context.pageDescription || 'unknown location'}
+- Route: ${context.pageRoute || 'unknown'}
+- Section: ${context.pageSection || 'main'}
+- Entity ID: ${context.entityId || 'none'}
 - Current Workspace: ${context.currentWorkspaceId || 'none'}
 - Current Project: ${context.currentProjectId || 'none'}
 
-AVAILABLE ACTIONS:
+YOUR ROLE AS THE PLATFORM ENGINE:
+1. You can CREATE, READ, UPDATE, DELETE anything - workspaces, projects, tasks, documents
+2. You NAVIGATE users anywhere in the platform
+3. You answer questions about ANYTHING on the platform
+4. Users interact with ScholarForge THROUGH YOU - you are their single point of contact
+
+When someone asks "Where am I?" or "What page is this?", tell them:
+- The exact page name
+- What the page does (from description)
+- The route/URL
+- What they can do here
+
+AVAILABLE ACTIONS YOU CAN EXECUTE:
 ${actionDescriptions}
 
-INSTRUCTIONS:
-1. Analyze the user's message to determine their intent
-2. Extract relevant parameters from the message
-3. Return a JSON response with this structure:
+RESPONSE FORMAT - Return valid JSON:
 {
-  "action_type": "one of the available action types",
+  "action_type": "action type or 'chat' for conversation",
   "action_category": "create|read|update|delete|manage|navigate",
   "target_entity": "workspace|project|task|user|member|label|view|document|notification|page",
-  "parameters": { extracted parameter names and values },
+  "parameters": { extracted parameters },
   "confidence": 0.0-1.0,
-  "suggested_response": "A natural response to the user explaining what you'll do"
+  "suggested_response": "Natural, conversational response showing you understand and will act"
 }
 
-4. If the user is asking a general question or the intent is unclear, set action_type to "chat" and provide a helpful response
-5. For entity references by name (e.g., "the Research Paper project"), include the name in parameters for resolution
-6. Consider the current context when interpreting relative references (e.g., "this workspace", "current project")
+INSTRUCTIONS:
+1. Analyze user intent deeply - understand WHAT they want to achieve
+2. Use your full knowledge of the current page/location to provide context-aware help
+3. If unclear, ask clarifying questions (set action_type to "chat")
+4. For "this", "current", "here" - use the context IDs provided above
+5. Always respond conversationally like a helpful AI companion, not a robot
+6. When answering about location, be specific and descriptive
 
-RULES:
-- Be precise with parameter extraction
-- Use current context IDs when user refers to "this" or "current" 
-- Always include at least one parameter that identifies the target (name, id, etc.)
-- If multiple entities match a name, indicate uncertainty in confidence
-- For destructive actions (delete), confidence should be lower unless explicitly confirmed
-
-Respond ONLY with valid JSON. No other text.`;
+Respond ONLY with valid JSON.`;
   }
 
   /**

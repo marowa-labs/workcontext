@@ -4,5 +4,6 @@
     "sound": "on"
   },
   "terminal.integrated.enableVisualBell": true,
-  "snyk.advanced.autoSelectOrganization": true
+  "snyk.advanced.autoSelectOrganization": true,
+  "snyk.advanced.organization": "e2b2b188-d8e9-443c-bcb4-dfd9f9a77fb6"
 }

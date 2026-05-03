@@ -1,83 +1,65 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import logger from "../monitoring/logger";
 import { SecretsService } from "./secrets-service";
 
-// Initialize Anthropic client
-let anthropic: Anthropic | null = null;
+// Initialize Google Generative AI client
+let genAI: GoogleGenerativeAI | null = null;
 
-// Lazy initialization of Anthropic client
-async function getAnthropicClient(): Promise<Anthropic> {
-  if (!anthropic) {
-    const apiKey = await SecretsService.getSecret("ANTHROPIC_API_KEY");
+// Lazy initialization of Gemini client
+async function getGeminiClient(): Promise<GoogleGenerativeAI> {
+  if (!genAI) {
+    const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
 
     if (!apiKey) {
-      throw new Error("Anthropic API key not configured");
+      throw new Error("Gemini API key not configured");
     }
 
-    anthropic = new Anthropic({
-      apiKey: apiKey,
-    });
+    genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  return anthropic;
+  return genAI;
 }
 
-interface ClaudeMessage {
+interface GeminiMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-interface ClaudeResponse {
+interface GeminiResponse {
   content: string;
   tokensUsed: number;
   cost: number;
 }
 
+// Default Gemini model
+const DEFAULT_MODEL = "gemini-3.1-flash-lite-preview";
+
 export class AnthropicService {
-  // Send message to Claude
+  // Send message using Gemini
   static async sendMessage(
-    messages: ClaudeMessage[],
-    model: string = "claude-3-5-sonnet",
+    messages: GeminiMessage[],
+    model: string = DEFAULT_MODEL,
     maxTokens: number = 1024,
     temperature: number = 0.7,
-  ): Promise<ClaudeResponse> {
+  ): Promise<GeminiResponse> {
     try {
-      const client = await getAnthropicClient();
+      const client = await getGeminiClient();
 
-      const response = await client.messages.create({
-        model: model,
-        max_tokens: maxTokens,
-        temperature: temperature,
-        messages: messages,
-      });
+      // Build prompt from messages
+      const prompt = messages.map(m => `${m.role}: ${m.content}`).join("\n");
 
-      // Extract text content from the response, handling different block types
-      let content = "";
-      if (response.content && response.content.length > 0) {
-        const firstBlock = response.content[0];
-        // Type guard to check if it's a text block
-        if ("text" in firstBlock) {
-          content = firstBlock.text;
-        } else {
-          // Handle other block types or provide a default
-          content = JSON.stringify(firstBlock);
-        }
-      }
-      const tokensUsed =
-        response.usage.input_tokens + response.usage.output_tokens;
+      const genModel = client.getGenerativeModel({ model });
+      const result = await genModel.generateContent(prompt);
+      const response = result.response;
+      const content = response.text();
 
-      // Calculate cost based on Anthropic pricing (approximate)
-      let inputCost = 0;
-      let outputCost = 0;
+      const tokensUsed = response.usageMetadata
+        ? response.usageMetadata.promptTokenCount + response.usageMetadata.candidatesTokenCount
+        : content.length;
 
-      // Claude 3.5 Sonnet: $3.00/1M input tokens, $15.00/1M output tokens
-      if (model === "claude-3-5-sonnet") {
-        inputCost = (response.usage.input_tokens / 1000000) * 3.0;
-        outputCost = (response.usage.output_tokens / 1000000) * 15.0;
-      }
-      // Standardize other models to 0 or throw if strictly needed, but cleaner to just support sonnet primarily.
-
-      const cost = inputCost + outputCost;
+      // Calculate cost based on Gemini pricing (approximate)
+      // Gemini 3.1 Flash Lite: $0.075/1M tokens
+      const cost = (tokensUsed / 1000000) * 0.075;
 
       return {
         content,
@@ -85,20 +67,20 @@ export class AnthropicService {
         cost,
       };
     } catch (error: any) {
-      logger.error("Error sending message to Claude:", error);
-      throw new Error(`Anthropic API error: ${error.message || error}`);
+      logger.error("Error sending message via Gemini:", error);
+      throw new Error(`Gemini API error: ${error.message || error}`);
     }
   }
 
-  // Document summarization with Claude models
+  // Document summarization with Gemini models
   static async summarizeDocument(
     content: string,
     summaryType:
       | "research_paper"
       | "article"
       | "long_document" = "long_document",
-    model: string = "claude-3-5-sonnet",
-  ): Promise<ClaudeResponse> {
+    model: string = DEFAULT_MODEL,
+  ): Promise<GeminiResponse> {
     try {
       let prompt = "";
 
@@ -115,7 +97,7 @@ export class AnthropicService {
           break;
       }
 
-      const messages: ClaudeMessage[] = [
+      const messages: GeminiMessage[] = [
         {
           role: "user",
           content: `${prompt}\n\nDocument content:\n${content}`,
@@ -124,19 +106,19 @@ export class AnthropicService {
 
       return await this.sendMessage(messages, model, 2048, 0.3);
     } catch (error: any) {
-      logger.error("Error summarizing document with Claude:", error);
+      logger.error("Error summarizing document with Gemini:", error);
       throw new Error(`Document summarization failed: ${error.message}`);
     }
   }
 
-  // AI Chat Assistant for Document Q&A with Claude models or GPT-4o
+  // AI Chat Assistant for Document Q&A with Gemini models
   static async answerDocumentQuestion(
     documentContent: string,
     question: string,
-    model: "claude-3-5-sonnet" = "claude-3-5-sonnet",
-  ): Promise<ClaudeResponse> {
+    model: string = DEFAULT_MODEL,
+  ): Promise<GeminiResponse> {
     try {
-      const messages: ClaudeMessage[] = [
+      const messages: GeminiMessage[] = [
         {
           role: "user",
           content: `You are an expert assistant answering questions about the following document. 
@@ -152,10 +134,9 @@ export class AnthropicService {
         },
       ];
 
-      const modelName = "claude-3-5-sonnet";
-      return await this.sendMessage(messages, modelName, 2048, 0.5);
+      return await this.sendMessage(messages, model, 2048, 0.5);
     } catch (error: any) {
-      logger.error("Error answering document question with Claude:", error);
+      logger.error("Error answering document question with Gemini:", error);
       throw new Error(`Document Q&A failed: ${error.message}`);
     }
   }
