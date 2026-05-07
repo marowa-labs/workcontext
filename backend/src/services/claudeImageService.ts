@@ -30,7 +30,7 @@ export class GeminiImageService {
   // Generate image description using Gemini that can be used with external image generation services
   static async generateImageDescription(
     imageUrl: string,
-    model: string = "gemini-2.5-flash",
+    model: string = "gemini-3.1-flash-lite-preview",
   ): Promise<GeminiImageResponse> {
     try {
       const client = await getGeminiClient();
@@ -45,7 +45,8 @@ export class GeminiImageService {
       const description = response.text();
 
       const tokensUsed = response.usageMetadata
-        ? response.usageMetadata.promptTokenCount + response.usageMetadata.candidatesTokenCount
+        ? response.usageMetadata.promptTokenCount +
+          response.usageMetadata.candidatesTokenCount
         : description.length;
 
       // Calculate cost based on Gemini pricing

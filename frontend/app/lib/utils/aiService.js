@@ -148,7 +148,7 @@ class AIService {
   }
 
   // Grammar and style checking
-  static async checkGrammar(text, model = "gemini-2.5-flash") {
+  static async checkGrammar(text, model = "gemini-3.1-flash-lite-preview") {
     try {
       console.log("=== Starting Grammar Check ===");
       const token = await this.getAuthToken();
@@ -266,7 +266,7 @@ class AIService {
   static async summarizeDocument(
     content,
     summaryType = "long_document",
-    model = "gemini-2.5-flash",
+    model = "gemini-3.1-flash-lite-preview",
   ) {
     try {
       const token = await this.getAuthToken();
@@ -320,7 +320,7 @@ class AIService {
   static async askDocumentQuestion(
     documentContent,
     question,
-    model = "gemini-2.5-flash",
+    model = "gemini-3.1-flash-lite-preview",
   ) {
     try {
       const token = await this.getAuthToken();
@@ -381,7 +381,7 @@ class AIService {
     action = "assist",
     projectType = "research_paper",
     researchTopic = "",
-    model = "gemini-2.5-flash",
+    model = "gemini-3.1-flash-lite-preview",
   ) {
     try {
       const token = await this.getAuthToken();
@@ -426,7 +426,7 @@ class AIService {
       if (!response.ok) {
         throw new Error(
           data.message ||
-          `Failed to assist with writing project (${response.status})`,
+            `Failed to assist with writing project (${response.status})`,
         );
       }
 

@@ -29,9 +29,15 @@ interface SummarizeModalProps {
   workspaceId?: string;
 }
 
-export function SummarizeModal({ isOpen, onClose, workspaceId }: SummarizeModalProps) {
+export function SummarizeModal({
+  isOpen,
+  onClose,
+  workspaceId,
+}: SummarizeModalProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string>(workspaceId || "");
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string>(
+    workspaceId || "",
+  );
   const [loading, setLoading] = useState(false);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
   const [summary, setSummary] = useState<string>("");
@@ -44,7 +50,9 @@ export function SummarizeModal({ isOpen, onClose, workspaceId }: SummarizeModalP
     const fetchWorkspaces = async () => {
       setLoadingWorkspaces(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const token = session?.access_token;
 
         const response = await fetch("/api/workspaces", {
@@ -93,7 +101,9 @@ export function SummarizeModal({ isOpen, onClose, workspaceId }: SummarizeModalP
     setSummary("");
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
 
       // Fetch workspace data
@@ -111,7 +121,9 @@ export function SummarizeModal({ isOpen, onClose, workspaceId }: SummarizeModalP
 
       const workspaceData = workspaceRes.ok ? await workspaceRes.json() : null;
       const tasksData = tasksRes.ok ? await tasksRes.json() : { tasks: [] };
-      const projectsData = projectsRes.ok ? await projectsRes.json() : { projects: [] };
+      const projectsData = projectsRes.ok
+        ? await projectsRes.json()
+        : { projects: [] };
 
       // Prepare content for AI summarization
       const workspace = workspaceData?.workspace || workspaceData;
@@ -126,7 +138,12 @@ Projects (${projects.length}):
 ${projects.map((p: any) => `- ${p.title}: ${p.description || "No description"} (Status: ${p.status || "unknown"})`).join("\n")}
 
 Tasks (${tasks.length}):
-${tasks.slice(0, 20).map((t: any) => `- ${t.title} (Status: ${t.status}, Priority: ${t.priority})`).join("\n")}
+${tasks
+  .slice(0, 20)
+  .map(
+    (t: any) => `- ${t.title} (Status: ${t.status}, Priority: ${t.priority})`,
+  )
+  .join("\n")}
 ${tasks.length > 20 ? `\n... and ${tasks.length - 20} more tasks` : ""}
 
 Summary statistics:
@@ -136,8 +153,10 @@ Summary statistics:
         tasks.reduce((acc: any, t: any) => {
           acc[t.status] = (acc[t.status] || 0) + 1;
           return acc;
-        }, {})
-      ).map(([status, count]) => `${status}: ${count}`).join(", ")}
+        }, {}),
+      )
+        .map(([status, count]) => `${status}: ${count}`)
+        .join(", ")}
 - High priority tasks: ${tasks.filter((t: any) => t.priority === "high").length}
 `;
 
@@ -151,7 +170,7 @@ Summary statistics:
         body: JSON.stringify({
           content,
           summaryType: "workspace_analysis",
-          model: "gemini-2.5-flash",
+          model: "gemini-3.1-flash-lite-preview",
         }),
       });
 
@@ -175,8 +194,14 @@ Summary statistics:
     }
   };
 
-  const generateSimpleSummary = (workspace: any, projects: any[], tasks: any[]) => {
-    const pendingTasks = tasks.filter((t) => t.status === "todo" || t.status === "in-progress");
+  const generateSimpleSummary = (
+    workspace: any,
+    projects: any[],
+    tasks: any[],
+  ) => {
+    const pendingTasks = tasks.filter(
+      (t) => t.status === "todo" || t.status === "in-progress",
+    );
     const highPriorityTasks = tasks.filter((t) => t.priority === "high");
     const completedTasks = tasks.filter((t) => t.status === "done");
 
@@ -186,10 +211,13 @@ Summary statistics:
 This workspace contains **${projects.length} projects** and **${tasks.length} tasks**.
 
 ## Project Status
-${projects.length > 0
-        ? projects.map((p) => `- **${p.title}**: ${p.status || "In progress"}`).join("\n")
-        : "No projects yet."
-      }
+${
+  projects.length > 0
+    ? projects
+        .map((p) => `- **${p.title}**: ${p.status || "In progress"}`)
+        .join("\n")
+    : "No projects yet."
+}
 
 ## Task Summary
 - **${pendingTasks.length}** tasks pending
@@ -197,15 +225,17 @@ ${projects.length > 0
 - **${completedTasks.length}** tasks completed
 
 ## Recommendations
-${highPriorityTasks.length > 0
-        ? `⚠️ Focus on ${highPriorityTasks.length} high priority tasks first.`
-        : "✅ No urgent high priority tasks."
-      }
+${
+  highPriorityTasks.length > 0
+    ? `⚠️ Focus on ${highPriorityTasks.length} high priority tasks first.`
+    : "✅ No urgent high priority tasks."
+}
 
-${pendingTasks.length > 10
-        ? `📊 You have ${pendingTasks.length} pending tasks. Consider prioritizing or delegating.`
-        : "📊 Task load looks manageable."
-      }
+${
+  pendingTasks.length > 10
+    ? `📊 You have ${pendingTasks.length} pending tasks. Consider prioritizing or delegating.`
+    : "📊 Task load looks manageable."
+}
 `;
   };
 
@@ -220,7 +250,7 @@ ${pendingTasks.length > 10
   };
 
   const selectedWorkspaceName = workspaces.find(
-    (w) => w.id === selectedWorkspace
+    (w) => w.id === selectedWorkspace,
   )?.name;
 
   if (!isOpen) return null;
@@ -271,7 +301,9 @@ ${pendingTasks.length > 10
                 className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="">
-                  {loadingWorkspaces ? "Loading workspaces..." : "Choose a workspace"}
+                  {loadingWorkspaces
+                    ? "Loading workspaces..."
+                    : "Choose a workspace"}
                 </option>
                 {workspaces.map((ws) => (
                   <option key={ws.id} value={ws.id}>
@@ -289,7 +321,9 @@ ${pendingTasks.length > 10
                 <Sparkles className="w-10 h-10 text-amber-500" />
               </div>
               <p className="text-center text-muted-foreground max-w-sm">
-                AI will analyze your workspace projects, tasks, and progress to generate a comprehensive summary with insights and recommendations.
+                AI will analyze your workspace projects, tasks, and progress to
+                generate a comprehensive summary with insights and
+                recommendations.
               </p>
               <Button
                 onClick={generateSummary}
@@ -306,7 +340,9 @@ ${pendingTasks.length > 10
           {loading && (
             <div className="flex flex-col items-center gap-4 py-12">
               <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-              <p className="text-muted-foreground">Analyzing workspace data...</p>
+              <p className="text-muted-foreground">
+                Analyzing workspace data...
+              </p>
             </div>
           )}
 

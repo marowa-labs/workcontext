@@ -7,18 +7,54 @@ import { createNotification } from "./notificationService";
 import { aiPerformanceMonitor } from "../monitoring/aiPerformance";
 import { SearchService } from "./searchService";
 import { SecretsService } from "./secrets-service";
+import { BYOKService } from "./byokService";
 import { AIPerformanceMetric, AIUsage } from "@prisma/client";
 
-// OpenRouter client (lazy initialized)
-let openRouterClient: OpenRouter | null = null;
-const getOpenRouterClient = (): OpenRouter | null => {
-  if (!openRouterClient) {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (apiKey) {
-      openRouterClient = new OpenRouter({ apiKey });
+// OpenRouter client (lazy initialized) - keyed by API key
+const openRouterClients: Map<string, OpenRouter> = new Map();
+
+/**
+ * Get OpenRouter client - checks for BYOK key first, falls back to system key
+ */
+const getOpenRouterClient = async (
+  userId?: string,
+): Promise<OpenRouter | null> => {
+  try {
+    let apiKey: string | null = null;
+
+    // If userId provided, check for BYOK key first
+    if (userId) {
+      apiKey = await BYOKService.getDecryptedKey(userId, "openrouter");
+      if (apiKey) {
+        logger.info("Using BYOK OpenRouter key for user", { userId });
+      }
     }
+
+    // Fall back to system key
+    if (!apiKey) {
+      apiKey = process.env.OPENROUTER_API_KEY || null;
+      if (apiKey) {
+        logger.debug("Using system OpenRouter key");
+      }
+    }
+
+    if (!apiKey) {
+      return null;
+    }
+
+    // Use cached client if available for this key
+    if (openRouterClients.has(apiKey)) {
+      return openRouterClients.get(apiKey)!;
+    }
+
+    // Create new client
+    const client = new OpenRouter({ apiKey });
+    openRouterClients.set(apiKey, client);
+    return client;
+  } catch (error) {
+    logger.error("Error getting OpenRouter client:", error);
+    return null;
   }
-  return openRouterClient;
 };
 
 // Initialize Google Generative AI client
@@ -37,7 +73,22 @@ const initializeGenAI = async () => {
 initializeGenAI();
 
 // Helper function to get initialized genAI instance
-const getGenAI = async (): Promise<GoogleGenerativeAI | null> => {
+// Supports BYOK (Bring Your Own Key) - checks for user-provided keys first
+const getGenAI = async (
+  userId?: string,
+): Promise<GoogleGenerativeAI | null> => {
+  // Check for BYOK key if userId provided
+  if (userId) {
+    const byokKey = await BYOKService.getDecryptedKey(userId, "google");
+    if (byokKey) {
+      logger.info("Using BYOK Google API key for user", {
+        userId: userId.slice(0, 8) + "...",
+      });
+      return new GoogleGenerativeAI(byokKey);
+    }
+  }
+
+  // Fall back to system key
   if (!genAI) {
     const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
     if (apiKey) {
@@ -73,11 +124,6 @@ interface AIModel {
 
 // Define available AI models
 const AI_MODELS: Record<string, AIModel> = {
-  "gemini-2.5-flash": {
-    name: "Gemini 2.5 Flash",
-    description: "Fast and efficient Gemini model",
-    maxTokens: 1048576,
-  },
   "gemini-3.1-flash-lite-preview": {
     name: "Gemini 3.1 Flash Lite",
     description: "Google's advanced multimodal model",
@@ -95,7 +141,8 @@ const AI_MODELS: Record<string, AIModel> = {
   },
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
     name: "Nemotron 3 Nano Omni",
-    description: "Multimodal model for text, image, video, and audio inputs. Built for enterprise agent systems with 300K context and 16K reasoning budget.",
+    description:
+      "Multimodal model for text, image, video, and audio inputs. Built for enterprise agent systems with 300K context and 16K reasoning budget.",
     maxTokens: 300000,
   },
 };
@@ -331,22 +378,24 @@ export class AIService {
       });
 
       const userModel =
-        preferredModel || user?.["preferred_ai_model"] || "gemini-2.5-flash";
+        preferredModel ||
+        user?.["preferred_ai_model"] ||
+        "gemini-3.1-flash-lite-preview";
 
       // Define available models per plan based on subscription restrictions
       const planModels: Record<string, string[]> = {
         free: [
-          "gemini-2.5-flash",
+          "gemini-3.1-flash-lite-preview",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         onetime: [
-          "gemini-2.5-flash",
+          "gemini-3.1-flash-lite-preview",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         student: [
-          "gemini-2.5-flash",
+          "gemini-3.1-flash-lite-preview",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
@@ -383,7 +432,10 @@ export class AIService {
             )
           ) {
             const researchModels = availableModels.filter((model) =>
-              ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview"].includes(model),
+              [
+                "gemini-3.1-flash-lite-preview",
+                "gemini-3.1-flash-lite-preview",
+              ].includes(model),
             );
             if (researchModels.length > 0) {
               return researchModels[0];
@@ -397,7 +449,10 @@ export class AIService {
             )
           ) {
             const creativeModels = availableModels.filter((model) =>
-              ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview"].includes(model),
+              [
+                "gemini-3.1-flash-lite-preview",
+                "gemini-3.1-flash-lite-preview",
+              ].includes(model),
             );
             if (creativeModels.length > 0) {
               return creativeModels[0];
@@ -409,7 +464,7 @@ export class AIService {
             ["fix_grammar", "summarize", "simplify"].includes(context.action)
           ) {
             const fastModels = availableModels.filter((model) =>
-              ["gemini-2.5-flash"].includes(model),
+              ["gemini-3.1-flash-lite-preview"].includes(model),
             );
             if (fastModels.length > 0) {
               return fastModels[0];
@@ -419,10 +474,10 @@ export class AIService {
       }
 
       // Otherwise, fall back to the default model for their plan
-      return availableModels[0] || "gemini-2.5-flash";
+      return availableModels[0] || "gemini-3.1-flash-lite-preview";
     } catch (error) {
       logger.error("Error getting user model:", error);
-      return "gemini-2.5-flash"; // Default fallback
+      return "gemini-3.1-flash-lite-preview"; // Default fallback
     }
   }
 
@@ -515,17 +570,17 @@ export class AIService {
     if (model) {
       const planModels: Record<string, string[]> = {
         free: [
-          "gemini-2.5-flash",
+          "gemini-3.1-flash-lite-preview",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         onetime: [
-          "gemini-2.5-flash",
+          "gemini-3.1-flash-lite-preview",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
         student: [
-          "gemini-2.5-flash",
+          "gemini-3.1-flash-lite-preview",
           "openai/gpt-oss-120b:free",
           "nvidia/nemotron-3-super-120b-a12b:free",
         ],
@@ -545,7 +600,8 @@ export class AIService {
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel = user?.["preferred_ai_model"] || "gemini-2.5-flash";
+    const preferredModel =
+      user?.["preferred_ai_model"] || "gemini-3.1-flash-lite-preview";
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Merge user preferences with request preferences
@@ -771,56 +827,125 @@ Context: "${context || "No additional context provided"}"
 Provide a helpful response.`;
     }
 
-    let modelName = request.model || "gemini-2.5-flash";
+    const modelName = request.model || preferredModel;
     let tokensUsed = 0;
     let success = false;
+    let responseText = "";
 
     try {
-      // Execute based on provider preference (currently defaulting to Gemini)
-      const genAI = await getGenAI();
-
-      if (!genAI) {
-        throw new Error(
-          "AI service is not configured. Please check your API keys.",
+      // Determine if this is an OpenRouter model (contains "/" indicating provider/model format)
+      const isOpenRouterModel =
+        modelName.includes("/") ||
+        Object.keys(AI_MODELS).some(
+          (m) => m === modelName && !m.startsWith("gemini"),
         );
-      }
 
-      // Get the model
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: systemMessage,
-      });
+      if (isOpenRouterModel) {
+        // Use OpenRouter API
+        logger.info("Using OpenRouter model", { modelName });
 
-      // Generate content
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+        const openRouter = await getOpenRouterClient(userId);
+        if (!openRouter) {
+          throw new Error(
+            "OpenRouter API is not configured. Please check your API keys or BYOK settings.",
+          );
+        }
 
-      // Track token usage if available
-      if (response.usageMetadata) {
-        const inputTokens = response.usageMetadata.promptTokenCount;
-        const outputTokens = response.usageMetadata.candidatesTokenCount;
-        tokensUsed = inputTokens + outputTokens;
+        const result: any = await (openRouter as any).chat.send({
+          model: modelName,
+          messages: [
+            { role: "system", content: systemMessage },
+            { role: "user", content: prompt },
+          ],
+          maxTokens: AI_MODELS[modelName]?.maxTokens || 4096,
+          stream: false,
+        });
 
-        // Asynchronously track usage details
+        responseText = result?.choices?.[0]?.message?.content || "";
+        tokensUsed = result?.usage?.totalTokens || 0;
+
+        // Track usage for OpenRouter
         if (!isAutomatic) {
           const estimatedCost = this.estimateCost(modelName, tokensUsed);
           this.trackAIUsage(userId, "request_tokens", {
             model: modelName,
-            inputTokens,
-            outputTokens,
+            inputTokens: result?.usage?.promptTokens || 0,
+            outputTokens: result?.usage?.completionTokens || 0,
             tokensUsed,
             cost: estimatedCost,
           }).catch((err: any) =>
             logger.error("Error tracking token usage", err),
           );
         }
+      } else {
+        // Use Gemini API
+        const genAI = await getGenAI(userId);
+
+        if (!genAI) {
+          throw new Error(
+            "AI service is not configured. Please check your API keys or BYOK settings.",
+          );
+        }
+
+        // Map model names to Gemini-compatible ones
+        const geminiModelMap: Record<string, string> = {
+          "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+        };
+
+        const geminiModelName =
+          geminiModelMap[modelName] ||
+          (modelName.startsWith("gemini")
+            ? modelName
+            : "gemini-3.1-flash-lite-preview");
+
+        logger.info("Using Gemini model", {
+          geminiModelName,
+          originalModel: modelName,
+        });
+
+        // Get the model
+        const model = genAI.getGenerativeModel({
+          model: geminiModelName,
+          systemInstruction: systemMessage,
+        });
+
+        // Generate content
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        responseText = response.text();
+
+        // Track token usage if available
+        if (response.usageMetadata) {
+          const inputTokens = response.usageMetadata.promptTokenCount;
+          const outputTokens = response.usageMetadata.candidatesTokenCount;
+          tokensUsed = inputTokens + outputTokens;
+
+          // Asynchronously track usage details
+          if (!isAutomatic) {
+            const estimatedCost = this.estimateCost(modelName, tokensUsed);
+            this.trackAIUsage(userId, "request_tokens", {
+              model: modelName,
+              inputTokens,
+              outputTokens,
+              tokensUsed,
+              cost: estimatedCost,
+            }).catch((err: any) =>
+              logger.error("Error tracking token usage", err),
+            );
+          }
+        }
       }
 
       success = true;
 
       // Parse and return result
-      const parsedResult = this.parseAIResponse(action, request.text, text);
+      const parsedResult = this.parseAIResponse(
+        action,
+        request.text,
+        responseText,
+      );
+
+      const responseTime = Date.now() - startTime;
 
       // Record performance metric to database
       await this.recordPerformanceMetric({
@@ -829,11 +954,14 @@ Provide a helpful response.`;
         model: modelName,
         success: true,
         tokensUsed,
+        responseTime,
       });
 
       return parsedResult;
     } catch (error) {
       logger.error("Error executing AI request:", error);
+
+      const responseTime = Date.now() - startTime;
 
       // Record failed performance metric
       await this.recordPerformanceMetric({
@@ -842,6 +970,7 @@ Provide a helpful response.`;
         model: modelName,
         success: false,
         tokensUsed: 0,
+        responseTime,
         error: (error as Error).message,
       });
 
@@ -855,13 +984,12 @@ Provide a helpful response.`;
   private static estimateCost(model: string, tokens: number): number {
     // Cost per 1K tokens (approximate rates)
     const costRates: Record<string, number> = {
-      "gemini-2.5-flash": 0.00015, // $0.15 per 1M tokens
       "gemini-3.1-flash-lite-preview": 0.000075, // $0.075 per 1M tokens
       "openai/gpt-oss-120b:free": 0,
       "nvidia/nemotron-3-super-120b-a12b:free": 0,
     };
 
-    const rate = costRates[model] || 0.00015; // Default to gemini-2.5-flash rate
+    const rate = costRates[model] || 0.00015; // Default to gemini-3.1-flash-lite-preview rate
     return (tokens / 1000) * rate;
   }
 
@@ -872,6 +1000,7 @@ Provide a helpful response.`;
     model,
     success,
     tokensUsed,
+    responseTime,
     error,
   }: {
     userId: string;
@@ -879,6 +1008,7 @@ Provide a helpful response.`;
     model: string;
     success: boolean;
     tokensUsed: number;
+    responseTime?: number;
     error?: string;
   }) {
     try {
@@ -889,6 +1019,7 @@ Provide a helpful response.`;
           model,
           success,
           tokens_used: tokensUsed,
+          response_time: responseTime || 0,
           error_message: error || null,
           timestamp: new Date(),
         },
@@ -1173,7 +1304,8 @@ Provide a helpful response.`;
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel = user?.["preferred_ai_model"] || "gemini-2.5-flash";
+    const preferredModel =
+      user?.["preferred_ai_model"] || "gemini-3.1-flash-lite-preview";
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Get user's name for personalization
@@ -1359,6 +1491,9 @@ User Message: ${content}
 Please provide a helpful response.`;
     }
 
+    // Determine the model name before try block so it's accessible in catch block
+    const modelName = model || preferredModel;
+
     try {
       // Log model selection for debugging
       logger.info("Selected AI model", {
@@ -1367,67 +1502,139 @@ Please provide a helpful response.`;
         requestedModel: model,
       });
 
-      // Call Google Generative AI with the selected model
-      logger.info("Calling Google Generative AI", {
-        model: model || preferredModel,
-      });
+      // Determine if this is an OpenRouter model
+      const isOpenRouterModel =
+        modelName.includes("/") ||
+        Object.keys(AI_MODELS).some(
+          (m) => m === modelName && !m.startsWith("gemini"),
+        );
 
-      // Get the generative model with optimized parameters
-      const currentGenAI = await getGenAI();
-      if (!currentGenAI) {
-        throw new Error("Gemini API not configured");
+      let responseText = "";
+      let tokensUsed = 0;
+
+      if (isOpenRouterModel) {
+        // Use OpenRouter API
+        logger.info("Using OpenRouter model for chat", { modelName });
+
+        const openRouter = await getOpenRouterClient(userId);
+        if (!openRouter) {
+          throw new Error(
+            "OpenRouter API is not configured. Please check your API keys or BYOK settings.",
+          );
+        }
+
+        const result: any = await (openRouter as any).chat.send({
+          model: modelName,
+          messages: [
+            { role: "system", content: systemMessage },
+            { role: "user", content: prompt },
+          ],
+          maxTokens: AI_MODELS[modelName]?.maxTokens || 4096,
+          stream: false,
+        });
+
+        responseText = result?.choices?.[0]?.message?.content || "";
+        tokensUsed = result?.usage?.totalTokens || responseText.length;
+
+        // Record performance metrics for OpenRouter
+        aiPerformanceMonitor.recordAIRequestTiming(
+          modelName,
+          "chat_message",
+          Date.now() - startTime,
+        );
+        aiPerformanceMonitor.recordAITokenUsage(
+          modelName,
+          "chat_message",
+          tokensUsed,
+        );
+        aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+
+        // Record to database for analytics dashboard
+        await this.recordPerformanceMetric({
+          userId,
+          action: "chat_message",
+          model: modelName,
+          success: true,
+          tokensUsed,
+          responseTime: Date.now() - startTime,
+        });
+      } else {
+        // Use Gemini API
+        logger.info("Calling Google Generative AI", {
+          model: modelName,
+        });
+
+        // Get the generative model with optimized parameters (with BYOK support)
+        const currentGenAI = await getGenAI(userId);
+        if (!currentGenAI) {
+          throw new Error("Gemini API not configured");
+        }
+
+        // Map model names to Gemini-compatible ones
+        const geminiModelMap: Record<string, string> = {
+          "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+        };
+
+        const geminiModelName =
+          geminiModelMap[modelName] ||
+          (modelName.startsWith("gemini")
+            ? modelName
+            : "gemini-3.1-flash-lite-preview");
+
+        logger.info("Using Gemini model", {
+          geminiModelName,
+          originalModel: modelName,
+        });
+
+        const geminiModel = currentGenAI.getGenerativeModel({
+          model: geminiModelName,
+        });
+
+        // Generate content
+        const result = await geminiModel.generateContent([
+          systemMessage,
+          prompt,
+        ]);
+
+        logger.info("Google Generative AI response", {
+          hasResponse: !!result.response,
+          hasText: !!result.response?.text(),
+        });
+
+        responseText = result.response?.text() || "";
+        if (!responseText) {
+          throw new Error(
+            "AI service returned empty response. Please check your API keys and model configuration.",
+          );
+        }
+
+        tokensUsed = responseText.length; // Approximation
+
+        const responseTime = Date.now() - startTime;
+
+        // Record performance metrics to monitoring system
+        aiPerformanceMonitor.recordAIRequestTiming(
+          modelName,
+          "chat_message",
+          responseTime,
+        );
+        aiPerformanceMonitor.recordAITokenUsage(
+          modelName,
+          "chat_message",
+          tokensUsed,
+        );
+        aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+
+        // Record to database for analytics dashboard
+        await this.recordPerformanceMetric({
+          userId,
+          action: "chat_message",
+          model: modelName,
+          success: true,
+          tokensUsed,
+          responseTime,
+        });
       }
-
-      // Map model names to Gemini-compatible ones
-      // User preferences may contain OpenAI model names like "gemini-2.5-flash"
-      // We need to convert these to valid Gemini model names
-      const geminiModelMap: Record<string, string> = {
-        "gemini-2.5-flash": "gemini-2.5-flash",
-        "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
-      };
-
-      const selectedModel = model || preferredModel;
-      const geminiModelName = geminiModelMap[selectedModel] ||
-        (selectedModel.startsWith("gemini") ? selectedModel : "gemini-2.5-flash");
-
-      logger.info("Using Gemini model", { geminiModelName, originalModel: selectedModel });
-
-      const geminiModel = currentGenAI.getGenerativeModel({
-        model: geminiModelName,
-      });
-
-      // Generate content
-      const result = await geminiModel.generateContent([systemMessage, prompt]);
-
-      logger.info("Google Generative AI response", {
-        hasResponse: !!result.response,
-        hasText: !!result.response?.text(),
-      });
-
-      let responseText = result.response?.text();
-      if (!responseText) {
-        throw new Error("AI service returned empty response. Please check your API keys and model configuration.");
-      }
-
-      const responseTime = Date.now() - startTime;
-      const tokensUsed = responseText.length; // Approximation
-
-      // Record performance metrics
-      aiPerformanceMonitor.recordAIRequestTiming(
-        model || preferredModel,
-        "chat_message",
-        responseTime,
-      );
-      aiPerformanceMonitor.recordAITokenUsage(
-        model || preferredModel,
-        "chat_message",
-        tokensUsed,
-      );
-      aiPerformanceMonitor.recordAIResult(
-        model || preferredModel,
-        "chat_message",
-        true,
-      );
 
       // Handle special markers in the response for different features
       if (metadata) {
@@ -1588,6 +1795,17 @@ ${formattedResults}
         false,
       );
 
+      // Record failed metric to database
+      await this.recordPerformanceMetric({
+        userId,
+        action: "chat_message",
+        model: modelName,
+        success: false,
+        tokensUsed: 0,
+        responseTime,
+        error: (error as any).message || "unknown_error",
+      });
+
       logger.error("Error processing chat message:", error);
       throw new Error("Failed to process chat message");
     }
@@ -1655,7 +1873,8 @@ ${formattedResults}
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel = user?.["preferred_ai_model"] || "gemini-2.5-flash";
+    const preferredModel =
+      user?.["preferred_ai_model"] || "gemini-3.1-flash-lite-preview";
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Get user's name for personalization
@@ -1844,75 +2063,133 @@ User Message: ${content}
 Please provide a helpful response.`;
     }
 
+    // Determine if this is an OpenRouter model
+    const modelName = model || preferredModel;
+    const isOpenRouterModel =
+      modelName.includes("/") ||
+      Object.keys(AI_MODELS).some(
+        (m) => m === modelName && !m.startsWith("gemini"),
+      );
+
     try {
-      // Call Google Generative AI with streaming
-      logger.info("Calling Google Generative AI with streaming", {
-        model: model || preferredModel,
-      });
-
-      // Get the generative model with optimized parameters
-      const currentGenAI = await getGenAI();
-      if (!currentGenAI) {
-        throw new Error("Gemini API not configured");
-      }
-
-      // Map model names to Gemini-compatible ones
-      const geminiModelMap: Record<string, string> = {
-        "gemini-2.5-flash": "gemini-2.5-flash",
-        "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
-      };
-
-      const selectedModel = model || preferredModel;
-      const geminiModelName = geminiModelMap[selectedModel] ||
-        (selectedModel.startsWith("gemini") ? selectedModel : "gemini-2.5-flash");
-
-      logger.info("Using Gemini model (streaming)", { geminiModelName, originalModel: selectedModel });
-
-      const geminiModel = currentGenAI.getGenerativeModel({
-        model: geminiModelName,
-      });
-
-      // Generate content with streaming
-      const result = await geminiModel.generateContentStream([
-        systemMessage,
-        prompt,
-      ]);
-
-      logger.info("Google Generative AI streaming response initiated", {
-        hasResponse: !!result.response,
-      });
-
-      // Collect all tokens for final response
       let fullResponse = "";
+      let tokensUsed = 0;
 
-      // Process streaming response
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        fullResponse += chunkText;
-        if (onToken) {
-          onToken(chunkText);
+      if (isOpenRouterModel) {
+        // Use OpenRouter API with streaming
+        logger.info("Using OpenRouter model (streaming)", { modelName });
+
+        const openRouter = await getOpenRouterClient(userId);
+        if (!openRouter) {
+          throw new Error(
+            "OpenRouter API is not configured. Please check your API keys or BYOK settings.",
+          );
         }
+
+        const stream: any = await openRouter.chat.send({
+          chatRequest: {
+            model: modelName,
+            messages: [
+              { role: "system", content: systemMessage },
+              { role: "user", content: prompt },
+            ],
+            maxTokens: AI_MODELS[modelName]?.maxTokens || 4096,
+            stream: true,
+          },
+        });
+
+        // Process streaming response (EventStream<ChatStreamChunk>)
+        for await (const chunk of stream) {
+          const token = chunk?.choices?.[0]?.delta?.content || "";
+          fullResponse += token;
+          if (onToken) {
+            onToken(token);
+          }
+        }
+
+        tokensUsed = fullResponse.length; // Approximation
+      } else {
+        // Use Gemini API with streaming
+        logger.info("Calling Google Generative AI with streaming", {
+          model: modelName,
+        });
+
+        // Get the generative model with optimized parameters
+        const currentGenAI = await getGenAI(userId);
+        if (!currentGenAI) {
+          throw new Error("Gemini API not configured");
+        }
+
+        // Map model names to Gemini-compatible ones
+        const geminiModelMap: Record<string, string> = {
+          "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+        };
+
+        const geminiModelName =
+          geminiModelMap[modelName] ||
+          (modelName.startsWith("gemini")
+            ? modelName
+            : "gemini-3.1-flash-lite-preview");
+
+        logger.info("Using Gemini model (streaming)", {
+          geminiModelName,
+          originalModel: modelName,
+        });
+
+        const geminiModel = currentGenAI.getGenerativeModel({
+          model: geminiModelName,
+        });
+
+        // Generate content with streaming
+        const result = await geminiModel.generateContentStream([
+          systemMessage,
+          prompt,
+        ]);
+
+        logger.info("Google Generative AI streaming response initiated", {
+          hasResponse: !!result.response,
+        });
+
+        // Process streaming response
+        for await (const chunk of result.stream) {
+          const chunkText = chunk.text();
+          fullResponse += chunkText;
+          if (onToken) {
+            onToken(chunkText);
+          }
+        }
+
+        tokensUsed = fullResponse.length; // Approximation
       }
 
       const responseTime = Date.now() - startTime;
-      const tokensUsed = fullResponse.length; // Approximation
 
-      // Record performance metrics
+      // Record performance metrics to monitoring system
       aiPerformanceMonitor.recordAIRequestTiming(
-        model || preferredModel,
+        modelName,
         "chat_message_stream",
         responseTime,
       );
       aiPerformanceMonitor.recordAITokenUsage(
-        model || preferredModel,
+        modelName,
         "chat_message_stream",
         tokensUsed,
       );
       aiPerformanceMonitor.recordAIResult(
-        model || preferredModel,
+        modelName,
         "chat_message_stream",
         true,
       );
+
+      // Record to database for analytics dashboard
+      await this.recordPerformanceMetric({
+        userId,
+        action: "chat_message_stream",
+        model: model || preferredModel,
+        success: true,
+        tokensUsed,
+        responseTime,
+      });
 
       // Track AI usage with metadata
       await this.trackAIUsage(userId, "chat_message", {
@@ -2078,6 +2355,17 @@ ${formattedResults}
         false,
       );
 
+      // Record failed metric to database
+      await this.recordPerformanceMetric({
+        userId,
+        action: "chat_message_stream",
+        model: model || preferredModel,
+        success: false,
+        tokensUsed: 0,
+        responseTime,
+        error: (error as Error).message || "unknown_error",
+      });
+
       logger.error("Error processing chat message with streaming:", error);
       throw new Error("Failed to process chat message with streaming");
     }
@@ -2210,8 +2498,9 @@ ${formattedResults}
       if (openAiKey) {
         // Add only the specific OpenAI models we're using
         // OpenAI key available but we use Gemini models now
-        if (AI_MODELS["gemini-2.5-flash"])
-          availableModels["gemini-2.5-flash"] = AI_MODELS["gemini-2.5-flash"];
+        if (AI_MODELS["gemini-3.1-flash-lite-preview"])
+          availableModels["gemini-3.1-flash-lite-preview"] =
+            AI_MODELS["gemini-3.1-flash-lite-preview"];
       }
     } catch (error) {
       logger.info("OpenAI API key not configured");
@@ -2227,8 +2516,6 @@ ${formattedResults}
         if (AI_MODELS["gemini-3.1-flash-lite-preview"])
           availableModels["gemini-3.1-flash-lite-preview"] =
             AI_MODELS["gemini-3.1-flash-lite-preview"];
-        if (AI_MODELS["gemini-2.5-flash"])
-          availableModels["gemini-2.5-flash"] = AI_MODELS["gemini-2.5-flash"];
       }
     } catch (error) {
       logger.info("Gemini API key not configured");
@@ -2238,6 +2525,10 @@ ${formattedResults}
     try {
       const openRouterKey = process.env.OPENROUTER_API_KEY;
       if (openRouterKey) {
+        if (AI_MODELS["nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"])
+          availableModels[
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+          ] = AI_MODELS["nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"];
         if (AI_MODELS["openai/gpt-oss-120b:free"])
           availableModels["openai/gpt-oss-120b:free"] =
             AI_MODELS["openai/gpt-oss-120b:free"];
@@ -2300,13 +2591,13 @@ ${formattedResults}
       const plan = plans[planId as keyof typeof plans];
 
       // Determine model based on user's plan
-      let model = "gemini-2.5-flash"; // Default fallback model
+      let model = "gemini-3.1-flash-lite-preview"; // Default fallback model
       if (planId === "researcher" || planId === "institutional") {
         // Use premium model for higher-tier plans
         model = "gemini-3.1-flash-lite-preview";
       } else if (planId === "student" || planId === "onetime") {
         // Use better model for paid plans
-        model = "gemini-2.5-flash";
+        model = "gemini-3.1-flash-lite-preview";
       }
       // Free plan uses the default fallback model
 
@@ -2326,10 +2617,10 @@ ${formattedResults}
       let suggestion = "";
 
       switch (model) {
-        case "gemini-2.5-flash":
+        case "gemini-3.1-flash-lite-preview":
         case "gemini-3.1-flash-lite-preview": {
           // Use Google Gemini
-          const currentGenAI = await getGenAI();
+          const currentGenAI = await getGenAI(userId);
           if (!currentGenAI) {
             throw new Error("Gemini API not configured");
           }
@@ -2343,7 +2634,7 @@ ${formattedResults}
         case "nvidia/nemotron-3-super-120b-a12b:free":
         case "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
           // Use native OpenRouter SDK for free open-source models
-          const orClient = getOpenRouterClient();
+          const orClient = await getOpenRouterClient(userId);
           if (!orClient) {
             throw new Error("OpenRouter API not configured");
           }
@@ -2366,11 +2657,13 @@ ${formattedResults}
 
         default: {
           // Default to Gemini for any other model
-          const currentGenAI = await getGenAI();
+          const currentGenAI = await getGenAI(userId);
           if (!currentGenAI) {
             throw new Error("Gemini API not configured");
           }
-          const geminiModel = currentGenAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+          const geminiModel = currentGenAI.getGenerativeModel({
+            model: "gemini-3.1-flash-lite-preview",
+          });
           const result = await geminiModel.generateContent(prompt);
           suggestion = result.response.text().trim();
           break;

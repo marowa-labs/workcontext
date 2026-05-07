@@ -69,7 +69,11 @@ export class AIActionService {
       );
 
       // Step 2: If no intent detected OR intent is "chat" (general conversation), treat as general chat
-      if (!intent || intent.actionType === "chat" || AIIntentParser.isGeneralChat(request.message)) {
+      if (
+        !intent ||
+        intent.actionType === "chat" ||
+        AIIntentParser.isGeneralChat(request.message)
+      ) {
         return this.handleGeneralChat(request, context);
       }
 
@@ -198,7 +202,7 @@ export class AIActionService {
         message: result.content,
         data: {
           tokensUsed: 0,
-          modelUsed: "gemini-2.5-flash",
+          modelUsed: "gemini-3.1-flash-lite-preview",
         },
       };
     } catch (error: any) {

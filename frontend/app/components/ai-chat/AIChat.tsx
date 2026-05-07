@@ -156,7 +156,7 @@ export function AIChatPanel({
     const fontSize =
       minFontSize +
       (maxFontSize - minFontSize) *
-      ((clampedWidth - minWidth) / (maxWidth - minWidth));
+        ((clampedWidth - minWidth) / (maxWidth - minWidth));
     return fontSize;
   }, [panelWidth]);
 
@@ -174,7 +174,7 @@ export function AIChatPanel({
     const lineHeight =
       minLineHeight +
       (maxLineHeight - minLineHeight) *
-      ((clampedWidth - minWidth) / (maxWidth - minWidth));
+        ((clampedWidth - minWidth) / (maxWidth - minWidth));
 
     return lineHeight;
   }, [panelWidth]);
@@ -192,7 +192,7 @@ export function AIChatPanel({
     const fontSize =
       minFontSize +
       (maxFontSize - minFontSize) *
-      ((clampedWidth - minWidth) / (maxWidth - minWidth));
+        ((clampedWidth - minWidth) / (maxWidth - minWidth));
     return fontSize;
   }, [panelWidth]);
 
@@ -209,7 +209,7 @@ export function AIChatPanel({
     const fontSize =
       minFontSize +
       (maxFontSize - minFontSize) *
-      ((clampedWidth - minWidth) / (maxWidth - minWidth));
+        ((clampedWidth - minWidth) / (maxWidth - minWidth));
     return fontSize;
   }, [panelWidth]);
 
@@ -223,7 +223,9 @@ export function AIChatPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentModel, setCurrentModel] = useState("gemini-2.5-flash");
+  const [currentModel, setCurrentModel] = useState(
+    "gemini-3.1-flash-lite-preview",
+  );
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [showSessions, setShowSessions] = useState(false);
   const [, setAvailableModels] = useState<AIModel[]>([]);
@@ -272,7 +274,9 @@ export function AIChatPanel({
   const research = { isLoading: false, error: null, data: null };
 
   // AI Action System State
-  const [pendingAction, setPendingAction] = useState<AIActionResult | null>(null);
+  const [pendingAction, setPendingAction] = useState<AIActionResult | null>(
+    null,
+  );
   const [isConfirming, setIsConfirming] = useState(false);
   const router = useRouter();
 
@@ -380,7 +384,6 @@ export function AIChatPanel({
       setError(error.message || "Failed to load available models");
     }
   }, [currentModel]);
-
 
   // Refresh usage limits when toggles change
   useEffect(() => {
@@ -521,7 +524,10 @@ export function AIChatPanel({
 
       // 2. History Hydration - ONLY if we haven't already initialized this project in this mount lifecycle
       const initializeHistory = async () => {
-        if (isInitializing.current || lastInitializedProjectId.current === projectId) {
+        if (
+          isInitializing.current ||
+          lastInitializedProjectId.current === projectId
+        ) {
           return;
         }
 
@@ -567,7 +573,15 @@ export function AIChatPanel({
 
       initializeHistory();
     }
-  }, [isOpen, projectId, loadAvailableModels, checkUserPlan, fetchUsageLimits, loadMessages, user?.id]);
+  }, [
+    isOpen,
+    projectId,
+    loadAvailableModels,
+    checkUserPlan,
+    fetchUsageLimits,
+    loadMessages,
+    user?.id,
+  ]);
 
   // Send a message
   const sendMessage = async () => {
@@ -916,7 +930,7 @@ export function AIChatPanel({
       // Handle table header separator lines - any line with |--- patterns
       .replace(/\n\|[-\s|]+\n/g, (match) => {
         // Count cells by splitting on |
-        const cells = match.split("|").filter(c => c.trim().length > 0);
+        const cells = match.split("|").filter((c) => c.trim().length > 0);
         if (cells.length > 0) {
           // Create proper markdown separator
           return "\n|" + cells.map(() => " --- ").join("|") + "|\n";
@@ -926,7 +940,10 @@ export function AIChatPanel({
       // Remove AI markers
       .replace(/\[\/?[A-Z\s]+(?:\s+[A-Z\s]+)*\]/g, "");
 
-    console.log("Processed content:", JSON.stringify(processed.substring(0, 200)));
+    console.log(
+      "Processed content:",
+      JSON.stringify(processed.substring(0, 200)),
+    );
     return processed;
   };
 
@@ -1034,7 +1051,13 @@ export function AIChatPanel({
       if (typeof response === "string") {
         parsedContent = response;
       } else if (response && typeof response === "object") {
-        parsedContent = response.text || response.content || response.response || response.suggestion || response.result || JSON.stringify(response, null, 2);
+        parsedContent =
+          response.text ||
+          response.content ||
+          response.response ||
+          response.suggestion ||
+          response.result ||
+          JSON.stringify(response, null, 2);
       }
 
       const assistantMessage: ChatMessage = {
@@ -1082,7 +1105,7 @@ export function AIChatPanel({
         {
           pageContext: "editor", // or derive from router
           currentProjectId: projectId || undefined,
-          conversationHistory: messages.slice(-10).map(m => ({
+          conversationHistory: messages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,
           })),
@@ -1110,7 +1133,7 @@ export function AIChatPanel({
               const suggestionMessage: ChatMessage = {
                 id: `suggestion-${Date.now()}`,
                 role: "assistant",
-                content: `\n\n**You can also ask me to:**\n${result.suggestedActions.map(a => `- ${a}`).join('\n')}`,
+                content: `\n\n**You can also ask me to:**\n${result.suggestedActions.map((a) => `- ${a}`).join("\n")}`,
                 message_type: "suggestion",
                 created_at: new Date().toISOString(),
               };
@@ -1141,7 +1164,7 @@ export function AIChatPanel({
               router.push("/tasks");
             }
           },
-        }
+        },
       );
     } catch (error: any) {
       console.error("Chat error:", error);
@@ -1305,7 +1328,8 @@ export function AIChatPanel({
         // Apply responsive font size and line height to the entire panel
         fontSize: `${responsiveFontSize}px`,
         lineHeight: responsiveLineHeight,
-      }}>
+      }}
+    >
       {/* Sessions Modal */}
       {showSessions && (
         <div className="absolute inset-y-4 right-4 bg-white z-10 flex flex-col shadow-lg border border-white rounded-lg w-96 overflow-x-hidden">
@@ -1314,14 +1338,16 @@ export function AIChatPanel({
             style={{
               fontSize: "inherit",
               lineHeight: "inherit",
-            }}>
+            }}
+          >
             <div className="flex items-center justify-between">
               <h3
                 className="font-semibold"
                 style={{
                   fontSize: "inherit",
                   lineHeight: "inherit",
-                }}>
+                }}
+              >
                 Chat Sessions
               </h3>
               <button
@@ -1330,7 +1356,8 @@ export function AIChatPanel({
                 style={{
                   fontSize: "inherit",
                   lineHeight: "inherit",
-                }}>
+                }}
+              >
                 <X size={16} />
               </button>
             </div>
@@ -1341,7 +1368,8 @@ export function AIChatPanel({
             style={{
               fontSize: "inherit",
               lineHeight: "inherit",
-            }}>
+            }}
+          >
             <div className="mb-4">
               <input
                 type="text"
@@ -1362,7 +1390,8 @@ export function AIChatPanel({
                 style={{
                   fontSize: "inherit",
                   lineHeight: "inherit",
-                }}>
+                }}
+              >
                 <Plus size={16} className="mr-2" />
                 Create New Session
               </button>
@@ -1372,22 +1401,26 @@ export function AIChatPanel({
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className={`p-3 rounded-lg border cursor-pointer flex justify-between items-center ${sessionId === session.id
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-white hover:bg-gray-50"
-                    }`}
-                  onClick={() => switchSession(session)}>
+                  className={`p-3 rounded-lg border cursor-pointer flex justify-between items-center ${
+                    sessionId === session.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-white hover:bg-gray-50"
+                  }`}
+                  onClick={() => switchSession(session)}
+                >
                   <div
                     style={{
                       fontSize: "inherit",
                       lineHeight: "inherit",
-                    }}>
+                    }}
+                  >
                     <div
                       className="font-medium"
                       style={{
                         fontSize: "inherit",
                         lineHeight: "inherit",
-                      }}>
+                      }}
+                    >
                       {session.title}
                     </div>
                     <div
@@ -1395,7 +1428,8 @@ export function AIChatPanel({
                       style={{
                         fontSize: `${responsiveExtraSmallFontSize}px`,
                         lineHeight: "inherit",
-                      }}>
+                      }}
+                    >
                       {new Date(session.last_message_at).toLocaleDateString()}
                     </div>
                   </div>
@@ -1404,7 +1438,8 @@ export function AIChatPanel({
                       e.stopPropagation();
                       handleDeleteSession(session.id);
                     }}
-                    className="p-1 text-red-500 hover:bg-red-100 rounded">
+                    className="p-1 text-red-500 hover:bg-red-100 rounded"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -1421,7 +1456,8 @@ export function AIChatPanel({
           style={{
             fontSize: "inherit",
             lineHeight: "inherit",
-          }}>
+          }}
+        >
           {error}
         </div>
       )}
@@ -1433,7 +1469,8 @@ export function AIChatPanel({
           style={{
             fontSize: "inherit",
             lineHeight: "inherit",
-          }}>
+          }}
+        >
           <div className="space-y-1">
             {notifications.map((notification) => (
               <div
@@ -1442,7 +1479,8 @@ export function AIChatPanel({
                 style={{
                   fontSize: "inherit",
                   lineHeight: "inherit",
-                }}>
+                }}
+              >
                 <CheckCircle2 size={16} className="mr-2 flex-shrink-0" />
                 <span>{notification.message}</span>
               </div>
@@ -1454,21 +1492,29 @@ export function AIChatPanel({
       {/* AI Action Confirmation Dialog */}
       {pendingAction && (
         <div className="absolute inset-x-4 top-20 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
-          <div className={`p-4 ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-50 border-b border-red-100' : 'bg-blue-50 border-b border-blue-100'}`}>
+          <div
+            className={`p-4 ${isDestructiveAction(pendingAction.actionType || "") ? "bg-red-50 border-b border-red-100" : "bg-blue-50 border-b border-blue-100"}`}
+          >
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                {isDestructiveAction(pendingAction.actionType || '') ? (
+              <div
+                className={`p-2 rounded-full ${isDestructiveAction(pendingAction.actionType || "") ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"}`}
+              >
+                {isDestructiveAction(pendingAction.actionType || "") ? (
                   <AlertTriangle size={20} />
                 ) : (
-                  <span className="text-lg">{getActionIcon(pendingAction.actionType || '')}</span>
+                  <span className="text-lg">
+                    {getActionIcon(pendingAction.actionType || "")}
+                  </span>
                 )}
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900">
-                  {isDestructiveAction(pendingAction.actionType || '') ? 'Confirm Action' : 'Confirm Action'}
+                  {isDestructiveAction(pendingAction.actionType || "")
+                    ? "Confirm Action"
+                    : "Confirm Action"}
                 </h4>
                 <p className="text-sm text-gray-600">
-                  {formatActionType(pendingAction.actionType || '')}
+                  {formatActionType(pendingAction.actionType || "")}
                 </p>
               </div>
             </div>
@@ -1479,9 +1525,15 @@ export function AIChatPanel({
 
             {pendingAction.data?.intent && (
               <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
-                <p className="text-gray-600 font-medium mb-1">Action details:</p>
+                <p className="text-gray-600 font-medium mb-1">
+                  Action details:
+                </p>
                 <pre className="text-xs text-gray-500 overflow-x-auto">
-                  {JSON.stringify(pendingAction.data.intent.parameters, null, 2)}
+                  {JSON.stringify(
+                    pendingAction.data.intent.parameters,
+                    null,
+                    2,
+                  )}
                 </pre>
               </div>
             )}
@@ -1492,15 +1544,19 @@ export function AIChatPanel({
                 disabled={isConfirming}
                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
-                {getConfirmationButtonText(pendingAction.actionType || '').cancel}
+                {
+                  getConfirmationButtonText(pendingAction.actionType || "")
+                    .cancel
+                }
               </button>
               <button
                 onClick={handleConfirmAction}
                 disabled={isConfirming}
-                className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${isDestructiveAction(pendingAction.actionType || '')
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  isDestructiveAction(pendingAction.actionType || "")
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
               >
                 {isConfirming ? (
                   <>
@@ -1509,7 +1565,10 @@ export function AIChatPanel({
                   </>
                 ) : (
                   <>
-                    {getConfirmationButtonText(pendingAction.actionType || '').confirm}
+                    {
+                      getConfirmationButtonText(pendingAction.actionType || "")
+                        .confirm
+                    }
                     <ArrowRight size={16} />
                   </>
                 )}
@@ -1530,21 +1589,24 @@ export function AIChatPanel({
                   variant="ghost"
                   size="sm"
                   className="text-xs bg-blue-500 hover:bg-blue-500 hover:text-white"
-                  onClick={() => setShowCitationPanel(!showCitationPanel)}>
+                  onClick={() => setShowCitationPanel(!showCitationPanel)}
+                >
                   Cite
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-xs bg-blue-500 hover:bg-blue-500 hover:text-white"
-                  onClick={() => setShowPaperPanel(!showPaperPanel)}>
+                  onClick={() => setShowPaperPanel(!showPaperPanel)}
+                >
                   Papers
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-xs bg-blue-500 hover:bg-blue-500 hover:text-white"
-                  onClick={() => setShowGapPanel(!showGapPanel)}>
+                  onClick={() => setShowGapPanel(!showGapPanel)}
+                >
                   Gaps
                 </Button>
               </div>
@@ -1559,7 +1621,8 @@ export function AIChatPanel({
               size="sm"
               className="h-7 text-xs gap-1 bg-blue-600 border border-blue-700 text-white hover:bg-blue-700 hover:border-blue-800 shadow-sm transition-all font-medium"
               onClick={() => handleQuickAction(action.prompt)}
-              disabled={isLoading}>
+              disabled={isLoading}
+            >
               {action.icon}
               {action.label}
             </Button>
@@ -1574,14 +1637,16 @@ export function AIChatPanel({
                 className={cn(
                   "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
                   message.role === "user" ? "flex-row-reverse" : "",
-                )}>
+                )}
+              >
                 <Avatar className="h-7 w-7 shrink-0">
                   <AvatarFallback
                     className={
                       message.role === "assistant"
                         ? "bg-green-500 text-white font-bold"
                         : "bg-gray-500 text-white font-bold"
-                    }>
+                    }
+                  >
                     {message.role === "assistant" ? "AI" : "U"}
                   </AvatarFallback>
                 </Avatar>
@@ -1592,7 +1657,8 @@ export function AIChatPanel({
                     message.role === "user"
                       ? "bg-blue-600 text-white shadow-md"
                       : "bg-white text-black border border-white",
-                  )}>
+                  )}
+                >
                   {message.role === "assistant" ? (
                     <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                       <ReactMarkdown
@@ -1613,7 +1679,8 @@ export function AIChatPanel({
                           p: ({ node, ...props }) => (
                             <p className="mb-2 last:mb-0" {...props} />
                           ),
-                        }}>
+                        }}
+                      >
                         {preprocessContent(String(message.content || ""))}
                       </ReactMarkdown>
                     </div>
@@ -1632,7 +1699,8 @@ export function AIChatPanel({
                         className="h-6 w-6 bg-red-500 text-red-100 hover:bg-red-600 hover:text-red-200"
                         onClick={() =>
                           copyToClipboard(message.content, message.id)
-                        }>
+                        }
+                      >
                         {copiedId === message.id ? (
                           <Check className="h-3 w-3" />
                         ) : (
@@ -1644,7 +1712,8 @@ export function AIChatPanel({
                         size="icon"
                         title="Insert into editor"
                         className="h-6 w-6 bg-green-500 text-green-100 hover:bg-green-600 hover:text-green-200"
-                        onClick={() => insertIntoEditor(message.content)}>
+                        onClick={() => insertIntoEditor(message.content)}
+                      >
                         <FileText className="h-3 w-3" />
                       </Button>
                       <Button
@@ -1666,7 +1735,8 @@ export function AIChatPanel({
                               "Unable to refresh: No active chat session",
                             );
                           }
-                        }}>
+                        }}
+                      >
                         <RefreshCw className="h-3 w-3" />
                       </Button>
                     </div>
@@ -1708,7 +1778,8 @@ export function AIChatPanel({
               />
               <button
                 onClick={removeImage}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+              >
                 <X size={12} />
               </button>
             </div>
@@ -1717,12 +1788,14 @@ export function AIChatPanel({
 
         <form
           onSubmit={handleSubmit}
-          className="p-3 bg-white text-black bg-gray-50/50">
+          className="p-3 bg-white text-black bg-gray-50/50"
+        >
           {/* Context Pills */}
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <button
               type="button"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm whitespace-nowrap">
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm whitespace-nowrap"
+            >
               <div className="flex items-center justify-center w-4 h-4 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold">
                 @
               </div>
@@ -1737,7 +1810,8 @@ export function AIChatPanel({
                 onClick={(e) => {
                   e.stopPropagation();
                   // potential handle remove context logic here
-                }}>
+                }}
+              >
                 <X
                   size={12}
                   className="text-gray-400 group-hover:text-inherit"
@@ -1772,7 +1846,8 @@ export function AIChatPanel({
                   </span>
                   <button
                     onClick={removeImage}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400 hover:text-gray-600 transition-colors">
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                  >
                     <X size={12} />
                   </button>
                 </div>
@@ -1796,7 +1871,8 @@ export function AIChatPanel({
                   variant="ghost"
                   size="icon"
                   onClick={() => fileInputRef.current?.click()} // Reuse same ref for attachment generic icon
-                  className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                  className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
                   <div className="rotate-45">
                     <svg
                       width="16"
@@ -1806,7 +1882,8 @@ export function AIChatPanel({
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
-                      strokeLinejoin="round">
+                      strokeLinejoin="round"
+                    >
                       <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                     </svg>
                   </div>
@@ -1817,7 +1894,8 @@ export function AIChatPanel({
                   size="icon"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading || !hasAccess}
-                  className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                  className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
                   <ImageIcon size={16} />
                 </Button>
               </div>
@@ -1830,15 +1908,18 @@ export function AIChatPanel({
                   onClick={() =>
                     selectSearchMode(webSearchEnabled ? "none" : "web")
                   }
-                  className={`flex items-center gap-1.5 px-1 py-1 rounded-full transition-colors ${webSearchEnabled ? "bg-purple-100" : "bg-transparent"}`}>
+                  className={`flex items-center gap-1.5 px-1 py-1 rounded-full transition-colors ${webSearchEnabled ? "bg-purple-100" : "bg-transparent"}`}
+                >
                   <div
-                    className={`w-9 h-5 rounded-full relative transition-colors ${webSearchEnabled ? "bg-purple-500" : "bg-gray-200"}`}>
+                    className={`w-9 h-5 rounded-full relative transition-colors ${webSearchEnabled ? "bg-purple-500" : "bg-gray-200"}`}
+                  >
                     <div
                       className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${webSearchEnabled ? "translate-x-4" : "translate-x-0"}`}
                     />
                   </div>
                   <span
-                    className={`text-xs font-medium ${webSearchEnabled ? "text-purple-700" : "text-gray-500"}`}>
+                    className={`text-xs font-medium ${webSearchEnabled ? "text-purple-700" : "text-gray-500"}`}
+                  >
                     Web
                   </span>
                 </button>
@@ -1848,15 +1929,18 @@ export function AIChatPanel({
                   onClick={() =>
                     selectSearchMode(deepSearchEnabled ? "none" : "deep")
                   } // Mapping library to deep search for now or handled separately
-                  className={`flex items-center gap-1.5 px-1 py-1 rounded-full transition-colors ${deepSearchEnabled ? "bg-purple-100" : "bg-transparent"}`}>
+                  className={`flex items-center gap-1.5 px-1 py-1 rounded-full transition-colors ${deepSearchEnabled ? "bg-purple-100" : "bg-transparent"}`}
+                >
                   <div
-                    className={`w-9 h-5 rounded-full relative transition-colors ${deepSearchEnabled ? "bg-purple-500" : "bg-gray-200"}`}>
+                    className={`w-9 h-5 rounded-full relative transition-colors ${deepSearchEnabled ? "bg-purple-500" : "bg-gray-200"}`}
+                  >
                     <div
                       className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${deepSearchEnabled ? "translate-x-4" : "translate-x-0"}`}
                     />
                   </div>
                   <span
-                    className={`text-xs font-medium ${deepSearchEnabled ? "text-purple-700" : "text-gray-500"}`}>
+                    className={`text-xs font-medium ${deepSearchEnabled ? "text-purple-700" : "text-gray-500"}`}
+                  >
                     Library
                   </span>
                 </button>
@@ -1864,10 +1948,12 @@ export function AIChatPanel({
                 <button
                   type="submit"
                   disabled={!inputValue.trim() || isLoading}
-                  className={`h-8 w-8 flex items-center justify-center rounded-full transition-all ${inputValue.trim()
-                    ? "bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg"
-                    : "bg-blue-200 text-white cursor-not-allowed"
-                    }`}>
+                  className={`h-8 w-8 flex items-center justify-center rounded-full transition-all ${
+                    inputValue.trim()
+                      ? "bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg"
+                      : "bg-blue-200 text-white cursor-not-allowed"
+                  }`}
+                >
                   <div className="w-4 h-4">
                     <svg
                       viewBox="0 0 24 24"
@@ -1875,7 +1961,8 @@ export function AIChatPanel({
                       stroke="currentColor"
                       strokeWidth="3"
                       strokeLinecap="round"
-                      strokeLinejoin="round">
+                      strokeLinejoin="round"
+                    >
                       <path d="M5 12h14" />
                       <path d="m12 5 7 7-7 7" />
                     </svg>

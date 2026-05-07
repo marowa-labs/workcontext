@@ -235,12 +235,13 @@ export class UnifiedAIService {
   ): string {
     // Define available models per plan
     const planModels: Record<string, string[]> = {
-      free: ["gemini-2.5-flash", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
-      onetime: ["gemini-2.5-flash", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
-      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
+      free: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
+      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
+      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
       researcher: [
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite-preview",
+        "nvidia/nemotron-3-super-120b-a12b:free",
         "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
         "openai/gpt-oss-120b:free",
       ],

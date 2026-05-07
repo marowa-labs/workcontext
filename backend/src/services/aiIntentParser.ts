@@ -13,7 +13,7 @@ import {
 } from "./aiActionTypes";
 
 export class AIIntentParser {
-  private static readonly PARSER_MODEL = "gemini-2.5-flash";
+  private static readonly PARSER_MODEL = "gemini-3.1-flash-lite-preview";
 
   /**
    * Parse user intent from a message
@@ -21,19 +21,28 @@ export class AIIntentParser {
   static async parseIntent(
     message: string,
     context: AIActionContext,
-    conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = []
+    conversationHistory: Array<{
+      role: "user" | "assistant";
+      content: string;
+    }> = [],
   ): Promise<ParsedIntent | null> {
     try {
       // First, try pattern matching for quick results
       const patternMatch = this.tryPatternMatching(message);
       if (patternMatch && patternMatch.confidence > 0.8) {
-        logger.info("Intent matched via pattern", { actionType: patternMatch.actionType });
+        logger.info("Intent matched via pattern", {
+          actionType: patternMatch.actionType,
+        });
         return patternMatch;
       }
 
       // If no high-confidence pattern match, use AI parsing
-      const aiParsed = await this.parseWithAI(message, context, conversationHistory);
-      
+      const aiParsed = await this.parseWithAI(
+        message,
+        context,
+        conversationHistory,
+      );
+
       // Merge pattern results with AI if both exist
       if (patternMatch && aiParsed) {
         // Use pattern for action type if confidence is high, AI for parameters
@@ -60,7 +69,7 @@ export class AIIntentParser {
       if (match) {
         const params = extractParams(match, message);
         const actionDef = ACTION_DEFINITIONS[actionType];
-        
+
         if (actionDef) {
           return {
             actionType,
@@ -83,10 +92,10 @@ export class AIIntentParser {
   private static async parseWithAI(
     message: string,
     context: AIActionContext,
-    conversationHistory: Array<{ role: "user" | "assistant"; content: string }>
+    conversationHistory: Array<{ role: "user" | "assistant"; content: string }>,
   ): Promise<ParsedIntent | null> {
     const systemPrompt = this.buildSystemPrompt(context);
-    
+
     const messages = [
       { role: "system" as const, content: systemPrompt },
       ...conversationHistory.slice(-5), // Last 5 messages for context
@@ -98,11 +107,11 @@ export class AIIntentParser {
         messages,
         this.PARSER_MODEL,
         1500,
-        0.1 // Low temperature for consistent parsing
+        0.1, // Low temperature for consistent parsing
       );
 
       const parsed = this.extractJSONFromResponse(response.content);
-      
+
       if (!parsed || !parsed.action_type) {
         return null;
       }
@@ -111,12 +120,17 @@ export class AIIntentParser {
 
       return {
         actionType: parsed.action_type,
-        actionCategory: (parsed.action_category || actionDef?.category || "read") as ActionCategory,
-        targetEntity: (parsed.target_entity || actionDef?.targetEntity || "project") as TargetEntity,
+        actionCategory: (parsed.action_category ||
+          actionDef?.category ||
+          "read") as ActionCategory,
+        targetEntity: (parsed.target_entity ||
+          actionDef?.targetEntity ||
+          "project") as TargetEntity,
         parameters: parsed.parameters || {},
         confidence: parsed.confidence || 0.7,
         requiresConfirmation: actionDef?.requiresConfirmation ?? true,
-        suggestedResponse: parsed.suggested_response || `I'll help you with that.`,
+        suggestedResponse:
+          parsed.suggested_response || `I'll help you with that.`,
       };
     } catch (error: any) {
       logger.error("AI parsing error:", error);
@@ -130,24 +144,25 @@ export class AIIntentParser {
   private static buildSystemPrompt(context: AIActionContext): string {
     const actionDescriptions = Object.entries(ACTION_DEFINITIONS)
       .map(([type, def]) => {
-        const params = def.parameters?.map(p => 
-          `${p.name}(${p.type}${p.required ? '' : '?'})`
-        ).join(', ') || 'none';
+        const params =
+          def.parameters
+            ?.map((p) => `${p.name}(${p.type}${p.required ? "" : "?"})`)
+            .join(", ") || "none";
         return `- ${type}: ${def.description} [params: ${params}]`;
       })
-      .join('\n');
+      .join("\n");
 
     return `You are ScholarForge AI - THE CENTRAL INTELLIGENCE and ENGINE of the ScholarForge academic platform. You are not just an assistant - you ARE the interface through which users interact with the entire platform.
 
 CURRENT CONTEXT (You know exactly where the user is):
 - User ID: ${context.userId}
-- Current Page: ${context.pageContext || 'unknown'}
-- Page Description: ${context.pageDescription || 'unknown location'}
-- Route: ${context.pageRoute || 'unknown'}
-- Section: ${context.pageSection || 'main'}
-- Entity ID: ${context.entityId || 'none'}
-- Current Workspace: ${context.currentWorkspaceId || 'none'}
-- Current Project: ${context.currentProjectId || 'none'}
+- Current Page: ${context.pageContext || "unknown"}
+- Page Description: ${context.pageDescription || "unknown location"}
+- Route: ${context.pageRoute || "unknown"}
+- Section: ${context.pageSection || "main"}
+- Entity ID: ${context.entityId || "none"}
+- Current Workspace: ${context.currentWorkspaceId || "none"}
+- Current Project: ${context.currentProjectId || "none"}
 
 YOUR ROLE AS THE PLATFORM ENGINE:
 1. You can CREATE, READ, UPDATE, DELETE anything - workspaces, projects, tasks, documents
@@ -210,7 +225,7 @@ Respond ONLY with valid JSON.`;
   static async resolveEntityReferences(
     intent: ParsedIntent,
     context: AIActionContext,
-    prisma: any
+    prisma: any,
   ): Promise<ParsedIntent> {
     const enhanced = { ...intent };
     const params = { ...intent.parameters };
@@ -219,11 +234,11 @@ Respond ONLY with valid JSON.`;
     if (params.workspaceName && !params.workspaceId) {
       const workspace = await prisma.workspace.findFirst({
         where: {
-          name: { contains: params.workspaceName, mode: 'insensitive' },
+          name: { contains: params.workspaceName, mode: "insensitive" },
           OR: [
             { owner_id: context.userId },
-            { members: { some: { user_id: context.userId } } }
-          ]
+            { members: { some: { user_id: context.userId } } },
+          ],
         },
       });
       if (workspace) {
@@ -236,7 +251,7 @@ Respond ONLY with valid JSON.`;
     if (params.projectName && !params.projectId) {
       const project = await prisma.project.findFirst({
         where: {
-          title: { contains: params.projectName, mode: 'insensitive' },
+          title: { contains: params.projectName, mode: "insensitive" },
           user_id: context.userId,
         },
       });
@@ -269,8 +284,8 @@ Respond ONLY with valid JSON.`;
       /^(goodbye|bye|see you)/i,
       /\?$/,
     ];
-    
-    return generalPatterns.some(pattern => pattern.test(message.trim()));
+
+    return generalPatterns.some((pattern) => pattern.test(message.trim()));
   }
 
   /**
@@ -278,11 +293,12 @@ Respond ONLY with valid JSON.`;
    */
   static buildActionConfirmationMessage(intent: ParsedIntent): string {
     const actionDef = ACTION_DEFINITIONS[intent.actionType];
-    const entityName = intent.parameters.name || 
-                      intent.parameters.title || 
-                      intent.parameters.workspaceName ||
-                      intent.parameters.projectName ||
-                      'this item';
+    const entityName =
+      intent.parameters.name ||
+      intent.parameters.title ||
+      intent.parameters.workspaceName ||
+      intent.parameters.projectName ||
+      "this item";
 
     const messages: Record<string, string> = {
       create_workspace: `I'll create a new workspace called "${entityName}".`,
@@ -304,9 +320,11 @@ Respond ONLY with valid JSON.`;
       list_tasks: `I'll show you your tasks.`,
     };
 
-    return messages[intent.actionType] || 
-           intent.suggestedResponse || 
-           `I'll ${intent.actionType.replace(/_/g, ' ')} for you.`;
+    return (
+      messages[intent.actionType] ||
+      intent.suggestedResponse ||
+      `I'll ${intent.actionType.replace(/_/g, " ")} for you.`
+    );
   }
 }
 

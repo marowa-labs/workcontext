@@ -49,7 +49,7 @@ Your response MUST be a valid JSON array.`;
 
       const aiResponse = await OpenAIService.sendCompletion(
         prompt,
-        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
         2000,
         0.2,
       );

@@ -97,6 +97,7 @@ DATABASE_URL=postgresql://postgres:password@localhost:5435/scholarforge
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 GEMINI_API_KEY=your_gemini_key          # optional
+OPENROUTER_API_KEY=your_openrouter_key  # optional
 RESEND_API_KEY=your_resend_key          # for emails
 ```
 

@@ -60,7 +60,7 @@ export class GeminiService {
       if (model === "gemini-3.1-flash-lite-preview") {
         // Gemini 3.1 Flash Lite: $1.25/1M input tokens, $10.00/1M output tokens
         cost = (tokensUsed / 1000000) * 1.25 + (tokensUsed / 1000000) * 10.0;
-      } else if (model === "gemini-2.5-flash") {
+      } else if (model === "gemini-3.1-flash-lite-preview") {
         // Gemini 2.0 Flash: $0.075/1M input tokens, $0.30/1M output tokens
         cost = (tokensUsed / 1000000) * 0.075 + (tokensUsed / 1000000) * 0.3;
       } else {

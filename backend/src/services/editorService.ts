@@ -1129,7 +1129,17 @@ export class EditorService {
         });
       }
 
-      return settings;
+      // Get user's preferred AI model to include in settings
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { preferred_ai_model: true },
+      });
+
+      // Return settings with aiModel included
+      return {
+        ...settings,
+        aiModel: user?.preferred_ai_model || "gemini-3.1-flash-lite-preview",
+      };
     } catch (error) {
       logger.error("Error getting editor settings:", {
         error,
@@ -1176,6 +1186,19 @@ export class EditorService {
     try {
       // Convert camelCase field names to snake_case for Prisma
       const prismaSettingsData = this.convertToSnakeCase(settingsData);
+
+      // If aiModel is provided, also update the user's preferred_ai_model field
+      // This ensures the AI service respects the user's model preference
+      if (settingsData.aiModel) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { preferred_ai_model: settingsData.aiModel },
+        });
+        logger.info("Updated user preferred AI model", {
+          userId,
+          model: settingsData.aiModel,
+        });
+      }
 
       // Update or create settings
       const settings = await prisma.editorSettings.upsert({

@@ -22,10 +22,10 @@ export class AIActionExecutor {
   static async executeAction(
     intent: ParsedIntent,
     context: AIActionContext,
-    skipConfirmation: boolean = false
+    skipConfirmation: boolean = false,
   ): Promise<ActionResult> {
     const startTime = Date.now();
-    
+
     try {
       // Get action definition
       const actionDef = ACTION_DEFINITIONS[intent.actionType];
@@ -33,7 +33,7 @@ export class AIActionExecutor {
         return {
           success: false,
           error: `Unknown action type: ${intent.actionType}`,
-          message: `I don't know how to ${intent.actionType.replace(/_/g, ' ')}.`,
+          message: `I don't know how to ${intent.actionType.replace(/_/g, " ")}.`,
           affectedEntities: [],
         };
       }
@@ -41,8 +41,12 @@ export class AIActionExecutor {
       // Check if confirmation is needed
       if (actionDef.requiresConfirmation && !skipConfirmation) {
         // Create pending action record
-        const actionRecord = await this.createActionRecord(intent, context, "pending");
-        
+        const actionRecord = await this.createActionRecord(
+          intent,
+          context,
+          "pending",
+        );
+
         return {
           success: true,
           data: { actionId: actionRecord.id, requiresConfirmation: true },
@@ -53,7 +57,7 @@ export class AIActionExecutor {
 
       // Execute the action
       const result = await this.performAction(intent, context);
-      
+
       // Record the action
       const duration = Date.now() - startTime;
       await this.completeActionRecord(intent, context, result, duration);
@@ -61,9 +65,9 @@ export class AIActionExecutor {
       return result;
     } catch (error: any) {
       logger.error("Action execution error:", error);
-      
+
       await this.failActionRecord(intent, context, error.message);
-      
+
       return {
         success: false,
         error: error.message,
@@ -78,7 +82,7 @@ export class AIActionExecutor {
    */
   static async confirmAndExecute(
     actionId: string,
-    confirmedBy: string
+    confirmedBy: string,
   ): Promise<ActionResult> {
     try {
       // Get the pending action
@@ -223,7 +227,7 @@ export class AIActionExecutor {
 
   private static async performAction(
     intent: ParsedIntent,
-    context: AIActionContext
+    context: AIActionContext,
   ): Promise<ActionResult> {
     const { actionType, parameters } = intent;
 
@@ -304,7 +308,7 @@ export class AIActionExecutor {
         return {
           success: false,
           error: `Action ${actionType} not implemented`,
-          message: `I can't ${actionType.replace(/_/g, ' ')} yet, but I'm learning!`,
+          message: `I can't ${actionType.replace(/_/g, " ")} yet, but I'm learning!`,
           affectedEntities: [],
         };
     }
@@ -314,7 +318,10 @@ export class AIActionExecutor {
   // Workspace Actions
   // ====================
 
-  private static async createWorkspace(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async createWorkspace(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const workspace = await this.prisma.workspace.create({
       data: {
         name: params.name,
@@ -328,11 +335,16 @@ export class AIActionExecutor {
       success: true,
       data: workspace,
       message: `Created workspace "${workspace.name}" successfully!`,
-      affectedEntities: [{ type: "workspace", id: workspace.id, name: workspace.name }],
+      affectedEntities: [
+        { type: "workspace", id: workspace.id, name: workspace.name },
+      ],
     };
   }
 
-  private static async updateWorkspace(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async updateWorkspace(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const workspace = await this.prisma.workspace.update({
       where: { id: params.workspaceId },
       data: {
@@ -347,11 +359,16 @@ export class AIActionExecutor {
       success: true,
       data: workspace,
       message: `Updated workspace "${workspace.name}" successfully!`,
-      affectedEntities: [{ type: "workspace", id: workspace.id, name: workspace.name }],
+      affectedEntities: [
+        { type: "workspace", id: workspace.id, name: workspace.name },
+      ],
     };
   }
 
-  private static async deleteWorkspace(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async deleteWorkspace(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     // Get workspace info before deletion for the message
     const workspace = await this.prisma.workspace.findUnique({
       where: { id: params.workspaceId },
@@ -365,11 +382,16 @@ export class AIActionExecutor {
       success: true,
       data: { deletedId: params.workspaceId },
       message: `Deleted workspace "${workspace?.name || params.workspaceId}" and all its contents.`,
-      affectedEntities: [{ type: "workspace", id: params.workspaceId, name: workspace?.name }],
+      affectedEntities: [
+        { type: "workspace", id: params.workspaceId, name: workspace?.name },
+      ],
     };
   }
 
-  private static async inviteWorkspaceMember(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async inviteWorkspaceMember(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     // Check if workspace exists and user has permission
     const workspace = await this.prisma.workspace.findFirst({
       where: {
@@ -382,7 +404,8 @@ export class AIActionExecutor {
       return {
         success: false,
         error: "Workspace not found or not authorized",
-        message: "I couldn't find that workspace or you don't have permission to invite members.",
+        message:
+          "I couldn't find that workspace or you don't have permission to invite members.",
         affectedEntities: [],
       };
     }
@@ -413,7 +436,10 @@ export class AIActionExecutor {
   // Project Actions
   // ====================
 
-  private static async createProject(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async createProject(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const project = await this.prisma.project.create({
       data: {
         title: params.title,
@@ -432,11 +458,16 @@ export class AIActionExecutor {
       success: true,
       data: project,
       message: `Created project "${project.title}" successfully!`,
-      affectedEntities: [{ type: "project", id: project.id, name: project.title }],
+      affectedEntities: [
+        { type: "project", id: project.id, name: project.title },
+      ],
     };
   }
 
-  private static async updateProject(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async updateProject(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const updateData: any = {
       updated_at: new Date(),
     };
@@ -455,11 +486,16 @@ export class AIActionExecutor {
       success: true,
       data: project,
       message: `Updated project "${project.title}" successfully!`,
-      affectedEntities: [{ type: "project", id: project.id, name: project.title }],
+      affectedEntities: [
+        { type: "project", id: project.id, name: project.title },
+      ],
     };
   }
 
-  private static async deleteProject(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async deleteProject(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const project = await this.prisma.project.findUnique({
       where: { id: params.projectId },
     });
@@ -472,11 +508,16 @@ export class AIActionExecutor {
       success: true,
       data: { deletedId: params.projectId },
       message: `Deleted project "${project?.title || params.projectId}" permanently.`,
-      affectedEntities: [{ type: "project", id: params.projectId, name: project?.title }],
+      affectedEntities: [
+        { type: "project", id: params.projectId, name: project?.title },
+      ],
     };
   }
 
-  private static async archiveProject(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async archiveProject(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const project = await this.prisma.project.update({
       where: { id: params.projectId },
       data: {
@@ -489,7 +530,9 @@ export class AIActionExecutor {
       success: true,
       data: project,
       message: `Archived project "${project.title}".`,
-      affectedEntities: [{ type: "project", id: project.id, name: project.title }],
+      affectedEntities: [
+        { type: "project", id: project.id, name: project.title },
+      ],
     };
   }
 
@@ -497,7 +540,10 @@ export class AIActionExecutor {
   // Task Actions
   // ====================
 
-  private static async createTask(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async createTask(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const task = await this.prisma.workspaceTask.create({
       data: {
         workspace_id: params.workspaceId,
@@ -534,7 +580,10 @@ export class AIActionExecutor {
     };
   }
 
-  private static async updateTask(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async updateTask(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const updateData: any = {
       updated_at: new Date(),
     };
@@ -558,7 +607,10 @@ export class AIActionExecutor {
     };
   }
 
-  private static async deleteTask(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async deleteTask(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const task = await this.prisma.workspaceTask.findUnique({
       where: { id: params.taskId },
     });
@@ -571,11 +623,16 @@ export class AIActionExecutor {
       success: true,
       data: { deletedId: params.taskId },
       message: `Deleted task "${task?.title || params.taskId}".`,
-      affectedEntities: [{ type: "task", id: params.taskId, name: task?.title }],
+      affectedEntities: [
+        { type: "task", id: params.taskId, name: task?.title },
+      ],
     };
   }
 
-  private static async completeTask(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async completeTask(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const task = await this.prisma.workspaceTask.update({
       where: { id: params.taskId },
       data: {
@@ -592,7 +649,10 @@ export class AIActionExecutor {
     };
   }
 
-  private static async createSubtask(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async createSubtask(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const subtask = await this.prisma.workspaceSubtask.create({
       data: {
         task_id: params.taskId,
@@ -614,7 +674,10 @@ export class AIActionExecutor {
   // Label & View Actions
   // ====================
 
-  private static async createLabel(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async createLabel(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const label = await this.prisma.workspaceLabel.create({
       data: {
         workspace_id: params.workspaceId,
@@ -631,7 +694,10 @@ export class AIActionExecutor {
     };
   }
 
-  private static async assignLabel(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async assignLabel(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     await this.prisma.workspaceTask.update({
       where: { id: params.taskId },
       data: {
@@ -651,7 +717,10 @@ export class AIActionExecutor {
     };
   }
 
-  private static async createView(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async createView(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const view = await this.prisma.workspaceView.create({
       data: {
         workspace_id: params.workspaceId,
@@ -672,7 +741,9 @@ export class AIActionExecutor {
   // Read/Query Actions
   // ====================
 
-  private static async listWorkspaces(context: AIActionContext): Promise<ActionResult> {
+  private static async listWorkspaces(
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const workspaces = await this.prisma.workspace.findMany({
       where: {
         OR: [
@@ -690,18 +761,25 @@ export class AIActionExecutor {
     return {
       success: true,
       data: { workspaces, count: workspaces.length },
-      message: `Found ${workspaces.length} workspace${workspaces.length !== 1 ? 's' : ''}.`,
-      affectedEntities: workspaces.map((w: any) => ({ type: "workspace" as const, id: w.id, name: w.name })),
+      message: `Found ${workspaces.length} workspace${workspaces.length !== 1 ? "s" : ""}.`,
+      affectedEntities: workspaces.map((w: any) => ({
+        type: "workspace" as const,
+        id: w.id,
+        name: w.name,
+      })),
     };
   }
 
-  private static async listProjects(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async listProjects(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const where: any = { user_id: context.userId };
-    
+
     if (params.workspaceId) {
       where.workspace_id = params.workspaceId;
     }
-    
+
     if (!params.archived) {
       where.status = { not: "archived" };
     }
@@ -714,14 +792,21 @@ export class AIActionExecutor {
     return {
       success: true,
       data: { projects, count: projects.length },
-      message: `Found ${projects.length} project${projects.length !== 1 ? 's' : ''}.`,
-      affectedEntities: projects.map((p: any) => ({ type: "project" as const, id: p.id, name: p.title })),
+      message: `Found ${projects.length} project${projects.length !== 1 ? "s" : ""}.`,
+      affectedEntities: projects.map((p: any) => ({
+        type: "project" as const,
+        id: p.id,
+        name: p.title,
+      })),
     };
   }
 
-  private static async listTasks(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async listTasks(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const where: any = { workspace_id: params.workspaceId };
-    
+
     if (params.status) where.status = params.status;
     if (params.priority) where.priority = params.priority;
 
@@ -740,12 +825,19 @@ export class AIActionExecutor {
     return {
       success: true,
       data: { tasks, count: tasks.length },
-      message: `Found ${tasks.length} task${tasks.length !== 1 ? 's' : ''}.`,
-      affectedEntities: tasks.map((t: any) => ({ type: "task" as const, id: t.id, name: t.title })),
+      message: `Found ${tasks.length} task${tasks.length !== 1 ? "s" : ""}.`,
+      affectedEntities: tasks.map((t: any) => ({
+        type: "task" as const,
+        id: t.id,
+        name: t.title,
+      })),
     };
   }
 
-  private static async getProjectDetails(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async getProjectDetails(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const project = await this.prisma.project.findUnique({
       where: { id: params.projectId },
       include: {
@@ -768,7 +860,9 @@ export class AIActionExecutor {
       success: true,
       data: project,
       message: `Here are the details for "${project.title}".`,
-      affectedEntities: [{ type: "project", id: project.id, name: project.title }],
+      affectedEntities: [
+        { type: "project", id: project.id, name: project.title },
+      ],
     };
   }
 
@@ -790,7 +884,10 @@ export class AIActionExecutor {
     };
   }
 
-  private static async openProject(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async openProject(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const project = await this.prisma.project.findFirst({
       where: {
         id: params.projectId,
@@ -817,7 +914,9 @@ export class AIActionExecutor {
         project,
       },
       message: `Opening "${project.title}" in the editor.`,
-      affectedEntities: [{ type: "project", id: project.id, name: project.title }],
+      affectedEntities: [
+        { type: "project", id: project.id, name: project.title },
+      ],
     };
   }
 
@@ -825,7 +924,10 @@ export class AIActionExecutor {
   // Document Actions
   // ====================
 
-  private static async editDocument(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async editDocument(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     // Get the project
     const project = await this.prisma.project.findUnique({
       where: { id: params.projectId },
@@ -849,7 +951,12 @@ ${currentContent}
 
 Provide the updated content in the same JSON format. Only return the JSON, no other text.`;
 
-    const result = await OpenAIService.sendCompletion(prompt, "gemini-2.5-flash", 4000, 0.3);
+    const result = await OpenAIService.sendCompletion(
+      prompt,
+      "gemini-3.1-flash-lite-preview",
+      4000,
+      0.3,
+    );
 
     // Try to parse the result
     let newContent;
@@ -857,7 +964,15 @@ Provide the updated content in the same JSON format. Only return the JSON, no ot
       newContent = JSON.parse(result.content);
     } catch {
       // If parsing fails, wrap it as content
-      newContent = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: result.content }] }] };
+      newContent = {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: result.content }],
+          },
+        ],
+      };
     }
 
     // Update the project
@@ -873,11 +988,16 @@ Provide the updated content in the same JSON format. Only return the JSON, no ot
       success: true,
       data: { project: updatedProject, edit: result.content },
       message: `I've edited the document based on your instructions.`,
-      affectedEntities: [{ type: "project", id: project.id, name: project.title }],
+      affectedEntities: [
+        { type: "project", id: project.id, name: project.title },
+      ],
     };
   }
 
-  private static async summarizeDocument(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async summarizeDocument(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const project = await this.prisma.project.findUnique({
       where: { id: params.projectId },
     });
@@ -893,7 +1013,7 @@ Provide the updated content in the same JSON format. Only return the JSON, no ot
 
     // Extract text content from the project
     const content = JSON.stringify(project.content);
-    
+
     const style = params.style || "brief";
     const stylePrompts: Record<string, string> = {
       brief: "Provide a brief 2-3 sentence summary.",
@@ -909,13 +1029,20 @@ ${content}
 
 Summary:`;
 
-    const result = await OpenAIService.sendCompletion(prompt, "gemini-2.5-flash", 1500, 0.3);
+    const result = await OpenAIService.sendCompletion(
+      prompt,
+      "gemini-3.1-flash-lite-preview",
+      1500,
+      0.3,
+    );
 
     return {
       success: true,
       data: { summary: result.content, style },
       message: `Here's a ${style} summary of "${project.title}":`,
-      affectedEntities: [{ type: "project", id: project.id, name: project.title }],
+      affectedEntities: [
+        { type: "project", id: project.id, name: project.title },
+      ],
     };
   }
 
@@ -923,9 +1050,12 @@ Summary:`;
   // Notification Actions
   // ====================
 
-  private static async markNotificationsRead(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async markNotificationsRead(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     const where: any = { user_id: context.userId, read: false };
-    
+
     if (params.notificationIds && params.notificationIds.length > 0) {
       where.id = { in: params.notificationIds };
     }
@@ -938,7 +1068,7 @@ Summary:`;
     return {
       success: true,
       data: { markedRead: result.count },
-      message: `Marked ${result.count} notification${result.count !== 1 ? 's' : ''} as read.`,
+      message: `Marked ${result.count} notification${result.count !== 1 ? "s" : ""} as read.`,
       affectedEntities: [],
     };
   }
@@ -947,7 +1077,10 @@ Summary:`;
   // Multi-step Actions
   // ====================
 
-  private static async createProjectWithTasks(params: any, context: AIActionContext): Promise<ActionResult> {
+  private static async createProjectWithTasks(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
     // Create project first
     const project = await this.prisma.project.create({
       data: {
@@ -982,10 +1115,14 @@ Summary:`;
     return {
       success: true,
       data: { project, tasks: createdTasks },
-      message: `Created project "${project.title}" with ${createdTasks.length} task${createdTasks.length !== 1 ? 's' : ''}.`,
+      message: `Created project "${project.title}" with ${createdTasks.length} task${createdTasks.length !== 1 ? "s" : ""}.`,
       affectedEntities: [
         { type: "project", id: project.id, name: project.title },
-        ...createdTasks.map((t: any) => ({ type: "task" as const, id: t.id, name: t.title })),
+        ...createdTasks.map((t: any) => ({
+          type: "task" as const,
+          id: t.id,
+          name: t.title,
+        })),
       ],
     };
   }
@@ -997,7 +1134,7 @@ Summary:`;
   private static async createActionRecord(
     intent: ParsedIntent,
     context: AIActionContext,
-    status: string
+    status: string,
   ) {
     return await this.prisma.aIAction.create({
       data: {
@@ -1006,7 +1143,11 @@ Summary:`;
         action_type: intent.actionType,
         action_category: intent.actionCategory,
         target_entity: intent.targetEntity,
-        target_id: intent.parameters.id || intent.parameters.projectId || intent.parameters.workspaceId || null,
+        target_id:
+          intent.parameters.id ||
+          intent.parameters.projectId ||
+          intent.parameters.workspaceId ||
+          null,
         status,
         user_intent: "", // Will be set by caller
         parsed_params: intent.parameters,
@@ -1021,7 +1162,7 @@ Summary:`;
     intent: ParsedIntent,
     context: AIActionContext,
     result: ActionResult,
-    duration: number
+    duration: number,
   ) {
     // This is called after performAction, so we create a record for completed actions
     await this.prisma.aIAction.create({
@@ -1050,7 +1191,7 @@ Summary:`;
   private static async failActionRecord(
     intent: ParsedIntent,
     context: AIActionContext,
-    errorMessage: string
+    errorMessage: string,
   ) {
     await this.prisma.aIAction.create({
       data: {
@@ -1084,7 +1225,10 @@ Summary:`;
       edit_document: "edit this document",
     };
 
-    return messages[intent.actionType] || `proceed with ${intent.actionType.replace(/_/g, " ")}`;
+    return (
+      messages[intent.actionType] ||
+      `proceed with ${intent.actionType.replace(/_/g, " ")}`
+    );
   }
 }
 

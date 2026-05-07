@@ -42,7 +42,10 @@ export class AIService {
       const resultData = {
         suggestions: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -70,7 +73,10 @@ export class AIService {
       const resultData = {
         improvedText: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -98,7 +104,10 @@ export class AIService {
       const resultData = {
         paraphrasedText: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -126,7 +135,10 @@ export class AIService {
       const resultData = {
         questions: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -155,7 +167,10 @@ export class AIService {
       const resultData = {
         outline: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -182,7 +197,10 @@ export class AIService {
       const resultData = {
         sources: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -209,7 +227,10 @@ export class AIService {
       const resultData = {
         citations: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -237,7 +258,10 @@ export class AIService {
       const resultData = {
         analysis: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite-preview"),
+        cost: this.calculateCost(
+          responseText.length,
+          "gemini-3.1-flash-lite-preview",
+        ),
       };
 
       return resultData;
@@ -263,7 +287,7 @@ export class AIService {
       // Using average of input/output pricing: ($7.00 + $21.00) / 2 = $14.00 per 1M tokens
       costPerMillionTokens = 14.0;
     } else if (
-      model.includes("gemini-2.5-flash") ||
+      model.includes("gemini-3.1-flash-lite-preview") ||
       model.includes("gemini-flash")
     ) {
       // Gemini 2.5 Flash pricing

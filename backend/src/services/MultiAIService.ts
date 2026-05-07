@@ -47,26 +47,23 @@ export class MultiAIService {
     return this.googleAI;
   }
 
-
   async generateContent(
     prompt: string,
     model: string = "gemini-3.1-flash-lite-preview",
     options: any = {},
   ): Promise<MultiAIResponse> {
     // Smart routing based on model name
-    if (
-      model.startsWith("openai/") ||
-      model.startsWith("nvidia/")
-    ) {
+    if (model.startsWith("openai/") || model.startsWith("nvidia/")) {
       return await this.generateWithOpenRouter(prompt, model, options);
-    } else if (
-      model.startsWith("gemini") ||
-      model.startsWith("google")
-    ) {
+    } else if (model.startsWith("gemini") || model.startsWith("google")) {
       return await this.generateWithGemini(prompt, model, options);
     } else {
       // Default to Gemini for any unrecognized model
-      return await this.generateWithGemini(prompt, "gemini-2.5-flash", options);
+      return await this.generateWithGemini(
+        prompt,
+        "gemini-3.1-flash-lite-preview",
+        options,
+      );
     }
   }
 
@@ -123,7 +120,7 @@ export class MultiAIService {
 
   private async generateWithGemini(
     prompt: string,
-    model: string = "gemini-2.5-flash",
+    model: string = "gemini-3.1-flash-lite-preview",
     options: any = {},
   ): Promise<MultiAIResponse> {
     try {
@@ -149,7 +146,6 @@ export class MultiAIService {
       throw new Error(`Gemini API error: ${error.message || error}`);
     }
   }
-
 }
 
 export const multiAIService = MultiAIService.getInstance();

@@ -1,23 +1,51 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Anthropic } from "@anthropic-ai/sdk";
 import logger from "../monitoring/logger";
 import { SecretsService } from "./secrets-service";
+import { BYOKService } from "./byokService";
 
 // Initialize Google Generative AI client
 let genAI: GoogleGenerativeAI | null = null;
 
-// Lazy initialization of Gemini client
-async function getGeminiClient(): Promise<GoogleGenerativeAI> {
+// Lazy initialization of Gemini client (with BYOK support)
+async function getGeminiClient(userId?: string): Promise<GoogleGenerativeAI> {
+  // Check for BYOK key first
+  if (userId) {
+    const byokKey = await BYOKService.getDecryptedKey(userId, "google");
+    if (byokKey) {
+      logger.info("AnthropicService using BYOK Google key for user", { userId: userId.slice(0, 8) + "..." });
+      return new GoogleGenerativeAI(byokKey);
+    }
+  }
+  
+  // Fall back to system key
   if (!genAI) {
     const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
-
     if (!apiKey) {
       throw new Error("Gemini API key not configured");
     }
-
     genAI = new GoogleGenerativeAI(apiKey);
   }
-
   return genAI;
+}
+
+// Lazy initialization of Anthropic client (with BYOK support)
+async function getAnthropicClient(userId?: string): Promise<Anthropic> {
+  // Check for BYOK key first
+  if (userId) {
+    const byokKey = await BYOKService.getDecryptedKey(userId, "anthropic");
+    if (byokKey) {
+      logger.info("AnthropicService using BYOK Claude key for user", { userId: userId.slice(0, 8) + "..." });
+      return new Anthropic({ apiKey: byokKey });
+    }
+  }
+  
+  // Fall back to system key
+  const apiKey = await SecretsService.getSecret("ANTHROPIC_API_KEY");
+  if (!apiKey) {
+    throw new Error("Anthropic API key not configured");
+  }
+  return new Anthropic({ apiKey });
 }
 
 interface GeminiMessage {

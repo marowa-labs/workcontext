@@ -30,7 +30,17 @@ model User {
   affiliate_ref            String?
   created_at               DateTime                @default(now())
   updated_at               DateTime                @updatedAt
-  preferred_ai_model       String?                 @default("gemini-2.5-flash")
+  preferred_ai_model       String?                 @default("gemini-3.1-flash-lite-preview")
+  
+  // BYOK (Bring Your Own Key) Settings
+  byok_enabled             Boolean?                @default(false)
+  byok_provider            String?                 // "google", "anthropic", "openai", "openrouter"
+  byok_google_key_encrypted String?                @db.Text
+  byok_claude_key_encrypted String?                @db.Text
+  byok_openai_key_encrypted String?                @db.Text
+  byok_openrouter_key_encrypted String?            @db.Text
+  byok_key_version         Int?                    @default(1) // For key rotation tracking
+  
   storage_used             Float?                  @default(0)
   storage_limit            Float?                  @default(5)
   last_backup              DateTime?

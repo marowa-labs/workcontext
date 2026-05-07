@@ -9,33 +9,33 @@ class AIModelAccessControl {
   // Define available models per plan
   static PLAN_MODELS = {
     free: [
-      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     onetime: [
-      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     student: [
-      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite-preview",
       "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     researcher: [
-      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite-preview",
       "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     institutional: [
-      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite-preview",
       "gemini-3.1-flash-lite-preview",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
@@ -45,7 +45,7 @@ class AIModelAccessControl {
 
   // Model details for UI display
   static MODEL_DETAILS = {
-    "gemini-2.5-flash": {
+    "gemini-3.1-flash-lite-preview": {
       name: "Gemini 2.5 Flash",
       description: "Fast and efficient Gemini model",
       maxTokens: 1048576,
@@ -71,7 +71,8 @@ class AIModelAccessControl {
     },
     "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
       name: "Nemotron 3 Nano Omni",
-      description: "Multimodal model for text, image, video, and audio inputs. Built for enterprise agent systems with 300K context and 16K reasoning budget.",
+      description:
+        "Multimodal model for text, image, video, and audio inputs. Built for enterprise agent systems with 300K context and 16K reasoning budget.",
       maxTokens: 300000,
       planRequired: "free",
     },

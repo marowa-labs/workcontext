@@ -202,6 +202,13 @@ export default function DashboardLayout({
     setSidebarOpen(false);
   }, [pathname]);
 
+  // Close AI chat panel when on AI settings route
+  useEffect(() => {
+    if (pathname?.startsWith("/ai")) {
+      setShowAIChat(false);
+    }
+  }, [pathname]);
+
   // Fetch workspaces
   useEffect(() => {
     const fetchWorkspaces = async () => {

@@ -6,6 +6,8 @@ import { AIService } from "../../services/aiService";
 import { UnifiedAIService } from "../../services/unifiedAIService";
 import { plans } from "../../services/subscriptionService";
 import { createNotification } from "../../services/notificationService";
+import { BYOKService } from "../../services/byokService";
+import { EncryptionService } from "../../services/encryptionService";
 import researchRouter from "./research-route";
 import searchRouter from "./search-route";
 import chatRouter from "./chat-route";
@@ -383,7 +385,9 @@ async function handlePutAIUserPreferences(req: any, res: any) {
       where: { id: userId },
       data: {
         preferred_ai_model:
-          preferences.preferredModel || preferences.model || "gemini-2.5-flash",
+          preferences.preferredModel ||
+          preferences.model ||
+          "gemini-3.1-flash-lite-preview",
         ai_preferences: preferences,
       },
     });
@@ -432,7 +436,8 @@ async function handleGetAIUserPreferences(req: any, res: any) {
     return res.status(200).json({
       success: true,
       preferences: {
-        preferredModel: user?.preferred_ai_model || "gemini-2.5-flash",
+        preferredModel:
+          user?.preferred_ai_model || "gemini-3.1-flash-lite-preview",
         ...user?.ai_preferences,
       },
     });
@@ -474,7 +479,8 @@ async function handleGetAvailableModels(req: any, res: any) {
       where: { id: userId },
     });
 
-    const currentModel = user?.preferred_ai_model || "gemini-2.5-flash";
+    const currentModel =
+      user?.preferred_ai_model || "gemini-3.1-flash-lite-preview";
 
     // Get user's subscription to determine available models
     const subscription = await prisma.subscription.findUnique({
@@ -491,31 +497,36 @@ async function handleGetAvailableModels(req: any, res: any) {
     // Define available models per plan, filtered by actually available models
     const planModels: Record<string, string[]> = {
       free: [
-        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
       onetime: [
-        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
       student: [
-        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
       researcher: [
-        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
         "gemini-3.1-flash-lite-preview",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
       institutional: [
-        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
         "gemini-3.1-flash-lite-preview",
         "openai/gpt-oss-120b:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       ],
     };
 
@@ -1049,5 +1060,241 @@ router.use("/actions", actionsRouter);
 
 // Mount chat routes
 router.use("/chat", chatRouter);
+
+// ==================== BYOK (Bring Your Own Key) Endpoints ====================
+
+// Get BYOK settings
+async function handleGetBYOKSettings(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const settings = await BYOKService.getSettings(userId);
+
+    return res.status(200).json({
+      success: true,
+      settings,
+    });
+  } catch (error: any) {
+    logger.error("Error fetching BYOK settings:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+// Update BYOK settings (enable/disable, provider)
+async function handleUpdateBYOKSettings(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { enabled, provider } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    // Validate provider if provided
+    if (
+      provider &&
+      !["google", "anthropic", "openai", "openrouter", null].includes(provider)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid provider. Must be 'google', 'anthropic', 'openai', 'openrouter', or null",
+      });
+    }
+
+    const settings = await BYOKService.saveSettings(userId, {
+      enabled,
+      provider: provider || null,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "BYOK settings updated successfully",
+      settings,
+    });
+  } catch (error: any) {
+    logger.error("Error updating BYOK settings:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+// Save API key
+async function handleSaveBYOKKey(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { provider, apiKey } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    if (
+      !provider ||
+      !["google", "anthropic", "openai", "openrouter"].includes(provider)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Valid provider required (google, anthropic, openai, or openrouter)",
+      });
+    }
+
+    if (!apiKey || typeof apiKey !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "API key is required",
+      });
+    }
+
+    // Validate key format (skip for OpenRouter as it uses a different format)
+    if (
+      provider !== "openrouter" &&
+      !EncryptionService.validateApiKeyFormat(apiKey, provider)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid API key format for ${provider}`,
+      });
+    }
+
+    // Test the key before saving
+    const testResult = await BYOKService.testApiKey(provider, apiKey);
+
+    if (!testResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: `API key validation failed: ${testResult.message}`,
+      });
+    }
+
+    // Save the encrypted key
+    await BYOKService.saveApiKey(userId, provider, apiKey);
+
+    return res.status(200).json({
+      success: true,
+      message: `${provider} API key saved and validated successfully`,
+      testMessage: testResult.message,
+    });
+  } catch (error: any) {
+    logger.error("Error saving BYOK key:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+// Delete API key
+async function handleDeleteBYOKKey(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { provider } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    if (!provider || !["google", "anthropic", "openai"].includes(provider)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid provider required (google, anthropic, or openai)",
+      });
+    }
+
+    await BYOKService.deleteApiKey(userId, provider);
+
+    return res.status(200).json({
+      success: true,
+      message: `${provider} API key deleted successfully`,
+    });
+  } catch (error: any) {
+    logger.error("Error deleting BYOK key:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+// Test API key (without saving)
+async function handleTestBYOKKey(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { provider, apiKey } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    if (!provider || !["google", "anthropic", "openai"].includes(provider)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid provider required (google, anthropic, or openai)",
+      });
+    }
+
+    if (!apiKey || typeof apiKey !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "API key is required",
+      });
+    }
+
+    const result = await BYOKService.testApiKey(provider, apiKey);
+
+    return res.status(200).json({
+      success: result.success,
+      message: result.message,
+    });
+  } catch (error: any) {
+    logger.error("Error testing BYOK key:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+// BYOK Routes
+logger.info("Registering BYOK routes");
+router.get("/byok/settings", authenticateExpressRequest, handleGetBYOKSettings);
+router.put(
+  "/byok/settings",
+  authenticateExpressRequest,
+  handleUpdateBYOKSettings,
+);
+router.post("/byok/keys", authenticateExpressRequest, handleSaveBYOKKey);
+router.delete(
+  "/byok/keys/:provider",
+  authenticateExpressRequest,
+  handleDeleteBYOKKey,
+);
+router.post("/byok/test", authenticateExpressRequest, handleTestBYOKKey);
+logger.info("BYOK routes registered successfully");
 
 export default router;

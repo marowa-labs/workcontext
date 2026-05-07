@@ -66,7 +66,7 @@ export const defaultSettings: EditorSettings = {
   autoSaveInterval: 30,
   spellCheck: false,
   aiSuggestions: false,
-  aiModel: "gemini-2.5-flash",
+  aiModel: "gemini-3.1-flash-lite-preview",
   aiTone: "professional",
   notifications: false,
   soundEffects: false,
@@ -195,7 +195,8 @@ export function SettingsModal({
         } else {
           onOpenChange(true);
         }
-      }}>
+      }}
+    >
       <DialogContent className="max-w-2xl bg-white border border-gray-200 shadow-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-black">
@@ -211,25 +212,29 @@ export function SettingsModal({
           <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1">
             <TabsTrigger
               value="editor"
-              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all">
+              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all"
+            >
               <Type className="h-4 w-4" />
               Editor
             </TabsTrigger>
             <TabsTrigger
               value="ai"
-              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all">
+              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all"
+            >
               <Sparkles className="h-4 w-4" />
               AI
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
-              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all">
+              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all"
+            >
               <Bell className="h-4 w-4" />
               Alerts
             </TabsTrigger>
             <TabsTrigger
               value="shortcuts"
-              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all">
+              className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-black hover:bg-gray-200 rounded-md transition-all"
+            >
               <Keyboard className="h-4 w-4" />
               Keys
             </TabsTrigger>
@@ -276,29 +281,34 @@ export function SettingsModal({
                     <Label className="text-black">Font Family</Label>
                     <Select
                       value={localSettings.fontFamily}
-                      onValueChange={(v) => updateSetting("fontFamily", v)}>
+                      onValueChange={(v) => updateSetting("fontFamily", v)}
+                    >
                       <SelectTrigger className="scale-100 border-gray-200 bg-white text-black">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
                         <SelectItem
                           value="default"
-                          className="text-black focus:bg-gray-100 cursor-pointer">
+                          className="text-black focus:bg-gray-100 cursor-pointer"
+                        >
                           System Default
                         </SelectItem>
                         <SelectItem
                           value="serif"
-                          className="text-black focus:bg-gray-100 cursor-pointer">
+                          className="text-black focus:bg-gray-100 cursor-pointer"
+                        >
                           Serif
                         </SelectItem>
                         <SelectItem
                           value="mono"
-                          className="text-black focus:bg-gray-100 cursor-pointer">
+                          className="text-black focus:bg-gray-100 cursor-pointer"
+                        >
                           Monospace
                         </SelectItem>
                         <SelectItem
                           value="inter"
-                          className="text-black focus:bg-gray-100 cursor-pointer">
+                          className="text-black focus:bg-gray-100 cursor-pointer"
+                        >
                           Inter
                         </SelectItem>
                       </SelectContent>
@@ -379,29 +389,34 @@ export function SettingsModal({
                   <Label className="text-black">Writing Tone</Label>
                   <Select
                     value={localSettings.aiTone}
-                    onValueChange={(v) => updateSetting("aiTone", v)}>
+                    onValueChange={(v) => updateSetting("aiTone", v)}
+                  >
                     <SelectTrigger className="scale-100 border-gray-200 bg-white text-black">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-200">
                       <SelectItem
                         value="professional"
-                        className="text-black focus:bg-gray-100 cursor-pointer">
+                        className="text-black focus:bg-gray-100 cursor-pointer"
+                      >
                         Professional
                       </SelectItem>
                       <SelectItem
                         value="casual"
-                        className="text-black focus:bg-gray-100 cursor-pointer">
+                        className="text-black focus:bg-gray-100 cursor-pointer"
+                      >
                         Casual
                       </SelectItem>
                       <SelectItem
                         value="academic"
-                        className="text-black focus:bg-gray-100 cursor-pointer">
+                        className="text-black focus:bg-gray-100 cursor-pointer"
+                      >
                         Academic
                       </SelectItem>
                       <SelectItem
                         value="creative"
-                        className="text-black focus:bg-gray-100 cursor-pointer">
+                        className="text-black focus:bg-gray-100 cursor-pointer"
+                      >
                         Creative
                       </SelectItem>
                     </SelectContent>
@@ -422,11 +437,13 @@ export function SettingsModal({
                     {aiModels.map((model) => (
                       <div
                         key={model.id}
-                        className={`p-4 rounded-lg border cursor-pointer ${model.isCurrent
+                        className={`p-4 rounded-lg border cursor-pointer ${
+                          model.isCurrent
                             ? "border-blue-500 bg-blue-50"
                             : "border-gray-200 hover:bg-gray-50"
-                          }`}
-                        onClick={() => updateSetting("aiModel", model.id)}>
+                        }`}
+                        onClick={() => updateSetting("aiModel", model.id)}
+                      >
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="font-medium flex items-center">
@@ -447,7 +464,8 @@ export function SettingsModal({
                           </div>
                           <div className="flex items-center">
                             <div
-                              className={`w-4 h-4 rounded-full border ${localSettings.aiModel === model.id ? "bg-blue-500 border-blue-500" : "border-gray-200"}`}>
+                              className={`w-4 h-4 rounded-full border ${localSettings.aiModel === model.id ? "bg-blue-500 border-blue-500" : "border-gray-200"}`}
+                            >
                               {localSettings.aiModel === model.id && (
                                 <div className="w-2 h-2 bg-white rounded-full m-0.5"></div>
                               )}
@@ -537,7 +555,8 @@ export function SettingsModal({
               ].map((shortcut) => (
                 <div
                   key={shortcut.keys}
-                  className="flex items-center justify-between py-2 border-b border-gray-200">
+                  className="flex items-center justify-between py-2 border-b border-gray-200"
+                >
                   <span className="text-sm text-black">{shortcut.action}</span>
                   <kbd className="px-2 py-1 text-xs bg-gray-100 text-black border border-gray-200 rounded font-mono">
                     {shortcut.keys}
@@ -552,12 +571,14 @@ export function SettingsModal({
           <Button
             variant="outline"
             onClick={cancelSettings}
-            className="border-gray-200 text-black bg-gray-500 hover:bg-white">
+            className="border-gray-200 text-black bg-gray-500 hover:bg-white"
+          >
             Cancel
           </Button>
           <Button
             className="border-gray-200 text-black bg-blue-500 hover:bg-blue-600 text-white"
-            onClick={saveSettings}>
+            onClick={saveSettings}
+          >
             Save Changes
           </Button>
         </div>

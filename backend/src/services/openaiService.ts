@@ -1,23 +1,65 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import logger from "../monitoring/logger";
 import { SecretsService } from "./secrets-service";
+import { BYOKService } from "./byokService";
 
-// Initialize Google Generative AI client
+// Initialize Google Generative AI client (fallback)
 let genAI: GoogleGenerativeAI | null = null;
 
-// Lazy initialization of Gemini client
-async function getGeminiClient(): Promise<GoogleGenerativeAI> {
+// Lazy initialization of Gemini client (with BYOK support for Google keys)
+async function getGeminiClient(userId?: string): Promise<GoogleGenerativeAI> {
+  // Check for BYOK key first
+  if (userId) {
+    const byokKey = await BYOKService.getDecryptedKey(userId, "google");
+    if (byokKey) {
+      logger.info("OpenAIService using BYOK Google key for user", {
+        userId: userId.slice(0, 8) + "...",
+      });
+      return new GoogleGenerativeAI(byokKey);
+    }
+  }
+
+  // Fall back to system key
   if (!genAI) {
     const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
-
     if (!apiKey) {
       throw new Error("Gemini API key not configured");
     }
-
     genAI = new GoogleGenerativeAI(apiKey);
   }
-
   return genAI;
+}
+
+// Lazy initialization of OpenAI client (with BYOK support)
+async function getOpenAIClient(userId?: string): Promise<OpenAI | null> {
+  // Check for BYOK key first
+  if (userId) {
+    const byokKey = await BYOKService.getDecryptedKey(userId, "openai");
+    if (byokKey) {
+      logger.info("OpenAIService using BYOK OpenAI key for user", {
+        userId: userId.slice(0, 8) + "...",
+      });
+      return new OpenAI({ apiKey: byokKey });
+    }
+  }
+
+  // Fall back to system key
+  const apiKey = await SecretsService.getOpenAiApiKey();
+  if (!apiKey) {
+    return null;
+  }
+  return new OpenAI({ apiKey });
+}
+
+// Check if user wants to use real OpenAI API (has BYOK key or system key available)
+async function shouldUseOpenAI(userId?: string): Promise<boolean> {
+  if (userId) {
+    const byokKey = await BYOKService.getDecryptedKey(userId, "openai");
+    if (byokKey) return true;
+  }
+  const systemKey = await SecretsService.getOpenAiApiKey();
+  return !!systemKey;
 }
 
 interface OpenAIResponse {
@@ -29,7 +71,7 @@ interface OpenAIResponse {
 }
 
 // Default Gemini model
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-3.1-flash-lite-preview";
 
 export class OpenAIService {
   // Send completion request using Gemini
@@ -81,7 +123,7 @@ export class OpenAIService {
       const genModel = client.getGenerativeModel({ model });
 
       // Build prompt from messages
-      const prompt = messages.map(m => `${m.role}: ${m.content}`).join("\n");
+      const prompt = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
       const result = await genModel.generateContent(prompt);
       const response = result.response;
       const content = response.text();
@@ -172,7 +214,7 @@ ${text}`;
       const client = await getGeminiClient();
       const genModel = client.getGenerativeModel({ model });
       const result = await genModel.generateContent(
-        `Generate a detailed image generation prompt for: ${prompt}. Size: ${size}, Quality: ${quality}, Style: ${style}`
+        `Generate a detailed image generation prompt for: ${prompt}. Size: ${size}, Quality: ${quality}, Style: ${style}`,
       );
       const description = result.response.text();
 

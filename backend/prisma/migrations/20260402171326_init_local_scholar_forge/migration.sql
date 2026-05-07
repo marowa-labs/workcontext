@@ -24,7 +24,7 @@ CREATE TABLE "User" (
     "affiliate_ref" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "preferred_ai_model" TEXT DEFAULT 'gemini-2.5-flash',
+    "preferred_ai_model" TEXT DEFAULT 'gemini-3.1-flash-lite-preview',
     "storage_used" DOUBLE PRECISION DEFAULT 0,
     "storage_limit" DOUBLE PRECISION DEFAULT 5,
     "last_backup" TIMESTAMP(3),
@@ -812,6 +812,7 @@ CREATE TABLE "EditorEvent" (
 
 -- CreateTable
 
+
 CREATE TABLE "UserFeedback" (
     "id" TEXT NOT NULL,
     "user_id" TEXT,
@@ -993,6 +994,7 @@ CREATE TABLE "ResearchSource" (
 
 -- CreateTable
 
+
 CREATE TABLE "ResearchPaper" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -1099,6 +1101,7 @@ CREATE TABLE "FeatureRequest" (
 );
 
 -- CreateTable
+
 
 CREATE TABLE "DocumentTemplate" (
     "id" TEXT NOT NULL,
