@@ -1471,6 +1471,20 @@ NEVER output raw pipe characters (|) without proper table formatting. Always cre
         systemMessage +=
           "\n\nNOTE: Both WEB SEARCH and DEEP SEARCH are enabled, but only one should be used at a time. Please choose the most appropriate search method for each query.";
       }
+
+      // Add action markers to system message
+      systemMessage +=
+        "\n\nACTION MARKERS - When performing platform actions, use these markers within your response:\n";
+      systemMessage +=
+        "1. NAVIGATION: [NAVIGATE]/route[/NAVIGATE] - Navigate to a page (e.g., [NAVIGATE]/settings[/NAVIGATE])\n";
+      systemMessage +=
+        "2. CREATE SPACE: [CREATE_SPACE]Name|Description[/CREATE_SPACE] - Create a new project/workspace\n";
+      systemMessage +=
+        "3. OPEN DOCUMENT: [OPEN_DOCUMENT]doc_id[/OPEN_DOCUMENT] - Open a document for editing\n";
+      systemMessage +=
+        "4. INSERT INTO EDITOR: [INSERT INTO EDITOR]Content[/INSERT INTO EDITOR] - Insert content into document\n";
+      systemMessage +=
+        "Always include these markers alongside natural conversation, not instead of it.\n";
     }
 
     if (messageType === "image" && imageUrl) {
@@ -1761,17 +1775,88 @@ ${formattedResults}
         }
       }
 
+      // Extract action markers from response
+      const extractActions = (text: string) => {
+        const actions: Record<string, any[]> = {
+          navigate: [],
+          createSpace: [],
+          openDocument: [],
+        };
+
+        // Extract navigation markers
+        const navMatches = text.match(/\[NAVIGATE\](.+?)\[\/NAVIGATE\]/g);
+        if (navMatches) {
+          navMatches.forEach((match) => {
+            const route =
+              match.match(/\[NAVIGATE\](.+?)\[\/NAVIGATE\]/)?.[1] || "";
+            if (route) actions.navigate.push({ route: route.trim() });
+          });
+        }
+
+        // Extract create space markers
+        const createSpaceMatches = text.match(
+          /\[CREATE_SPACE\](.+?)\[\/CREATE_SPACE\]/g,
+        );
+        if (createSpaceMatches) {
+          createSpaceMatches.forEach((match) => {
+            const content =
+              match.match(/\[CREATE_SPACE\](.+?)\[\/CREATE_SPACE\]/)?.[1] || "";
+            const parts = content.split("|").map((s) => s.trim());
+            if (parts[0])
+              actions.createSpace.push({
+                name: parts[0],
+                description: parts[1] || "",
+              });
+          });
+        }
+
+        // Extract open document markers
+        const openDocMatches = text.match(
+          /\[OPEN_DOCUMENT\](.+?)\[\/OPEN_DOCUMENT\]/g,
+        );
+        if (openDocMatches) {
+          openDocMatches.forEach((match) => {
+            const docId =
+              match.match(/\[OPEN_DOCUMENT\](.+?)\[\/OPEN_DOCUMENT\]/)?.[1] ||
+              "";
+            if (docId) actions.openDocument.push({ documentId: docId.trim() });
+          });
+        }
+
+        return Object.keys(actions).some((key) => actions[key].length > 0)
+          ? actions
+          : null;
+      };
+
+      const extractedActions = extractActions(responseText);
+
+      // Remove action markers from response text before sending to client
+      let cleanedResponseText = responseText;
+      cleanedResponseText = cleanedResponseText.replace(
+        /\[NAVIGATE\].+?\[\/NAVIGATE\]/g,
+        "",
+      );
+      cleanedResponseText = cleanedResponseText.replace(
+        /\[CREATE_SPACE\].+?\[\/CREATE_SPACE\]/g,
+        "",
+      );
+      cleanedResponseText = cleanedResponseText.replace(
+        /\[OPEN_DOCUMENT\].+?\[\/OPEN_DOCUMENT\]/g,
+        "",
+      );
+      cleanedResponseText = cleanedResponseText.trim();
+
       // Determine the appropriate message type
       let finalMessageType = "text";
 
       // Always treat as text message
 
       return {
-        content: responseText,
+        content: cleanedResponseText,
         messageType: finalMessageType,
         imageUrl: undefined,
         fileUrl: undefined,
-        metadata: undefined,
+        metadata: extractedActions ? { actions: extractedActions } : undefined,
         sessionId,
         userId,
       };
@@ -2044,6 +2129,20 @@ NEVER output raw pipe characters (|) without proper table formatting. Always cre
         systemMessage +=
           "\n\nNOTE: Both WEB SEARCH and DEEP SEARCH are enabled, but only one should be used at a time. Please choose the most appropriate search method for each query.";
       }
+
+      // Add action markers to system message
+      systemMessage +=
+        "\n\nACTION MARKERS - When performing platform actions, use these markers within your response:\n";
+      systemMessage +=
+        "1. NAVIGATION: [NAVIGATE]/route[/NAVIGATE] - Navigate to a page (e.g., [NAVIGATE]/settings[/NAVIGATE])\n";
+      systemMessage +=
+        "2. CREATE SPACE: [CREATE_SPACE]Name|Description[/CREATE_SPACE] - Create a new project/workspace\n";
+      systemMessage +=
+        "3. OPEN DOCUMENT: [OPEN_DOCUMENT]doc_id[/OPEN_DOCUMENT] - Open a document for editing\n";
+      systemMessage +=
+        "4. INSERT INTO EDITOR: [INSERT INTO EDITOR]Content[/INSERT INTO EDITOR] - Insert content into document\n";
+      systemMessage +=
+        "Always include these markers alongside natural conversation, not instead of it.\n";
     }
 
     if (messageType === "image" && imageUrl) {
@@ -2323,15 +2422,86 @@ ${formattedResults}
         }
       }
 
+      // Extract action markers from response
+      const extractActions = (text: string) => {
+        const actions: Record<string, any[]> = {
+          navigate: [],
+          createSpace: [],
+          openDocument: [],
+        };
+
+        // Extract navigation markers
+        const navMatches = text.match(/\[NAVIGATE\](.+?)\[\/NAVIGATE\]/g);
+        if (navMatches) {
+          navMatches.forEach((match) => {
+            const route =
+              match.match(/\[NAVIGATE\](.+?)\[\/NAVIGATE\]/)?.[1] || "";
+            if (route) actions.navigate.push({ route: route.trim() });
+          });
+        }
+
+        // Extract create space markers
+        const createSpaceMatches = text.match(
+          /\[CREATE_SPACE\](.+?)\[\/CREATE_SPACE\]/g,
+        );
+        if (createSpaceMatches) {
+          createSpaceMatches.forEach((match) => {
+            const content =
+              match.match(/\[CREATE_SPACE\](.+?)\[\/CREATE_SPACE\]/)?.[1] || "";
+            const parts = content.split("|").map((s) => s.trim());
+            if (parts[0])
+              actions.createSpace.push({
+                name: parts[0],
+                description: parts[1] || "",
+              });
+          });
+        }
+
+        // Extract open document markers
+        const openDocMatches = text.match(
+          /\[OPEN_DOCUMENT\](.+?)\[\/OPEN_DOCUMENT\]/g,
+        );
+        if (openDocMatches) {
+          openDocMatches.forEach((match) => {
+            const docId =
+              match.match(/\[OPEN_DOCUMENT\](.+?)\[\/OPEN_DOCUMENT\]/)?.[1] ||
+              "";
+            if (docId) actions.openDocument.push({ documentId: docId.trim() });
+          });
+        }
+
+        return Object.keys(actions).some((key) => actions[key].length > 0)
+          ? actions
+          : null;
+      };
+
+      const extractedActions = extractActions(finalResponse);
+
+      // Remove action markers from response text before sending to client
+      let cleanedResponseText = finalResponse;
+      cleanedResponseText = cleanedResponseText.replace(
+        /\[NAVIGATE\].+?\[\/NAVIGATE\]/g,
+        "",
+      );
+      cleanedResponseText = cleanedResponseText.replace(
+        /\[CREATE_SPACE\].+?\[\/CREATE_SPACE\]/g,
+        "",
+      );
+      cleanedResponseText = cleanedResponseText.replace(
+        /\[OPEN_DOCUMENT\].+?\[\/OPEN_DOCUMENT\]/g,
+        "",
+      );
+      cleanedResponseText = cleanedResponseText.trim();
+
       // Determine the appropriate message type
       let finalMessageType = "text";
 
       return {
-        content: finalResponse,
+        content: cleanedResponseText,
         messageType: finalMessageType,
         imageUrl: undefined,
         fileUrl: undefined,
-        metadata: undefined,
+        metadata: extractedActions ? { actions: extractedActions } : undefined,
         sessionId,
         userId,
       };
