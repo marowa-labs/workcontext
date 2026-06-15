@@ -268,37 +268,28 @@ const AISettingsPage = () => {
                   AI Usage
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  Track your AI assistant usage
+                  Your AI usage is tracked for reference. Limits are set by your
+                  API provider.
                 </p>
               </div>
               <div className="text-right">
                 <div className="text-lg font-semibold text-foreground">
-                  {usage ? (
-                    <>
-                      {formatNumber(usage.remaining)} /{" "}
-                      {formatNumber(usage.limit)}
-                    </>
+                  {analytics?.totalRequests != null ? (
+                    <>{analytics.totalRequests.toLocaleString()} requests</>
                   ) : (
                     "Loading..."
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  requests remaining
+                  {analytics?.totalTokensUsed != null ? (
+                    <>
+                      {analytics.totalTokensUsed.toLocaleString()} tokens used
+                    </>
+                  ) : (
+                    ""
+                  )}
                 </div>
               </div>
-            </div>
-
-            <div className="mt-4 w-full bg-secondary rounded-full h-2">
-              <div
-                className="bg-purple-600 h-2 rounded-full"
-                style={{
-                  width: `${usage ? getUsagePercentage() : 0}%`,
-                }}
-              ></div>
-            </div>
-
-            <div className="mt-2 text-sm text-muted-foreground">
-              {getUsageText()}
             </div>
           </div>
 

@@ -230,7 +230,7 @@ class AIService {
   }
 
   // Language check with structured JSON response
-  static async checkLanguage(text) {
+  static async checkLanguage(text, model) {
     try {
       const token = await this.getAuthToken();
       if (!token) {
@@ -243,7 +243,7 @@ class AIService {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, model }),
       });
 
       if (!response.ok) {

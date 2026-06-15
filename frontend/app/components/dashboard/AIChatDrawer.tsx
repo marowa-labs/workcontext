@@ -331,6 +331,17 @@ function ChatContent({
             overflow-wrap: break-word;
             word-wrap: break-word;
           }
+          .prose table {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          .prose ul,
+          .prose ol {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+          }
         `}</style>
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center">
@@ -438,10 +449,10 @@ function ChatContent({
                 )}
                 <div
                   className={cn(
-                    "text-sm leading-relaxed",
+                    "text-sm leading-relaxed min-w-0",
                     message.role === "user"
                       ? "max-w-[85%] bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 break-words"
-                      : "max-w-[90%] text-gray-700 prose prose-sm max-w-none",
+                      : "max-w-[90%] text-gray-700 prose prose-sm max-w-full overflow-hidden",
                   )}
                 >
                   {message.role === "user" ? (
@@ -736,22 +747,32 @@ export function AIChatDrawer({
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       if (!isResizing) return;
-      const deltaX = event.clientX - resizeStartXRef.current;
-      const newWidth = resizeStartWidthRef.current - deltaX;
-      setDrawerWidth(Math.min(Math.max(newWidth, 320), 760));
+      event.preventDefault();
+      const newWidth =
+        resizeStartWidthRef.current + (resizeStartXRef.current - event.clientX);
+      setDrawerWidth(Math.min(Math.max(newWidth, 320), 900));
     };
 
     const handleMouseUp = () => {
       if (isResizing) {
         setIsResizing(false);
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
       }
     };
+
+    if (isResizing) {
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "col-resize";
+    }
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
     };
   }, [isResizing]);
 
@@ -963,16 +984,17 @@ export function AIChatDrawer({
     }
   };
 
-  // Helper to save user message to database
+  // Helper to save user message to database (save-only, no AI processing)
   const saveUserMessage = async (content: string): Promise<Message | null> => {
     if (!currentSession) return null;
     try {
-      const response = await apiClient.post("/api/ai/chat/message", {
+      const response = await apiClient.post("/api/ai/chat/message/direct", {
         sessionId: currentSession,
         content,
+        role: "user",
         messageType: "text",
       });
-      return response.userMessage || null;
+      return response.message || null;
     } catch (error) {
       console.error("Failed to save user message:", error);
       return null;
@@ -1213,13 +1235,6 @@ export function AIChatDrawer({
     }
   };
 
-  const startResizing = (event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsResizing(true);
-    resizeStartXRef.current = event.clientX;
-    resizeStartWidthRef.current = drawerWidth;
-  };
-
   const clearChat = () => {
     setMessages([]);
     createNewSession();
@@ -1394,27 +1409,41 @@ export function AIChatDrawer({
 
   // ── Modal / Drawer mode ───────────────────────────────────────────────────
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex">
+    <>
       {/* Transparent click-away overlay */}
-      <div className="fixed inset-0 bg-transparent" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-transparent" onClick={onClose} />
 
-      {/* BUG FIX #4 & #5: The outer drawer <div> was missing its closing tag,
-          and the closing `)` + `}` were misplaced, making them close sendMessage()
-          instead of the component's return statement. Both are now correct. */}
+      {/* Resize handle - positioned at the left edge of the drawer */}
+      {viewMode !== "fullscreen" && (
+        <div
+          className="fixed top-0 bottom-0 z-[60] cursor-col-resize group flex items-center justify-center"
+          role="presentation"
+          style={{
+            right: `${drawerWidth}px`,
+            width: "14px",
+            transform: "translateX(50%)",
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsResizing(true);
+            resizeStartXRef.current = e.clientX;
+            resizeStartWidthRef.current = drawerWidth;
+          }}
+        >
+          {/* Visual drag indicator */}
+          <div className="h-12 w-1 rounded-full bg-gray-300 group-hover:bg-blue-500 group-hover:h-16 transition-all opacity-0 group-hover:opacity-100" />
+        </div>
+      )}
+
+      {/* Drawer container */}
       <div
-        className="relative bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col h-full animate-in slide-in-from-right duration-200 overflow-hidden"
+        className="fixed inset-y-0 right-0 z-50 bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col animate-in slide-in-from-right duration-200"
         style={{
           width: viewMode === "fullscreen" ? "100vw" : `${drawerWidth}px`,
-          minWidth: viewMode === "fullscreen" ? undefined : "320px",
+          minWidth: "320px",
         }}
       >
-        <div
-          className="absolute left-0 top-0 bottom-0 w-5 z-50 cursor-col-resize"
-          onMouseDown={startResizing}
-          role="presentation"
-        >
-          <div className="h-full w-full bg-transparent hover:bg-gray-200/30" />
-        </div>
         {/* Header - Fixed height, always visible */}
         <div className="h-14 flex-none flex items-center justify-between px-4 border-b border-gray-100 bg-white shrink-0">
           <div className="flex items-center gap-2" ref={sessionsDropdownRef}>
@@ -1606,8 +1635,6 @@ export function AIChatDrawer({
           <ChatContent {...sharedProps} />
         </div>
       </div>
-      {/* ← BUG FIX #4: closing tag was missing */}
-    </div>
+    </>
   );
-  // ↑ BUG FIX #5: return now properly closes here, not inside sendMessage()
 }

@@ -226,7 +226,7 @@ export function AIChatPanel({
   const [currentModel, setCurrentModel] = useState<string>("");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [showSessions, setShowSessions] = useState(false);
-  const [, setAvailableModels] = useState<AIModel[]>([]);
+  const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
   const [lockedModels, setLockedModels] = useState<Set<string>>(new Set());
   const [, setUserPlan] = useState<string | null>(null);
   const [hasAccess, setHasAccess] = useState<boolean>(true);
@@ -345,10 +345,10 @@ export function AIChatPanel({
     try {
       // Get models from backend API (includes BYOK models)
       const modelsData = await AIService.getAvailableModels();
-      const availableModels = modelsData.models || [];
+      const rawModels = modelsData.models || [];
 
       // Transform to AIModel format
-      const transformedModels = availableModels.map(
+      const transformedModels = rawModels.map(
         (model: {
           id: string;
           name: string;
@@ -367,7 +367,7 @@ export function AIChatPanel({
 
       // Set locked models (models user doesn't have access to)
       const locked = new Set<string>(
-        availableModels
+        transformedModels
           .filter(
             (model: { id: string; isCurrent: boolean }) =>
               !model.isCurrent && !modelsData.byokEnabled,
@@ -378,12 +378,12 @@ export function AIChatPanel({
 
       // Check if current model is locked
       const currentModelLocked =
-        availableModels.find((m: { id: string }) => m.id === currentModel)
+        transformedModels.find((m: AIModel) => m.id === currentModel)
           ?.isCurrent === false && !modelsData.byokEnabled;
       if (currentModelLocked) {
         // Switch to first available model
-        const firstAvailable = availableModels.find(
-          (m: { isCurrent: boolean }) => m.isCurrent || true,
+        const firstAvailable = transformedModels.find(
+          (m: AIModel) => m.isCurrent || true,
         );
         if (firstAvailable) {
           setCurrentModel(firstAvailable.id);

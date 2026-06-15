@@ -94,6 +94,46 @@ function ChatContent({
             overflow-wrap: break-word;
             word-wrap: break-word;
           }
+          .prose table {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+          }
+          .prose thead {
+            border-bottom: 2px solid #d1d5db;
+          }
+          .prose th {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #111827;
+            white-space: nowrap;
+            background: #f9fafb;
+          }
+          .prose td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+            vertical-align: top;
+          }
+          .prose tbody tr:last-child td {
+            border-bottom: none;
+          }
+          .prose table::-webkit-scrollbar {
+            height: 6px;
+          }
+          .prose table::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+          }
+          .prose table::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+          }
         `}</style>
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">

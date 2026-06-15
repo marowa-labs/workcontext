@@ -64,8 +64,12 @@ export class UnifiedAIService {
         byokSettings.hasClaudeKey ||
         byokSettings.hasOpenRouterKey;
 
-      // Validate requested model against BYOK-aware available models
-      const preferredModel = options.preferredModel;
+      // Resolve the effective preferred model:
+      // 1. Explicitly requested model (from frontend) — highest priority
+      // 2. User's saved preferred_ai_model from DB — persistent preference
+      // 3. null — falls through to pickDefaultModel in each select*Model
+      const preferredModel =
+        options.preferredModel || (await this.getUserPreferredModel(userId));
       if (preferredModel) {
         const availableModels = await AIService.getUserAvailableModels(userId);
         if (!availableModels[preferredModel]) {
@@ -88,10 +92,7 @@ export class UnifiedAIService {
       // Route to appropriate service based on capability — BYOK-aware model selection
       switch (capability) {
         case "grammar_check":
-          modelUsed = await this.selectGrammarModel(
-            userId,
-            options.preferredModel,
-          );
+          modelUsed = await this.selectGrammarModel(userId, preferredModel);
           if (!modelUsed)
             throw new Error(
               "No AI model available. Please configure an API key in your AI settings.",
@@ -107,7 +108,7 @@ export class UnifiedAIService {
         case "summarization":
           modelUsed = await this.selectSummarizationModel(
             userId,
-            options.preferredModel,
+            preferredModel,
           );
           if (!modelUsed)
             throw new Error(
@@ -122,7 +123,7 @@ export class UnifiedAIService {
           break;
 
         case "document_qa":
-          modelUsed = await this.selectQAModel(userId, options.preferredModel);
+          modelUsed = await this.selectQAModel(userId, preferredModel);
           if (!modelUsed)
             throw new Error(
               "No AI model available. Please configure an API key in your AI settings.",
@@ -138,7 +139,7 @@ export class UnifiedAIService {
         case "writing_project":
           modelUsed = await this.selectWritingProjectModel(
             userId,
-            options.preferredModel,
+            preferredModel,
           );
           if (!modelUsed)
             throw new Error(
@@ -287,6 +288,37 @@ export class UnifiedAIService {
     }
 
     // OpenRouter models (openai/gpt-*:free, nvidia/*:free, etc.)
+    // Before falling back to OpenRouter, check if this is actually a Google model
+    // (Google API may return models that don't start with "gemini-", e.g. "antigravity-preview-*")
+    const byokSettings = await BYOKService.getSettings(userId);
+    if (byokSettings.hasGoogleKey) {
+      try {
+        const googleModels = await BYOKService.getProviderModels(
+          userId,
+          "google",
+        );
+        const isGoogleModel =
+          googleModels?.some((m) => m.id === model) ?? false;
+        if (isGoogleModel) {
+          logger.info("Routing non-prefixed model through GeminiService", {
+            model,
+            userId: userId.slice(0, 8) + "...",
+          });
+          return await GeminiService.sendMessage(
+            prompt,
+            model,
+            options.maxTokens,
+            options.temperature,
+            userId,
+          );
+        }
+      } catch (checkError) {
+        logger.warn("Failed to check Google models for routing", {
+          error: (checkError as Error).message,
+        });
+      }
+    }
+
     // Fall back to AIService.processChatMessage which handles OpenRouter
     const chatResult = await AIService.processChatMessage({
       sessionId: `unified-${Date.now()}`,
@@ -301,64 +333,112 @@ export class UnifiedAIService {
     };
   }
 
+  /**
+   * Read the user's saved preferred_ai_model from the database.
+   * This is the persisted model preference (set by user in AI Settings).
+   */
+  private static async getUserPreferredModel(
+    userId: string,
+  ): Promise<string | null> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { preferred_ai_model: true },
+      });
+      return user?.preferred_ai_model || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Pick the best default model from available IDs.
+   * Provider-agnostic: doesn't hardcode a specific model family.
+   * If a userId is provided, checks their configured providers to make
+   * better default choices (e.g., gemini-first for Google key users).
+   */
+  private static async pickDefaultModel(
+    availableIds: string[],
+    userId?: string,
+  ): Promise<string | null> {
+    if (availableIds.length === 0) return null;
+
+    if (userId) {
+      try {
+        const byokSettings = await BYOKService.getSettings(userId);
+        // For Google users, prefer gemini- prefixed models
+        if (byokSettings.hasGoogleKey) {
+          const geminiModel = availableIds.find((id) =>
+            id.startsWith("gemini-"),
+          );
+          if (geminiModel) return geminiModel;
+        }
+      } catch {
+        // Fall through to first-available
+      }
+    }
+
+    return availableIds[0];
+  }
+
   // Select appropriate model for grammar checking — BYOK-aware
   private static async selectGrammarModel(
     userId: string,
-    preferredModel?: string,
+    preferredModel?: string | null,
   ): Promise<string | null> {
     const availableModels = await AIService.getUserAvailableModels(userId);
     const availableIds = Object.keys(availableModels);
     if (preferredModel && availableIds.includes(preferredModel))
       return preferredModel;
-    return availableIds.length > 0 ? availableIds[0] : null;
+    return this.pickDefaultModel(availableIds, userId);
   }
 
   // Select appropriate model for document Q&A — BYOK-aware
   private static async selectQAModel(
     userId: string,
-    preferredModel?: string,
+    preferredModel?: string | null,
   ): Promise<string | null> {
     const availableModels = await AIService.getUserAvailableModels(userId);
     const availableIds = Object.keys(availableModels);
     if (preferredModel && availableIds.includes(preferredModel))
       return preferredModel;
-    return availableIds.length > 0 ? availableIds[0] : null;
+    return this.pickDefaultModel(availableIds, userId);
   }
 
   // Select appropriate model for writing project — BYOK-aware
   private static async selectWritingProjectModel(
     userId: string,
-    preferredModel?: string,
+    preferredModel?: string | null,
   ): Promise<string | null> {
     const availableModels = await AIService.getUserAvailableModels(userId);
     const availableIds = Object.keys(availableModels);
     if (preferredModel && availableIds.includes(preferredModel))
       return preferredModel;
-    return availableIds.length > 0 ? availableIds[0] : null;
+    return this.pickDefaultModel(availableIds, userId);
   }
 
   // Select appropriate model for structured tasks — BYOK-aware
   private static async selectStructuredTaskModel(
     userId: string,
-    preferredModel?: string,
+    preferredModel?: string | null,
   ): Promise<string | null> {
     const availableModels = await AIService.getUserAvailableModels(userId);
     const availableIds = Object.keys(availableModels);
     if (preferredModel && availableIds.includes(preferredModel))
       return preferredModel;
-    return availableIds.length > 0 ? availableIds[0] : null;
+    return this.pickDefaultModel(availableIds, userId);
   }
 
   // Select appropriate model for summarization — BYOK-aware
   private static async selectSummarizationModel(
     userId: string,
-    preferredModel?: string,
+    preferredModel?: string | null,
   ): Promise<string | null> {
     const availableModels = await AIService.getUserAvailableModels(userId);
     const availableIds = Object.keys(availableModels);
     if (preferredModel && availableIds.includes(preferredModel))
       return preferredModel;
-    return availableIds.length > 0 ? availableIds[0] : null;
+    return this.pickDefaultModel(availableIds, userId);
   }
 
   // Track AI usage for billing and analytics with BYOK cost attribution

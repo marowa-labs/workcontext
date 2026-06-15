@@ -62,7 +62,7 @@ export class BYOKFrontendService {
    */
   static async saveApiKey(
     provider: BYOKProvider,
-    apiKey: string
+    apiKey: string,
   ): Promise<{ message: string; testMessage: string }> {
     const response = await apiClient.post("/api/ai/byok/keys", {
       provider,
@@ -81,7 +81,10 @@ export class BYOKFrontendService {
    * Delete an API key for a provider
    */
   static async deleteApiKey(provider: BYOKProvider): Promise<string> {
-    const response = await apiClient.delete(`/api/ai/byok/keys/${provider}`, {});
+    const response = await apiClient.delete(
+      `/api/ai/byok/keys/${provider}`,
+      {},
+    );
     if (!response || response.success === false) {
       throw new Error(response?.message || "Failed to delete API key");
     }
@@ -93,7 +96,7 @@ export class BYOKFrontendService {
    */
   static async testApiKey(
     provider: BYOKProvider,
-    apiKey: string
+    apiKey: string,
   ): Promise<BYOKKeyTestResult> {
     const response = await apiClient.post("/api/ai/byok/test", {
       provider,
@@ -126,7 +129,10 @@ export class BYOKFrontendService {
     bgColor: string;
     borderColor: string;
   } {
-    const info: Record<BYOKProvider, { color: string; bgColor: string; borderColor: string }> = {
+    const info: Record<
+      BYOKProvider,
+      { color: string; bgColor: string; borderColor: string }
+    > = {
       google: {
         color: "text-blue-600",
         bgColor: "bg-blue-50",
@@ -186,6 +192,42 @@ export class BYOKFrontendService {
       openrouter: "sk-or-... (OpenRouter API Key - Access 100+ models)",
     };
     return placeholders[provider];
+  }
+
+  /**
+   * Add a custom model for a provider
+   */
+  static async addCustomModel(
+    provider: BYOKProvider,
+    modelId: string,
+    modelName?: string,
+  ): Promise<{ message: string; model: any }> {
+    const response = await apiClient.post("/api/ai/byok/custom-model", {
+      provider,
+      modelId,
+      modelName,
+    });
+    if (!response || response.success === false) {
+      throw new Error(response?.message || "Failed to add custom model");
+    }
+    return { message: response.message, model: response.model };
+  }
+
+  /**
+   * Remove a custom model for a provider
+   */
+  static async removeCustomModel(
+    provider: BYOKProvider,
+    modelId: string,
+  ): Promise<string> {
+    const response = await apiClient.post("/api/ai/byok/custom-model/remove", {
+      provider,
+      modelId,
+    });
+    if (!response || response.success === false) {
+      throw new Error(response?.message || "Failed to remove custom model");
+    }
+    return response.message;
   }
 }
 

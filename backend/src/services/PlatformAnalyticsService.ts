@@ -56,7 +56,12 @@ export class PlatformAnalyticsService {
 
       // Sort by task count within the range, take top 5
       const topWorkspaces = topWorkspacesRaw
-        .sort((a, b) => b._count.tasks - a._count.tasks)
+        .sort(
+          (
+            a: { _count: { tasks: number } },
+            b: { _count: { tasks: number } },
+          ) => b._count.tasks - a._count.tasks,
+        )
         .slice(0, 5)
         .map(
           (w: {

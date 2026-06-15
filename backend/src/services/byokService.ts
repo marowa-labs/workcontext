@@ -248,47 +248,108 @@ export class BYOKService {
       }
 
       case "anthropic": {
-        // Anthropic doesn't have a models.list API, so we return known models
-        // In production, you could use the Anthropic API to validate the key
+        // Anthropic has no public models.list API, but we can validate the key
+        // and return the current lineup. This is kept up to date with Anthropic's available models.
+        // Users can also type any valid Anthropic model ID directly in the chat.
         return [
           {
             id: "anthropic/claude-sonnet-4-20250514",
             name: "Claude Sonnet 4",
             description:
-              "Anthropic's latest Sonnet model with excellent reasoning",
-            maxTokens: 200000,
-          },
-          {
-            id: "anthropic/claude-3-5-haiku-20241022",
-            name: "Claude 3.5 Haiku",
-            description: "Anthropic's fastest model for quick tasks",
+              "Anthropic's latest Sonnet — excellent reasoning, coding, and writing",
             maxTokens: 200000,
           },
           {
             id: "anthropic/claude-3-5-sonnet-20241022",
             name: "Claude 3.5 Sonnet",
-            description: "Balanced performance and speed",
+            description:
+              "Fast, capable model for complex tasks with extended context",
+            maxTokens: 200000,
+          },
+          {
+            id: "anthropic/claude-3-5-haiku-20241022",
+            name: "Claude 3.5 Haiku",
+            description:
+              "Anthropic's fastest model — ideal for lightweight, responsive tasks",
+            maxTokens: 200000,
+          },
+          {
+            id: "anthropic/claude-3-opus-20240229",
+            name: "Claude 3 Opus",
+            description:
+              "Anthropic's most powerful model for deep analysis and complex reasoning",
+            maxTokens: 200000,
+          },
+          {
+            id: "anthropic/claude-3-haiku-20240307",
+            name: "Claude 3 Haiku",
+            description:
+              "Fast and cost-effective model for high-throughput tasks",
             maxTokens: 200000,
           },
         ];
       }
 
       case "google": {
-        // Google doesn't have a simple models.list via API key, return known Gemini models
-        return [
-          {
-            id: "gemini-3.1-flash-lite",
-            name: "Gemini 3.1 Flash Lite",
-            description: "Google's fast multimodal model",
-            maxTokens: 1048576,
-          },
-          {
-            id: "gemini-2.0-flash",
-            name: "Gemini 2.0 Flash",
-            description: "Google's balanced multimodal model",
-            maxTokens: 1048576,
-          },
-        ];
+        // Fetch available Gemini models from Google's models.list API
+        try {
+          const fetch = (await import("node-fetch")).default;
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+          );
+          if (!response.ok) {
+            throw new Error(`Google models API returned ${response.status}`);
+          }
+          const data = (await response.json()) as any;
+          return (data.models || [])
+            .filter(
+              (m: any) =>
+                m.supportedGenerationMethods &&
+                m.supportedGenerationMethods.includes("generateContent"),
+            )
+            .map((m: any) => ({
+              id: m.name.replace("models/", ""),
+              name:
+                m.displayName ||
+                m.name.replace("models/", "").replace(/-/g, " "),
+              description: m.description || `Google Gemini model: ${m.name}`,
+              maxTokens: m.outputTokenLimit || 1048576,
+            }))
+            .sort((a: any, b: any) => {
+              // Prioritize gemini- prefixed models first, then sort alphabetically
+              const aIsGemini = a.id.startsWith("gemini-");
+              const bIsGemini = b.id.startsWith("gemini-");
+              if (aIsGemini && !bIsGemini) return -1;
+              if (!aIsGemini && bIsGemini) return 1;
+              return a.id.localeCompare(b.id);
+            });
+        } catch (error: any) {
+          logger.warn(
+            "Failed to fetch Gemini models dynamically, using fallback list",
+            { error: error.message },
+          );
+          // Fallback to known Gemini models
+          return [
+            {
+              id: "gemini-3.1-flash-lite",
+              name: "Gemini 3.1 Flash Lite",
+              description: "Google's fast multimodal model",
+              maxTokens: 1048576,
+            },
+            {
+              id: "gemini-2.0-flash",
+              name: "Gemini 2.0 Flash",
+              description: "Google's balanced multimodal model",
+              maxTokens: 1048576,
+            },
+            {
+              id: "gemini-2.5-pro",
+              name: "Gemini 2.5 Pro",
+              description: "Google's most capable reasoning model",
+              maxTokens: 1048576,
+            },
+          ];
+        }
       }
 
       case "openrouter": {
@@ -388,6 +449,83 @@ export class BYOKService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Add a custom model for a provider (user manually entered model ID)
+   */
+  static async addCustomModel(
+    userId: string,
+    provider: string,
+    model: { id: string; name: string; description: string; maxTokens: number },
+  ): Promise<void> {
+    const fieldMap: Record<string, string> = {
+      google: "byok_google_models",
+      anthropic: "byok_claude_models",
+      openai: "byok_openai_models",
+      openrouter: "byok_openrouter_models",
+    };
+    const field = fieldMap[provider];
+    if (!field) throw new Error(`Invalid provider: ${provider}`);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { [field]: true },
+    });
+    const existingModels: any[] = (user as any)?.[field] || [];
+
+    // Check if model with this ID already exists
+    const existing = existingModels.find((m: any) => m.id === model.id);
+    if (existing) {
+      // Update the existing custom model
+      Object.assign(existing, model, { custom: true });
+    } else {
+      existingModels.push({ ...model, custom: true });
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { [field]: existingModels },
+    });
+    logger.info(
+      `Added custom model "${model.id}" for user ${userId}, provider: ${provider}`,
+    );
+  }
+
+  /**
+   * Remove a custom model for a provider
+   */
+  static async removeCustomModel(
+    userId: string,
+    provider: string,
+    modelId: string,
+  ): Promise<void> {
+    const fieldMap: Record<string, string> = {
+      google: "byok_google_models",
+      anthropic: "byok_claude_models",
+      openai: "byok_openai_models",
+      openrouter: "byok_openrouter_models",
+    };
+    const field = fieldMap[provider];
+    if (!field) throw new Error(`Invalid provider: ${provider}`);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { [field]: true },
+    });
+    const existingModels: any[] = (user as any)?.[field] || [];
+
+    const filtered = existingModels.filter(
+      (m: any) => !(m.id === modelId && m.custom === true),
+    );
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { [field]: filtered },
+    });
+    logger.info(
+      `Removed custom model "${modelId}" for user ${userId}, provider: ${provider}`,
+    );
   }
 
   /**

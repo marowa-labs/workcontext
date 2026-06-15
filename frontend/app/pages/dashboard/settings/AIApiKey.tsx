@@ -17,6 +17,8 @@ import {
   ExternalLink,
   Info,
   RefreshCw,
+  PlusCircle,
+  X,
 } from "lucide-react";
 import AIService from "../../../lib/utils/aiService";
 import BYOKFrontendService, {
@@ -88,6 +90,14 @@ const AIApiKeyPage = () => {
     openrouter: "unknown",
   });
   const [refreshingModels, setRefreshingModels] = useState<string | null>(null);
+
+  // Custom model state
+  const [customModelProvider, setCustomModelProvider] =
+    useState<string>("openai");
+  const [customModelId, setCustomModelId] = useState("");
+  const [customModelName, setCustomModelName] = useState("");
+  const [addingCustomModel, setAddingCustomModel] = useState(false);
+  const [showCustomModelInput, setShowCustomModelInput] = useState(false);
 
   // Derived: does user have ANY api key configured?
   const hasAnyApiKey = byokSettings
@@ -185,6 +195,14 @@ const AIApiKeyPage = () => {
     try {
       if (field === "model") {
         await AIService.updatePreferredModel(value);
+        // Update local models state immediately so the UI highlights the new selection
+        setModels((prev) =>
+          prev.map((m) => ({
+            ...m,
+            isCurrent: m.id === value,
+          })),
+        );
+        setSettings((prev) => ({ ...prev, model: value }));
       }
       const settingsToUpdate = { ...settings, [field]: value };
       await AIService.updateAIPreferences(settingsToUpdate);
@@ -393,6 +411,56 @@ const AIApiKeyPage = () => {
     }
   };
 
+  // Add a custom model for a provider
+  const handleAddCustomModel = async () => {
+    if (!customModelId.trim()) return;
+    setAddingCustomModel(true);
+    try {
+      const result = await BYOKFrontendService.addCustomModel(
+        customModelProvider as BYOKProvider,
+        customModelId.trim(),
+        customModelName.trim() || undefined,
+      );
+      toast({ title: "Custom Model Added", description: result.message });
+      setCustomModelId("");
+      setCustomModelName("");
+      setShowCustomModelInput(false);
+      // Refresh models list
+      const modelsData = await AIService.getAvailableModels();
+      setModels(modelsData.models || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add custom model",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingCustomModel(false);
+    }
+  };
+
+  // Remove a custom model
+  const handleRemoveCustomModel = async (provider: string, modelId: string) => {
+    try {
+      await BYOKFrontendService.removeCustomModel(
+        provider as BYOKProvider,
+        modelId,
+      );
+      toast({
+        title: "Model Removed",
+        description: `Custom model removed from ${provider}`,
+      });
+      const modelsData = await AIService.getAvailableModels();
+      setModels(modelsData.models || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove custom model",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderConnectionStatus = (provider: string) => {
     const status = byokConnectionStatus[provider];
     const hasKey = byokSettings?.[
@@ -492,17 +560,30 @@ const AIApiKeyPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => handleRefreshModels("openrouter")}
-                disabled={refreshingModels !== null}
-                className="flex items-center gap-1 px-2 py-1 text-xs border border-border rounded-lg hover:bg-muted/50 transition-colors disabled:opacity-50"
-                title="Refresh models from providers"
-              >
-                <RefreshCw
-                  className={`h-3 w-3 ${refreshingModels ? "animate-spin" : ""}`}
-                />
-                Refresh Models
-              </button>
+              {["google", "openai", "anthropic", "openrouter"].map(
+                (provider) => {
+                  const hasKey = byokSettings?.[
+                    `has${provider.charAt(0).toUpperCase() + provider.slice(1)}Key` as keyof BYOKSettings
+                  ] as boolean;
+                  if (!hasKey) return null;
+                  return (
+                    <button
+                      key={provider}
+                      onClick={() => handleRefreshModels(provider)}
+                      disabled={refreshingModels !== null}
+                      className="flex items-center gap-1 px-2 py-1 text-xs border border-border rounded-lg hover:bg-muted/50 transition-colors disabled:opacity-50"
+                      title={`Refresh models from ${BYOKFrontendService.getProviderDisplayName(provider as BYOKProvider)}`}
+                    >
+                      <RefreshCw
+                        className={`h-3 w-3 ${refreshingModels === provider ? "animate-spin" : ""}`}
+                      />
+                      {refreshingModels === provider
+                        ? "Refreshing..."
+                        : `Refresh ${BYOKFrontendService.getProviderDisplayName(provider as BYOKProvider)}`}
+                    </button>
+                  );
+                },
+              )}
               {["google", "anthropic", "openai", "openrouter"].map(
                 (provider) => {
                   const hasKey = byokSettings?.[
@@ -882,22 +963,145 @@ const AIApiKeyPage = () => {
                       <h3 className="font-medium text-foreground">
                         {model.name}
                       </h3>
-                      {model.isCurrent && (
-                        <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full">
-                          Active
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {model.custom && (
+                          <span className="px-1.5 py-0.5 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
+                            Custom
+                          </span>
+                        )}
+                        {model.isCurrent && (
+                          <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {model.description}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Max tokens: {model.maxTokens?.toLocaleString()}
-                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Max tokens: {model.maxTokens?.toLocaleString()}
+                      </p>
+                      {model.custom && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Determine provider from model id prefix
+                            let provider = "openrouter";
+                            if (model.id.startsWith("gemini"))
+                              provider = "google";
+                            else if (model.id.startsWith("openai/"))
+                              provider = "openai";
+                            else if (
+                              model.id.startsWith("anthropic/") ||
+                              model.id.startsWith("claude-")
+                            )
+                              provider = "anthropic";
+                            handleRemoveCustomModel(provider, model.id);
+                          }}
+                          className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
+                          title="Remove custom model"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </button>
                 ))}
               </div>
             )}
+
+            {/* Add Custom Model */}
+            <div className="mt-6 pt-6 border-t border-border">
+              {!showCustomModelInput ? (
+                <button
+                  onClick={() => setShowCustomModelInput(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm border border-dashed border-border rounded-lg hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors w-full justify-center text-muted-foreground hover:text-purple-600"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Add Custom Model
+                </button>
+              ) : (
+                <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-foreground">
+                      Add a Custom Model
+                    </h4>
+                    <button
+                      onClick={() => setShowCustomModelInput(false)}
+                      className="p-1 rounded hover:bg-muted transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    If your provider&apos;s model isn&apos;t listed above, enter
+                    its ID manually. The model will be routed to the correct
+                    provider based on its prefix.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={customModelProvider}
+                      onChange={(e) => setCustomModelProvider(e.target.value)}
+                      className="px-2 py-2 border border-input rounded-lg bg-background text-foreground text-sm w-32"
+                    >
+                      {["google", "openai", "anthropic", "openrouter"].map(
+                        (p) => {
+                          const hasKey = byokSettings?.[
+                            `has${p.charAt(0).toUpperCase() + p.slice(1)}Key` as keyof BYOKSettings
+                          ] as boolean;
+                          if (!hasKey) return null;
+                          return (
+                            <option key={p} value={p}>
+                              {
+                                BYOKFrontendService.getProviderDisplayName(
+                                  p as BYOKProvider,
+                                ).split(" ")[0]
+                              }
+                            </option>
+                          );
+                        },
+                      )}
+                    </select>
+                    <input
+                      type="text"
+                      value={customModelId}
+                      onChange={(e) => setCustomModelId(e.target.value)}
+                      placeholder="e.g. gpt-4.1, claude-opus-4, gemini-2.5-pro..."
+                      className="flex-1 px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleAddCustomModel()
+                      }
+                    />
+                    <input
+                      type="text"
+                      value={customModelName}
+                      onChange={(e) => setCustomModelName(e.target.value)}
+                      placeholder="Display name (optional)"
+                      className="px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm w-40 hidden sm:block"
+                    />
+                    <button
+                      onClick={handleAddCustomModel}
+                      disabled={addingCustomModel || !customModelId.trim()}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors text-sm whitespace-nowrap"
+                    >
+                      {addingCustomModel ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Add"
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Provider prefix is added automatically (e.g. entering
+                    &quot;gpt-4.1&quot; becomes &quot;openai/gpt-4.1&quot;). You
+                    can also enter a full ID like
+                    &quot;anthropic/claude-opus-4&quot;.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* AI Behavior Settings */}
@@ -976,74 +1180,108 @@ const AIApiKeyPage = () => {
       {/* ==================== TAB: Usage & Analytics ==================== */}
       {activeTab === "usage" && (
         <div className="space-y-6">
+          {/* Status Banner */}
+          <div
+            className={`p-4 rounded-lg border ${hasAnyApiKey ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"}`}
+          >
+            <div className="flex items-center">
+              {hasAnyApiKey ? (
+                <Wifi className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2 flex-shrink-0" />
+              )}
+              <p className="text-sm">
+                {hasAnyApiKey ? (
+                  <span className="text-green-700 dark:text-green-300">
+                    <strong>BYOK Active</strong> — You&apos;re using your own
+                    API keys. Your provider handles rate limits and billing
+                    directly. Usage shown below is for your reference.
+                  </span>
+                ) : (
+                  <span className="text-amber-700 dark:text-amber-300">
+                    <strong>No API Keys</strong> — AI features are disabled.
+                    Configure an API key in the Keys tab to get started.
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Analytics Cards */}
           <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
-              Usage Overview
+              Your Usage
             </h2>
-
-            {hasAnyApiKey ? (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-4">
-                <div className="flex items-center">
-                  <Wifi className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    <strong>BYOK Active</strong> — You're using your own API
-                    keys. Usage is unlimited and billed by your provider.
-                  </p>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-2xl font-bold text-foreground">
+                  {analytics?.totalRequests || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">Total Requests</p>
               </div>
-            ) : (
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-4">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
-                  <p className="text-sm text-amber-700 dark:text-amber-300">
-                    <strong>No API Keys</strong> — AI features are disabled.
-                    Configure an API key to get started.
-                  </p>
+              <div className="p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-2xl font-bold text-foreground">
+                  {analytics?.successfulRequests || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">Successful</p>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-2xl font-bold text-foreground">
+                  {analytics?.totalTokensUsed?.toLocaleString() || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">Tokens Used</p>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-2xl font-bold text-foreground">
+                  ${(analytics?.costEstimate || 0).toFixed(2)}
+                </p>
+                <p className="text-sm text-muted-foreground">Est. Cost</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Model Usage Breakdown */}
+          {analytics?.modelUsage &&
+            Object.keys(analytics.modelUsage).length > 0 && (
+              <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-4">
+                  Model Usage
+                </h2>
+                <div className="space-y-3">
+                  {Object.entries(
+                    analytics.modelUsage as Record<string, number>,
+                  ).map(([model, count]) => (
+                    <div
+                      key={model}
+                      className="flex items-center justify-between"
+                    >
+                      <span
+                        className="text-sm text-foreground font-mono truncate max-w-[70%]"
+                        title={model}
+                      >
+                        {model}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {count as number} requests
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {usage && !hasAnyApiKey && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {usage.remaining}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Remaining</p>
-                </div>
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {usage.limit}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Limit</p>
-                </div>
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {usage.limit - usage.remaining}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Used</p>
-                </div>
-              </div>
-            )}
-
-            {hasAnyApiKey && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {analytics?.totalRequests || 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Total Requests
-                  </p>
-                </div>
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {analytics?.totalTokensUsed?.toLocaleString() || 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Tokens Used</p>
-                </div>
-              </div>
-            )}
+          {/* Provider note */}
+          <div className="p-4 bg-card rounded-xl border border-border text-sm text-muted-foreground">
+            <p>
+              <strong className="text-foreground">
+                Limits are provider-based.
+              </strong>{" "}
+              Rate limits (RPM/TPM) are determined by your API provider, not
+              ScholarForge. Check your provider&apos;s dashboard for current
+              rate limits and billing details.
+              {!hasAnyApiKey &&
+                " Configure an API key to remove all platform-imposed limits."}
+            </p>
           </div>
 
           {/* Provider Links */}
@@ -1052,7 +1290,7 @@ const AIApiKeyPage = () => {
               Get API Keys
             </h2>
             <p className="text-sm text-muted-foreground mb-4">
-              Don't have an API key? Get one from any of these providers:
+              Don&apos;t have an API key? Get one from any of these providers:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[

@@ -313,15 +313,7 @@ async function handlePutPreferredModel(req: any, res: any) {
       });
     }
 
-    // Validate that the model is supported
-    const availableModels = Object.keys(AIService.getAvailableModels());
-    if (!availableModels.includes(model)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid model specified",
-      });
-    }
-
+    // Always save the user's model preference — runtime routing handles provider/key mismatches gracefully
     // Prepare update data
     const updateData: any = { preferred_ai_model: model };
 
@@ -384,8 +376,6 @@ async function handlePutAIUserPreferences(req: any, res: any) {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        preferred_ai_model:
-          preferences.preferredModel || preferences.model || null,
         ai_preferences: preferences,
       },
     });
@@ -541,6 +531,7 @@ async function handleGetAvailableModels(req: any, res: any) {
         name: model.name,
         description: model.description,
         maxTokens: model.maxTokens,
+        custom: model.custom || false,
         isCurrent: modelId === currentModel,
       };
     });
@@ -1427,6 +1418,117 @@ router.post(
   "/byok/refresh-models",
   authenticateExpressRequest,
   handleRefreshModels,
+);
+
+// Add a custom model for a provider
+async function handleAddCustomModel(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { provider, modelId, modelName } = req.body;
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    if (!provider || !modelId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Provider and modelId are required" });
+    }
+    if (!["google", "anthropic", "openai", "openrouter"].includes(provider)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid provider" });
+    }
+
+    // Determine the full model ID (add provider prefix if missing)
+    let fullId = modelId;
+    if (
+      !modelId.includes("/") &&
+      !modelId.startsWith("gemini") &&
+      !modelId.startsWith("claude-")
+    ) {
+      const prefixMap: Record<string, string> = {
+        openai: "openai/",
+        anthropic: "anthropic/",
+        openrouter: "",
+        google: "",
+      };
+      fullId = (prefixMap[provider] || "") + modelId;
+    }
+
+    const displayName =
+      modelName ||
+      modelId
+        .replace(/^[a-z]+\//, "")
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+    await BYOKService.addCustomModel(userId, provider, {
+      id: fullId,
+      name: displayName,
+      description: `Custom model: ${displayName}`,
+      maxTokens: 128000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Custom model "${displayName}" added for ${provider}`,
+      model: {
+        id: fullId,
+        name: displayName,
+        description: `Custom model: ${displayName}`,
+        maxTokens: 128000,
+      },
+    });
+  } catch (error: any) {
+    logger.error("Error adding custom model:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to add custom model",
+    });
+  }
+}
+router.post(
+  "/byok/custom-model",
+  authenticateExpressRequest,
+  handleAddCustomModel,
+);
+
+// Remove a custom model for a provider
+async function handleRemoveCustomModel(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { provider, modelId } = req.body;
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    if (!provider || !modelId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Provider and modelId are required" });
+    }
+
+    await BYOKService.removeCustomModel(userId, provider, modelId);
+
+    return res.status(200).json({
+      success: true,
+      message: `Custom model removed from ${provider}`,
+    });
+  } catch (error: any) {
+    logger.error("Error removing custom model:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to remove custom model",
+    });
+  }
+}
+router.post(
+  "/byok/custom-model/remove",
+  authenticateExpressRequest,
+  handleRemoveCustomModel,
 );
 
 logger.info("BYOK routes registered successfully");

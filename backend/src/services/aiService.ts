@@ -126,6 +126,7 @@ interface AIModel {
   name: string;
   description: string;
   maxTokens: number;
+  custom?: boolean; // true if user manually added this model
 }
 
 // Define available AI models
@@ -210,6 +211,105 @@ interface AISuggestion {
 }
 
 export class AIService {
+  /**
+   * Detect provider rate-limit / credit-exhaustion errors and return a user-friendly message.
+   * Returns null if the error is not rate-limit-related.
+   */
+  private static detectProviderRateLimitError(error: any): string | null {
+    const msg = (error?.message || error?.toString() || "").toLowerCase();
+    const status = error?.status || error?.statusCode || error?.code || 0;
+
+    // HTTP 429 is universal rate-limit code
+    if (status === 429 || status === "429") {
+      return `Your API provider is rate-limiting requests (HTTP 429). Wait a moment and try again, or check your provider's dashboard for quota limits.`;
+    }
+
+    // Google Gemini quota/resource exhausted
+    if (
+      msg.includes("quota") &&
+      (msg.includes("exceeded") || msg.includes("exhausted"))
+    ) {
+      return `Your Google Gemini API quota has been exceeded. Check your Google AI Studio billing dashboard or wait for quota to reset.`;
+    }
+    if (
+      msg.includes("resource_exhausted") ||
+      msg.includes("resource has been exhausted")
+    ) {
+      return `Your Google Gemini API quota is exhausted. Visit https://aistudio.google.com to check your quota or upgrade your plan.`;
+    }
+
+    // OpenAI quota / billing errors
+    if (
+      msg.includes("exceeded your current quota") ||
+      msg.includes("insufficient_quota")
+    ) {
+      return `Your OpenAI API credit has run out or quota exceeded. Please check your billing at https://platform.openai.com/account/billing or add funds.`;
+    }
+    if (
+      msg.includes("rate_limit") &&
+      (msg.includes("openai") || msg.includes("gpt"))
+    ) {
+      return `OpenAI is rate-limiting your requests. Wait a moment and try again, or check your usage tier at https://platform.openai.com/account/limits.`;
+    }
+
+    // Anthropic rate limit / overload
+    if (msg.includes("overloaded") && msg.includes("anthropic")) {
+      return `Anthropic's servers are currently overloaded. Please wait and try again in a few seconds.`;
+    }
+    if (
+      (msg.includes("rate") || msg.includes("limit")) &&
+      msg.includes("anthropic")
+    ) {
+      return `Your Anthropic API key has hit a rate limit. Check your usage at https://console.anthropic.com or wait and retry.`;
+    }
+
+    // OpenRouter errors — HTTP 429 from any upstream provider
+    if (msg.includes("openrouter")) {
+      if (msg.includes("credit") || msg.includes("insufficient")) {
+        return `Your OpenRouter credits are insufficient. Please add credits at https://openrouter.ai/credits.`;
+      }
+      if (
+        msg.includes("429") ||
+        msg.includes("rate") ||
+        msg.includes("limit")
+      ) {
+        return `OpenRouter is rate-limiting requests. Wait a moment and try again, or check your OpenRouter dashboard at https://openrouter.ai/settings/keys.`;
+      }
+      if (
+        msg.includes("provider") &&
+        (msg.includes("error") || msg.includes("down"))
+      ) {
+        return `OpenRouter's upstream provider returned an error. Try again or switch to a different model via OpenRouter.`;
+      }
+    }
+    // OpenRouter credit exhaustion (even without "openrouter" in the text)
+    if (msg.includes("insufficient credits") || msg.includes("no credits")) {
+      return `Your OpenRouter credits have run out. Please add credits at https://openrouter.ai/credits.`;
+    }
+    // OpenRouter key invalid
+    if (
+      msg.includes("invalid api key") &&
+      (msg.includes("openrouter") || error?.name === "OpenRouterError")
+    ) {
+      return `Your OpenRouter API key is invalid. Check your key at https://openrouter.ai/settings/keys.`;
+    }
+
+    // Generic billing / payment
+    if (
+      msg.includes("billing") ||
+      msg.includes("payment required") ||
+      msg.includes("insufficient funds")
+    ) {
+      return `Your API provider requires payment or has a billing issue. Please check your provider's billing dashboard.`;
+    }
+
+    // Generic quota
+    if (msg.includes("quota") || msg.includes("limit reached")) {
+      return `You've reached your API provider's rate limit or quota. Check your provider dashboard for limits and billing status.`;
+    }
+
+    return null;
+  }
   // Track AI usage for users with enhanced tracking
   static async trackAIUsage(
     userId: string,
@@ -1028,8 +1128,10 @@ Provide a helpful response.`;
         error: (error as Error).message,
       });
 
+      const providerError = this.detectProviderRateLimitError(error);
       throw new Error(
-        `AI processing failed: ${(error as Error).message || "Unknown error"}`,
+        providerError ||
+          `AI processing failed: ${(error as Error).message || "Unknown error"}`,
       );
     }
   }
@@ -1570,22 +1672,88 @@ Please provide a helpful response.`;
     // Normalize short names (e.g. "gpt-4o-mini") to full AI_MODELS keys (e.g. "openai/gpt-4o-mini")
     const modelName = normalizeModelName(rawModelName);
 
+    // Validate the user actually has a key for this model's provider, and fall back if not
+    let finalModelName = modelName;
+    const provider = getModelProvider(modelName);
+    const byokSettings = await BYOKService.getSettings(userId);
+    const providerHasKey: Record<string, boolean> = {
+      gemini: byokSettings.hasGoogleKey,
+      openai: byokSettings.hasOpenAIKey,
+      anthropic: byokSettings.hasClaudeKey,
+      openrouter: byokSettings.hasOpenRouterKey,
+    };
+
+    if (!providerHasKey[provider]) {
+      // User doesn't have a key for this model's provider — find an alternative
+      const availableModels = await this.getUserAvailableModels(userId);
+      const availableIds = Object.keys(availableModels);
+      if (availableIds.length > 0) {
+        finalModelName = availableIds[0];
+        logger.info(
+          "Model provider key not found, falling back to available model",
+          {
+            userId: userId.slice(0, 8),
+            requested: modelName,
+            requestedProvider: provider,
+            fallback: finalModelName,
+          },
+        );
+      } else {
+        throw new Error(
+          `No API key configured for ${provider}. Please add your API key for this provider in AI Settings, or select a different model.`,
+        );
+      }
+    }
+
     try {
       // Log model selection for debugging
       logger.info("Selected AI model", {
         userId,
-        model: modelName,
-        requestedModel: model,
+        model: finalModelName,
+        originalRequested: modelName,
       });
 
-      // Route to the correct provider based on model prefix (no hardcoded AI_MODELS dependency)
-      const provider = getModelProvider(modelName);
+      // Route to the correct provider based on model prefix
+      const routeProvider = getModelProvider(finalModelName);
       let responseText = "";
       let tokensUsed = 0;
 
-      logger.info("Routing chat request", { modelName, provider, userId });
+      logger.info("Routing chat request", {
+        modelName: finalModelName,
+        provider: routeProvider,
+        userId,
+      });
 
-      switch (provider) {
+      // If provider is "openrouter" but the user has a Google key, check if this
+      // is actually a Google model (Google API may return models without "gemini-" prefix)
+      let effectiveProvider = routeProvider;
+      if (
+        routeProvider === "openrouter" &&
+        byokSettings.hasGoogleKey &&
+        !byokSettings.hasOpenRouterKey
+      ) {
+        try {
+          const googleModels = await BYOKService.getProviderModels(
+            userId,
+            "google",
+          );
+          const isGoogleModel =
+            googleModels?.some((m) => m.id === finalModelName) ?? false;
+          if (isGoogleModel) {
+            effectiveProvider = "gemini";
+            logger.info("Redirecting non-prefixed Google model to Gemini", {
+              model: finalModelName,
+              userId: userId.slice(0, 8) + "...",
+            });
+          }
+        } catch (checkError) {
+          logger.warn("Failed to check Google models for routing", {
+            error: (checkError as Error).message,
+          });
+        }
+      }
+
+      switch (effectiveProvider) {
         case "gemini": {
           const currentGenAI = await getGenAI(userId);
           if (!currentGenAI) {
@@ -1595,7 +1763,7 @@ Please provide a helpful response.`;
           }
 
           const geminiModel = currentGenAI.getGenerativeModel({
-            model: modelName,
+            model: finalModelName,
           });
           const result = await geminiModel.generateContent([
             systemMessage,
@@ -1610,20 +1778,24 @@ Please provide a helpful response.`;
           tokensUsed = responseText.length;
 
           aiPerformanceMonitor.recordAIRequestTiming(
-            modelName,
+            finalModelName,
             "chat_message",
             Date.now() - startTime,
           );
           aiPerformanceMonitor.recordAITokenUsage(
-            modelName,
+            finalModelName,
             "chat_message",
             tokensUsed,
           );
-          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          aiPerformanceMonitor.recordAIResult(
+            finalModelName,
+            "chat_message",
+            true,
+          );
           await this.recordPerformanceMetric({
             userId,
             action: "chat_message",
-            model: modelName,
+            model: finalModelName,
             success: true,
             tokensUsed,
             responseTime: Date.now() - startTime,
@@ -1639,7 +1811,7 @@ Please provide a helpful response.`;
             );
           }
 
-          const openaiModelName = modelName.replace("openai/", "");
+          const openaiModelName = finalModelName.replace("openai/", "");
           const completion = await openaiClient.chat.completions.create({
             model: openaiModelName,
             messages: [
@@ -1653,20 +1825,24 @@ Please provide a helpful response.`;
             (completion.usage?.completion_tokens || 0);
 
           aiPerformanceMonitor.recordAIRequestTiming(
-            modelName,
+            finalModelName,
             "chat_message",
             Date.now() - startTime,
           );
           aiPerformanceMonitor.recordAITokenUsage(
-            modelName,
+            finalModelName,
             "chat_message",
             tokensUsed,
           );
-          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          aiPerformanceMonitor.recordAIResult(
+            finalModelName,
+            "chat_message",
+            true,
+          );
           await this.recordPerformanceMetric({
             userId,
             action: "chat_message",
-            model: modelName,
+            model: finalModelName,
             success: true,
             tokensUsed,
             responseTime: Date.now() - startTime,
@@ -1682,7 +1858,7 @@ Please provide a helpful response.`;
             );
           }
 
-          const anthropicModelName = modelName.replace("anthropic/", "");
+          const anthropicModelName = finalModelName.replace("anthropic/", "");
           const msg = await anthropicClient.messages.create({
             model: anthropicModelName,
             max_tokens: 4096,
@@ -1696,20 +1872,24 @@ Please provide a helpful response.`;
             (msg.usage.input_tokens || 0) + (msg.usage.output_tokens || 0);
 
           aiPerformanceMonitor.recordAIRequestTiming(
-            modelName,
+            finalModelName,
             "chat_message",
             Date.now() - startTime,
           );
           aiPerformanceMonitor.recordAITokenUsage(
-            modelName,
+            finalModelName,
             "chat_message",
             tokensUsed,
           );
-          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          aiPerformanceMonitor.recordAIResult(
+            finalModelName,
+            "chat_message",
+            true,
+          );
           await this.recordPerformanceMetric({
             userId,
             action: "chat_message",
-            model: modelName,
+            model: finalModelName,
             success: true,
             tokensUsed,
             responseTime: Date.now() - startTime,
@@ -1727,7 +1907,7 @@ Please provide a helpful response.`;
           }
 
           const result: any = await (openRouter as any).chat.send({
-            model: modelName,
+            model: finalModelName,
             messages: [
               { role: "system", content: systemMessage },
               { role: "user", content: prompt },
@@ -1740,20 +1920,24 @@ Please provide a helpful response.`;
           tokensUsed = result?.usage?.totalTokens || responseText.length;
 
           aiPerformanceMonitor.recordAIRequestTiming(
-            modelName,
+            finalModelName,
             "chat_message",
             Date.now() - startTime,
           );
           aiPerformanceMonitor.recordAITokenUsage(
-            modelName,
+            finalModelName,
             "chat_message",
             tokensUsed,
           );
-          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          aiPerformanceMonitor.recordAIResult(
+            finalModelName,
+            "chat_message",
+            true,
+          );
           await this.recordPerformanceMetric({
             userId,
             action: "chat_message",
-            model: modelName,
+            model: finalModelName,
             success: true,
             tokensUsed,
             responseTime: Date.now() - startTime,
@@ -1977,17 +2161,17 @@ ${formattedResults}
 
       // Record error in performance monitoring
       aiPerformanceMonitor.recordAIRequestTiming(
-        model || preferredModel,
+        finalModelName,
         "chat_message",
         responseTime,
       );
       aiPerformanceMonitor.recordAIError(
-        model || preferredModel,
+        finalModelName,
         "chat_message",
         (error as any).message || "unknown_error",
       );
       aiPerformanceMonitor.recordAIResult(
-        model || preferredModel,
+        finalModelName,
         "chat_message",
         false,
       );
@@ -1996,7 +2180,7 @@ ${formattedResults}
       await this.recordPerformanceMetric({
         userId,
         action: "chat_message",
-        model: modelName,
+        model: finalModelName,
         success: false,
         tokensUsed: 0,
         responseTime,
@@ -2004,7 +2188,12 @@ ${formattedResults}
       });
 
       logger.error("Error processing chat message:", error);
-      throw new Error("Failed to process chat message");
+      const providerError = this.detectProviderRateLimitError(error);
+      throw new Error(
+        providerError ||
+          (error as any).message ||
+          "Failed to process chat message",
+      );
     }
   }
 
@@ -2681,7 +2870,10 @@ ${formattedResults}
       });
 
       logger.error("Error processing chat message with streaming:", error);
-      throw new Error("Failed to process chat message with streaming");
+      const providerError = this.detectProviderRateLimitError(error);
+      throw new Error(
+        providerError || "Failed to process chat message with streaming",
+      );
     }
   }
 
@@ -2837,12 +3029,13 @@ ${formattedResults}
           );
 
           if (cachedModels && cachedModels.length > 0) {
-            // Use the dynamically-fetched models
+            // Use the dynamically-fetched models (including custom user-added ones)
             for (const m of cachedModels) {
               availableModels[m.id] = {
                 name: m.name,
                 description: m.description,
                 maxTokens: m.maxTokens,
+                custom: (m as any).custom || false,
               };
             }
           } else {
@@ -2869,6 +3062,7 @@ ${formattedResults}
                       name: m.name,
                       description: m.description,
                       maxTokens: m.maxTokens,
+                      custom: (m as any).custom || false,
                     };
                   }
                 }

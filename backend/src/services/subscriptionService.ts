@@ -22,8 +22,8 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: 0,
-      aiRequests: 25,
-      aiChatMessages: 100,
+      aiRequests: 25, // Platform limit (irrelevant with BYOK — own API keys skip limits)
+      aiChatMessages: 100, // Platform limit (irrelevant with BYOK)
       aiWebSearches: 0,
       aiDeepSearches: 0,
       collaborators: 10,
@@ -33,7 +33,7 @@ export const plans = {
       citationFormats: 26000,
       versionHistory: 7, // days
       support: "community",
-      aiCostLimit: 0, // No AI cost limit since it's included
+      aiCostLimit: 0,
     },
     analytics: {
       writingProductivity: false,
@@ -48,14 +48,11 @@ export const plans = {
       "Export to Word/PDF",
       "Real-time collaboration (up to 10 members)",
       "7-day version history",
-      "5,000 AI words/month",
+      "5,000 AI words/month (with platform keys)",
       "Grammar & spell check",
       "Unlimited projects",
       "Basic writing suggestions",
-      "Max 25 AI Requests/Month",
-      "Max 100 AI Chat Messages/Month",
-      "Gemini 2.5 Flash",
-      "No Access to Premium Models (Gemini 3.1 Flash Lite)",
+      "Bring your own API keys — no platform limits",
       "100MB Storage",
       "Community Support",
     ],
@@ -79,7 +76,7 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: -1, // unlimited
-      aiRequests: -1, // unlimited gemini-3.1-flash-lite
+      aiRequests: -1, // unlimited
       aiChatMessages: -1, // unlimited
       aiWebSearches: -1, // unlimited
       aiDeepSearches: -1, // unlimited
@@ -104,9 +101,9 @@ export const plans = {
       "Real-time collaboration",
       "30-day version history",
       "$15/session (minimum), usage-based overages",
+      "Bring your own API keys — use any model from any provider",
       "First $15 covers up to 25,000 words",
       "Additional usage billed at $0.0006/word",
-      "Models: Gemini 2.5 Flash + OpenRouter OSS models",
       "Email support",
       "5GB storage",
     ],
@@ -131,8 +128,8 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: -1, // unlimited
-      aiRequests: 170, // 120 Gemini 2.5 Flash + 50 OpenRouter OSS = 170 total
-      aiChatMessages: 1000,
+      aiRequests: 170, // Platform limit (irrelevant with BYOK)
+      aiChatMessages: 1000, // Platform limit (irrelevant with BYOK)
       aiWebSearches: 50,
       aiDeepSearches: 10,
       collaborators: 100,
@@ -160,8 +157,7 @@ export const plans = {
       "Email support",
       "Writing analytics dashboard",
       "75,000 AI words/month (~450k tokens)",
-      "120 Gemini 2.5 Flash requests",
-      "50 OpenRouter OSS model requests",
+      "Bring your own API keys — use any model from any provider",
       "100GB storage",
     ],
     excludedFeatures: [
@@ -188,8 +184,8 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: -1, // unlimited
-      aiRequests: 375, // 200 Gemini 2.5 Flash + 100 Gemini 3.1 Flash Lite + 75 OpenRouter OSS = 375 total
-      aiChatMessages: 5000,
+      aiRequests: -1, // Unlimited (platform — BYOK bypasses entirely)
+      aiChatMessages: -1, // Unlimited (platform — BYOK bypasses entirely)
       aiWebSearches: 500,
       aiDeepSearches: 100,
       collaborators: -1, // unlimited
@@ -218,9 +214,7 @@ export const plans = {
       "Phone & chat support",
       "Dedicated account manager",
       "300,000 AI words/month (~1.8M tokens)",
-      "Unlimited Gemini 2.5 Flash requests",
-      "200 Gemini 3.1 Flash Lite requests/month",
-      "75 OpenRouter OSS model requests/month",
+      "Bring your own API keys — use any model from any provider",
       "500GB storage",
     ],
     excludedFeatures: [],
@@ -352,6 +346,30 @@ export class SubscriptionService {
       console.error("Error checking institutional membership:", error);
     }
     */
+
+    // BYOK users bypass all AI-related platform limits — their provider handles rate limits
+    const aiActions = [
+      "ai_request",
+      "ai_chat_message",
+      "ai_web_search",
+      "ai_deep_search",
+    ] as string[];
+    if (aiActions.includes(action)) {
+      try {
+        const { BYOKService } = await import("./byokService");
+        const byokSettings = await BYOKService.getSettings(userId);
+        const hasBYOK =
+          byokSettings.hasGoogleKey ||
+          byokSettings.hasOpenAIKey ||
+          byokSettings.hasClaudeKey ||
+          byokSettings.hasOpenRouterKey;
+        if (hasBYOK) {
+          return { allowed: true };
+        }
+      } catch {
+        // Fall through to plan-based check if BYOK service fails
+      }
+    }
 
     switch (action) {
       case "create_project": {

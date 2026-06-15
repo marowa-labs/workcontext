@@ -209,6 +209,66 @@ code {
   border-radius: 0 !important;
 }
 
+/* Markdown table styles (used by ReactMarkdown across all chat panels) */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.prose table thead {
+  border-bottom: 2px solid #d1d5db;
+  background-color: #f9fafb;
+}
+.prose table th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  border-right: 1px solid #e5e7eb;
+}
+.prose table th:last-child {
+  border-right: none;
+}
+.prose table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+  vertical-align: top;
+  border-right: 1px solid #e5e7eb;
+}
+.prose table td:last-child {
+  border-right: none;
+}
+.prose table tbody tr:last-child td {
+  border-bottom: none;
+}
+.prose table tbody tr:hover {
+  background-color: #f9fafb;
+}
+/* Dark mode table styles */
+.dark .prose table thead {
+  border-bottom-color: #4b5563;
+  background-color: #1f2937;
+}
+.dark .prose table th {
+  color: #f9fafb;
+  border-right-color: #4b5563;
+}
+.dark .prose table td {
+  color: #d1d5db;
+  border-bottom-color: #374151;
+  border-right-color: #374151;
+}
+.dark .prose table tbody tr:hover {
+  background-color: #111827;
+}
+
 /* Multi-column layout */
 .prose-columns-2 {
   column-count: 2;
