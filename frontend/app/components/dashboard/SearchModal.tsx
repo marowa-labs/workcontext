@@ -12,13 +12,16 @@ import {
   ChevronRight,
   Loader2,
   Hash,
+  MessageSquare,
+  FileText,
+  StickyNote,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase/client";
 import { cn } from "../../lib/utils";
 
 interface SearchResult {
   id: string;
-  type: "workspace" | "space" | "task";
+  type: "workspace" | "space" | "task" | "chat" | "note" | "document";
   title: string;
   subtitle: string;
   status?: string;
@@ -32,12 +35,14 @@ interface SearchResult {
 interface SearchResponse {
   results: SearchResult[];
   total: number;
+  query: string;
   categories: {
     workspaces: number;
     projects: number;
     tasks: number;
+    chats: number;
+    documents: number;
   };
-  query: string;
 }
 
 interface SearchModalProps {
@@ -159,13 +164,25 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
     switch (result.type) {
       case "workspace":
-        router.push(`/dashboard/workspace/${result.id}`);
+        router.push("/workspaces/" + result.id);
         break;
       case "space":
-        router.push(`/dashboard/workspace/${result.workspaceId}/projects`);
+        router.push("/workspaces/" + result.workspaceId + "/projects");
         break;
       case "task":
-        router.push(`/dashboard/workspace/${result.workspaceId}/kanban`);
+        router.push("/workspaces/" + result.workspaceId + "/kanban");
+        break;
+      case "chat":
+        // Open AI chat for this session
+        window.dispatchEvent(new CustomEvent("open-ai-chat", {
+          detail: { sessionId: result.status },
+        }));
+        break;
+      case "note":
+        router.push("/projects/" + result.id);
+        break;
+      case "document":
+        router.push("/projects/" + result.id);
         break;
     }
   };
@@ -179,6 +196,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return <FolderOpen className="w-5 h-5" />;
       case "task":
         return <CheckSquare className="w-5 h-5" />;
+      case "chat":
+        return <MessageSquare className="w-5 h-5" />;
+      case "note":
+        return <StickyNote className="w-5 h-5" />;
+      case "document":
+        return <FileText className="w-5 h-5" />;
       default:
         return <Folder className="w-5 h-5" />;
     }
@@ -193,6 +216,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400";
       case "task":
         return "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400";
+      case "chat":
+        return "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400";
+      case "note":
+        return "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400";
+      case "document":
+        return "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400";
       default:
         return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
     }
@@ -204,6 +233,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     { id: "workspaces", label: "Workspaces", count: results.filter(r => r.type === "workspace").length },
     { id: "spaces", label: "Spaces", count: results.filter(r => r.type === "space").length },
     { id: "tasks", label: "Tasks", count: results.filter(r => r.type === "task").length },
+    { id: "chats", label: "Chats", count: results.filter(r => r.type === "chat").length },
+    { id: "docs", label: "Docs", count: results.filter(r => r.type === "note" || r.type === "document").length },
   ];
 
   const [activeFilter, setActiveFilter] = useState("all");
@@ -214,6 +245,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       if (activeFilter === "workspaces") return r.type === "workspace";
       if (activeFilter === "spaces") return r.type === "space";
       if (activeFilter === "tasks") return r.type === "task";
+      if (activeFilter === "chats") return r.type === "chat";
+      if (activeFilter === "docs") return r.type === "note" || r.type === "document";
       return true;
     });
 
@@ -235,7 +268,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search workspaces, spaces, tasks..."
+            placeholder="Search workspaces, projects, tasks, AI chats, docs..."
             className="flex-1 bg-transparent text-foreground placeholder-muted-foreground outline-none text-base"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

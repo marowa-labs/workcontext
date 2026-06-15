@@ -10,14 +10,18 @@ import {
   Plus,
   FileText,
   FolderOpen,
-  Zap,
   BarChart3,
   HelpCircle,
   X,
   ChevronRight,
   Activity,
+  CheckSquare,
+  Layout,
+  StickyNote,
+  Loader2,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { supabase } from "../../lib/supabase/client";
 
 interface CommandItem {
   id: string;
@@ -158,6 +162,110 @@ export function SlashCommandPalette({
     },
   ];
 
+  // ---- Real search results state ----
+  interface SearchResult {
+    id: string;
+    type: string;
+    title: string;
+    subtitle: string;
+    status?: string;
+    workspaceId?: string;
+    workspaceName?: string;
+    score: number;
+  }
+
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const performRealSearch = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(
+        "/api/search?q=" + encodeURIComponent(q) + "&limit=10",
+        {
+          headers: token ? { Authorization: "Bearer " + token } : {},
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.results || []);
+      } else {
+        setSearchResults([]);
+      }
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  // Debounced API search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      performRealSearch(searchQuery);
+    }, 200);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, performRealSearch]);
+
+  const handleSearchResultClick = (result: SearchResult) => {
+    onClose();
+    switch (result.type) {
+      case "workspace":
+        router.push("/dashboard/workspaces/" + result.id);
+        break;
+      case "space":
+        router.push(
+          "/dashboard/workspaces/" + result.workspaceId + "/projects",
+        );
+        break;
+      case "task":
+        router.push("/dashboard/workspaces/" + result.workspaceId + "/kanban");
+        break;
+      case "chat":
+        window.dispatchEvent(
+          new CustomEvent("open-ai-chat", {
+            detail: { sessionId: result.status },
+          }),
+        );
+        break;
+      case "note":
+      case "document":
+        router.push("/projects/" + result.id);
+        break;
+    }
+  };
+
+  const getSearchResultIcon = (type: string) => {
+    switch (type) {
+      case "workspace":
+        return <Layout className="w-4 h-4" />;
+      case "space":
+        return <FolderOpen className="w-4 h-4" />;
+      case "task":
+        return <CheckSquare className="w-4 h-4" />;
+      case "chat":
+        return <MessageSquare className="w-4 h-4" />;
+      case "note":
+        return <StickyNote className="w-4 h-4" />;
+      case "document":
+        return <FileText className="w-4 h-4" />;
+      default:
+        return <Search className="w-4 h-4" />;
+    }
+  };
+
   // Filter commands based on search
   const filteredCommands = commands.filter(
     (cmd) =>
@@ -267,12 +375,8 @@ export function SlashCommandPalette({
 
         {/* Commands List */}
         <div className="max-h-[60vh] overflow-y-auto py-2">
-          {filteredCommands.length === 0 ? (
-            <div className="px-4 py-8 text-center text-muted-foreground">
-              <p>No commands found</p>
-              <p className="text-sm mt-1">Try a different search</p>
-            </div>
-          ) : (
+          {/* Static commands section */}
+          {filteredCommands.length > 0 &&
             categoryOrder.map((category) => {
               const cmds = groupedCommands[category];
               if (!cmds || cmds.length === 0) return null;
@@ -318,7 +422,53 @@ export function SlashCommandPalette({
                   })}
                 </div>
               );
-            })
+            })}
+
+          {/* Real-time search results from API */}
+          {searchQuery.trim().length > 0 && searchResults.length > 0 && (
+            <div>
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Search Results
+              </div>
+              {searchResults.map((result, idx) => (
+                <button
+                  key={result.type + "-" + result.id}
+                  onClick={() => handleSearchResultClick(result)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground">
+                    {getSearchResultIcon(result.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground truncate">
+                      {result.title}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {result.subtitle}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-border" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Empty state when nothing matches */}
+          {filteredCommands.length === 0 &&
+            searchQuery.trim().length > 0 &&
+            !searchLoading &&
+            searchResults.length === 0 && (
+              <div className="px-4 py-8 text-center text-muted-foreground">
+                <p>No results found for &quot;{searchQuery}&quot;</p>
+                <p className="text-sm mt-1">Try different keywords</p>
+              </div>
+            )}
+
+          {searchLoading && (
+            <div className="px-4 py-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Searching...
+            </div>
           )}
         </div>
 

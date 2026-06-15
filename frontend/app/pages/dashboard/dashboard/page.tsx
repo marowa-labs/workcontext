@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "../../../lib/utils/useUser";
-import { useTheme } from "../../../contexts/ThemeContext";
 import { SlashCommandPalette } from "../../../components/dashboard/SlashCommandPalette";
 import {
   Command,
@@ -12,10 +11,8 @@ import {
   Search,
   MessageSquare,
   FolderOpen,
-  FileText,
   ArrowRight,
   Zap,
-  BarChart3,
   ChevronRight,
 } from "lucide-react";
 
@@ -55,7 +52,6 @@ function ActionTile({
 export default function DashboardPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
-  const { settings } = useTheme();
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [greeting, setGreeting] = useState("Good day");
 

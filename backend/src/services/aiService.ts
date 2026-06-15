@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { OpenRouter } from "@openrouter/sdk";
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import logger from "../monitoring/logger";
 import { prisma } from "../lib/prisma";
 import { SubscriptionService, plans } from "./subscriptionService";
@@ -56,6 +58,64 @@ const getGenAI = async (
     userId: userId.slice(0, 8) + "...",
   });
   return new GoogleGenerativeAI(byokKey);
+};
+
+// Lazy initialization of OpenAI client — BYOK ONLY, no system fallback
+const getOpenAIDirectClient = async (
+  userId?: string,
+): Promise<OpenAI | null> => {
+  if (!userId) return null;
+  const byokKey = await BYOKService.getDecryptedKey(userId, "openai");
+  if (!byokKey) return null;
+  logger.info("Using BYOK OpenAI key for direct chat", {
+    userId: userId.slice(0, 8) + "...",
+  });
+  return new OpenAI({ apiKey: byokKey });
+};
+
+// Lazy initialization of Anthropic client — BYOK ONLY, no system fallback
+const getAnthropicDirectClient = async (
+  userId?: string,
+): Promise<Anthropic | null> => {
+  if (!userId) return null;
+  const byokKey = await BYOKService.getDecryptedKey(userId, "anthropic");
+  if (!byokKey) return null;
+  logger.info("Using BYOK Anthropic key for direct chat", {
+    userId: userId.slice(0, 8) + "...",
+  });
+  return new Anthropic({ apiKey: byokKey });
+};
+
+/**
+ * Normalize model names to provider-prefixed format.
+ * e.g. "gpt-4o-mini" → "openai/gpt-4o-mini", "claude-sonnet-4" → "anthropic/claude-sonnet-4"
+ * Does NOT depend on the hardcoded AI_MODELS list — works for any model name.
+ */
+const normalizeModelName = (modelName: string): string => {
+  // Already has a provider prefix (contains /)
+  if (modelName.includes("/")) return modelName;
+  // Already a Gemini model
+  if (modelName.startsWith("gemini")) return modelName;
+  // OpenAI model patterns: gpt-*, o1-*, o3-*, o4-*
+  if (/^(gpt-|o[134]-)/.test(modelName)) return "openai/" + modelName;
+  // Anthropic model patterns: claude-*
+  if (modelName.startsWith("claude-")) return "anthropic/" + modelName;
+  // Unknown pattern — return as-is (will be routed through OpenRouter)
+  return modelName;
+};
+
+/**
+ * Determine which provider to use based on the model prefix.
+ * Returns the provider identifier: "gemini" | "openai" | "anthropic" | "openrouter"
+ */
+const getModelProvider = (
+  modelName: string,
+): "gemini" | "openai" | "anthropic" | "openrouter" => {
+  if (modelName.startsWith("gemini")) return "gemini";
+  if (modelName.startsWith("openai/")) return "openai";
+  if (modelName.startsWith("anthropic/") || modelName.startsWith("claude-"))
+    return "anthropic";
+  return "openrouter";
 };
 
 // Track session time for autocomplete restrictions
@@ -380,80 +440,23 @@ export class AIService {
         byokSettings.hasClaudeKey ||
         byokSettings.hasOpenRouterKey;
 
-      // Build list of models available from user's BYOK providers (dynamic + hard-coded fallback)
-      const byokModels: string[] = [];
+      if (!hasBYOK) return null;
 
-      // For each provider, try dynamic cached models first, then fall back to hard-coded
-      const providerPrefixes: Array<{
-        hasKey: boolean;
-        provider: string;
-        prefix: string;
-      }> = [
-        {
-          hasKey: byokSettings.hasGoogleKey,
-          provider: "google",
-          prefix: "gemini",
-        },
-        {
-          hasKey: byokSettings.hasOpenAIKey,
-          provider: "openai",
-          prefix: "openai/",
-        },
-        {
-          hasKey: byokSettings.hasClaudeKey,
-          provider: "anthropic",
-          prefix: "anthropic/",
-        },
-      ];
+      // Delegate to getUserAvailableModels (which fetches from provider APIs live if needed)
+      const availableModels = await this.getUserAvailableModels(userId);
+      const modelIds = Object.keys(availableModels);
 
-      for (const { hasKey, provider, prefix } of providerPrefixes) {
-        if (!hasKey) continue;
-        // Try dynamic cached models first
-        const cachedModels = await BYOKService.getProviderModels(
-          userId,
-          provider,
-        );
-        if (cachedModels && cachedModels.length > 0) {
-          cachedModels.forEach((m: any) => byokModels.push(m.id));
-        } else {
-          // Fall back to hard-coded models for this provider
-          Object.keys(AI_MODELS)
-            .filter((m) => m.startsWith(prefix) && !m.includes(":free"))
-            .forEach((m) => byokModels.push(m));
-        }
-      }
+      // Normalize userModel to match available model keys
+      const normalizedUserModel = normalizeModelName(userModel);
+      if (modelIds.includes(normalizedUserModel)) return normalizedUserModel;
+      if (modelIds.includes(userModel)) return userModel;
 
-      // OpenRouter is special — it has many models, always include if key exists
-      if (byokSettings.hasOpenRouterKey) {
-        const cachedModels = await BYOKService.getProviderModels(
-          userId,
-          "openrouter",
-        );
-        if (cachedModels && cachedModels.length > 0) {
-          cachedModels.forEach((m: any) => {
-            if (!byokModels.includes(m.id)) byokModels.push(m.id);
-          });
-        } else {
-          Object.keys(AI_MODELS)
-            .filter(
-              (m) =>
-                !m.startsWith("gemini") &&
-                !m.startsWith("openai/") &&
-                !m.startsWith("anthropic/"),
-            )
-            .forEach((m) => byokModels.push(m));
-        }
-      }
-
-      // If user has BYOK keys, prefer their providers' models
-      if (hasBYOK && byokModels.length > 0) {
-        if (byokModels.includes(userModel)) return userModel;
-        const selected = this.selectModelFromPool(byokModels, context);
+      if (modelIds.length > 0) {
+        const selected = this.selectModelFromPool(modelIds, context);
         if (selected) return selected;
-        return byokModels[0];
+        return modelIds[0];
       }
 
-      // No BYOK — no models available (user must configure a key)
       return null;
     } catch (error) {
       logger.error("Error getting user model:", error);
@@ -852,112 +855,138 @@ Context: "${context || "No additional context provided"}"
 Provide a helpful response.`;
     }
 
-    const modelName = selectedModel;
+    const modelName = normalizeModelName(selectedModel);
     let tokensUsed = 0;
     let success = false;
     let responseText = "";
 
     try {
-      // Determine if this is an OpenRouter model (contains "/" indicating provider/model format)
-      const isOpenRouterModel =
-        modelName.includes("/") ||
-        Object.keys(AI_MODELS).some(
-          (m) => m === modelName && !m.startsWith("gemini"),
-        );
+      const provider = getModelProvider(modelName);
+      logger.info("Routing AI request", { modelName, provider, userId });
 
-      if (isOpenRouterModel) {
-        // Use OpenRouter API
-        logger.info("Using OpenRouter model", { modelName });
-
-        const openRouter = await getOpenRouterClient(userId);
-        if (!openRouter) {
-          throw new Error(
-            "OpenRouter API is not configured. Please check your API keys or BYOK settings.",
-          );
-        }
-
-        const result: any = await (openRouter as any).chat.send({
-          model: modelName,
-          messages: [
-            { role: "system", content: systemMessage },
-            { role: "user", content: prompt },
-          ],
-          maxTokens: AI_MODELS[modelName]?.maxTokens || 4096,
-          stream: false,
-        });
-
-        responseText = result?.choices?.[0]?.message?.content || "";
-        tokensUsed = result?.usage?.totalTokens || 0;
-
-        // Track usage for OpenRouter
-        if (!isAutomatic) {
-          const estimatedCost = this.estimateCost(modelName, tokensUsed);
-          this.trackAIUsage(userId, "request_tokens", {
+      switch (provider) {
+        case "gemini": {
+          const genAI = await getGenAI(userId);
+          if (!genAI) {
+            throw new Error(
+              "Google Gemini API key not configured. Please add your Google API key in AI Settings.",
+            );
+          }
+          const model = genAI.getGenerativeModel({
             model: modelName,
-            inputTokens: result?.usage?.promptTokens || 0,
-            outputTokens: result?.usage?.completionTokens || 0,
-            tokensUsed,
-            cost: estimatedCost,
-          }).catch((err: any) =>
-            logger.error("Error tracking token usage", err),
-          );
+            systemInstruction: systemMessage,
+          });
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          responseText = response.text();
+          if (response.usageMetadata) {
+            tokensUsed =
+              response.usageMetadata.promptTokenCount +
+              response.usageMetadata.candidatesTokenCount;
+            if (!isAutomatic) {
+              const estimatedCost = this.estimateCost(modelName, tokensUsed);
+              this.trackAIUsage(userId, "request_tokens", {
+                model: modelName,
+                inputTokens: response.usageMetadata.promptTokenCount,
+                outputTokens: response.usageMetadata.candidatesTokenCount,
+                tokensUsed,
+                cost: estimatedCost,
+              }).catch((err: any) =>
+                logger.error("Error tracking token usage", err),
+              );
+            }
+          }
+          success = true;
+          break;
         }
-      } else {
-        // Use Gemini API
-        const genAI = await getGenAI(userId);
 
-        if (!genAI) {
-          throw new Error(
-            "AI service is not configured. Please check your API keys or BYOK settings.",
-          );
+        case "openai": {
+          const openaiClient = await getOpenAIDirectClient(userId);
+          if (!openaiClient) {
+            throw new Error(
+              "OpenAI API key not configured. Please add your OpenAI API key in AI Settings.",
+            );
+          }
+          const openaiModelName = modelName.replace("openai/", "");
+          const completion = await openaiClient.chat.completions.create({
+            model: openaiModelName,
+            messages: [
+              { role: "system", content: systemMessage },
+              { role: "user", content: prompt },
+            ],
+          });
+          responseText = completion.choices[0]?.message?.content || "";
+          tokensUsed =
+            (completion.usage?.prompt_tokens || 0) +
+            (completion.usage?.completion_tokens || 0);
+          success = true;
+          if (!isAutomatic) {
+            this.trackAIUsage(userId, "request_tokens", {
+              model: modelName,
+              tokensUsed,
+            }).catch((err: any) =>
+              logger.error("Error tracking token usage", err),
+            );
+          }
+          break;
         }
 
-        // Map model names to Gemini-compatible ones
-        const geminiModelMap: Record<string, string> = {
-          "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
-        };
+        case "anthropic": {
+          const anthropicClient = await getAnthropicDirectClient(userId);
+          if (!anthropicClient) {
+            throw new Error(
+              "Anthropic API key not configured. Please add your Anthropic API key in AI Settings.",
+            );
+          }
+          const anthropicModelName = modelName.replace("anthropic/", "");
+          const msg = await anthropicClient.messages.create({
+            model: anthropicModelName,
+            max_tokens: 4096,
+            messages: [
+              { role: "user", content: systemMessage + "\n\n" + prompt },
+            ],
+          });
+          responseText =
+            msg.content[0]?.type === "text" ? msg.content[0].text : "";
+          tokensUsed =
+            (msg.usage.input_tokens || 0) + (msg.usage.output_tokens || 0);
+          success = true;
+          break;
+        }
 
-        const geminiModelName =
-          geminiModelMap[modelName] ||
-          (modelName.startsWith("gemini")
-            ? modelName
-            : "gemini-3.1-flash-lite");
-
-        logger.info("Using Gemini model", {
-          geminiModelName,
-          originalModel: modelName,
-        });
-
-        // Get the model
-        const model = genAI.getGenerativeModel({
-          model: geminiModelName,
-          systemInstruction: systemMessage,
-        });
-
-        // Generate content
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        responseText = response.text();
-
-        // Track token usage if available
-        if (response.usageMetadata) {
-          const inputTokens = response.usageMetadata.promptTokenCount;
-          const outputTokens = response.usageMetadata.candidatesTokenCount;
-          tokensUsed = inputTokens + outputTokens;
-
-          // Asynchronously track usage details
+        case "openrouter":
+        default: {
+          const openRouter = await getOpenRouterClient(userId);
+          if (!openRouter) {
+            throw new Error(
+              "OpenRouter API key not configured. Please add your OpenRouter API key in AI Settings.",
+            );
+          }
+          const result: any = await (openRouter as any).chat.send({
+            model: modelName,
+            messages: [
+              { role: "system", content: systemMessage },
+              { role: "user", content: prompt },
+            ],
+            maxTokens: 4096,
+            stream: false,
+          });
+          responseText = result?.choices?.[0]?.message?.content || "";
+          tokensUsed = result?.usage?.totalTokens || 0;
+          success = true;
           if (!isAutomatic) {
             const estimatedCost = this.estimateCost(modelName, tokensUsed);
             this.trackAIUsage(userId, "request_tokens", {
               model: modelName,
-              inputTokens,
-              outputTokens,
+              inputTokens: result?.usage?.promptTokens || 0,
+              outputTokens: result?.usage?.completionTokens || 0,
               tokensUsed,
               cost: estimatedCost,
             }).catch((err: any) =>
               logger.error("Error tracking token usage", err),
             );
           }
+          break;
         }
       }
 
@@ -1530,13 +1559,16 @@ Please provide a helpful response.`;
     }
 
     // Determine the model name before try block so it's accessible in catch block
-    const modelName = model || preferredModel;
+    const rawModelName = model || preferredModel;
 
-    if (!modelName) {
+    if (!rawModelName) {
       throw new Error(
         "No AI API key configured. Please add your API key in Settings → AI API Keys to start using AI features.",
       );
     }
+
+    // Normalize short names (e.g. "gpt-4o-mini") to full AI_MODELS keys (e.g. "openai/gpt-4o-mini")
+    const modelName = normalizeModelName(rawModelName);
 
     try {
       // Log model selection for debugging
@@ -1546,138 +1578,188 @@ Please provide a helpful response.`;
         requestedModel: model,
       });
 
-      // Determine if this is an OpenRouter model
-      const isOpenRouterModel =
-        modelName.includes("/") ||
-        Object.keys(AI_MODELS).some(
-          (m) => m === modelName && !m.startsWith("gemini"),
-        );
-
+      // Route to the correct provider based on model prefix (no hardcoded AI_MODELS dependency)
+      const provider = getModelProvider(modelName);
       let responseText = "";
       let tokensUsed = 0;
 
-      if (isOpenRouterModel) {
-        // Use OpenRouter API
-        logger.info("Using OpenRouter model for chat", { modelName });
+      logger.info("Routing chat request", { modelName, provider, userId });
 
-        const openRouter = await getOpenRouterClient(userId);
-        if (!openRouter) {
-          throw new Error(
-            "OpenRouter API is not configured. Please check your API keys or BYOK settings.",
+      switch (provider) {
+        case "gemini": {
+          const currentGenAI = await getGenAI(userId);
+          if (!currentGenAI) {
+            throw new Error(
+              "Google Gemini API key not configured. Please add your Google API key in AI Settings.",
+            );
+          }
+
+          const geminiModel = currentGenAI.getGenerativeModel({
+            model: modelName,
+          });
+          const result = await geminiModel.generateContent([
+            systemMessage,
+            prompt,
+          ]);
+          responseText = result.response?.text() || "";
+          if (!responseText) {
+            throw new Error(
+              "AI service returned empty response. Please check your API keys and model configuration.",
+            );
+          }
+          tokensUsed = responseText.length;
+
+          aiPerformanceMonitor.recordAIRequestTiming(
+            modelName,
+            "chat_message",
+            Date.now() - startTime,
           );
-        }
-
-        const result: any = await (openRouter as any).chat.send({
-          model: modelName,
-          messages: [
-            { role: "system", content: systemMessage },
-            { role: "user", content: prompt },
-          ],
-          maxTokens: AI_MODELS[modelName]?.maxTokens || 4096,
-          stream: false,
-        });
-
-        responseText = result?.choices?.[0]?.message?.content || "";
-        tokensUsed = result?.usage?.totalTokens || responseText.length;
-
-        // Record performance metrics for OpenRouter
-        aiPerformanceMonitor.recordAIRequestTiming(
-          modelName,
-          "chat_message",
-          Date.now() - startTime,
-        );
-        aiPerformanceMonitor.recordAITokenUsage(
-          modelName,
-          "chat_message",
-          tokensUsed,
-        );
-        aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
-
-        // Record to database for analytics dashboard
-        await this.recordPerformanceMetric({
-          userId,
-          action: "chat_message",
-          model: modelName,
-          success: true,
-          tokensUsed,
-          responseTime: Date.now() - startTime,
-        });
-      } else {
-        // Use Gemini API
-        logger.info("Calling Google Generative AI", {
-          model: modelName,
-        });
-
-        // Get the generative model with optimized parameters (with BYOK support)
-        const currentGenAI = await getGenAI(userId);
-        if (!currentGenAI) {
-          throw new Error("Gemini API not configured");
-        }
-
-        // Map model names to Gemini-compatible ones
-        const geminiModelMap: Record<string, string> = {
-          "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
-        };
-
-        const geminiModelName =
-          geminiModelMap[modelName] ||
-          (modelName.startsWith("gemini")
-            ? modelName
-            : "gemini-3.1-flash-lite");
-
-        logger.info("Using Gemini model", {
-          geminiModelName,
-          originalModel: modelName,
-        });
-
-        const geminiModel = currentGenAI.getGenerativeModel({
-          model: geminiModelName,
-        });
-
-        // Generate content
-        const result = await geminiModel.generateContent([
-          systemMessage,
-          prompt,
-        ]);
-
-        logger.info("Google Generative AI response", {
-          hasResponse: !!result.response,
-          hasText: !!result.response?.text(),
-        });
-
-        responseText = result.response?.text() || "";
-        if (!responseText) {
-          throw new Error(
-            "AI service returned empty response. Please check your API keys and model configuration.",
+          aiPerformanceMonitor.recordAITokenUsage(
+            modelName,
+            "chat_message",
+            tokensUsed,
           );
+          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          await this.recordPerformanceMetric({
+            userId,
+            action: "chat_message",
+            model: modelName,
+            success: true,
+            tokensUsed,
+            responseTime: Date.now() - startTime,
+          });
+          break;
         }
 
-        tokensUsed = responseText.length; // Approximation
+        case "openai": {
+          const openaiClient = await getOpenAIDirectClient(userId);
+          if (!openaiClient) {
+            throw new Error(
+              "OpenAI API key not configured. Please add your OpenAI API key in AI Settings.",
+            );
+          }
 
-        const responseTime = Date.now() - startTime;
+          const openaiModelName = modelName.replace("openai/", "");
+          const completion = await openaiClient.chat.completions.create({
+            model: openaiModelName,
+            messages: [
+              { role: "system", content: systemMessage },
+              { role: "user", content: prompt },
+            ],
+          });
+          responseText = completion.choices[0]?.message?.content || "";
+          tokensUsed =
+            (completion.usage?.prompt_tokens || 0) +
+            (completion.usage?.completion_tokens || 0);
 
-        // Record performance metrics to monitoring system
-        aiPerformanceMonitor.recordAIRequestTiming(
-          modelName,
-          "chat_message",
-          responseTime,
-        );
-        aiPerformanceMonitor.recordAITokenUsage(
-          modelName,
-          "chat_message",
-          tokensUsed,
-        );
-        aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          aiPerformanceMonitor.recordAIRequestTiming(
+            modelName,
+            "chat_message",
+            Date.now() - startTime,
+          );
+          aiPerformanceMonitor.recordAITokenUsage(
+            modelName,
+            "chat_message",
+            tokensUsed,
+          );
+          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          await this.recordPerformanceMetric({
+            userId,
+            action: "chat_message",
+            model: modelName,
+            success: true,
+            tokensUsed,
+            responseTime: Date.now() - startTime,
+          });
+          break;
+        }
 
-        // Record to database for analytics dashboard
-        await this.recordPerformanceMetric({
-          userId,
-          action: "chat_message",
-          model: modelName,
-          success: true,
-          tokensUsed,
-          responseTime,
-        });
+        case "anthropic": {
+          const anthropicClient = await getAnthropicDirectClient(userId);
+          if (!anthropicClient) {
+            throw new Error(
+              "Anthropic API key not configured. Please add your Anthropic API key in AI Settings.",
+            );
+          }
+
+          const anthropicModelName = modelName.replace("anthropic/", "");
+          const msg = await anthropicClient.messages.create({
+            model: anthropicModelName,
+            max_tokens: 4096,
+            messages: [
+              { role: "user", content: systemMessage + "\n\n" + prompt },
+            ],
+          });
+          responseText =
+            msg.content[0]?.type === "text" ? msg.content[0].text : "";
+          tokensUsed =
+            (msg.usage.input_tokens || 0) + (msg.usage.output_tokens || 0);
+
+          aiPerformanceMonitor.recordAIRequestTiming(
+            modelName,
+            "chat_message",
+            Date.now() - startTime,
+          );
+          aiPerformanceMonitor.recordAITokenUsage(
+            modelName,
+            "chat_message",
+            tokensUsed,
+          );
+          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          await this.recordPerformanceMetric({
+            userId,
+            action: "chat_message",
+            model: modelName,
+            success: true,
+            tokensUsed,
+            responseTime: Date.now() - startTime,
+          });
+          break;
+        }
+
+        case "openrouter":
+        default: {
+          const openRouter = await getOpenRouterClient(userId);
+          if (!openRouter) {
+            throw new Error(
+              "OpenRouter API key not configured. Please add your OpenRouter API key in AI Settings.",
+            );
+          }
+
+          const result: any = await (openRouter as any).chat.send({
+            model: modelName,
+            messages: [
+              { role: "system", content: systemMessage },
+              { role: "user", content: prompt },
+            ],
+            maxTokens: 4096,
+            stream: false,
+          });
+
+          responseText = result?.choices?.[0]?.message?.content || "";
+          tokensUsed = result?.usage?.totalTokens || responseText.length;
+
+          aiPerformanceMonitor.recordAIRequestTiming(
+            modelName,
+            "chat_message",
+            Date.now() - startTime,
+          );
+          aiPerformanceMonitor.recordAITokenUsage(
+            modelName,
+            "chat_message",
+            tokensUsed,
+          );
+          aiPerformanceMonitor.recordAIResult(modelName, "chat_message", true);
+          await this.recordPerformanceMetric({
+            userId,
+            action: "chat_message",
+            model: modelName,
+            success: true,
+            tokensUsed,
+            responseTime: Date.now() - startTime,
+          });
+          break;
+        }
       }
 
       // Handle special markers in the response for different features
@@ -2192,109 +2274,135 @@ Please provide a helpful response.`;
     }
 
     // Determine if this is an OpenRouter model
-    const modelName = model || preferredModel;
+    const rawModelName = model || preferredModel;
 
-    if (!modelName) {
+    if (!rawModelName) {
       throw new Error(
         "No AI API key configured. Please add your API key in Settings → AI API Keys to start using AI features.",
       );
     }
 
-    const isOpenRouterModel =
-      modelName.includes("/") ||
-      Object.keys(AI_MODELS).some(
-        (m) => m === modelName && !m.startsWith("gemini"),
-      );
+    const modelName = normalizeModelName(rawModelName);
+    const provider = getModelProvider(modelName);
 
     try {
       let fullResponse = "";
       let tokensUsed = 0;
 
-      if (isOpenRouterModel) {
-        // Use OpenRouter API with streaming
-        logger.info("Using OpenRouter model (streaming)", { modelName });
+      switch (provider) {
+        case "gemini": {
+          const currentGenAI = await getGenAI(userId);
+          if (!currentGenAI) {
+            throw new Error(
+              "Google Gemini API key not configured. Please add your Google API key in AI Settings.",
+            );
+          }
 
-        const openRouter = await getOpenRouterClient(userId);
-        if (!openRouter) {
-          throw new Error(
-            "OpenRouter API is not configured. Please check your API keys or BYOK settings.",
-          );
+          const geminiModel = currentGenAI.getGenerativeModel({
+            model: modelName,
+          });
+          const result = await geminiModel.generateContentStream([
+            systemMessage,
+            prompt,
+          ]);
+
+          for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            fullResponse += chunkText;
+            if (onToken) onToken(chunkText);
+          }
+          tokensUsed = fullResponse.length;
+          break;
         }
 
-        const stream: any = await openRouter.chat.send({
-          chatRequest: {
-            model: modelName,
+        case "openai": {
+          const openaiClient = await getOpenAIDirectClient(userId);
+          if (!openaiClient) {
+            throw new Error(
+              "OpenAI API key not configured. Please add your OpenAI API key in AI Settings.",
+            );
+          }
+
+          const openaiModelName = modelName.replace("openai/", "");
+          const stream = await openaiClient.chat.completions.create({
+            model: openaiModelName,
             messages: [
               { role: "system", content: systemMessage },
               { role: "user", content: prompt },
             ],
-            maxTokens: AI_MODELS[modelName]?.maxTokens || 4096,
             stream: true,
-          },
-        });
+          });
 
-        // Process streaming response (EventStream<ChatStreamChunk>)
-        for await (const chunk of stream) {
-          const token = chunk?.choices?.[0]?.delta?.content || "";
-          fullResponse += token;
-          if (onToken) {
-            onToken(token);
+          for await (const chunk of stream) {
+            const token = chunk.choices[0]?.delta?.content || "";
+            fullResponse += token;
+            if (onToken) onToken(token);
           }
+          tokensUsed = fullResponse.length;
+          break;
         }
 
-        tokensUsed = fullResponse.length; // Approximation
-      } else {
-        // Use Gemini API with streaming
-        logger.info("Calling Google Generative AI with streaming", {
-          model: modelName,
-        });
-
-        // Get the generative model with optimized parameters
-        const currentGenAI = await getGenAI(userId);
-        if (!currentGenAI) {
-          throw new Error("Gemini API not configured");
-        }
-
-        // Map model names to Gemini-compatible ones
-        const geminiModelMap: Record<string, string> = {
-          "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
-        };
-
-        const geminiModelName =
-          geminiModelMap[modelName] ||
-          (modelName.startsWith("gemini")
-            ? modelName
-            : "gemini-3.1-flash-lite");
-
-        logger.info("Using Gemini model (streaming)", {
-          geminiModelName,
-          originalModel: modelName,
-        });
-
-        const geminiModel = currentGenAI.getGenerativeModel({
-          model: geminiModelName,
-        });
-
-        // Generate content with streaming
-        const result = await geminiModel.generateContentStream([
-          systemMessage,
-          prompt,
-        ]);
-
-        logger.info("Google Generative AI streaming response initiated", {
-          hasResponse: !!result.response,
-        });
-
-        // Process streaming response
-        for await (const chunk of result.stream) {
-          const chunkText = chunk.text();
-          fullResponse += chunkText;
-          if (onToken) {
-            onToken(chunkText);
+        case "anthropic": {
+          const anthropicClient = await getAnthropicDirectClient(userId);
+          if (!anthropicClient) {
+            throw new Error(
+              "Anthropic API key not configured. Please add your Anthropic API key in AI Settings.",
+            );
           }
+
+          const anthropicModelName = modelName.replace("anthropic/", "");
+          const stream = await anthropicClient.messages.create({
+            model: anthropicModelName,
+            max_tokens: 4096,
+            messages: [
+              { role: "user", content: systemMessage + "\n\n" + prompt },
+            ],
+            stream: true,
+          });
+
+          for await (const event of stream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              const token = event.delta.text;
+              fullResponse += token;
+              if (onToken) onToken(token);
+            }
+          }
+          tokensUsed = fullResponse.length;
+          break;
         }
 
-        tokensUsed = fullResponse.length; // Approximation
+        case "openrouter":
+        default: {
+          const openRouter = await getOpenRouterClient(userId);
+          if (!openRouter) {
+            throw new Error(
+              "OpenRouter API key not configured. Please add your OpenRouter API key in AI Settings.",
+            );
+          }
+
+          const stream: any = await openRouter.chat.send({
+            chatRequest: {
+              model: modelName,
+              messages: [
+                { role: "system", content: systemMessage },
+                { role: "user", content: prompt },
+              ],
+              maxTokens: 4096,
+              stream: true,
+            },
+          });
+
+          for await (const chunk of stream) {
+            const token = chunk?.choices?.[0]?.delta?.content || "";
+            fullResponse += token;
+            if (onToken) onToken(token);
+          }
+          tokensUsed = fullResponse.length;
+          break;
+        }
       }
 
       const responseTime = Date.now() - startTime;
@@ -2738,23 +2846,42 @@ ${formattedResults}
               };
             }
           } else {
-            // Fallback to hard-coded models if dynamic fetch hasn't happened yet
-            const prefixMap: Record<string, string> = {
-              google: "gemini",
-              openai: "openai/",
-              anthropic: "anthropic/",
-              openrouter: "", // OpenRouter models don't share a prefix
-            };
-            const prefix = prefixMap[provider];
-            Object.keys(AI_MODELS)
-              .filter((m) =>
-                provider === "openrouter"
-                  ? !m.startsWith("gemini") &&
-                    !m.startsWith("openai/") &&
-                    !m.startsWith("anthropic/")
-                  : m.startsWith(prefix) && !m.includes(":free"),
-              )
-              .forEach((m) => (availableModels[m] = AI_MODELS[m]));
+            // No cached models yet — fetch live from provider API
+            try {
+              const apiKey = await BYOKService.getDecryptedKey(
+                userId,
+                provider,
+              );
+              if (apiKey) {
+                const fetchedModels = await BYOKService.fetchProviderModels(
+                  provider,
+                  apiKey,
+                );
+                if (fetchedModels.length > 0) {
+                  // Save for next time (fire-and-forget, don't await)
+                  BYOKService.saveProviderModels(
+                    userId,
+                    provider,
+                    fetchedModels,
+                  ).catch(() => {});
+                  for (const m of fetchedModels) {
+                    availableModels[m.id] = {
+                      name: m.name,
+                      description: m.description,
+                      maxTokens: m.maxTokens,
+                    };
+                  }
+                }
+              }
+            } catch (fetchError) {
+              logger.warn(
+                `Failed to fetch models live for provider ${provider}`,
+                {
+                  userId: userId.slice(0, 8) + "...",
+                  error: (fetchError as Error).message,
+                },
+              );
+            }
           }
         }
 
@@ -2844,47 +2971,81 @@ ${formattedResults}
 
       Continuation:`;
 
-      // Route based on model prefix — same logic as processChatMessage
-      const isOpenRouterModel =
-        model.includes("/") ||
-        (!model.startsWith("gemini") && !model.startsWith("anthropic"));
+      // Route by provider prefix (no hardcoded AI_MODELS dependency)
+      const normalizedModel = normalizeModelName(model);
+      const provider = getModelProvider(normalizedModel);
 
       let suggestion = "";
 
-      if (isOpenRouterModel) {
-        // Use native OpenRouter SDK
-        const orClient = await getOpenRouterClient(userId);
-        if (!orClient) {
-          throw new Error("OpenRouter API not configured");
+      switch (provider) {
+        case "gemini": {
+          const currentGenAI = await getGenAI(userId);
+          if (!currentGenAI)
+            throw new Error(
+              "Google Gemini API key not configured. Please add your Google API key in AI Settings.",
+            );
+          const geminiModel = currentGenAI.getGenerativeModel({
+            model: normalizedModel,
+          });
+          const result = await geminiModel.generateContent(prompt);
+          suggestion = result.response.text().trim();
+          break;
         }
-        const stream = await orClient.chat.send({
-          chatRequest: {
-            model: model,
+
+        case "openai": {
+          const openaiClient = await getOpenAIDirectClient(userId);
+          if (!openaiClient)
+            throw new Error(
+              "OpenAI API key not configured. Please add your OpenAI API key in AI Settings.",
+            );
+          const completion = await openaiClient.chat.completions.create({
+            model: normalizedModel.replace("openai/", ""),
             messages: [{ role: "user", content: prompt }],
-            maxTokens: 2048,
-            stream: true,
-          },
-        });
-        let orText = "";
-        for await (const chunk of stream) {
-          const content = chunk.choices?.[0]?.delta?.content;
-          if (content) orText += content;
+            max_tokens: 100,
+          });
+          suggestion = completion.choices[0]?.message?.content?.trim() || "";
+          break;
         }
-        suggestion = orText.trim();
-      } else {
-        // Use Gemini
-        const currentGenAI = await getGenAI(userId);
-        if (!currentGenAI) {
-          throw new Error("Gemini API not configured");
+
+        case "anthropic": {
+          const anthropicClient = await getAnthropicDirectClient(userId);
+          if (!anthropicClient)
+            throw new Error(
+              "Anthropic API key not configured. Please add your Anthropic API key in AI Settings.",
+            );
+          const msg = await anthropicClient.messages.create({
+            model: normalizedModel.replace("anthropic/", ""),
+            max_tokens: 100,
+            messages: [{ role: "user", content: prompt }],
+          });
+          suggestion =
+            msg.content[0]?.type === "text" ? msg.content[0].text.trim() : "";
+          break;
         }
-        const geminiModelName = model.startsWith("gemini")
-          ? model
-          : "gemini-3.1-flash-lite";
-        const geminiModel = currentGenAI.getGenerativeModel({
-          model: geminiModelName,
-        });
-        const result = await geminiModel.generateContent(prompt);
-        suggestion = result.response.text().trim();
+
+        case "openrouter":
+        default: {
+          const orClient = await getOpenRouterClient(userId);
+          if (!orClient)
+            throw new Error(
+              "OpenRouter API key not configured. Please add your OpenRouter API key in AI Settings.",
+            );
+          const stream = await orClient.chat.send({
+            chatRequest: {
+              model: normalizedModel,
+              messages: [{ role: "user", content: prompt }],
+              maxTokens: 2048,
+              stream: true,
+            },
+          });
+          let orText = "";
+          for await (const chunk of stream) {
+            const content = chunk.choices?.[0]?.delta?.content;
+            if (content) orText += content;
+          }
+          suggestion = orText.trim();
+          break;
+        }
       }
 
       // Clean up the suggestion to ensure it's appropriate for autocomplete

@@ -13,8 +13,6 @@ import {
   CheckCircle2,
   Calendar,
   Zap,
-  BarChart3,
-  PieChart,
   Activity,
   Award,
   Flame,
@@ -24,6 +22,7 @@ import {
   MessageSquare,
   Folder,
 } from "lucide-react";
+import SmoothAreaChart from "../../components/ui/SmoothAreaChart";
 
 interface UserStats {
   tasksCompleted: number;
@@ -185,14 +184,14 @@ export default function StatsPage() {
             icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />}
             label="Tasks Completed"
             value={stats.tasksCompleted.toString()}
-            subtext={`${stats.completionRate}% completion rate`}
+            subtext={stats.completionRate + "% completion rate"}
             trend="up"
           />
           <KpiCard
             icon={<Flame className="w-5 h-5 text-orange-500" />}
             label="Current Streak"
-            value={`${stats.currentStreak} days`}
-            subtext={`Best: ${stats.longestStreak} days`}
+            value={stats.currentStreak + " days"}
+            subtext={"Best: " + stats.longestStreak + " days"}
             trend="up"
           />
           <KpiCard
@@ -216,48 +215,42 @@ export default function StatsPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <Activity className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900">
-                  Weekly Activity
+                  {timeRange === "week"
+                    ? "Weekly Activity"
+                    : timeRange === "month"
+                      ? "Monthly Activity"
+                      : "All-Time Activity"}
                 </h3>
                 <p className="text-sm text-slate-500">Tasks and hours logged</p>
               </div>
             </div>
           </div>
-          <div className="h-48 flex items-end gap-4">
-            {stats.weeklyActivity.map((day) => (
-              <div
-                key={day.day}
-                className="flex-1 flex flex-col items-center gap-2"
-              >
-                <div className="w-full flex flex-col gap-1">
-                  <div
-                    className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
-                    style={{
-                      height: `${(day.tasks / 20) * 100}px`,
-                      minHeight: "4px",
-                    }}
-                    title={`${day.tasks} tasks`}
-                  />
-                  <div
-                    className="w-full bg-purple-400 rounded-t transition-all hover:bg-purple-500"
-                    style={{ height: `${day.hours * 8}px`, minHeight: "4px" }}
-                    title={`${day.hours} hours`}
-                  />
-                </div>
-                <span className="text-xs text-slate-500">{day.day}</span>
-              </div>
-            ))}
-          </div>
+          <SmoothAreaChart
+            series={[
+              {
+                data: stats.weeklyActivity.map((d) => d.tasks),
+                color: "#3b82f6",
+                label: "Tasks",
+              },
+              {
+                data: stats.weeklyActivity.map((d) => d.hours),
+                color: "#a855f7",
+                label: "Hours",
+              },
+            ]}
+            labels={stats.weeklyActivity.map((d) => d.day)}
+          />
           <div className="flex items-center justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded" />
               <span className="text-sm text-slate-600">Tasks</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-purple-400 rounded" />
+              <div className="w-3 h-3 bg-purple-500 rounded" />
               <span className="text-sm text-slate-600">Hours</span>
             </div>
           </div>
@@ -374,7 +367,7 @@ export default function StatsPage() {
           <SimpleStat
             icon={<Star className="w-4 h-4" />}
             label="Completion"
-            value={`${stats.completionRate}%`}
+            value={stats.completionRate + "%"}
           />
         </div>
       </div>
@@ -401,7 +394,9 @@ function KpiCard({
         <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
         {trend !== "neutral" && (
           <div
-            className={`p-1 rounded ${trend === "up" ? "bg-emerald-50" : "bg-red-50"}`}
+            className={
+              "p-1 rounded " + (trend === "up" ? "bg-emerald-50" : "bg-red-50")
+            }
           >
             {trend === "up" ? (
               <TrendingUp className="w-4 h-4 text-emerald-500" />

@@ -12,8 +12,8 @@ export class UserStatsService {
       startDate.setDate(startDate.getDate() - days);
       startDate.setHours(0, 0, 0, 0);
 
-      // 1. Task statistics
-      const [tasksCreated, tasksCompleted] = await Promise.all([
+      // 1. Task statistics (time-filtered)
+      const [tasksCreatedInRange, tasksCompletedInRange] = await Promise.all([
         prisma.workspaceTask.count({
           where: {
             creator_id: userId,
@@ -29,23 +29,29 @@ export class UserStatsService {
         }),
       ]);
 
+      // All-time totals for streak/progress context
       const totalUserTasks = await prisma.workspaceTask.count({
         where: { creator_id: userId },
       });
-      // Since updated_by doesn't exist, count done tasks created by user
       const totalCompletedTasks = await prisma.workspaceTask.count({
         where: { creator_id: userId, status: "done" },
       });
 
-      const completionRate =
-        totalUserTasks > 0
-          ? Math.round((totalCompletedTasks / totalUserTasks) * 100)
+      // Completion rate scoped to time range
+      const rangeCompletionRate =
+        tasksCreatedInRange > 0
+          ? Math.round((tasksCompletedInRange / tasksCreatedInRange) * 100)
           : 0;
 
-      // 2. Workspace and message counts
+      // 2. Workspace and message counts (time-filtered where applicable)
       const [totalWorkspaces, totalMessages, aiInteractions] =
         await Promise.all([
-          prisma.workspaceMember.count({ where: { user_id: userId } }),
+          prisma.workspaceMember.count({
+            where: {
+              user_id: userId,
+              joined_at: { gte: startDate },
+            },
+          }),
           prisma.aIChatMessage.count({
             where: {
               user_id: userId,
@@ -65,13 +71,13 @@ export class UserStatsService {
       const { currentStreak, longestStreak } =
         await this.calculateStreak(userId);
 
-      // 4. Weekly activity data
-      const weeklyActivity = await this.getWeeklyActivity(userId);
+      // 4. Weekly activity data (adapts to range)
+      const weeklyActivity = await this.getWeeklyActivity(userId, days);
 
-      // 5. Calculate productivity score (0-100)
+      // 5. Calculate productivity score (0-100) using time-filtered values
       const productivity = this.calculateProductivity({
-        tasksCompleted,
-        completionRate,
+        tasksCompleted: tasksCompletedInRange,
+        completionRate: rangeCompletionRate,
         currentStreak,
         aiInteractions,
       });
@@ -109,9 +115,9 @@ export class UserStatsService {
       );
 
       return {
-        tasksCompleted: totalCompletedTasks,
-        tasksCreated: totalUserTasks,
-        completionRate,
+        tasksCompleted: tasksCompletedInRange,
+        tasksCreated: tasksCreatedInRange,
+        completionRate: rangeCompletionRate,
         currentStreak,
         longestStreak,
         totalWorkspaces,
@@ -199,48 +205,119 @@ export class UserStatsService {
     return { currentStreak, longestStreak };
   }
 
-  private static async getWeeklyActivity(userId: string) {
+  private static async getWeeklyActivity(userId: string, days: number = 7) {
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const result: { day: string; tasks: number; hours: number }[] = [];
 
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
+    if (days <= 7) {
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
 
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
+        const tasks = await prisma.workspaceTask.count({
+          where: {
+            creator_id: userId,
+            status: "done",
+            updated_at: { gte: date, lt: nextDate },
+          },
+        });
 
-      const tasks = await prisma.workspaceTask.count({
-        where: {
-          creator_id: userId,
-          status: "done",
-          updated_at: { gte: date, lt: nextDate },
-        },
-      });
+        const timeEntries = await prisma.taskTimeEntry.findMany({
+          where: {
+            user_id: userId,
+            start_time: { gte: date, lt: nextDate },
+            duration: { not: null },
+          },
+          select: { duration: true },
+        });
+        const totalMinutes = timeEntries.reduce(
+          (sum: number, entry: { duration: number | null }) =>
+            sum + (entry.duration || 0),
+          0,
+        );
 
-      // Get real time tracked from TaskTimeEntry for this day
-      const timeEntries = await prisma.taskTimeEntry.findMany({
-        where: {
-          user_id: userId,
-          start_time: { gte: date, lt: nextDate },
-          duration: { not: null },
-        },
-        select: { duration: true },
-      });
+        result.push({
+          day: dayNames[date.getDay()],
+          tasks,
+          hours: Math.round((totalMinutes / 60) * 10) / 10,
+        });
+      }
+    } else if (days <= 30) {
+      const interval = 3;
+      for (let i = days - 1; i >= 0; i -= interval) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + interval);
 
-      const totalMinutes = timeEntries.reduce(
-        (sum: number, entry: { duration: number | null }) =>
-          sum + (entry.duration || 0),
-        0,
-      );
-      const hours = Math.round((totalMinutes / 60) * 10) / 10;
+        const tasks = await prisma.workspaceTask.count({
+          where: {
+            creator_id: userId,
+            status: "done",
+            updated_at: { gte: date, lt: endDate },
+          },
+        });
 
-      result.push({
-        day: dayNames[date.getDay()],
-        tasks,
-        hours,
-      });
+        const timeEntries = await prisma.taskTimeEntry.findMany({
+          where: {
+            user_id: userId,
+            start_time: { gte: date, lt: endDate },
+            duration: { not: null },
+          },
+          select: { duration: true },
+        });
+        const totalMinutes = timeEntries.reduce(
+          (sum: number, entry: { duration: number | null }) =>
+            sum + (entry.duration || 0),
+          0,
+        );
+
+        result.push({
+          day: `${date.getDate()}/${date.getMonth() + 1}`,
+          tasks,
+          hours: Math.round((totalMinutes / 60) * 10) / 10,
+        });
+      }
+    } else {
+      for (let i = days - 1; i >= 0; i -= 7) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + 7);
+
+        const tasks = await prisma.workspaceTask.count({
+          where: {
+            creator_id: userId,
+            status: "done",
+            updated_at: { gte: date, lt: endDate },
+          },
+        });
+
+        const timeEntries = await prisma.taskTimeEntry.findMany({
+          where: {
+            user_id: userId,
+            start_time: { gte: date, lt: endDate },
+            duration: { not: null },
+          },
+          select: { duration: true },
+        });
+        const totalMinutes = timeEntries.reduce(
+          (sum: number, entry: { duration: number | null }) =>
+            sum + (entry.duration || 0),
+          0,
+        );
+
+        result.push({
+          day: `${date.getDate()}/${date.getMonth() + 1}`,
+          tasks,
+          hours: Math.round((totalMinutes / 60) * 10) / 10,
+        });
+      }
     }
 
     return result;
@@ -281,7 +358,7 @@ export class UserStatsService {
           id: { not: userId },
           OR: [
             // Users who haven't created any tasks
-            { workspace_tasks: { none: {} } },
+            { created_tasks: { none: {} } },
           ],
         },
       });

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { apiClient } from "../../lib/utils/apiClient";
 import useUser from "../../lib/utils/useUser";
 import {
-  BarChart3,
   TrendingUp,
   Users,
   Folder,
@@ -19,6 +18,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
+import SmoothAreaChart from "../../components/ui/SmoothAreaChart";
 
 interface PlatformAnalytics {
   totalUsers: number;
@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
           <div className="bg-white rounded-xl border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-blue-50 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <Activity className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900">
@@ -193,23 +193,16 @@ export default function AnalyticsPage() {
                 </p>
               </div>
             </div>
-            <div className="h-48 flex items-end gap-2">
-              {analytics.activityByDay.map((day, i) => (
-                <div
-                  key={day.day}
-                  className="flex-1 flex flex-col items-center gap-2"
-                >
-                  <div
-                    className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
-                    style={{
-                      height: `${(day.count / 400) * 100}%`,
-                      minHeight: "4px",
-                    }}
-                  />
-                  <span className="text-xs text-slate-500">{day.day}</span>
-                </div>
-              ))}
-            </div>
+            <SmoothAreaChart
+              series={[
+                {
+                  data: analytics.activityByDay.map((d) => d.count),
+                  color: "#3b82f6",
+                  label: "Activity",
+                },
+              ]}
+              labels={analytics.activityByDay.map((d) => d.day)}
+            />
           </div>
 
           {/* AI Usage Chart */}
@@ -226,23 +219,16 @@ export default function AnalyticsPage() {
                 </p>
               </div>
             </div>
-            <div className="h-48 flex items-end gap-2">
-              {analytics.aiUsage.byDay.map((day, i) => (
-                <div
-                  key={day.day}
-                  className="flex-1 flex flex-col items-center gap-2"
-                >
-                  <div
-                    className="w-full bg-purple-500 rounded-t transition-all hover:bg-purple-600"
-                    style={{
-                      height: `${(day.count / 800) * 100}%`,
-                      minHeight: "4px",
-                    }}
-                  />
-                  <span className="text-xs text-slate-500">{day.day}</span>
-                </div>
-              ))}
-            </div>
+            <SmoothAreaChart
+              series={[
+                {
+                  data: analytics.aiUsage.byDay.map((d) => d.count),
+                  color: "#a855f7",
+                  label: "AI Requests",
+                },
+              ]}
+              labels={analytics.aiUsage.byDay.map((d) => d.day)}
+            />
           </div>
         </div>
 

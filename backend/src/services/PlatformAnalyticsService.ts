@@ -12,24 +12,19 @@ export class PlatformAnalyticsService {
       startDate.setDate(startDate.getDate() - days);
       startDate.setHours(0, 0, 0, 0);
 
-      // 1. Total counts
-      const [
-        totalUsers,
-        totalWorkspaces,
-        totalTasks,
-        totalMessages,
-        activeUsers,
-      ] = await Promise.all([
-        prisma.user.count(),
-        prisma.workspace.count(),
-        prisma.workspaceTask.count(),
-        prisma.aIChatMessage.count(),
-        prisma.user.count({
-          where: {
-            updated_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-          },
-        }),
-      ]);
+      // 1. Total counts (absolute all-time — appropriate for overview cards)
+      const [totalUsers, totalWorkspaces, totalTasks, totalMessages] =
+        await Promise.all([
+          prisma.user.count(),
+          prisma.workspace.count(),
+          prisma.workspaceTask.count(),
+          prisma.aIChatMessage.count(),
+        ]);
+
+      // Active users within the selected range
+      const activeUsers = await prisma.user.count({
+        where: { updated_at: { gte: startDate } },
+      });
 
       // 2. Daily growth (new in last 24h)
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -44,29 +39,60 @@ export class PlatformAnalyticsService {
       // 3. Activity by day for chart
       const activityByDay = await this.getActivityByDay(days);
 
-      // 4. Top workspaces by activity
-      const topWorkspaces = await prisma.workspace.findMany({
+      // 4. Top workspaces by activity within the range
+      const topWorkspacesRaw = await prisma.workspace.findMany({
         take: 5,
-        orderBy: { updated_at: "desc" },
         include: {
           _count: {
-            select: { tasks: true, members: true },
+            select: {
+              tasks: {
+                where: { updated_at: { gte: startDate } },
+              },
+              members: true,
+            },
           },
         },
       });
 
-      // 5. AI usage stats
+      // Sort by task count within the range, take top 5
+      const topWorkspaces = topWorkspacesRaw
+        .sort((a, b) => b._count.tasks - a._count.tasks)
+        .slice(0, 5)
+        .map(
+          (w: {
+            id: string;
+            name: string;
+            _count: { tasks: number; members: number };
+          }) => ({
+            id: w.id,
+            name: w.name,
+            tasks: w._count.tasks,
+            users: w._count.members,
+          }),
+        );
+
+      // 5. AI usage stats within range
       const aiUsage = await this.getAIUsageByDay(days);
 
-      // 6. Platform-wide completion rate
-      const totalDoneTasks = await prisma.workspaceTask.count({
-        where: { status: "done" },
+      const rangeTotalMessages = await prisma.aIChatMessage.count({
+        where: { created_at: { gte: startDate } },
+      });
+
+      // 6. Platform-wide completion rate scoped to range
+      const rangeTotalTasks = await prisma.workspaceTask.count({
+        where: { created_at: { gte: startDate } },
+      });
+      const rangeDoneTasks = await prisma.workspaceTask.count({
+        where: { status: "done", created_at: { gte: startDate } },
       });
       const completionRate =
-        totalTasks > 0 ? Math.round((totalDoneTasks / totalTasks) * 100) : 0;
+        rangeTotalTasks > 0
+          ? Math.round((rangeDoneTasks / rangeTotalTasks) * 100)
+          : 0;
 
-      // 7. Average AI response time (from AIPerformanceMetric)
+      // 7. Average AI response time scoped to range
       const avgResponseResult = await prisma.aIPerformanceMetric.aggregate({
+        where: { timestamp: { gte: startDate } },
         _avg: { response_time: true },
       });
       const avgResponseTime = avgResponseResult._avg.response_time
@@ -87,20 +113,9 @@ export class PlatformAnalyticsService {
           tasks: newTasks,
         },
         activityByDay,
-        topWorkspaces: topWorkspaces.map(
-          (w: {
-            id: string;
-            name: string;
-            _count: { tasks: number; members: number };
-          }) => ({
-            id: w.id,
-            name: w.name,
-            tasks: w._count.tasks,
-            users: w._count.members,
-          }),
-        ),
+        topWorkspaces,
         aiUsage: {
-          totalRequests: await prisma.aIChatMessage.count(),
+          totalRequests: rangeTotalMessages,
           byDay: aiUsage,
         },
       };
@@ -114,31 +129,73 @@ export class PlatformAnalyticsService {
     const result: { day: string; count: number }[] = [];
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
+    if (days <= 7) {
+      // Show daily buckets for 7d
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
 
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
+        const [taskCount, messageCount] = await Promise.all([
+          prisma.workspaceTask.count({
+            where: { updated_at: { gte: date, lt: nextDate } },
+          }),
+          prisma.aIChatMessage.count({
+            where: { created_at: { gte: date, lt: nextDate } },
+          }),
+        ]);
 
-      const [taskCount, messageCount] = await Promise.all([
-        prisma.workspaceTask.count({
-          where: {
-            updated_at: { gte: date, lt: nextDate },
-          },
-        }),
-        prisma.aIChatMessage.count({
-          where: {
-            created_at: { gte: date, lt: nextDate },
-          },
-        }),
-      ]);
-
-      // Only show last 7 days for the chart
-      if (i < 7) {
         result.push({
           day: dayNames[date.getDay()],
+          count: taskCount + messageCount,
+        });
+      }
+    } else if (days <= 30) {
+      // Show ~10 intervals (every 3 days) for 30d
+      const interval = 3;
+      for (let i = days - 1; i >= 0; i -= interval) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + interval);
+
+        const [taskCount, messageCount] = await Promise.all([
+          prisma.workspaceTask.count({
+            where: { updated_at: { gte: date, lt: endDate } },
+          }),
+          prisma.aIChatMessage.count({
+            where: { created_at: { gte: date, lt: endDate } },
+          }),
+        ]);
+
+        result.push({
+          day: `${date.getDate()}/${date.getMonth() + 1}`,
+          count: taskCount + messageCount,
+        });
+      }
+    } else {
+      // Show weekly buckets for 90d (~13 weeks)
+      for (let i = days - 1; i >= 0; i -= 7) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + 7);
+
+        const [taskCount, messageCount] = await Promise.all([
+          prisma.workspaceTask.count({
+            where: { updated_at: { gte: date, lt: endDate } },
+          }),
+          prisma.aIChatMessage.count({
+            where: { created_at: { gte: date, lt: endDate } },
+          }),
+        ]);
+
+        result.push({
+          day: `${date.getDate()}/${date.getMonth() + 1}`,
           count: taskCount + messageCount,
         });
       }
@@ -151,25 +208,61 @@ export class PlatformAnalyticsService {
     const result: { day: string; count: number }[] = [];
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
+    if (days <= 7) {
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
 
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
+        const count = await prisma.aIChatMessage.count({
+          where: {
+            created_at: { gte: date, lt: nextDate },
+            role: "assistant",
+          },
+        });
+        result.push({ day: dayNames[date.getDay()], count });
+      }
+    } else if (days <= 30) {
+      const interval = 3;
+      for (let i = days - 1; i >= 0; i -= interval) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + interval);
 
-      const count = await prisma.aIChatMessage.count({
-        where: {
-          created_at: { gte: date, lt: nextDate },
-          role: "assistant",
-        },
-      });
+        const count = await prisma.aIChatMessage.count({
+          where: {
+            created_at: { gte: date, lt: endDate },
+            role: "assistant",
+          },
+        });
+        result.push({
+          day: `${date.getDate()}/${date.getMonth() + 1}`,
+          count,
+        });
+      }
+    } else {
+      for (let i = days - 1; i >= 0; i -= 7) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + 7);
 
-      result.push({
-        day: dayNames[date.getDay()],
-        count,
-      });
+        const count = await prisma.aIChatMessage.count({
+          where: {
+            created_at: { gte: date, lt: endDate },
+            role: "assistant",
+          },
+        });
+        result.push({
+          day: `${date.getDate()}/${date.getMonth() + 1}`,
+          count,
+        });
+      }
     }
 
     return result;

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Plus,
   Search,
   Settings,
   MoreHorizontal,
@@ -27,7 +26,6 @@ import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
 import WorkspaceService from "../../../lib/utils/workspaceService";
 import { useToast } from "../../../hooks/use-toast";
-import CreateProjectModal from "../../../components/dashboard/CreateProjectModal";
 
 const TABS = [
   { id: "teamspaces", label: "Teamspaces", icon: Building2 },
@@ -42,10 +40,8 @@ export default function SpacesLibraryPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [spaces, setSpaces] = useState([]);
-  const [workspaces, setWorkspaces] = useState([]);
   const [activeTab, setActiveTab] = useState("teamspaces");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -54,7 +50,6 @@ export default function SpacesLibraryPage() {
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const dropdownRef = useRef(null);
   const [renamingSpace, setRenamingSpace] = useState(null);
-  const [newSpaceName, setNewSpaceName] = useState("");
 
   const { data: user, loading: userLoading } = useUser();
 
@@ -135,263 +130,6 @@ export default function SpacesLibraryPage() {
       isMounted = false;
     };
   }, [user]);
-
-  const handleCreateProject = () => {
-    setIsCreateModalOpen(true);
-  };
-
-  const handleProjectCreate = async (newProject) => {
-    try {
-      console.log("New project created:", newProject);
-      setSpaces((prev) => [newProject, ...prev]);
-      toast({
-        title: "Success",
-        description: "Project created successfully!",
-      });
-      return newProject;
-    } catch (error) {
-      console.error("Failed to create project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create project. Please try again.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const handleProjectClick = (project) => {
-    console.log("Opening project:", project.id);
-    // Use React Router navigation instead of window.location
-    router.push(`/editor/${project.id}`);
-  };
-
-  const handleRenameProject = (project) => {
-    setRenamingSpace(project);
-    setNewSpaceName(project.title);
-  };
-
-  const handleRenameConfirm = async () => {
-    if (!renamingSpace || !newSpaceName.trim()) return;
-
-    try {
-      await ProjectService.updateProject(renamingSpace.id, {
-        title: newSpaceName.trim(),
-      });
-
-      setSpaces((prev) =>
-        prev.map((p) =>
-          p.id === renamingSpace.id ? { ...p, title: newSpaceName.trim() } : p,
-        ),
-      );
-
-      setRenamingSpace(null);
-      setNewSpaceName("");
-
-      toast({
-        title: "Success",
-        description: "Project renamed successfully!",
-      });
-    } catch (error) {
-      console.error("Failed to rename project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to rename project. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDuplicateProject = async (project) => {
-    try {
-      toast({
-        title: "Duplicating Project",
-        description: `Creating a copy of "${project.title}"...`,
-      });
-
-      const duplicateData = {
-        ...project,
-        title: `${project.title} (Copy)`,
-        id: undefined, // Remove ID to create a new project
-      };
-
-      const duplicatedProject =
-        await ProjectService.createProject(duplicateData);
-      setSpaces((prev) => [duplicatedProject, ...prev]);
-
-      toast({
-        title: "Success",
-        description: "Project duplicated successfully!",
-      });
-    } catch (error) {
-      console.error("Failed to duplicate project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to duplicate project. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExportProject = async (project) => {
-    try {
-      toast({
-        title: "Export Started",
-        description: `Exporting "${project.title}"... This may take a moment.`,
-      });
-
-      // Use the real export service to get the blob
-      const blob = await ExportService.exportProjectBlob(project.id, {
-        format: "pdf",
-      });
-
-      // Create a download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${project.title.replace(/\s+/g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Export Complete",
-        description: `Project "${project.title}" has been exported successfully.`,
-      });
-    } catch (error) {
-      console.error("Failed to export project:", error);
-      toast({
-        title: "Export Failed",
-        description: `Failed to export "${project.title}". Please try again.`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleArchiveProject = async (project) => {
-    try {
-      if (
-        window.confirm(
-          `Are you sure you want to archive "${project.title}"? You can restore it later from the archived projects view.`,
-        )
-      ) {
-        await ProjectService.updateProject(project.id, {
-          status: "archived",
-        });
-
-        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
-
-        toast({
-          title: "Success",
-          description: "Project archived successfully!",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to archive project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to archive project. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleRestoreProject = async (project) => {
-    try {
-      if (
-        window.confirm(
-          `Are you sure you want to restore "${project.title}"? It will be moved back to your active projects.`,
-        )
-      ) {
-        await ProjectService.restoreProject(project.id);
-        // Remove the restored project from the list (since we are likely in Archived view)
-        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
-
-        toast({
-          title: "Success",
-          description: "Project restored successfully!",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to restore project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to restore project. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteProject = async (project) => {
-    try {
-      if (
-        window.confirm(
-          "Are you sure you want to delete this project? This action cannot be undone.",
-        )
-      ) {
-        await ProjectService.deleteProject(project.id);
-        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
-
-        toast({
-          title: "Success",
-          description: "Project deleted successfully!",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to delete project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete project. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleProjectAction = async (action, project) => {
-    console.log(`Project ${action}:`, project.id);
-
-    try {
-      switch (action) {
-        case "open":
-          handleProjectClick(project);
-          break;
-        case "rename":
-          handleRenameProject(project);
-          break;
-        case "duplicate":
-          handleDuplicateProject(project);
-          break;
-        case "export":
-          handleExportProject(project);
-          break;
-        case "archive":
-          handleArchiveProject(project);
-          break;
-        case "restore":
-          handleRestoreProject(project);
-          break;
-        case "delete":
-          handleDeleteProject(project);
-          break;
-        default:
-          console.log("Unknown action:", action);
-      }
-    } catch (error) {
-      console.error(`Failed to perform action ${action}:`, error);
-      // Check if it's a network error
-      let errorMessage = "Failed to perform action. Please try again later.";
-      if (error.message && error.message.includes("fetch")) {
-        errorMessage =
-          "Unable to connect to the server. Please make sure the backend API is running.";
-      }
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    }
-  };
 
   // Close dropdown when clicking outside - MUST be before any conditional returns
   useEffect(() => {
@@ -591,38 +329,17 @@ export default function SpacesLibraryPage() {
     setDropdownOpen(null);
   };
 
-  const handleCreateSpace = async (newSpace) => {
-    try {
-      setSpaces((prev) => [newSpace, ...prev]);
-      toast({
-        title: "Success",
-        description: "New space created successfully!",
-      });
-      return newSpace;
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create space.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Library</h1>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New teamspace
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Your Spaces</h1>
+        <p className="text-sm text-gray-500">
+          Manage your teamspaces, projects, and private work in one place.
+        </p>
+      </div>
+
+      <div className="px-8">
 
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-6 border-b border-gray-200">
@@ -885,13 +602,6 @@ export default function SpacesLibraryPage() {
           )}
         </div>
       </div>
-
-      {/* Create Modal */}
-      <CreateProjectModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onProjectCreate={handleCreateSpace}
-      />
     </div>
   );
 }
