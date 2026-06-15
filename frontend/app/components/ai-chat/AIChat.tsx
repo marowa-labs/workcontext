@@ -223,9 +223,7 @@ export function AIChatPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentModel, setCurrentModel] = useState(
-    "gemini-3.1-flash-lite-preview",
-  );
+  const [currentModel, setCurrentModel] = useState<string>("");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [showSessions, setShowSessions] = useState(false);
   const [, setAvailableModels] = useState<AIModel[]>([]);
@@ -342,39 +340,51 @@ export function AIChatPanel({
     }
   };
 
-  // Load available models with access control
+  // Load available models from backend (BYOK-aware)
   const loadAvailableModels = useCallback(async () => {
     try {
-      // Get models with access information
-      const modelsWithAccess =
-        await AIModelAccessControl.getModelsWithAccessInfo();
+      // Get models from backend API (includes BYOK models)
+      const modelsData = await AIService.getAvailableModels();
+      const availableModels = modelsData.models || [];
 
       // Transform to AIModel format
-      const transformedModels = modelsWithAccess.map((model) => ({
-        id: model.id,
-        name: model.name,
-        description: model.description,
-        maxTokens: model.maxTokens,
-        isCurrent: model.id === currentModel,
-      }));
+      const transformedModels = availableModels.map(
+        (model: {
+          id: string;
+          name: string;
+          description: string;
+          maxTokens: number;
+        }) => ({
+          id: model.id,
+          name: model.name,
+          description: model.description,
+          maxTokens: model.maxTokens,
+          isCurrent: model.id === currentModel,
+        }),
+      );
 
       setAvailableModels(transformedModels);
 
-      // Set locked models
+      // Set locked models (models user doesn't have access to)
       const locked = new Set<string>(
-        modelsWithAccess
-          .filter((model) => model.isLocked)
-          .map((model) => model.id),
+        availableModels
+          .filter(
+            (model: { id: string; isCurrent: boolean }) =>
+              !model.isCurrent && !modelsData.byokEnabled,
+          )
+          .map((model: { id: string }) => model.id),
       );
       setLockedModels(locked);
 
       // Check if current model is locked
-      const currentModelLocked = modelsWithAccess.find(
-        (m) => m.id === currentModel,
-      )?.isLocked;
+      const currentModelLocked =
+        availableModels.find((m: { id: string }) => m.id === currentModel)
+          ?.isCurrent === false && !modelsData.byokEnabled;
       if (currentModelLocked) {
         // Switch to first available model
-        const firstAvailable = modelsWithAccess.find((m) => !m.isLocked);
+        const firstAvailable = availableModels.find(
+          (m: { isCurrent: boolean }) => m.isCurrent || true,
+        );
         if (firstAvailable) {
           setCurrentModel(firstAvailable.id);
         }
@@ -1451,14 +1461,40 @@ export function AIChatPanel({
 
       {/* Error message */}
       {error && (
-        <div
-          className="p-2 bg-red-100 border-b border-red-200 text-red-700 text-sm"
-          style={{
-            fontSize: "inherit",
-            lineHeight: "inherit",
-          }}
-        >
-          {error}
+        <div className="p-3 bg-red-50 border-b border-red-200 text-red-700 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div>
+            <p>{error}</p>
+            {error.includes("API key") && (
+              <a
+                href="/settings/ai-api-key"
+                className="inline-block mt-1 text-red-600 font-medium underline hover:text-red-800"
+              >
+                Configure API Keys →
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* No models configured warning */}
+      {!error && availableModels.length === 0 && !isLoading && (
+        <div className="p-3 bg-amber-50 border-b border-amber-200 text-amber-800 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">No AI models available</p>
+            <p className="mt-0.5">
+              You haven&apos;t configured any AI API key yet. Add your key from
+              Google Gemini, OpenAI, Anthropic, or OpenRouter to start using AI
+              features.
+            </p>
+            <a
+              href="/settings/ai-api-key"
+              className="inline-block mt-1.5 px-3 py-1 bg-amber-600 text-white rounded-lg font-medium text-xs hover:bg-amber-700 transition-colors"
+            >
+              Configure API Keys →
+            </a>
+          </div>
         </div>
       )}
 

@@ -10,8 +10,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Use webpack instead of Turbopack for Yjs compatibility
-  // Turbopack has known issues with Yjs module deduplication
+  // Turbopack configuration for Yjs compatibility
+  turbopack: {
+    resolveAlias: {
+      yjs: "yjs",
+    },
+  },
+  // Keep webpack config for development if using --webpack flag
   webpack: (config, { isServer }) => {
     // Ensure only one instance of Yjs is loaded
     config.resolve.alias = {

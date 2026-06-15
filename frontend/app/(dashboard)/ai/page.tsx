@@ -105,7 +105,12 @@ function ChatContent({
                   <ellipse cx="50" cy="55" rx="20" ry="25" fill="#E8E8E8" />
                   <circle cx="42" cy="45" r="3" fill="#333" />
                   <circle cx="58" cy="45" r="3" fill="#333" />
-                  <path d="M45 55 Q50 60 55 55" stroke="#333" strokeWidth="2" fill="none" />
+                  <path
+                    d="M45 55 Q50 60 55 55"
+                    stroke="#333"
+                    strokeWidth="2"
+                    fill="none"
+                  />
                 </svg>
               </div>
             </div>
@@ -117,10 +122,26 @@ function ChatContent({
             {/* Quick Actions */}
             <div className="w-full grid grid-cols-2 gap-3">
               {[
-                { icon: "🏢", label: "Create workspace", prompt: "Create a workspace called My Research" },
-                { icon: "📄", label: "Create project", prompt: "Create a project called Research Paper" },
-                { icon: "✅", label: "Create task", prompt: "Create a task called Review literature" },
-                { icon: "📊", label: "Summarize document", prompt: "Summarize the current document" },
+                {
+                  icon: "🏢",
+                  label: "Create workspace",
+                  prompt: "Create a workspace called My Research",
+                },
+                {
+                  icon: "📄",
+                  label: "Create project",
+                  prompt: "Create a project called Research Paper",
+                },
+                {
+                  icon: "✅",
+                  label: "Create task",
+                  prompt: "Create a task called Review literature",
+                },
+                {
+                  icon: "📊",
+                  label: "Summarize document",
+                  prompt: "Summarize the current document",
+                },
               ].map((action) => (
                 <button
                   key={action.label}
@@ -140,7 +161,7 @@ function ChatContent({
                 key={message.id}
                 className={cn(
                   "flex gap-3",
-                  message.role === "user" ? "flex-row-reverse" : ""
+                  message.role === "user" ? "flex-row-reverse" : "",
                 )}
               >
                 {message.role === "assistant" && (
@@ -163,7 +184,7 @@ function ChatContent({
                     "max-w-[85%] text-sm leading-relaxed overflow-x-hidden",
                     message.role === "user"
                       ? "bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 break-words"
-                      : "text-gray-700 prose prose-sm max-w-none break-words"
+                      : "text-gray-700 prose prose-sm max-w-none break-words",
                   )}
                 >
                   {message.role === "user" ? (
@@ -198,24 +219,36 @@ function ChatContent({
           {/* AI Action Confirmation Dialog */}
           {pendingAction && (
             <div className="mb-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className={`p-3 ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-50 border-b border-red-100' : 'bg-blue-50 border-b border-blue-100'}`}>
+              <div
+                className={`p-3 ${isDestructiveAction(pendingAction.actionType || "") ? "bg-red-50 border-b border-red-100" : "bg-blue-50 border-b border-blue-100"}`}
+              >
                 <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-full ${isDestructiveAction(pendingAction.actionType || '') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                    {isDestructiveAction(pendingAction.actionType || '') ? (
+                  <div
+                    className={`p-1.5 rounded-full ${isDestructiveAction(pendingAction.actionType || "") ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"}`}
+                  >
+                    {isDestructiveAction(pendingAction.actionType || "") ? (
                       <AlertTriangle size={16} />
                     ) : (
-                      <span className="text-base">{getActionIcon(pendingAction.actionType || '')}</span>
+                      <span className="text-base">
+                        {getActionIcon(pendingAction.actionType || "")}
+                      </span>
                     )}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-gray-900">Confirm Action</h4>
-                    <p className="text-xs text-gray-600">{formatActionType(pendingAction.actionType || '')}</p>
+                    <h4 className="font-semibold text-sm text-gray-900">
+                      Confirm Action
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      {formatActionType(pendingAction.actionType || "")}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="p-3">
-                <p className="text-sm text-gray-700 mb-3 break-words">{pendingAction.message}</p>
+                <p className="text-sm text-gray-700 mb-3 break-words">
+                  {pendingAction.message}
+                </p>
 
                 <div className="flex gap-2">
                   <button
@@ -223,15 +256,19 @@ function ChatContent({
                     disabled={isConfirming}
                     className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                   >
-                    {getConfirmationButtonText(pendingAction.actionType || '').cancel}
+                    {
+                      getConfirmationButtonText(pendingAction.actionType || "")
+                        .cancel
+                    }
                   </button>
                   <button
                     onClick={onConfirmAction}
                     disabled={isConfirming}
-                    className={`flex-1 px-3 py-1.5 rounded-lg text-white text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1 ${isDestructiveAction(pendingAction.actionType || '')
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
+                    className={`flex-1 px-3 py-1.5 rounded-lg text-white text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1 ${
+                      isDestructiveAction(pendingAction.actionType || "")
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
                   >
                     {isConfirming ? (
                       <>
@@ -240,7 +277,11 @@ function ChatContent({
                       </>
                     ) : (
                       <>
-                        {getConfirmationButtonText(pendingAction.actionType || '').confirm}
+                        {
+                          getConfirmationButtonText(
+                            pendingAction.actionType || "",
+                          ).confirm
+                        }
                         <ArrowRight size={14} />
                       </>
                     )}
@@ -275,7 +316,13 @@ function ChatContent({
                   disabled={!input.trim() || loading}
                   className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:bg-transparent rounded-lg transition-colors"
                 >
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <line x1="22" y1="2" x2="11" y2="13" />
                     <polygon points="22,2 15,22 11,13 2,9 22,2" />
                   </svg>
@@ -297,7 +344,9 @@ export default function AIPage() {
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<AIActionResult | null>(null);
+  const [pendingAction, setPendingAction] = useState<AIActionResult | null>(
+    null,
+  );
   const [isConfirming, setIsConfirming] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [renamingSession, setRenamingSession] = useState<string | null>(null);
@@ -307,9 +356,12 @@ export default function AIPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Filter sessions based on search
-  const filteredSessions = sessions.filter((session) =>
-    session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (session.lastMessage?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+  const filteredSessions = sessions.filter(
+    (session) =>
+      session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (session.lastMessage?.toLowerCase() || "").includes(
+        searchQuery.toLowerCase(),
+      ),
   );
 
   // Auto-scroll to bottom
@@ -343,15 +395,27 @@ export default function AIPage() {
       console.error("Failed to load sessions:", error);
       // Create mock sessions for demo
       setSessions([
-        { id: "1", title: "Help with dashboard charts", lastMessage: "Here's how to create charts...", updatedAt: new Date().toISOString() },
-        { id: "2", title: "Create Notion dashboard instructions", lastMessage: "Let me help you set up...", updatedAt: new Date().toISOString() },
+        {
+          id: "1",
+          title: "Help with dashboard charts",
+          lastMessage: "Here's how to create charts...",
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: "2",
+          title: "Create ScholarForge AI dashboard instructions",
+          lastMessage: "Let me help you set up...",
+          updatedAt: new Date().toISOString(),
+        },
       ]);
     }
   };
 
   const loadMessages = async (sessionId: string) => {
     try {
-      const data = await apiClient.get(`/api/ai/chat/session/${sessionId}/messages`);
+      const data = await apiClient.get(
+        `/api/ai/chat/session/${sessionId}/messages`,
+      );
       setMessages(data.messages || []);
     } catch (error) {
       console.error("Failed to load messages:", error);
@@ -361,7 +425,9 @@ export default function AIPage() {
 
   const createNewSession = async () => {
     try {
-      const data = await apiClient.post("/api/ai/chat/session", { title: "New Chat" });
+      const data = await apiClient.post("/api/ai/chat/session", {
+        title: "New Chat",
+      });
       setCurrentSession(data.session.id);
       setMessages([]);
       setSessions((prev) => [data.session, ...prev]);
@@ -370,7 +436,7 @@ export default function AIPage() {
       const newSession = {
         id: `session-${Date.now()}`,
         title: "New chat",
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
       setCurrentSession(newSession.id);
       setMessages([]);
@@ -382,7 +448,7 @@ export default function AIPage() {
     try {
       await apiClient.patch(`/api/ai/chat/session/${sessionId}`, { title });
       setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, title } : s))
+        prev.map((s) => (s.id === sessionId ? { ...s, title } : s)),
       );
       setRenamingSession(null);
       setNewTitle("");
@@ -390,7 +456,7 @@ export default function AIPage() {
       console.error("Failed to rename session:", error);
       // Still update locally for demo
       setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, title } : s))
+        prev.map((s) => (s.id === sessionId ? { ...s, title } : s)),
       );
       setRenamingSession(null);
       setNewTitle("");
@@ -439,7 +505,7 @@ export default function AIPage() {
       await aiActionService.sendMessage(
         userMessage.content,
         {
-          conversationHistory: messages.slice(-10).map(m => ({
+          conversationHistory: messages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,
           })),
@@ -481,7 +547,7 @@ export default function AIPage() {
               router.push("/tasks");
             }
           },
-        }
+        },
       );
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -534,20 +600,41 @@ export default function AIPage() {
   return (
     <div className="flex h-screen bg-white overflow-hidden">
       {/* Left Sidebar - Chat History */}
-      <div className={`${sidebarCollapsed ? 'w-14' : 'w-72'} border-r border-gray-200 flex flex-col bg-gray-50/50 h-screen shrink-0 transition-all duration-300`}>
+      <div
+        className={`${sidebarCollapsed ? "w-14" : "w-72"} border-r border-gray-200 flex flex-col bg-gray-50/50 h-screen shrink-0 transition-all duration-300`}
+      >
         {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-between mb-3">
             {sidebarCollapsed ? (
-              <Link href="/dashboard" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors" title="Home">
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <Link
+                href="/dashboard"
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                title="Home"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9,22 9,12 15,12 15,22" />
                 </svg>
               </Link>
             ) : (
-              <Link href="/dashboard" className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9,22 9,12 15,12 15,22" />
                 </svg>
@@ -570,7 +657,11 @@ export default function AIPage() {
                 className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
                 title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
-                {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                {sidebarCollapsed ? (
+                  <ChevronRight className="w-4 h-4" />
+                ) : (
+                  <ChevronLeft className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
@@ -599,10 +690,11 @@ export default function AIPage() {
             {filteredSessions.map((session) => (
               <div
                 key={session.id}
-                className={`group flex items-start gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${currentSession === session.id
-                  ? "bg-white shadow-sm border border-gray-200"
-                  : "hover:bg-gray-100"
-                  }`}
+                className={`group flex items-start gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  currentSession === session.id
+                    ? "bg-white shadow-sm border border-gray-200"
+                    : "hover:bg-gray-100"
+                }`}
               >
                 <button
                   onClick={() => {
@@ -640,10 +732,14 @@ export default function AIPage() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <p className="text-sm text-gray-700 truncate">{session.title}</p>
+                      <p className="text-sm text-gray-700 truncate">
+                        {session.title}
+                      </p>
                     )}
                     {session.lastMessage && renamingSession !== session.id && (
-                      <p className="text-xs text-gray-400 truncate mt-0.5">{session.lastMessage}</p>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">
+                        {session.lastMessage}
+                      </p>
                     )}
                   </div>
                 </button>
@@ -662,7 +758,9 @@ export default function AIPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm("Are you sure you want to delete this chat?")) {
+                      if (
+                        confirm("Are you sure you want to delete this chat?")
+                      ) {
                         deleteSession(session.id);
                       }
                     }}

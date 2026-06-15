@@ -37,30 +37,33 @@ export class UserStatsService {
         where: { creator_id: userId, status: "done" },
       });
 
-      const completionRate = totalUserTasks > 0
-        ? Math.round((totalCompletedTasks / totalUserTasks) * 100)
-        : 0;
+      const completionRate =
+        totalUserTasks > 0
+          ? Math.round((totalCompletedTasks / totalUserTasks) * 100)
+          : 0;
 
       // 2. Workspace and message counts
-      const [totalWorkspaces, totalMessages, aiInteractions] = await Promise.all([
-        prisma.workspaceMember.count({ where: { user_id: userId } }),
-        prisma.aIChatMessage.count({
-          where: {
-            user_id: userId,
-            created_at: { gte: startDate },
-          },
-        }),
-        prisma.aIChatMessage.count({
-          where: {
-            user_id: userId,
-            role: "user",
-            created_at: { gte: startDate },
-          },
-        }),
-      ]);
+      const [totalWorkspaces, totalMessages, aiInteractions] =
+        await Promise.all([
+          prisma.workspaceMember.count({ where: { user_id: userId } }),
+          prisma.aIChatMessage.count({
+            where: {
+              user_id: userId,
+              created_at: { gte: startDate },
+            },
+          }),
+          prisma.aIChatMessage.count({
+            where: {
+              user_id: userId,
+              role: "user",
+              created_at: { gte: startDate },
+            },
+          }),
+        ]);
 
       // 3. Calculate streak
-      const { currentStreak, longestStreak } = await this.calculateStreak(userId);
+      const { currentStreak, longestStreak } =
+        await this.calculateStreak(userId);
 
       // 4. Weekly activity data
       const weeklyActivity = await this.getWeeklyActivity(userId);
@@ -73,15 +76,36 @@ export class UserStatsService {
         aiInteractions,
       });
 
-      // 6. Achievements (mock for now - could be stored in DB)
-      const achievements = this.getAchievements(totalCompletedTasks, currentStreak, aiInteractions);
+      // 5b. Calculate productivity percentile among all users
+      const productivityPercentile = await this.calculateProductivityPercentile(
+        userId,
+        productivity,
+      );
+
+      // 6. Achievements
+      const achievements = await this.getAchievements(
+        userId,
+        totalCompletedTasks,
+        currentStreak,
+        aiInteractions,
+      );
 
       // 7. Recent milestones
       const recentMilestones = await this.getRecentMilestones(userId, 5);
 
-      // 8. Time spent estimation (based on activity)
-      const timeSpent = Math.round(
-        (tasksCreated * 15 + tasksCompleted * 10 + aiInteractions * 2) // rough estimate in minutes
+      // 8. Time spent from real TaskTimeEntry data
+      const timeEntries = await prisma.taskTimeEntry.findMany({
+        where: {
+          user_id: userId,
+          duration: { not: null },
+          start_time: { gte: startDate },
+        },
+        select: { duration: true },
+      });
+      const timeSpent = timeEntries.reduce(
+        (sum: number, entry: { duration: number | null }) =>
+          sum + (entry.duration || 0),
+        0,
       );
 
       return {
@@ -95,6 +119,7 @@ export class UserStatsService {
         aiInteractions,
         timeSpent,
         productivity,
+        productivityPercentile,
         weeklyActivity,
         achievements,
         recentMilestones,
@@ -105,7 +130,9 @@ export class UserStatsService {
     }
   }
 
-  private static async calculateStreak(userId: string): Promise<{ currentStreak: number; longestStreak: number }> {
+  private static async calculateStreak(
+    userId: string,
+  ): Promise<{ currentStreak: number; longestStreak: number }> {
     // Get all completed tasks ordered by date
     const completedTasks = await prisma.workspaceTask.findMany({
       where: {
@@ -120,15 +147,17 @@ export class UserStatsService {
       return { currentStreak: 0, longestStreak: 0 };
     }
 
-    const dates = completedTasks.map((t: { updated_at: Date }) =>
-      t.updated_at.toISOString().split("T")[0]
+    const dates = completedTasks.map(
+      (t: { updated_at: Date }) => t.updated_at.toISOString().split("T")[0],
     );
     const uniqueDates = [...new Set(dates)];
 
     // Calculate current streak
     let currentStreak = 0;
     const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     // Check if active today or yesterday
     if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
@@ -136,7 +165,9 @@ export class UserStatsService {
       for (let i = 1; i < uniqueDates.length; i++) {
         const prevDate = new Date(uniqueDates[i - 1] as string);
         const currDate = new Date(uniqueDates[i] as string);
-        const diffDays = Math.floor((prevDate.getTime() - currDate.getTime()) / (24 * 60 * 60 * 1000));
+        const diffDays = Math.floor(
+          (prevDate.getTime() - currDate.getTime()) / (24 * 60 * 60 * 1000),
+        );
 
         if (diffDays === 1) {
           currentStreak++;
@@ -153,7 +184,9 @@ export class UserStatsService {
     for (let i = 1; i < uniqueDates.length; i++) {
       const prevDate = new Date(uniqueDates[i - 1] as string);
       const currDate = new Date(uniqueDates[i] as string);
-      const diffDays = Math.floor((prevDate.getTime() - currDate.getTime()) / (24 * 60 * 60 * 1000));
+      const diffDays = Math.floor(
+        (prevDate.getTime() - currDate.getTime()) / (24 * 60 * 60 * 1000),
+      );
 
       if (diffDays === 1) {
         tempStreak++;
@@ -186,8 +219,22 @@ export class UserStatsService {
         },
       });
 
-      // Estimate hours based on task activity
-      const hours = Math.round((tasks * 0.5 + Math.random() * 2) * 10) / 10;
+      // Get real time tracked from TaskTimeEntry for this day
+      const timeEntries = await prisma.taskTimeEntry.findMany({
+        where: {
+          user_id: userId,
+          start_time: { gte: date, lt: nextDate },
+          duration: { not: null },
+        },
+        select: { duration: true },
+      });
+
+      const totalMinutes = timeEntries.reduce(
+        (sum: number, entry: { duration: number | null }) =>
+          sum + (entry.duration || 0),
+        0,
+      );
+      const hours = Math.round((totalMinutes / 60) * 10) / 10;
 
       result.push({
         day: dayNames[date.getDay()],
@@ -215,10 +262,58 @@ export class UserStatsService {
     return Math.min(total, 100);
   }
 
-  private static getAchievements(
+  private static async calculateProductivityPercentile(
+    userId: string,
+    userProductivity: number,
+  ): Promise<number> {
+    try {
+      // Get total user count for percentile calculation
+      const totalUsers = await prisma.user.count();
+      if (totalUsers <= 1) return 100;
+
+      // Count users who have completed fewer tasks as a productivity proxy
+      const userTaskCount = await prisma.workspaceTask.count({
+        where: { creator_id: userId, status: "done" },
+      });
+
+      const usersWithFewerTasks = await prisma.user.count({
+        where: {
+          id: { not: userId },
+          OR: [
+            // Users who haven't created any tasks
+            { workspace_tasks: { none: {} } },
+          ],
+        },
+      });
+
+      // Count users who have tasks but fewer completed ones
+      // We use a raw query approach: count users whose done task count < userTaskCount
+      const userTaskCounts = await prisma.workspaceTask.groupBy({
+        by: ["creator_id"],
+        where: { status: "done" },
+        _count: { id: true },
+      });
+
+      const usersBelow = userTaskCounts.filter(
+        (u: { creator_id: string; _count: { id: number } }) =>
+          u.creator_id !== userId && u._count.id < userTaskCount,
+      ).length;
+
+      // Users with no tasks at all + users with fewer completed tasks
+      const totalBelow = usersWithFewerTasks + usersBelow;
+      const percentile = Math.round((totalBelow / (totalUsers - 1)) * 100);
+
+      return Math.max(1, Math.min(99, percentile));
+    } catch {
+      return 50; // fallback
+    }
+  }
+
+  private static async getAchievements(
+    userId: string,
     tasksCompleted: number,
     streak: number,
-    aiInteractions: number
+    aiInteractions: number,
   ) {
     const achievements: {
       id: string;
@@ -228,33 +323,57 @@ export class UserStatsService {
       unlockedAt: string;
     }[] = [];
 
+    // Look up the actual date when each threshold was crossed by finding the Nth completed task
     if (tasksCompleted >= 100) {
+      const hundredthTask = await prisma.workspaceTask.findFirst({
+        where: { creator_id: userId, status: "done" },
+        orderBy: { updated_at: "asc" },
+        skip: 99,
+        select: { updated_at: true },
+      });
       achievements.push({
         id: "task-master",
         name: "Task Master",
         description: "Complete 100 tasks",
         icon: "trophy",
-        unlockedAt: new Date().toISOString(),
+        unlockedAt:
+          hundredthTask?.updated_at?.toISOString() || new Date().toISOString(),
       });
     }
 
+    // For streak achievements, use the most recent completed task date
     if (streak >= 7) {
+      const lastCompletedTask = await prisma.workspaceTask.findFirst({
+        where: { creator_id: userId, status: "done" },
+        orderBy: { updated_at: "desc" },
+        select: { updated_at: true },
+      });
       achievements.push({
         id: "streak-keeper",
         name: "Streak Keeper",
         description: "7-day streak achieved",
         icon: "flame",
-        unlockedAt: new Date().toISOString(),
+        unlockedAt:
+          lastCompletedTask?.updated_at?.toISOString() ||
+          new Date().toISOString(),
       });
     }
 
     if (aiInteractions >= 500) {
+      const fiveHundredthMessage = await prisma.aIChatMessage.findFirst({
+        where: { user_id: userId, role: "user" },
+        orderBy: { created_at: "asc" },
+        skip: 499,
+        select: { created_at: true },
+      });
       achievements.push({
         id: "ai-explorer",
         name: "AI Explorer",
         description: "Use AI assistant 500 times",
         icon: "zap",
-        unlockedAt: new Date().toISOString(),
+        unlockedAt:
+          fiveHundredthMessage?.created_at?.toISOString() ||
+          new Date().toISOString(),
       });
     }
 
@@ -280,14 +399,16 @@ export class UserStatsService {
       select: { id: true, title: true, updated_at: true },
     });
 
-    recentTasks.forEach((task: { id: string; title: string; updated_at: Date }) => {
-      milestones.push({
-        id: `task-${task.id}`,
-        title: `Completed: ${task.title.substring(0, 30)}${task.title.length > 30 ? "..." : ""}`,
-        date: task.updated_at.toISOString(),
-        type: "task",
-      });
-    });
+    recentTasks.forEach(
+      (task: { id: string; title: string; updated_at: Date }) => {
+        milestones.push({
+          id: `task-${task.id}`,
+          title: `Completed: ${task.title.substring(0, 30)}${task.title.length > 30 ? "..." : ""}`,
+          date: task.updated_at.toISOString(),
+          type: "task",
+        });
+      },
+    );
 
     // Sort by date and take top 5
     return milestones

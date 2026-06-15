@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, ReactNode } from "react";
+import Image from "next/image";
 import {
   Menu,
   X,
@@ -29,7 +30,6 @@ import {
   MessageCircle,
   Activity,
   Loader2,
-  Sparkles,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import Link from "next/link";
@@ -48,7 +48,6 @@ import { SearchModal } from "./SearchModal";
 import { QuickTaskModal } from "./QuickTaskModal";
 import { AIChatDrawer } from "./AIChatDrawer";
 import { FloatingAIButton } from "./FloatingAIButton";
-import { SummarizeModal } from "./SummarizeModal";
 import {
   Dialog,
   DialogContent,
@@ -180,8 +179,8 @@ export default function DashboardLayout({
     if (path === "/dashboard") return "dashboard";
     if (path === "/guide") return "guide";
     if (path === "/ai") return "ai";
-    if (path === "/projects" || path.startsWith("/projects/"))
-      return "projects";
+    if (path === "/projects") return "projects";
+    if (path === "/spaces" || path.startsWith("/spaces/")) return "spaces";
     if (path.startsWith("/dashboard/admin")) return "admin";
     if (path.startsWith("/settings/")) return "settings";
     if (path.startsWith("/billing/")) return "billing";
@@ -364,7 +363,10 @@ export default function DashboardLayout({
       window.removeEventListener("create-project", handleCreateProject);
       window.removeEventListener("create-quick-task", handleCreateQuickTask);
       window.removeEventListener("open-ai-chat", handleOpenAIChat);
-      window.removeEventListener("summarize-workspace", handleSummarizeWorkspace);
+      window.removeEventListener(
+        "summarize-workspace",
+        handleSummarizeWorkspace,
+      );
     };
   }, []);
 
@@ -386,8 +388,20 @@ export default function DashboardLayout({
   const privateItems = [
     { id: "guide", label: "How to Use", icon: HelpCircle, href: "/guide" },
     { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
-    { id: "ai", label: "Notion AI", icon: Sparkles, href: "/ai" },
-    { id: "projects", label: "My Spaces", icon: Folder, href: "/projects" },
+    {
+      id: "projects",
+      label: "Projects",
+      icon: FolderKanban,
+      href: "/projects",
+    },
+    {
+      id: "ai",
+      label: "ScholarForge AI",
+      icon: null,
+      href: "/ai",
+      isLogo: true,
+    },
+    { id: "spaces", label: "My Spaces", icon: Folder, href: "/spaces" },
   ];
 
   const bottomItems = [
@@ -479,7 +493,8 @@ export default function DashboardLayout({
     const planColor = getPlanBadgeColor(userPlan);
     return (
       <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${planColor} shadow-sm`}>
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${planColor} shadow-sm`}
+      >
         <Crown className="mr-1 h-3 w-3" />
         {userPlan}
       </span>
@@ -508,15 +523,21 @@ export default function DashboardLayout({
 
   // Update position classes to remove navbar padding
   const positionClasses = {
-    sidebar: sidebarPosition === "right"
-      ? "fixed inset-y-0 right-0 z-40 w-64 bg-card border-l border-border"
-      : "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border",
+    sidebar:
+      sidebarPosition === "right"
+        ? "fixed inset-y-0 right-0 z-40 w-64 bg-card border-l border-border"
+        : "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border",
     sidebarTransform: sidebarOpen
-      ? (sidebarPosition === "right" ? "translate-x-0" : "translate-x-0")
-      : (sidebarPosition === "right" ? "translate-x-full lg:translate-x-0" : "-translate-x-full lg:translate-x-0"),
-    mainContent: sidebarPosition === "right"
-      ? `flex-1 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:mr-20" : "lg:mr-64"}`
-      : `flex-1 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"}`,
+      ? sidebarPosition === "right"
+        ? "translate-x-0"
+        : "translate-x-0"
+      : sidebarPosition === "right"
+        ? "translate-x-full lg:translate-x-0"
+        : "-translate-x-full lg:translate-x-0",
+    mainContent:
+      sidebarPosition === "right"
+        ? `flex-1 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:mr-20" : "lg:mr-64"}`
+        : `flex-1 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"}`,
   };
 
   const transitionClasses = getTransitionClasses();
@@ -531,21 +552,34 @@ export default function DashboardLayout({
           transform transition-all duration-300 ease-in-out
           ${positionClasses.sidebarTransform}
           ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"}
-        `}>
+        `}
+        >
           <div className="flex flex-col h-full">
-            {/* Sidebar Header - Notion Style */}
+            {/* Sidebar Header - ScholarForge AI Style */}
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/dashboard" className="flex items-center gap-2 group">
-                  {userPlan && userPlan !== "Free Plan" && userPlan !== "Free" && (
-                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${userPlan.includes("Student") || userPlan.includes("Pro")
-                      ? "bg-blue-600 text-white"
-                      : "bg-purple-600 text-white"
-                      }`}>
-                      {userPlan.includes("Student") || userPlan.includes("Pro") ? "PRO" : "RESEARCHER"}
-                    </span>
-                  )}
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 group"
+                >
+                  {userPlan &&
+                    userPlan !== "Free Plan" &&
+                    userPlan !== "Free" && (
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                          userPlan.includes("Student") ||
+                          userPlan.includes("Pro")
+                            ? "bg-blue-600 text-white"
+                            : "bg-purple-600 text-white"
+                        }`}
+                      >
+                        {userPlan.includes("Student") ||
+                        userPlan.includes("Pro")
+                          ? "PRO"
+                          : "RESEARCHER"}
+                      </span>
+                    )}
                   {!sidebarCollapsed && (
                     <span className="font-bold text-foreground text-lg tracking-tight">
                       ScholarForge AI
@@ -557,7 +591,9 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                   className={`p-1.5 rounded-lg text-muted-foreground hover:bg-muted ${transitionClasses}`}
-                  title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  title={
+                    sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                  }
                 >
                   {sidebarCollapsed ? (
                     <ChevronRight className="w-4 h-4" />
@@ -584,13 +620,25 @@ export default function DashboardLayout({
                     href={item.href}
                     className={`
                       flex items-center px-3 py-2 rounded-lg text-sm font-medium ${transitionClasses}
-                      ${currentActiveTab === item.id
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm"
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                      ${
+                        currentActiveTab === item.id
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm"
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }
                       ${sidebarCollapsed ? "justify-center" : ""}
-                    `}>
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    `}
+                  >
+                    {item.isLogo ? (
+                      <Image
+                        src="/assets/images/ScholarForge-AI-Logo.png"
+                        alt="ScholarForge AI"
+                        width={20}
+                        height={20}
+                        className="flex-shrink-0"
+                      />
+                    ) : item.icon ? (
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                    ) : null}
                     {!sidebarCollapsed && (
                       <span className="ml-3 truncate">{item.label}</span>
                     )}
@@ -607,7 +655,8 @@ export default function DashboardLayout({
                     </span>
                     <button
                       onClick={() => setShowCreateWorkspaceModal(true)}
-                      className="text-muted-foreground hover:text-emerald-500 transition-colors cursor-pointer outline-none">
+                      className="text-muted-foreground hover:text-emerald-500 transition-colors cursor-pointer outline-none"
+                    >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -627,15 +676,17 @@ export default function DashboardLayout({
                         <div
                           className={`
                             flex items-center px-3 py-2 rounded-lg text-sm font-medium ${transitionClasses} group
-                            ${isActive
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+                            ${
+                              isActive
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
                             }
                             ${sidebarCollapsed ? "justify-center" : "justify-between"}
                           `}
                           onClick={() =>
                             !sidebarCollapsed && toggleWorkspace(ws.id)
-                          }>
+                          }
+                        >
                           <div className="flex items-center flex-1 min-w-0">
                             {ws.icon && (LucideIcons as any)[ws.icon] ? (
                               (() => {
@@ -652,10 +703,11 @@ export default function DashboardLayout({
                               </span>
                             ) : (
                               <Hash
-                                className={`w-4 h-4 flex-shrink-0 ${isActive
-                                  ? "text-emerald-500"
-                                  : "text-slate-300"
-                                  }`}
+                                className={`w-4 h-4 flex-shrink-0 ${
+                                  isActive
+                                    ? "text-emerald-500"
+                                    : "text-slate-300"
+                                }`}
                               />
                             )}
                             {!sidebarCollapsed && (
@@ -665,8 +717,9 @@ export default function DashboardLayout({
 
                           {!sidebarCollapsed && (
                             <ChevronRight
-                              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
-                                }`}
+                              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                                isExpanded ? "rotate-90" : ""
+                              }`}
                             />
                           )}
                         </div>
@@ -678,12 +731,14 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/overview`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname ===
+                                ${
+                                  pathname ===
                                   `/dashboard/workspace/${ws.id}/overview`
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <LayoutDashboard className="w-3.5 h-3.5 flex-shrink-0" />
                               Overview
                             </Link>
@@ -691,13 +746,15 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/projects`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(
-                                `/workspace/${ws.id}/projects`,
-                              )
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                ${
+                                  pathname.includes(
+                                    `/workspace/${ws.id}/projects`,
+                                  )
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <FolderKanban className="w-3.5 h-3.5 flex-shrink-0" />
                               Projects
                             </Link>
@@ -705,13 +762,15 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/kanban`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(
-                                `/workspace/${ws.id}/kanban`,
-                              )
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                ${
+                                  pathname.includes(
+                                    `/workspace/${ws.id}/kanban`,
+                                  )
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <Trello className="w-3.5 h-3.5 flex-shrink-0" />
                               Kanban
                             </Link>
@@ -719,13 +778,15 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/calendar`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(
-                                `/workspace/${ws.id}/calendar`,
-                              )
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                ${
+                                  pathname.includes(
+                                    `/workspace/${ws.id}/calendar`,
+                                  )
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
                               Calendar
                             </Link>
@@ -733,13 +794,15 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/timeline`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(
-                                `/workspace/${ws.id}/timeline`,
-                              )
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                ${
+                                  pathname.includes(
+                                    `/workspace/${ws.id}/timeline`,
+                                  )
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <GanttChart className="w-3.5 h-3.5 flex-shrink-0" />
                               Timeline
                             </Link>
@@ -747,13 +810,15 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/analytics`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(
-                                `/workspace/${ws.id}/analytics`,
-                              )
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                ${
+                                  pathname.includes(
+                                    `/workspace/${ws.id}/analytics`,
+                                  )
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <BarChart2 className="w-3.5 h-3.5 flex-shrink-0" />
                               Analytics
                             </Link>
@@ -761,11 +826,13 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/chat`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(`/workspace/${ws.id}/chat`)
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                ${
+                                  pathname.includes(`/workspace/${ws.id}/chat`)
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <MessageCircle className="w-3.5 h-3.5 flex-shrink-0" />
                               Chat
                             </Link>
@@ -773,13 +840,15 @@ export default function DashboardLayout({
                               href={`/dashboard/workspace/${ws.id}/notifications`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${pathname.includes(
-                                `/workspace/${ws.id}/notifications`,
-                              )
-                                  ? "text-emerald-600 bg-emerald-50/50"
-                                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                ${
+                                  pathname.includes(
+                                    `/workspace/${ws.id}/notifications`,
+                                  )
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }
-                              `}>
+                              `}
+                            >
                               <Bell className="w-3.5 h-3.5 flex-shrink-0" />
                               Notifications
                             </Link>
@@ -815,12 +884,14 @@ export default function DashboardLayout({
                           }
                           className={`
                             flex items-center px-3 py-2 rounded-lg text-sm font-medium ${transitionClasses} cursor-pointer
-                            ${currentActiveTab === item.id
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            ${
+                              currentActiveTab === item.id
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
                             }
                             ${sidebarCollapsed ? "justify-center" : "justify-between"}
-                          `}>
+                          `}
+                        >
                           <div className="flex items-center">
                             <item.icon className="w-5 h-5 flex-shrink-0" />
                             {!sidebarCollapsed && (
@@ -831,8 +902,9 @@ export default function DashboardLayout({
                           </div>
                           {!sidebarCollapsed && (
                             <ChevronRight
-                              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isAdminExpanded ? "rotate-90" : ""
-                                }`}
+                              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                                isAdminExpanded ? "rotate-90" : ""
+                              }`}
                             />
                           )}
                         </div>
@@ -846,10 +918,11 @@ export default function DashboardLayout({
                                   className="flex items-center justify-between px-3 py-1.5 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 cursor-pointer"
                                   onClick={() =>
                                     toggleWorkspace(`admin-${ws.id}`)
-                                  }>
+                                  }
+                                >
                                   <div className="flex items-center gap-2 min-w-0">
                                     {ws.icon &&
-                                      (LucideIcons as any)[ws.icon] ? (
+                                    (LucideIcons as any)[ws.icon] ? (
                                       (() => {
                                         const IconNode = (LucideIcons as any)[
                                           ws.icon
@@ -868,63 +941,70 @@ export default function DashboardLayout({
                                     <span className="truncate">{ws.name}</span>
                                   </div>
                                   <ChevronRight
-                                    className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${expandedWorkspaces.includes(
-                                      `admin-${ws.id}`,
-                                    )
-                                      ? "rotate-90"
-                                      : ""
-                                      }`}
+                                    className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${
+                                      expandedWorkspaces.includes(
+                                        `admin-${ws.id}`,
+                                      )
+                                        ? "rotate-90"
+                                        : ""
+                                    }`}
                                   />
                                 </div>
 
                                 {expandedWorkspaces.includes(
                                   `admin-${ws.id}`,
                                 ) && (
-                                    <div className="ml-2 pl-2 border-l border-slate-200 mt-1 space-y-1">
-                                      <Link
-                                        href={`/dashboard/admin/${ws.id}/members`}
-                                        className={`
+                                  <div className="ml-2 pl-2 border-l border-slate-200 mt-1 space-y-1">
+                                    <Link
+                                      href={`/dashboard/admin/${ws.id}/members`}
+                                      className={`
                                         flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                        ${pathname.includes(
-                                          `/admin/${ws.id}/members`,
-                                        )
+                                        ${
+                                          pathname.includes(
+                                            `/admin/${ws.id}/members`,
+                                          )
                                             ? "text-emerald-600 bg-emerald-50/50"
                                             : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                                          }
-                                      `}>
-                                        <Users className="w-3.5 h-3.5 flex-shrink-0" />
-                                        Members
-                                      </Link>
-                                      <Link
-                                        href={`/dashboard/admin/${ws.id}/activity-log`}
-                                        className={`
+                                        }
+                                      `}
+                                    >
+                                      <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                                      Members
+                                    </Link>
+                                    <Link
+                                      href={`/dashboard/admin/${ws.id}/activity-log`}
+                                      className={`
                                         flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                        ${pathname.includes(
-                                          `/admin/${ws.id}/activity-log`,
-                                        )
+                                        ${
+                                          pathname.includes(
+                                            `/admin/${ws.id}/activity-log`,
+                                          )
                                             ? "text-emerald-600 bg-emerald-50/50"
                                             : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                                          }
-                                      `}>
-                                        <Activity className="w-3.5 h-3.5 flex-shrink-0" />
-                                        Activity Log
-                                      </Link>
-                                      <Link
-                                        href={`/dashboard/admin/${ws.id}/settings`}
-                                        className={`
+                                        }
+                                      `}
+                                    >
+                                      <Activity className="w-3.5 h-3.5 flex-shrink-0" />
+                                      Activity Log
+                                    </Link>
+                                    <Link
+                                      href={`/dashboard/admin/${ws.id}/settings`}
+                                      className={`
                                         flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                        ${pathname.includes(
-                                          `/admin/${ws.id}/settings`,
-                                        )
+                                        ${
+                                          pathname.includes(
+                                            `/admin/${ws.id}/settings`,
+                                          )
                                             ? "text-emerald-600 bg-emerald-50/50"
                                             : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                                          }
-                                      `}>
-                                        <Settings className="w-3.5 h-3.5 flex-shrink-0" />
-                                        Settings
-                                      </Link>
-                                    </div>
-                                  )}
+                                        }
+                                      `}
+                                    >
+                                      <Settings className="w-3.5 h-3.5 flex-shrink-0" />
+                                      Settings
+                                    </Link>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -939,12 +1019,14 @@ export default function DashboardLayout({
                       href={item.href}
                       className={`
                         flex items-center px-3 py-2 rounded-lg text-sm font-medium ${transitionClasses}
-                        ${currentActiveTab === item.id
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ${
+                          currentActiveTab === item.id
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         }
                         ${sidebarCollapsed ? "justify-center" : ""}
-                      `}>
+                      `}
+                    >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       {!sidebarCollapsed && (
                         <span className="ml-3 truncate">{item.label}</span>
@@ -960,7 +1042,8 @@ export default function DashboardLayout({
               {/* Mobile menu button (only on mobile) */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`lg:hidden w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-muted ${transitionClasses}`}>
+                className={`lg:hidden w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-muted ${transitionClasses}`}
+              >
                 {sidebarOpen ? (
                   <X className="w-4 h-4" />
                 ) : (
@@ -970,152 +1053,165 @@ export default function DashboardLayout({
               </button>
 
               {/* Theme Toggle */}
-              <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2`}>
-                {!sidebarCollapsed && <span className="text-sm text-muted-foreground">Theme</span>}
+              <div
+                className={`flex items-center ${sidebarCollapsed ? "justify-center" : "justify-between"} px-3 py-2`}
+              >
+                {!sidebarCollapsed && (
+                  <span className="text-sm text-muted-foreground">Theme</span>
+                )}
                 <ModeToggle />
               </div>
 
               {/* Notifications */}
               {workspaces.length > 0 && (
-                <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2`}>
-                  {!sidebarCollapsed && <span className="text-sm text-muted-foreground">Notifications</span>}
+                <div
+                  className={`flex items-center ${sidebarCollapsed ? "justify-center" : "justify-between"} px-3 py-2`}
+                >
+                  {!sidebarCollapsed && (
+                    <span className="text-sm text-muted-foreground">
+                      Notifications
+                    </span>
+                  )}
                   <NotificationBell
                     isPinned={isInboxPinned}
                     onPinChange={setIsInboxPinned}
                   />
                 </div>
               )}
-
-              {/* Profile Section */}
-              <div className="relative profile-dropdown">
-                <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted ${transitionClasses}`}>
-                  <div
-                    className={`
-                    relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                    ${userPlan === "Free Plan" || !userPlan
-                        ? "bg-gradient-to-br from-gray-400 to-gray-600"
-                        : userPlan.includes("Student") ||
-                          userPlan.includes("Pro")
-                          ? "bg-gradient-to-br from-blue-500 to-blue-700"
-                          : "bg-gradient-to-br from-purple-500 to-purple-700"
-                      }
-                  `}>
-                    <span className="text-white font-medium text-sm">
-                      {user?.user_metadata?.full_name
-                        ? user.user_metadata.full_name.charAt(0).toUpperCase()
-                        : user?.email?.charAt(0).toUpperCase() || "U"}
-                    </span>
-                    {userPlan &&
-                      userPlan !== "Free Plan" &&
-                      userPlan !== "Free" && (
-                        <div
-                          className={`
-                        absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center
-                        ${userPlan.includes("Student") ||
-                              userPlan.includes("Pro")
-                              ? "bg-blue-500 border border-white"
-                              : "bg-purple-500 border border-white"
-                            }
-                      `}>
-                          <Crown className="w-2 h-2 text-white" />
-                        </div>
-                      )}
-                  </div>
-                  {!sidebarCollapsed && (
-                    <>
-                      <div className="flex-1 min-w-0 text-left">
-                        <p className="text-sm font-medium truncate">
-                          {user?.user_metadata?.full_name || "User"}
-                        </p>
-                        <p className="text-xs text-slate-400 truncate">
-                          {user?.email}
-                        </p>
-                      </div>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    </>
-                  )}
-                </button>
-
-                {/* Profile Dropdown */}
-                {profileDropdownOpen && (
-                  <div className="absolute bottom-full left-0 right-0 mb-2 w-full bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border py-2 z-50">
-                    {/* User info */}
-                    <div className="px-4 py-3 border-b border-border">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`
-                          relative w-10 h-10 rounded-full flex items-center justify-center
-                          ${userPlan === "Free Plan" || !userPlan
-                              ? "bg-gradient-to-br from-slate-600 to-slate-800"
-                              : "bg-gradient-to-br from-emerald-500 to-emerald-700"
-                            }
-                        `}>
-                          <span className="text-white font-medium">
-                            {user?.user_metadata?.full_name
-                              ? user.user_metadata.full_name
-                                .charAt(0)
-                                .toUpperCase()
-                              : user?.email?.charAt(0).toUpperCase() || "U"}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className="text-sm font-medium truncate">
-                            {user?.user_metadata?.full_name || "User"}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user?.email}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Menu items */}
-                    <div className="py-2">
-                      <Link
-                        href="/settings/profile"
-                        className={`flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted ${transitionClasses}`}>
-                        <Users className="w-4 h-4 mr-3" />
-                        View Profile
-                      </Link>
-
-                      <button
-                        onClick={handleSignOut}
-                        className={`flex items-center w-full px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 ${transitionClasses}`}>
-                        <LogOut className="w-4 h-4 mr-3" />
-                        Log Out
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Usage meter */}
             {!sidebarCollapsed && (
               <div className="p-4 border-t border-border">
                 <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-emerald-400 flex items-center">
-                      <span>{getUserPlanBadge()}</span> {userPlan}
-                    </span>
-                    {projectsLimit !== Infinity && (
-                      <span className="text-xs text-slate-400">
-                        {projectsUsed}/{projectsLimit}
-                      </span>
-                    )}
-                    {projectsLimit === Infinity && (
-                      <span className="text-xs text-slate-400">
-                        {projectsUsed}/∞
-                      </span>
+                  {/* Profile Section */}
+                  <div className="relative profile-dropdown">
+                    <button
+                      onClick={() =>
+                        setProfileDropdownOpen(!profileDropdownOpen)
+                      }
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted ${transitionClasses}`}
+                    >
+                      <div
+                        className={`
+                    relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                    ${
+                      userPlan === "Free Plan" || !userPlan
+                        ? "bg-gradient-to-br from-gray-400 to-gray-600"
+                        : userPlan.includes("Student") ||
+                            userPlan.includes("Pro")
+                          ? "bg-gradient-to-br from-blue-500 to-blue-700"
+                          : "bg-gradient-to-br from-purple-500 to-purple-700"
+                    }
+                  `}
+                      >
+                        <span className="text-white font-medium text-sm">
+                          {user?.user_metadata?.full_name
+                            ? user.user_metadata.full_name
+                                .charAt(0)
+                                .toUpperCase()
+                            : user?.email?.charAt(0).toUpperCase() || "U"}
+                        </span>
+                        {userPlan &&
+                          userPlan !== "Free Plan" &&
+                          userPlan !== "Free" && (
+                            <div
+                              className={`
+                        absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center
+                        ${
+                          userPlan.includes("Student") ||
+                          userPlan.includes("Pro")
+                            ? "bg-blue-500 border border-white"
+                            : "bg-purple-500 border border-white"
+                        }
+                      `}
+                            >
+                              <Crown className="w-2 h-2 text-white" />
+                            </div>
+                          )}
+                      </div>
+                      {!sidebarCollapsed && (
+                        <>
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="text-sm font-medium truncate">
+                              {user?.user_metadata?.full_name || "User"}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {user?.email}
+                            </p>
+                          </div>
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        </>
+                      )}
+                    </button>
+
+                    {/* Profile Dropdown */}
+                    {profileDropdownOpen && (
+                      <div className="absolute bottom-full left-0 right-0 mb-2 w-full bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border py-2 z-50">
+                        {/* User info */}
+                        <div className="px-4 py-3 border-b border-border">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`
+                          relative w-10 h-10 rounded-full flex items-center justify-center
+                          ${
+                            userPlan === "Free Plan" || !userPlan
+                              ? "bg-gradient-to-br from-slate-600 to-slate-800"
+                              : "bg-gradient-to-br from-emerald-500 to-emerald-700"
+                          }
+                        `}
+                            >
+                              <span className="text-white font-medium">
+                                {user?.user_metadata?.full_name
+                                  ? user.user_metadata.full_name
+                                      .charAt(0)
+                                      .toUpperCase()
+                                  : user?.email?.charAt(0).toUpperCase() || "U"}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0 text-left">
+                              <p className="text-sm font-medium truncate">
+                                {user?.user_metadata?.full_name || "User"}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {user?.email}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Menu items */}
+                        <div className="py-2">
+                          <Link
+                            href="/settings/profile"
+                            className={`flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted ${transitionClasses}`}
+                          >
+                            <Users className="w-4 h-4 mr-3" />
+                            View Profile
+                          </Link>
+
+                          <button
+                            onClick={handleSignOut}
+                            className={`flex items-center w-full px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 ${transitionClasses}`}
+                          >
+                            <LogOut className="w-4 h-4 mr-3" />
+                            Log Out
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
 
-                  {/* Always show unlimited projects message */}
-                  <p className="text-xs text-slate-500 mb-3">
-                    Unlimited projects
-                  </p>
+                  {/* Greeting message */}
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground">
+                      {getGreeting()},{" "}
+                      <span className="text-emerald-400 font-medium">
+                        {user?.user_metadata?.full_name || "User"}
+                      </span>
+                      !
+                    </p>
+                  </div>
 
                   {/* Show loading indicator when projects are loading */}
                   {loadingProjects && (
@@ -1136,17 +1232,6 @@ export default function DashboardLayout({
                       </p>
                     </div>
                   )}
-
-                  {/* Greeting message */}
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground">
-                      {getGreeting()},{" "}
-                      <span className="text-emerald-400 font-medium">
-                        {user?.user_metadata?.full_name || "User"}
-                      </span>
-                      !
-                    </p>
-                  </div>
                 </div>
               </div>
             )}
@@ -1167,7 +1252,7 @@ export default function DashboardLayout({
             positionClasses.mainContent,
             "min-w-0 h-full flex flex-col transition-all duration-300",
             showAIChat && "lg:mr-[420px]",
-            isInboxPinned && "lg:ml-[calc(16rem+22.5rem)]"
+            isInboxPinned && "lg:ml-[calc(16rem+22.5rem)]",
           )}
         >
           {children}
@@ -1220,8 +1305,15 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setIsInboxPinned(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-                  title="Unpin inbox">
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  title="Unpin inbox"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M12 2v10M5 12h14M12 12l-4 8M12 12l4 8" />
                   </svg>
                 </button>
@@ -1247,11 +1339,11 @@ export default function DashboardLayout({
         onClose={() => setShowQuickTaskModal(false)}
       />
 
-
       {/* Create Workspace Modal */}
       <Dialog
         open={showCreateWorkspaceModal}
-        onOpenChange={setShowCreateWorkspaceModal}>
+        onOpenChange={setShowCreateWorkspaceModal}
+      >
         <DialogContent className="sm:max-w-[480px] bg-card border-border shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -1294,7 +1386,8 @@ export default function DashboardLayout({
                         newWorkspaceIcon === iconName
                           ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-110"
                           : "text-muted-foreground hover:text-emerald-500",
-                      )}>
+                      )}
+                    >
                       {IconNode && <IconNode className="w-4 h-4" />}
                     </button>
                   );
@@ -1321,13 +1414,15 @@ export default function DashboardLayout({
               variant="outline"
               className="bg-muted hover:bg-muted/80 border-border text-sm font-semibold"
               onClick={() => setShowCreateWorkspaceModal(false)}
-              disabled={isCreatingWorkspace}>
+              disabled={isCreatingWorkspace}
+            >
               Cancel
             </Button>
             <Button
               className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 text-sm font-semibold px-6"
               onClick={handleCreateWorkspace}
-              disabled={isCreatingWorkspace}>
+              disabled={isCreatingWorkspace}
+            >
               {isCreatingWorkspace ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (

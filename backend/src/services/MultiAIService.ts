@@ -1,3 +1,8 @@
+/**
+ * @deprecated This service is not BYOK-aware and uses system API keys only.
+ * It is scheduled for migration to the UnifiedAIService + BYOK system.
+ * Do not use for new features. Existing usage in searchService.ts will be migrated.
+ */
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fetch from "node-fetch";
 import logger from "../monitoring/logger";
@@ -49,7 +54,7 @@ export class MultiAIService {
 
   async generateContent(
     prompt: string,
-    model: string = "gemini-3.1-flash-lite-preview",
+    model: string = "gemini-3.1-flash-lite",
     options: any = {},
   ): Promise<MultiAIResponse> {
     // Smart routing based on model name
@@ -61,7 +66,7 @@ export class MultiAIService {
       // Default to Gemini for any unrecognized model
       return await this.generateWithGemini(
         prompt,
-        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-flash-lite",
         options,
       );
     }
@@ -120,7 +125,7 @@ export class MultiAIService {
 
   private async generateWithGemini(
     prompt: string,
-    model: string = "gemini-3.1-flash-lite-preview",
+    model: string = "gemini-3.1-flash-lite",
     options: any = {},
   ): Promise<MultiAIResponse> {
     try {

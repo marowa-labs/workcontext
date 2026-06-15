@@ -33,6 +33,7 @@ async function handlePostAction(req: any, res: any) {
       currentProjectId,
       conversationHistory,
       autoConfirm,
+      model,
     } = req.body;
 
     if (!message || typeof message !== "string") {
@@ -56,6 +57,7 @@ async function handlePostAction(req: any, res: any) {
       currentProjectId,
       conversationHistory,
       autoConfirm,
+      model,
     });
 
     return res.status(200).json({
@@ -67,6 +69,45 @@ async function handlePostAction(req: any, res: any) {
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to process action",
+      type: "error",
+    });
+  }
+}
+
+/**
+ * Handle confirming a pending action
+ */
+async function handleConfirmAction(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const { actionId } = req.body;
+
+    if (!actionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Action ID is required",
+      });
+    }
+
+    // Confirm and execute the action
+    const result = await AIActionService.confirmAction(actionId, userId);
+
+    return res.status(result.type === "error" ? 400 : 200).json({
+      success: result.type !== "error",
+      ...result,
+    });
+  } catch (error: any) {
+    logger.error("Error confirming AI action:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to confirm action",
       type: "error",
     });
   }
@@ -108,8 +149,53 @@ async function handleGetActions(req: any, res: any) {
   }
 }
 
+/**
+ * Handle cancelling a pending action
+ */
+async function handleCancelAction(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const { actionId } = req.body;
+
+    if (!actionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Action ID is required",
+      });
+    }
+
+    // Cancel the action
+    const result = await AIActionService.cancelAction(actionId);
+
+    return res.status(result.type === "error" ? 400 : 200).json({
+      success: result.type !== "error",
+      ...result,
+    });
+  } catch (error: any) {
+    logger.error("Error cancelling AI action:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to cancel action",
+      type: "error",
+    });
+  }
+}
+
 // POST /api/ai/actions - Process AI action
 router.post("/", authenticateExpressRequest, handlePostAction);
+
+// POST /api/ai/actions/confirm - Confirm pending action
+router.post("/confirm", authenticateExpressRequest, handleConfirmAction);
+
+// POST /api/ai/actions/cancel - Cancel pending action
+router.post("/cancel", authenticateExpressRequest, handleCancelAction);
 
 // GET /api/ai/actions - Get action history/pending actions
 router.get("/", authenticateExpressRequest, handleGetActions);

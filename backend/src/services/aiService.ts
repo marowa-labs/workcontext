@@ -6,7 +6,6 @@ import { SubscriptionService, plans } from "./subscriptionService";
 import { createNotification } from "./notificationService";
 import { aiPerformanceMonitor } from "../monitoring/aiPerformance";
 import { SearchService } from "./searchService";
-import { SecretsService } from "./secrets-service";
 import { BYOKService } from "./byokService";
 import { AIPerformanceMetric, AIUsage } from "@prisma/client";
 
@@ -14,33 +13,20 @@ import { AIPerformanceMetric, AIUsage } from "@prisma/client";
 const openRouterClients: Map<string, OpenRouter> = new Map();
 
 /**
- * Get OpenRouter client - checks for BYOK key first, falls back to system key
+ * Get OpenRouter client — BYOK ONLY, no system fallback
  */
 const getOpenRouterClient = async (
   userId?: string,
 ): Promise<OpenRouter | null> => {
   try {
-    let apiKey: string | null = null;
+    if (!userId) return null;
 
-    // If userId provided, check for BYOK key first
-    if (userId) {
-      apiKey = await BYOKService.getDecryptedKey(userId, "openrouter");
-      if (apiKey) {
-        logger.info("Using BYOK OpenRouter key for user", { userId });
-      }
-    }
+    const apiKey = await BYOKService.getDecryptedKey(userId, "openrouter");
+    if (!apiKey) return null;
 
-    // Fall back to system key
-    if (!apiKey) {
-      apiKey = process.env.OPENROUTER_API_KEY || null;
-      if (apiKey) {
-        logger.debug("Using system OpenRouter key");
-      }
-    }
-
-    if (!apiKey) {
-      return null;
-    }
+    logger.info("Using BYOK OpenRouter key for user", {
+      userId: userId.slice(0, 8) + "...",
+    });
 
     // Use cached client if available for this key
     if (openRouterClients.has(apiKey)) {
@@ -57,60 +43,20 @@ const getOpenRouterClient = async (
   }
 };
 
-// Initialize Google Generative AI client
-let genAI: GoogleGenerativeAI | null = null;
-
-// Initialize the genAI instance
-const initializeGenAI = async () => {
-  const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
-  if (apiKey) {
-    genAI = new GoogleGenerativeAI(apiKey);
-  }
-  return genAI;
-};
-
-// Initialize at startup
-initializeGenAI();
-
-// Helper function to get initialized genAI instance
-// Supports BYOK (Bring Your Own Key) - checks for user-provided keys first
+// Helper function to get Gemini AI instance — BYOK ONLY, no system fallback
 const getGenAI = async (
   userId?: string,
 ): Promise<GoogleGenerativeAI | null> => {
-  // Check for BYOK key if userId provided
-  if (userId) {
-    const byokKey = await BYOKService.getDecryptedKey(userId, "google");
-    if (byokKey) {
-      logger.info("Using BYOK Google API key for user", {
-        userId: userId.slice(0, 8) + "...",
-      });
-      return new GoogleGenerativeAI(byokKey);
-    }
-  }
+  if (!userId) return null;
 
-  // Fall back to system key
-  if (!genAI) {
-    const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
-    if (apiKey) {
-      genAI = new GoogleGenerativeAI(apiKey);
-    }
-  }
-  return genAI;
-};
+  const byokKey = await BYOKService.getDecryptedKey(userId, "google");
+  if (!byokKey) return null;
 
-// Log Gemini API key status for debugging
-const logGeminiStatus = async () => {
-  const hasApiKey = !!(await SecretsService.getSecret("GEMINI_API_KEY"));
-  const apiKeyLength = (await SecretsService.getSecret("GEMINI_API_KEY"))
-    ?.length;
-
-  logger.info("Gemini API Key Status", {
-    hasApiKey,
-    apiKeyLength,
+  logger.info("Using BYOK Google API key for user", {
+    userId: userId.slice(0, 8) + "...",
   });
+  return new GoogleGenerativeAI(byokKey);
 };
-
-logGeminiStatus();
 
 // Track session time for autocomplete restrictions
 const sessionStartTime = new Map<string, number>(); // userId -> session start time
@@ -124,7 +70,7 @@ interface AIModel {
 
 // Define available AI models
 const AI_MODELS: Record<string, AIModel> = {
-  "gemini-3.1-flash-lite-preview": {
+  "gemini-3.1-flash-lite": {
     name: "Gemini 3.1 Flash Lite",
     description: "Google's advanced multimodal model",
     maxTokens: 1048576,
@@ -144,6 +90,30 @@ const AI_MODELS: Record<string, AIModel> = {
     description:
       "Multimodal model for text, image, video, and audio inputs. Built for enterprise agent systems with 300K context and 16K reasoning budget.",
     maxTokens: 300000,
+  },
+
+  // OpenAI models (require OpenAI API key)
+  "openai/gpt-4o": {
+    name: "GPT-4o",
+    description: "OpenAI's most capable multimodal model",
+    maxTokens: 128000,
+  },
+  "openai/gpt-4o-mini": {
+    name: "GPT-4o Mini",
+    description: "Fast and affordable OpenAI model for lightweight tasks",
+    maxTokens: 128000,
+  },
+
+  // Anthropic models (require Anthropic API key)
+  "anthropic/claude-sonnet-4-20250514": {
+    name: "Claude Sonnet 4",
+    description: "Anthropic's latest Sonnet model with excellent reasoning",
+    maxTokens: 200000,
+  },
+  "anthropic/claude-3-5-haiku-20241022": {
+    name: "Claude 3.5 Haiku",
+    description: "Anthropic's fastest model for quick tasks",
+    maxTokens: 200000,
   },
 };
 
@@ -245,6 +215,25 @@ export class AIService {
       if (metadata?.cost) {
         updateData.total_cost_estimate =
           (usage?.total_cost_estimate || 0) + metadata.cost;
+
+        // Track BYOK vs system cost attribution
+        const byokSettings = await BYOKService.getSettings(userId);
+        const hasBYOK =
+          byokSettings.hasGoogleKey ||
+          byokSettings.hasOpenAIKey ||
+          byokSettings.hasClaudeKey ||
+          byokSettings.hasOpenRouterKey;
+
+        if (hasBYOK) {
+          updateData.byok_cost_estimate =
+            (usage?.byok_cost_estimate || 0) + metadata.cost;
+          updateData.byok_request_count = (usage?.byok_request_count || 0) + 1;
+        } else {
+          updateData.system_cost_estimate =
+            (usage?.system_cost_estimate || 0) + metadata.cost;
+          updateData.system_request_count =
+            (usage?.system_request_count || 0) + 1;
+        }
       }
 
       let usageRecord;
@@ -265,6 +254,14 @@ export class AIService {
           image_generation_count: 0,
           web_search_count: 0,
           deep_search_count: 0,
+          grammar_check_count: 0,
+          summarization_count: 0,
+          document_qa_count: 0,
+          writing_project_count: 0,
+          byok_request_count: 0,
+          system_request_count: 0,
+          byok_cost_estimate: 0,
+          system_cost_estimate: 0,
         };
 
         // Set the appropriate count to 1 for the current usage type
@@ -358,127 +355,152 @@ export class AIService {
     }
   }
 
-  // Get the appropriate model for a user based on their subscription plan and context
+  // Get the appropriate model for a user — BYOK-first approach
+  // If user has BYOK keys, they can use any model from their configured providers
+  // Otherwise, fall back to plan-based model restrictions
   static async getUserModel(
     userId: string,
     preferredModel?: string,
     context?: { action?: string; contentLength?: number },
-  ): Promise<string> {
+  ): Promise<string | null> {
     try {
-      // Get user's subscription
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
-
-      const planId = subscription?.plan || "free";
-
-      // Get user's preferred model
+      // Get user's preferred model setting
       const user: any = await prisma.user.findUnique({
         where: { id: userId },
       });
 
-      const userModel =
-        preferredModel ||
-        user?.["preferred_ai_model"] ||
-        "gemini-3.1-flash-lite-preview";
+      const userModel = preferredModel || user?.["preferred_ai_model"] || null;
+      if (!userModel) return null;
 
-      // Define available models per plan based on subscription restrictions
-      const planModels: Record<string, string[]> = {
-        free: [
-          "gemini-3.1-flash-lite-preview",
-          "openai/gpt-oss-120b:free",
-          "nvidia/nemotron-3-super-120b-a12b:free",
-        ],
-        onetime: [
-          "gemini-3.1-flash-lite-preview",
-          "openai/gpt-oss-120b:free",
-          "nvidia/nemotron-3-super-120b-a12b:free",
-        ],
-        student: [
-          "gemini-3.1-flash-lite-preview",
-          "openai/gpt-oss-120b:free",
-          "nvidia/nemotron-3-super-120b-a12b:free",
-        ],
-        researcher: Object.keys(AI_MODELS),
-        institutional: Object.keys(AI_MODELS),
-      };
+      // Check if user has any BYOK keys configured
+      const byokSettings = await BYOKService.getSettings(userId);
+      const hasBYOK =
+        byokSettings.hasGoogleKey ||
+        byokSettings.hasOpenAIKey ||
+        byokSettings.hasClaudeKey ||
+        byokSettings.hasOpenRouterKey;
 
-      const availableModels = planModels[planId] || planModels.free;
+      // Build list of models available from user's BYOK providers (dynamic + hard-coded fallback)
+      const byokModels: string[] = [];
 
-      // If user's preferred model is available in their plan, use it
-      if (availableModels.includes(userModel)) {
-        return userModel;
-      }
+      // For each provider, try dynamic cached models first, then fall back to hard-coded
+      const providerPrefixes: Array<{
+        hasKey: boolean;
+        provider: string;
+        prefix: string;
+      }> = [
+        {
+          hasKey: byokSettings.hasGoogleKey,
+          provider: "google",
+          prefix: "gemini",
+        },
+        {
+          hasKey: byokSettings.hasOpenAIKey,
+          provider: "openai",
+          prefix: "openai/",
+        },
+        {
+          hasKey: byokSettings.hasClaudeKey,
+          provider: "anthropic",
+          prefix: "anthropic/",
+        },
+      ];
 
-      // Context-aware model selection
-      if (context) {
-        // For long content, prefer models with higher token limits
-        if (context.contentLength && context.contentLength > 10000) {
-          // Prefer models with high token limits for long content
-          const highTokenModels = availableModels.filter(
-            (model) => AI_MODELS[model]?.maxTokens > 100000,
-          );
-          if (highTokenModels.length > 0) {
-            return highTokenModels[0];
-          }
-        }
-
-        // For specific actions, prefer appropriate models
-        if (context.action) {
-          // For research-related actions, prefer models with strong reasoning
-          if (
-            ["research_topic", "suggest_sources", "compare_arguments"].includes(
-              context.action,
-            )
-          ) {
-            const researchModels = availableModels.filter((model) =>
-              [
-                "gemini-3.1-flash-lite-preview",
-                "gemini-3.1-flash-lite-preview",
-              ].includes(model),
-            );
-            if (researchModels.length > 0) {
-              return researchModels[0];
-            }
-          }
-
-          // For creative writing, prefer models with strong text generation
-          if (
-            ["continue_writing", "expand", "generate_outline"].includes(
-              context.action,
-            )
-          ) {
-            const creativeModels = availableModels.filter((model) =>
-              [
-                "gemini-3.1-flash-lite-preview",
-                "gemini-3.1-flash-lite-preview",
-              ].includes(model),
-            );
-            if (creativeModels.length > 0) {
-              return creativeModels[0];
-            }
-          }
-
-          // For quick tasks, prefer faster models
-          if (
-            ["fix_grammar", "summarize", "simplify"].includes(context.action)
-          ) {
-            const fastModels = availableModels.filter((model) =>
-              ["gemini-3.1-flash-lite-preview"].includes(model),
-            );
-            if (fastModels.length > 0) {
-              return fastModels[0];
-            }
-          }
+      for (const { hasKey, provider, prefix } of providerPrefixes) {
+        if (!hasKey) continue;
+        // Try dynamic cached models first
+        const cachedModels = await BYOKService.getProviderModels(
+          userId,
+          provider,
+        );
+        if (cachedModels && cachedModels.length > 0) {
+          cachedModels.forEach((m: any) => byokModels.push(m.id));
+        } else {
+          // Fall back to hard-coded models for this provider
+          Object.keys(AI_MODELS)
+            .filter((m) => m.startsWith(prefix) && !m.includes(":free"))
+            .forEach((m) => byokModels.push(m));
         }
       }
 
-      // Otherwise, fall back to the default model for their plan
-      return availableModels[0] || "gemini-3.1-flash-lite-preview";
+      // OpenRouter is special — it has many models, always include if key exists
+      if (byokSettings.hasOpenRouterKey) {
+        const cachedModels = await BYOKService.getProviderModels(
+          userId,
+          "openrouter",
+        );
+        if (cachedModels && cachedModels.length > 0) {
+          cachedModels.forEach((m: any) => {
+            if (!byokModels.includes(m.id)) byokModels.push(m.id);
+          });
+        } else {
+          Object.keys(AI_MODELS)
+            .filter(
+              (m) =>
+                !m.startsWith("gemini") &&
+                !m.startsWith("openai/") &&
+                !m.startsWith("anthropic/"),
+            )
+            .forEach((m) => byokModels.push(m));
+        }
+      }
+
+      // If user has BYOK keys, prefer their providers' models
+      if (hasBYOK && byokModels.length > 0) {
+        if (byokModels.includes(userModel)) return userModel;
+        const selected = this.selectModelFromPool(byokModels, context);
+        if (selected) return selected;
+        return byokModels[0];
+      }
+
+      // No BYOK — no models available (user must configure a key)
+      return null;
     } catch (error) {
       logger.error("Error getting user model:", error);
-      return "gemini-3.1-flash-lite-preview"; // Default fallback
+      return null;
     }
+  }
+
+  // Helper: context-aware model selection from a pool of available models
+  private static selectModelFromPool(
+    pool: string[],
+    context?: { action?: string; contentLength?: number },
+  ): string | null {
+    if (!context) return null;
+
+    // For long content, prefer models with higher token limits
+    if (context.contentLength && context.contentLength > 10000) {
+      const highTokenModels = pool.filter(
+        (model) => (AI_MODELS[model]?.maxTokens || 0) > 100000,
+      );
+      if (highTokenModels.length > 0) return highTokenModels[0];
+    }
+
+    // For specific actions, prefer appropriate models
+    if (context.action) {
+      if (
+        ["research_topic", "suggest_sources", "compare_arguments"].includes(
+          context.action,
+        )
+      ) {
+        const researchModels = pool.filter((m) => m.startsWith("gemini"));
+        if (researchModels.length > 0) return researchModels[0];
+      }
+      if (
+        ["continue_writing", "expand", "generate_outline"].includes(
+          context.action,
+        )
+      ) {
+        const creativeModels = pool.filter((m) => m.startsWith("gemini"));
+        if (creativeModels.length > 0) return creativeModels[0];
+      }
+      if (["fix_grammar", "summarize", "simplify"].includes(context.action)) {
+        const fastModels = pool.filter((m) => m.includes("flash"));
+        if (fastModels.length > 0) return fastModels[0];
+      }
+    }
+
+    return null;
   }
 
   // Check if user has reached their AI usage limit
@@ -497,7 +519,23 @@ export class AIService {
         },
       });
 
-      // Check if user can perform AI request based on their subscription
+      // BYOK users have no platform-imposed limits — they pay for their own API usage
+      const byokSettings = await BYOKService.getSettings(userId);
+      const hasBYOK =
+        byokSettings.hasGoogleKey ||
+        byokSettings.hasOpenAIKey ||
+        byokSettings.hasClaudeKey ||
+        byokSettings.hasOpenRouterKey;
+
+      if (hasBYOK) {
+        // BYOK users: no platform limit, return a high remaining count
+        logger.info("BYOK user — skipping platform usage limits", {
+          userId: userId.slice(0, 8) + "...",
+        });
+        return { hasLimit: false, remaining: 1000000 };
+      }
+
+      // Non-BYOK users: check subscription-based limits
       const canPerform = await SubscriptionService.canPerformAction(
         userId,
         "ai_request",
@@ -523,7 +561,7 @@ export class AIService {
         (usage?.web_search_count || 0) +
         (usage?.deep_search_count || 0);
       const remaining =
-        limit === -1 || (limit as any) === -1 ? 1000000 : limit - used; // For unlimited, set a high number
+        limit === -1 || (limit as any) === -1 ? 1000000 : limit - used;
 
       return {
         hasLimit: remaining <= 0,
@@ -559,49 +597,36 @@ export class AIService {
       await this.trackAIUsage(userId);
     }
 
-    // Get the appropriate model for the user based on context and optimization
-    // Get user's subscription plan
-    const subscription = await prisma.subscription.findUnique({
-      where: { user_id: userId },
-    });
-    const planId = subscription?.plan || "free";
-
-    // Check if user has access to the requested model
-    if (model) {
-      const planModels: Record<string, string[]> = {
-        free: [
-          "gemini-3.1-flash-lite-preview",
-          "openai/gpt-oss-120b:free",
-          "nvidia/nemotron-3-super-120b-a12b:free",
-        ],
-        onetime: [
-          "gemini-3.1-flash-lite-preview",
-          "openai/gpt-oss-120b:free",
-          "nvidia/nemotron-3-super-120b-a12b:free",
-        ],
-        student: [
-          "gemini-3.1-flash-lite-preview",
-          "openai/gpt-oss-120b:free",
-          "nvidia/nemotron-3-super-120b-a12b:free",
-        ],
-        researcher: Object.keys(AI_MODELS),
-        institutional: Object.keys(AI_MODELS),
-      };
-
-      const availableModels = planModels[planId] || planModels.free;
-      if (!availableModels.includes(model)) {
-        throw new Error(
-          `Model ${model} is not available for your ${planId} plan. Please upgrade your subscription or select a different model.`,
-        );
-      }
-    }
-
     // Get user's preferred model and AI preferences
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel =
-      user?.["preferred_ai_model"] || "gemini-3.1-flash-lite-preview";
+    const preferredModel = user?.["preferred_ai_model"] || model || null;
+
+    // Validate requested model against BYOK-aware available models
+    if (model) {
+      const availableModels = await this.getUserAvailableModels(userId);
+      if (!availableModels[model]) {
+        throw new Error(
+          `Model ${model} is not available. Please configure the required API key in your AI settings or select a different model.`,
+        );
+      }
+    }
+
+    // Get the appropriate model for the user (BYOK-first, no hard-coded fallback)
+    const selectedModel = await this.getUserModel(
+      userId,
+      preferredModel || model,
+      {
+        action,
+        contentLength: text?.length,
+      },
+    );
+    if (!selectedModel) {
+      throw new Error(
+        "No AI model available. Please configure an API key in your AI settings and select a model.",
+      );
+    }
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Merge user preferences with request preferences
@@ -742,7 +767,7 @@ Provide expanded text that feels like natural development, not padding.`;
 
       case "summarize":
         prompt = `Summarize the following text concisely while preserving key points and meaning.
-        
+
 Text: "${text}"
 
 Provide a clear, condensed summary.`;
@@ -750,7 +775,7 @@ Provide a clear, condensed summary.`;
 
       case "academic_tone":
         prompt = `Convert the following text to academic tone. Use formal language, technical vocabulary, and objective voice.
-        
+
 Text: "${text}"
 
 Field: ${mergedPreferences?.field || "general"}
@@ -795,7 +820,7 @@ Provide 3 distinct continuation options, each with a different approach or empha
 
       case "generate_outline":
         prompt = `Generate a detailed outline for an academic paper based on the following topic or text:
-        
+
 Topic/Text: "${text}"
 
 Context: "${context || "No additional context provided"}"
@@ -807,7 +832,7 @@ Create a structured outline with main sections, subsections, and brief descripti
 
       case "suggest_sources":
         prompt = `Suggest relevant academic sources for the following topic or research area:
-        
+
 Topic: "${text}"
 
 Context: "${context || "No additional context provided"}"
@@ -819,7 +844,7 @@ Provide a list of 5-10 relevant sources with brief descriptions of their relevan
 
       default:
         prompt = `Process the following request:
-        
+
 Text: "${text}"
 
 Context: "${context || "No additional context provided"}"
@@ -827,7 +852,7 @@ Context: "${context || "No additional context provided"}"
 Provide a helpful response.`;
     }
 
-    const modelName = request.model || preferredModel;
+    const modelName = selectedModel;
     let tokensUsed = 0;
     let success = false;
     let responseText = "";
@@ -889,14 +914,14 @@ Provide a helpful response.`;
 
         // Map model names to Gemini-compatible ones
         const geminiModelMap: Record<string, string> = {
-          "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+          "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
         };
 
         const geminiModelName =
           geminiModelMap[modelName] ||
           (modelName.startsWith("gemini")
             ? modelName
-            : "gemini-3.1-flash-lite-preview");
+            : "gemini-3.1-flash-lite");
 
         logger.info("Using Gemini model", {
           geminiModelName,
@@ -984,12 +1009,12 @@ Provide a helpful response.`;
   private static estimateCost(model: string, tokens: number): number {
     // Cost per 1K tokens (approximate rates)
     const costRates: Record<string, number> = {
-      "gemini-3.1-flash-lite-preview": 0.000075, // $0.075 per 1M tokens
+      "gemini-3.1-flash-lite": 0.000075, // $0.075 per 1M tokens
       "openai/gpt-oss-120b:free": 0,
       "nvidia/nemotron-3-super-120b-a12b:free": 0,
     };
 
-    const rate = costRates[model] || 0.00015; // Default to gemini-3.1-flash-lite-preview rate
+    const rate = costRates[model] || 0.00015; // Default to gemini-3.1-flash-lite rate
     return (tokens / 1000) * rate;
   }
 
@@ -1304,8 +1329,7 @@ Provide a helpful response.`;
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel =
-      user?.["preferred_ai_model"] || "gemini-3.1-flash-lite-preview";
+    const preferredModel = user?.["preferred_ai_model"] || model || null;
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Get user's name for personalization
@@ -1508,11 +1532,17 @@ Please provide a helpful response.`;
     // Determine the model name before try block so it's accessible in catch block
     const modelName = model || preferredModel;
 
+    if (!modelName) {
+      throw new Error(
+        "No AI API key configured. Please add your API key in Settings → AI API Keys to start using AI features.",
+      );
+    }
+
     try {
       // Log model selection for debugging
       logger.info("Selected AI model", {
         userId,
-        model: model || preferredModel,
+        model: modelName,
         requestedModel: model,
       });
 
@@ -1586,14 +1616,14 @@ Please provide a helpful response.`;
 
         // Map model names to Gemini-compatible ones
         const geminiModelMap: Record<string, string> = {
-          "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+          "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
         };
 
         const geminiModelName =
           geminiModelMap[modelName] ||
           (modelName.startsWith("gemini")
             ? modelName
-            : "gemini-3.1-flash-lite-preview");
+            : "gemini-3.1-flash-lite");
 
         logger.info("Using Gemini model", {
           geminiModelName,
@@ -1958,8 +1988,7 @@ ${formattedResults}
     const user: any = await prisma.user.findUnique({
       where: { id: userId },
     });
-    const preferredModel =
-      user?.["preferred_ai_model"] || "gemini-3.1-flash-lite-preview";
+    const preferredModel = user?.["preferred_ai_model"] || model || null;
     const aiPreferences = user?.["ai_preferences"] || {};
 
     // Get user's name for personalization
@@ -2164,6 +2193,13 @@ Please provide a helpful response.`;
 
     // Determine if this is an OpenRouter model
     const modelName = model || preferredModel;
+
+    if (!modelName) {
+      throw new Error(
+        "No AI API key configured. Please add your API key in Settings → AI API Keys to start using AI features.",
+      );
+    }
+
     const isOpenRouterModel =
       modelName.includes("/") ||
       Object.keys(AI_MODELS).some(
@@ -2221,14 +2257,14 @@ Please provide a helpful response.`;
 
         // Map model names to Gemini-compatible ones
         const geminiModelMap: Record<string, string> = {
-          "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+          "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
         };
 
         const geminiModelName =
           geminiModelMap[modelName] ||
           (modelName.startsWith("gemini")
             ? modelName
-            : "gemini-3.1-flash-lite-preview");
+            : "gemini-3.1-flash-lite");
 
         logger.info("Using Gemini model (streaming)", {
           geminiModelName,
@@ -2657,60 +2693,89 @@ ${formattedResults}
     return AI_MODELS;
   }
 
-  // Function to check which AI models are actually available based on configured API keys
-  static async getActuallyAvailableModels(): Promise<Record<string, AIModel>> {
+  // Get models available for a specific user — dynamically fetched from provider APIs
+  static async getUserAvailableModels(
+    userId: string,
+  ): Promise<Record<string, AIModel>> {
     const availableModels: Record<string, AIModel> = {};
-    const { SecretsService } = await import("./secrets-service");
 
-    // Check OpenAI availability
     try {
-      const openAiKey = await SecretsService.getOpenAiApiKey();
-      if (openAiKey) {
-        // Add only the specific OpenAI models we're using
-        // OpenAI key available but we use Gemini models now
-        if (AI_MODELS["gemini-3.1-flash-lite-preview"])
-          availableModels["gemini-3.1-flash-lite-preview"] =
-            AI_MODELS["gemini-3.1-flash-lite-preview"];
+      const byokSettings = await BYOKService.getSettings(userId);
+      const hasAnyBYOK =
+        byokSettings.hasGoogleKey ||
+        byokSettings.hasOpenAIKey ||
+        byokSettings.hasClaudeKey ||
+        byokSettings.hasOpenRouterKey;
+
+      if (hasAnyBYOK) {
+        // For each provider the user has a key for, fetch dynamically-cached models
+        const providerMap: Array<{
+          hasKey: boolean;
+          provider: "google" | "anthropic" | "openai" | "openrouter";
+        }> = [
+          { hasKey: byokSettings.hasGoogleKey, provider: "google" },
+          { hasKey: byokSettings.hasOpenAIKey, provider: "openai" },
+          { hasKey: byokSettings.hasClaudeKey, provider: "anthropic" },
+          { hasKey: byokSettings.hasOpenRouterKey, provider: "openrouter" },
+        ];
+
+        for (const { hasKey, provider } of providerMap) {
+          if (!hasKey) continue;
+
+          // Get dynamically-fetched models from DB cache
+          const cachedModels = await BYOKService.getProviderModels(
+            userId,
+            provider,
+          );
+
+          if (cachedModels && cachedModels.length > 0) {
+            // Use the dynamically-fetched models
+            for (const m of cachedModels) {
+              availableModels[m.id] = {
+                name: m.name,
+                description: m.description,
+                maxTokens: m.maxTokens,
+              };
+            }
+          } else {
+            // Fallback to hard-coded models if dynamic fetch hasn't happened yet
+            const prefixMap: Record<string, string> = {
+              google: "gemini",
+              openai: "openai/",
+              anthropic: "anthropic/",
+              openrouter: "", // OpenRouter models don't share a prefix
+            };
+            const prefix = prefixMap[provider];
+            Object.keys(AI_MODELS)
+              .filter((m) =>
+                provider === "openrouter"
+                  ? !m.startsWith("gemini") &&
+                    !m.startsWith("openai/") &&
+                    !m.startsWith("anthropic/")
+                  : m.startsWith(prefix) && !m.includes(":free"),
+              )
+              .forEach((m) => (availableModels[m] = AI_MODELS[m]));
+          }
+        }
+
+        logger.info("Returning BYOK-based models for user", {
+          userId: userId.slice(0, 8) + "...",
+          modelCount: Object.keys(availableModels).length,
+        });
+        return availableModels;
       }
     } catch (error) {
-      logger.info("OpenAI API key not configured");
+      logger.warn("Error checking BYOK settings for user", { userId, error });
     }
 
-    // Anthropic no longer used - models replaced with Gemini equivalents
-
-    // Check Gemini availability
-    try {
-      const geminiKey = await SecretsService.getSecret("GEMINI_API_KEY");
-      if (geminiKey) {
-        // Add only the specific Gemini models we're using
-        if (AI_MODELS["gemini-3.1-flash-lite-preview"])
-          availableModels["gemini-3.1-flash-lite-preview"] =
-            AI_MODELS["gemini-3.1-flash-lite-preview"];
-      }
-    } catch (error) {
-      logger.info("Gemini API key not configured");
-    }
-
-    // Check OpenRouter availability
-    try {
-      const openRouterKey = process.env.OPENROUTER_API_KEY;
-      if (openRouterKey) {
-        if (AI_MODELS["nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"])
-          availableModels[
-            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
-          ] = AI_MODELS["nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"];
-        if (AI_MODELS["openai/gpt-oss-120b:free"])
-          availableModels["openai/gpt-oss-120b:free"] =
-            AI_MODELS["openai/gpt-oss-120b:free"];
-        if (AI_MODELS["nvidia/nemotron-3-super-120b-a12b:free"])
-          availableModels["nvidia/nemotron-3-super-120b-a12b:free"] =
-            AI_MODELS["nvidia/nemotron-3-super-120b-a12b:free"];
-      }
-    } catch (error) {
-      logger.info("OpenRouter API key not configured");
-    }
-
-    return availableModels;
+    // No BYOK keys configured — no models available
+    logger.info(
+      "No BYOK keys configured for user, returning empty model list",
+      {
+        userId: userId?.slice(0, 8) + "...",
+      },
+    );
+    return {};
   }
 
   /**
@@ -2760,84 +2825,66 @@ ${formattedResults}
       const planId = subscription?.plan || "free";
       const plan = plans[planId as keyof typeof plans];
 
-      // Determine model based on user's plan
-      let model = "gemini-3.1-flash-lite-preview"; // Default fallback model
-      if (planId === "researcher" || planId === "institutional") {
-        // Use premium model for higher-tier plans
-        model = "gemini-3.1-flash-lite-preview";
-      } else if (planId === "student" || planId === "onetime") {
-        // Use better model for paid plans
-        model = "gemini-3.1-flash-lite-preview";
-      }
-      // Free plan uses the default fallback model
+      // Determine model — use user's preferred model if set, otherwise fall back to Gemini default
+      const userRecord: any = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      const userModel = userRecord?.["preferred_ai_model"] || null;
+      const model = userModel || "gemini-3.1-flash-lite";
 
       // Prepare the prompt for autocomplete
-      const prompt = `You are an AI writing assistant. Provide a concise and contextually appropriate continuation for the following text. 
-      Keep your response brief (1-3 sentences maximum) and relevant to the context. 
-      Do not repeat the existing text. 
+      const prompt = `You are an AI writing assistant. Provide a concise and contextually appropriate continuation for the following text.
+      Keep your response brief (1-3 sentences maximum) and relevant to the context.
+      Do not repeat the existing text.
       Do not include any markdown formatting or special characters.
       Just provide the natural continuation of the text.
-      
+
       Text to continue:
       "${text}"
-      
+
       Continuation:`;
 
-      // Generate the autocomplete suggestion using the appropriate model
+      // Route based on model prefix — same logic as processChatMessage
+      const isOpenRouterModel =
+        model.includes("/") ||
+        (!model.startsWith("gemini") && !model.startsWith("anthropic"));
+
       let suggestion = "";
 
-      switch (model) {
-        case "gemini-3.1-flash-lite-preview":
-        case "gemini-3.1-flash-lite-preview": {
-          // Use Google Gemini
-          const currentGenAI = await getGenAI(userId);
-          if (!currentGenAI) {
-            throw new Error("Gemini API not configured");
-          }
-          const geminiModel = currentGenAI.getGenerativeModel({ model: model });
-          const result = await geminiModel.generateContent(prompt);
-          suggestion = result.response.text().trim();
-          break;
+      if (isOpenRouterModel) {
+        // Use native OpenRouter SDK
+        const orClient = await getOpenRouterClient(userId);
+        if (!orClient) {
+          throw new Error("OpenRouter API not configured");
         }
-
-        case "openai/gpt-oss-120b:free":
-        case "nvidia/nemotron-3-super-120b-a12b:free":
-        case "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
-          // Use native OpenRouter SDK for free open-source models
-          const orClient = await getOpenRouterClient(userId);
-          if (!orClient) {
-            throw new Error("OpenRouter API not configured");
-          }
-          // @openrouter/sdk wraps the chat payload inside chatRequest
-          const stream = await orClient.chat.send({
-            chatRequest: {
-              model: model, // use the actual model id from the switch
-              messages: [{ role: "user", content: prompt }],
-              stream: true,
-            },
-          });
-          let orText = "";
-          for await (const chunk of stream) {
-            const content = chunk.choices[0]?.delta?.content;
-            if (content) orText += content;
-          }
-          suggestion = orText.trim();
-          break;
+        const stream = await orClient.chat.send({
+          chatRequest: {
+            model: model,
+            messages: [{ role: "user", content: prompt }],
+            maxTokens: 2048,
+            stream: true,
+          },
+        });
+        let orText = "";
+        for await (const chunk of stream) {
+          const content = chunk.choices?.[0]?.delta?.content;
+          if (content) orText += content;
         }
-
-        default: {
-          // Default to Gemini for any other model
-          const currentGenAI = await getGenAI(userId);
-          if (!currentGenAI) {
-            throw new Error("Gemini API not configured");
-          }
-          const geminiModel = currentGenAI.getGenerativeModel({
-            model: "gemini-3.1-flash-lite-preview",
-          });
-          const result = await geminiModel.generateContent(prompt);
-          suggestion = result.response.text().trim();
-          break;
+        suggestion = orText.trim();
+      } else {
+        // Use Gemini
+        const currentGenAI = await getGenAI(userId);
+        if (!currentGenAI) {
+          throw new Error("Gemini API not configured");
         }
+        const geminiModelName = model.startsWith("gemini")
+          ? model
+          : "gemini-3.1-flash-lite";
+        const geminiModel = currentGenAI.getGenerativeModel({
+          model: geminiModelName,
+        });
+        const result = await geminiModel.generateContent(prompt);
+        suggestion = result.response.text().trim();
       }
 
       // Clean up the suggestion to ensure it's appropriate for autocomplete

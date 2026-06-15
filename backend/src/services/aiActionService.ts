@@ -27,6 +27,7 @@ export interface AIActionRequest {
   userPreferences?: Record<string, any>;
   conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
   autoConfirm?: boolean; // Skip confirmation for this request
+  model?: string; // Preferred AI model
 }
 
 export interface AIActionResponse {
@@ -194,7 +195,7 @@ export class AIActionService {
         sessionId: request.sessionId || `chat-${Date.now()}`,
         userId: request.userId,
         content: request.message,
-        model: undefined, // Use default model
+        model: request.model, // Use user's preferred model
       });
 
       return {
@@ -202,7 +203,7 @@ export class AIActionService {
         message: result.content,
         data: {
           tokensUsed: 0,
-          modelUsed: "gemini-3.1-flash-lite-preview",
+          modelUsed: request.model || "default",
         },
       };
     } catch (error: any) {

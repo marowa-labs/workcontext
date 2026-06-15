@@ -43,10 +43,10 @@ async function main() {
         model: "gpt-4o-mini",
       },
       data: {
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       },
     });
-    console.log(`Updated ${updateResult.count} records to use "gemini-3.1-flash-lite-preview"`);
+    console.log(`Updated ${updateResult.count} records to use "gemini-3.1-flash-lite"`);
     */
   }
 

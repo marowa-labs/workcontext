@@ -10,9 +10,9 @@ import {
   Zap,
   CheckCircle,
   BookOpen,
-  Play,
   ArrowRight,
   Sparkles,
+  Github,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
@@ -83,7 +83,8 @@ function HeroSection() {
             'url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&h=1080&fit=crop&crop=center")',
           backgroundSize: "cover",
           backgroundPosition: "center",
-        }}>
+        }}
+      >
         <div className="absolute inset-0 bg-[#121212] opacity-90"></div>
       </div>
 
@@ -104,8 +105,8 @@ function HeroSection() {
           </h1>
 
           <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-            The context-aware workspace that connects your docs, tasks, and team.
-            No more searching. No more organizing. Just productive flow.
+            The context-aware workspace that connects your docs, tasks, and
+            team. No more searching. No more organizing. Just productive flow.
           </p>
 
           {/* CTAs */}
@@ -113,18 +114,28 @@ function HeroSection() {
             <Button
               asChild
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white hover:from-blue-700 hover:to-cyan-800 font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
+              className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white hover:from-blue-700 hover:to-cyan-800 font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+            >
               <Link href="/signup" className="flex items-center">
                 Start For Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button
+              asChild
               variant="outline"
               size="lg"
-              className="border-gray-300 text-gray-600 bg-gray-200 hover:bg-gray-400 backdrop-blur-sm px-8 py-6 text-lg">
-              <Play className="mr-2 h-5 w-5" />
-              Watch 60-sec Demo
+              className="border-gray-300 text-gray-600 bg-gray-200 hover:bg-gray-400 backdrop-blur-sm px-8 py-6 text-lg"
+            >
+              <a
+                href="https://github.com/marowa-craig/scholarforge-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center"
+              >
+                <Github className="mr-2 h-5 w-5" />
+                GitHub
+              </a>
             </Button>
           </div>
 
@@ -192,11 +203,12 @@ function PreviewSection() {
                     Q4 Product Launch Strategy
                   </h3>
                   <p className="text-gray-600">
-                    Our Q4 launch represents a significant opportunity to capture
-                    the enterprise market.
+                    Our Q4 launch represents a significant opportunity to
+                    capture the enterprise market.
                     <span
                       className="bg-blue-100 text-blue-800 px-1 rounded border-b-2 border-blue-500 cursor-pointer"
-                      title="Related: Q3 Market Analysis doc">
+                      title="Related: Q3 Market Analysis doc"
+                    >
                       Customer feedback shows 73% demand for advanced team
                       collaboration features, particularly in the 50-500
                       employee segment.
@@ -206,22 +218,23 @@ function PreviewSection() {
                     Competitive analysis reveals that
                     <span
                       className="bg-purple-100 text-purple-800 px-1 rounded border-b-2 border-purple-500 cursor-pointer"
-                      title="Action Item: Schedule competitor review meeting">
+                      title="Action Item: Schedule competitor review meeting"
+                    >
                       none of our top 3 competitors offer real-time workspace
                       intelligence
                     </span>
                     , giving us a 6-month first-mover advantage in this space.
                   </p>
                   <p className="text-gray-600">
-                    Furthermore, our team bandwidth analysis shows we have
-                    been
+                    Furthermore, our team bandwidth analysis shows we have been
                     <span
                       className="bg-green-100 px-1 rounded border-b-2 border-green-500 cursor-pointer"
-                      title="Task auto-created: Resource planning needed">
+                      title="Task auto-created: Resource planning needed"
+                    >
                       significantly under-allocated on UX research
                     </span>
-                    , which could impact our launch timeline if not addressed
-                    by next sprint...
+                    , which could impact our launch timeline if not addressed by
+                    next sprint...
                   </p>
                 </div>
               </div>
@@ -302,7 +315,8 @@ function ComparisonSection() {
           {highlights.map((highlight, index) => (
             <Card
               key={index}
-              className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-300">
+              className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-300"
+            >
               <CardContent className="p-8 text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 mb-6">
                   <highlight.icon className="h-8 w-8 text-white" />
@@ -392,10 +406,12 @@ function FeaturesGrid() {
             <Card
               key={index}
               onClick={() => (window.location.href = feature.href)}
-              className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-white border border-gray-300">
+              className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-white border border-gray-300"
+            >
               <CardContent className="p-8">
                 <div
-                  className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} mb-6 group-hover:scale-110 transition-transform duration-300`}
+                >
                   <feature.icon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-600 mb-3">
@@ -434,7 +450,7 @@ function TestimonialsSection() {
     },
     {
       quote:
-        "We replaced Notion, Asana, and Slack with ScholarForge. The action extraction alone saves our team 10+ hours a week. Game changer.",
+        "We replaced other tools with ScholarForge. The action extraction alone saves our team 10+ hours a week. Game changer.",
       author: "Alex Rivera",
       role: "CEO, LaunchPad Startups",
       avatar:
@@ -450,7 +466,8 @@ function TestimonialsSection() {
             Loved by Productive Teams
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Join thousands of teams who've replaced tool overload with intelligent flow.
+            Join thousands of teams who've replaced tool overload with
+            intelligent flow.
           </p>
         </div>
 
@@ -458,7 +475,8 @@ function TestimonialsSection() {
           {testimonials.map((testimonial, index) => (
             <Card
               key={index}
-              className="border-0 shadow-lg bg-white border border-gray-300">
+              className="border-0 shadow-lg bg-white border border-gray-300"
+            >
               <CardContent className="p-8">
                 <div className="flex items-center mb-6">
                   <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
@@ -512,7 +530,8 @@ function CTASection() {
             <Button
               asChild
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-cyan-700 text-gray-300 hover:from-blue-700 hover:to-cyan-800 font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
+              className="bg-gradient-to-r from-blue-600 to-cyan-700 text-gray-300 hover:from-blue-700 hover:to-cyan-800 font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+            >
               <Link href="/signup" className="flex items-center">
                 Get Started Free Today
                 <Zap className="ml-2 h-5 w-5" />
@@ -521,7 +540,8 @@ function CTASection() {
             <Button
               variant="outline"
               size="lg"
-              className="border-gray-500 text-gray-300 hover:bg-gray-500 backdrop-blur-sm px-8 py-6 text-lg">
+              className="border-gray-500 text-gray-300 hover:bg-gray-500 backdrop-blur-sm px-8 py-6 text-lg"
+            >
               <Link href="/docs/quickstart" className="flex items-center">
                 See How It Works
                 <BookOpen className="ml-2 h-5 w-5" />
@@ -531,12 +551,14 @@ function CTASection() {
               asChild
               size="lg"
               variant="outline"
-              className="border-gray-500 text-gray-300 hover:bg-gray-500 backdrop-blur-sm px-8 py-6 text-lg">
+              className="border-gray-500 text-gray-300 hover:bg-gray-500 backdrop-blur-sm px-8 py-6 text-lg"
+            >
               <a
                 href="https://discord.gg/2MMSdX3Uee"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center">
+                className="flex items-center"
+              >
                 Join Our Community
                 <Users className="ml-2 h-5 w-5" />
               </a>

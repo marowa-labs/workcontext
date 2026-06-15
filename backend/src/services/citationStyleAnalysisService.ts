@@ -112,7 +112,7 @@ Style ID:`;
 
       const aiResponse = await OpenAIService.sendCompletion(
         prompt,
-        "gemini-3.1-flash-lite-preview",
+        undefined,
         500,
         0.2,
       );

@@ -7,19 +7,8 @@ import {
   BarChart3,
   TrendingUp,
   DollarSign,
-  Key,
-  Shield,
-  Check,
-  AlertCircle,
-  Trash2,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import AIService from "../../../lib/utils/aiService";
-import BYOKFrontendService, {
-  BYOKSettings,
-  BYOKProvider,
-} from "../../../lib/utils/byokService";
 import { useToast } from "../../../hooks/use-toast";
 
 const AISettingsPage = () => {
@@ -37,7 +26,7 @@ const AISettingsPage = () => {
     useForImprovement: true,
     storeHistory: true,
     anonymousData: true,
-    model: "gemini-3.1-flash-lite-preview",
+    model: "",
     temperature: 0.7,
     maxTokens: 1000,
   });
@@ -53,23 +42,6 @@ const AISettingsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("settings");
-
-  // BYOK (Bring Your Own Key) State
-  const [byokSettings, setByokSettings] = useState<BYOKSettings | null>(null);
-  const [byokInputKeys, setByokInputKeys] = useState({
-    google: "",
-    anthropic: "",
-    openai: "",
-    openrouter: "",
-  });
-  const [byokShowKeys, setByokShowKeys] = useState({
-    google: false,
-    anthropic: false,
-    openai: false,
-    openrouter: false,
-  });
-  const [byokTesting, setByokTesting] = useState<BYOKProvider | null>(null);
-  const [byokSaving, setByokSaving] = useState<BYOKProvider | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,14 +87,6 @@ const AISettingsPage = () => {
             ...prev,
             ...preferences,
           }));
-        }
-
-        // Fetch BYOK settings
-        try {
-          const byokData = await BYOKFrontendService.getSettings();
-          setByokSettings(byokData);
-        } catch (byokErr) {
-          console.error("Failed to fetch BYOK settings:", byokErr);
         }
       } catch (err) {
         console.error("Failed to fetch data:", err);
@@ -241,146 +205,6 @@ const AISettingsPage = () => {
     return peakHour ? `${peakHour}:00` : "N/A";
   };
 
-  // ==================== BYOK Helper Functions ====================
-
-  // Test API key without saving
-  const handleTestKey = async (provider: BYOKProvider) => {
-    const key = byokInputKeys[provider];
-    if (!key) {
-      toast({
-        title: "Error",
-        description: "Please enter an API key to test",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setByokTesting(provider);
-    try {
-      const result = await BYOKFrontendService.testApiKey(provider, key);
-      toast({
-        title: result.success ? "Success" : "Test Failed",
-        description: result.message,
-        variant: result.success ? "default" : "destructive",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to test API key",
-        variant: "destructive",
-      });
-    } finally {
-      setByokTesting(null);
-    }
-  };
-
-  // Save API key
-  const handleSaveKey = async (provider: BYOKProvider) => {
-    const key = byokInputKeys[provider];
-    if (!key) {
-      toast({
-        title: "Error",
-        description: "Please enter an API key to save",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setByokSaving(provider);
-    try {
-      const result = await BYOKFrontendService.saveApiKey(provider, key);
-      toast({
-        title: "Success",
-        description: result.message,
-      });
-      // Refresh settings
-      const updatedSettings = await BYOKFrontendService.getSettings();
-      setByokSettings(updatedSettings);
-      // Clear input
-      setByokInputKeys((prev) => ({ ...prev, [provider]: "" }));
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save API key",
-        variant: "destructive",
-      });
-    } finally {
-      setByokSaving(null);
-    }
-  };
-
-  // Delete API key
-  const handleDeleteKey = async (provider: BYOKProvider) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete your ${BYOKFrontendService.getProviderDisplayName(provider)} API key?`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const message = await BYOKFrontendService.deleteApiKey(provider);
-      toast({
-        title: "Success",
-        description: message,
-      });
-      // Refresh settings
-      const updatedSettings = await BYOKFrontendService.getSettings();
-      setByokSettings(updatedSettings);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete API key",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Toggle BYOK enabled state
-  const handleToggleBYOK = async (enabled: boolean) => {
-    try {
-      const updatedSettings = await BYOKFrontendService.updateSettings({
-        enabled,
-      });
-      setByokSettings(updatedSettings);
-      toast({
-        title: "Success",
-        description: enabled
-          ? "BYOK enabled. Your API keys will be used for AI requests."
-          : "BYOK disabled. Platform API keys will be used.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update BYOK settings",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Set preferred provider
-  const handleSetProvider = async (provider: BYOKProvider | null) => {
-    try {
-      const updatedSettings = await BYOKFrontendService.updateSettings({
-        provider,
-      });
-      setByokSettings(updatedSettings);
-      toast({
-        title: "Success",
-        description: provider
-          ? `${BYOKFrontendService.getProviderDisplayName(provider)} set as preferred provider.`
-          : "No preferred provider set.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update provider",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="w-full py-6">
       <div className="mb-6">
@@ -431,22 +255,6 @@ const AISettingsPage = () => {
             }`}
           >
             Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab("byok")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
-              activeTab === "byok"
-                ? "border-purple-500 text-purple-600 dark:text-purple-400"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-            }`}
-          >
-            <Key className="h-4 w-4 mr-1" />
-            API Keys
-            {byokSettings?.enabled && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
-                Active
-              </span>
-            )}
           </button>
         </nav>
       </div>
@@ -1113,254 +921,6 @@ const AISettingsPage = () => {
               <p className="mt-4 text-foreground">Loading analytics data...</p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* BYOK (Bring Your Own Key) Tab */}
-      {activeTab === "byok" && (
-        <div className="space-y-6">
-          {/* BYOK Header */}
-          <div className="bg-card rounded-xl shadow-sm border border-border">
-            <div className="p-6 border-b border-border">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                    <Key className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div className="ml-4">
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Bring Your Own Key (BYOK)
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Use your own API keys for AI providers
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">
-                    {byokSettings?.enabled ? "Enabled" : "Disabled"}
-                  </span>
-                  <button
-                    onClick={() => handleToggleBYOK(!byokSettings?.enabled)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      byokSettings?.enabled ? "bg-purple-600" : "bg-gray-200"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        byokSettings?.enabled
-                          ? "translate-x-6"
-                          : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {/* Info Banner */}
-              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="flex items-start">
-                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3" />
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Secure Key Storage
-                    </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      Your API keys are encrypted using AES-256-GCM and stored
-                      securely. Keys are only decrypted when making AI requests
-                      on your behalf.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Provider Selection */}
-              {byokSettings?.enabled && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Preferred Provider
-                  </label>
-                  <select
-                    value={byokSettings?.provider || ""}
-                    onChange={(e) =>
-                      handleSetProvider(
-                        (e.target.value as BYOKProvider) || null,
-                      )
-                    }
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-background text-foreground"
-                  >
-                    <option value="">Auto (Use available key)</option>
-                    <option value="google">Google AI Studio (Gemini)</option>
-                    <option value="anthropic">Anthropic (Claude)</option>
-                    <option value="openai">OpenAI (GPT)</option>
-                    <option value="openrouter">OpenRouter (100+ models)</option>
-                  </select>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Select which provider to use when multiple keys are
-                    configured
-                  </p>
-                </div>
-              )}
-
-              {/* API Key Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Google AI Studio */}
-                {["google", "anthropic", "openai", "openrouter"].map(
-                  (provider) => {
-                    const providerInfo = BYOKFrontendService.getProviderInfo(
-                      provider as BYOKProvider,
-                    );
-                    const displayName =
-                      BYOKFrontendService.getProviderDisplayName(
-                        provider as BYOKProvider,
-                      );
-                    const hasKey = byokSettings?.[
-                      `has${provider.charAt(0).toUpperCase() + provider.slice(1)}Key` as keyof BYOKSettings
-                    ] as boolean;
-                    const maskedKey =
-                      byokSettings?.maskedKeys?.[
-                        provider as keyof typeof byokSettings.maskedKeys
-                      ];
-                    const isTesting = byokTesting === provider;
-                    const isSaving = byokSaving === provider;
-
-                    return (
-                      <div
-                        key={provider}
-                        className={`border rounded-lg p-4 ${providerInfo.borderColor} ${providerInfo.bgColor}`}
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className={`font-medium ${providerInfo.color}`}>
-                            {displayName}
-                          </h3>
-                          {hasKey && (
-                            <span className="flex items-center text-xs text-green-600">
-                              <Check className="h-3 w-3 mr-1" />
-                              Configured
-                            </span>
-                          )}
-                        </div>
-
-                        {hasKey && (
-                          <div className="mb-4 p-2 bg-white dark:bg-gray-800 rounded border">
-                            <p className="text-sm font-mono text-foreground">
-                              {maskedKey || "••••••••••••••••"}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Key Input */}
-                        <div className="space-y-3">
-                          <div className="relative">
-                            <input
-                              type={
-                                byokShowKeys[
-                                  provider as keyof typeof byokShowKeys
-                                ]
-                                  ? "text"
-                                  : "password"
-                              }
-                              value={
-                                byokInputKeys[
-                                  provider as keyof typeof byokInputKeys
-                                ]
-                              }
-                              onChange={(e) =>
-                                setByokInputKeys((prev) => ({
-                                  ...prev,
-                                  [provider]: e.target.value,
-                                }))
-                              }
-                              placeholder={BYOKFrontendService.getKeyPlaceholder(
-                                provider as BYOKProvider,
-                              )}
-                              className="w-full px-3 py-2 pr-10 border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-background text-foreground text-sm"
-                            />
-                            <button
-                              onClick={() =>
-                                setByokShowKeys((prev) => ({
-                                  ...prev,
-                                  [provider]:
-                                    !prev[provider as keyof typeof prev],
-                                }))
-                              }
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                            >
-                              {byokShowKeys[
-                                provider as keyof typeof byokShowKeys
-                              ] ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex space-x-2">
-                            {byokInputKeys[
-                              provider as keyof typeof byokInputKeys
-                            ] && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    handleTestKey(provider as BYOKProvider)
-                                  }
-                                  disabled={isTesting}
-                                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
-                                >
-                                  {isTesting ? "Testing..." : "Test"}
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleSaveKey(provider as BYOKProvider)
-                                  }
-                                  disabled={isSaving}
-                                  className="flex-1 px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                                >
-                                  {isSaving ? "Saving..." : "Save"}
-                                </button>
-                              </>
-                            )}
-                            {hasKey && (
-                              <button
-                                onClick={() =>
-                                  handleDeleteKey(provider as BYOKProvider)
-                                }
-                                className="px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  },
-                )}
-              </div>
-
-              {/* Usage Note */}
-              <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3" />
-                  <div>
-                    <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
-                      Important Note
-                    </h4>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                      When BYOK is enabled, all AI requests will use your API
-                      keys. You are responsible for any costs incurred on your
-                      API accounts. This feature is designed for users who
-                      prefer to manage their own AI provider billing.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

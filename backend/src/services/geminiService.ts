@@ -1,23 +1,27 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import logger from "../monitoring/logger";
-import { SecretsService } from "./secrets-service";
+import { BYOKService } from "./byokService";
 
-// Initialize Google Generative AI client
-let genAI: GoogleGenerativeAI | null = null;
-
-// Lazy initialization of Google Generative AI client
-async function getGeminiClient(): Promise<GoogleGenerativeAI> {
-  if (!genAI) {
-    const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
-
-    if (!apiKey) {
-      throw new Error("Gemini API key not configured");
-    }
-
-    genAI = new GoogleGenerativeAI(apiKey);
+// Get Gemini client with BYOK support — NO system fallback
+// Users MUST configure their own Google API key for Gemini to work
+async function getGeminiClient(userId?: string): Promise<GoogleGenerativeAI> {
+  if (!userId) {
+    throw new Error(
+      "No user ID provided. Please configure your Google API key in AI settings.",
+    );
   }
 
-  return genAI;
+  const byokKey = await BYOKService.getDecryptedKey(userId, "google");
+  if (!byokKey) {
+    throw new Error(
+      "No Gemini API key configured. Please add your Google API key in AI settings.",
+    );
+  }
+
+  logger.info("Using BYOK Google API key for user", {
+    userId: userId.slice(0, 8) + "...",
+  });
+  return new GoogleGenerativeAI(byokKey);
 }
 
 interface GeminiResponse {
@@ -30,12 +34,13 @@ export class GeminiService {
   // Send message to Gemini
   static async sendMessage(
     prompt: string,
-    model: string = "gemini-3.1-flash-lite-preview",
+    model: string = "gemini-3.1-flash-lite",
     maxTokens: number = 2048,
     temperature: number = 0.7,
+    userId?: string,
   ): Promise<GeminiResponse> {
     try {
-      const client = await getGeminiClient();
+      const client = await getGeminiClient(userId);
       const geminiModel = client.getGenerativeModel({ model: model });
 
       const result = await geminiModel.generateContent({
@@ -57,10 +62,10 @@ export class GeminiService {
       const tokensUsed = content.length;
       // Calculate cost based on Gemini pricing (approximate)
       let cost = 0;
-      if (model === "gemini-3.1-flash-lite-preview") {
+      if (model === "gemini-3.1-flash-lite") {
         // Gemini 3.1 Flash Lite: $1.25/1M input tokens, $10.00/1M output tokens
         cost = (tokensUsed / 1000000) * 1.25 + (tokensUsed / 1000000) * 10.0;
-      } else if (model === "gemini-3.1-flash-lite-preview") {
+      } else if (model === "gemini-3.1-flash-lite") {
         // Gemini 2.0 Flash: $0.075/1M input tokens, $0.30/1M output tokens
         cost = (tokensUsed / 1000000) * 0.075 + (tokensUsed / 1000000) * 0.3;
       } else {
@@ -82,11 +87,12 @@ export class GeminiService {
   static async assistWithWritingProject(
     projectDescription: string,
     userRequest: string,
-    model: string = "gemini-3.1-flash-lite-preview",
+    model: string = "gemini-3.1-flash-lite",
+    userId?: string,
   ): Promise<GeminiResponse> {
     try {
       const prompt = `You are an expert writing project assistant. Help the user with their writing project.
-      
+
 Project Description:
 ${projectDescription}
 
@@ -102,7 +108,7 @@ Provide comprehensive assistance including:
 
 Be specific, actionable, and focused on academic writing excellence.`;
 
-      return await this.sendMessage(prompt, model, 3000, 0.7);
+      return await this.sendMessage(prompt, model, 3000, 0.7, userId);
     } catch (error: any) {
       logger.error("Error assisting with writing project using Gemini:", error);
       throw new Error(`Writing project assistance failed: ${error.message}`);
@@ -113,11 +119,12 @@ Be specific, actionable, and focused on academic writing excellence.`;
   static async generateProjectOutline(
     projectTopic: string,
     projectType: string = "research_paper",
-    model: string = "gemini-3.1-flash-lite-preview",
+    model: string = "gemini-3.1-flash-lite",
+    userId?: string,
   ): Promise<GeminiResponse> {
     try {
       const prompt = `Create a detailed academic outline for a ${projectType} on the topic: "${projectTopic}".
-      
+
 Include:
 1. Main sections with clear headings
 2. Subsections with brief descriptions
@@ -127,7 +134,7 @@ Include:
 
 Format the outline in a clear, hierarchical structure.`;
 
-      return await this.sendMessage(prompt, model, 2000, 0.5);
+      return await this.sendMessage(prompt, model, 2000, 0.5, userId);
     } catch (error: any) {
       logger.error("Error generating project outline using Gemini:", error);
       throw new Error(`Project outline generation failed: ${error.message}`);
@@ -138,11 +145,12 @@ Format the outline in a clear, hierarchical structure.`;
   static async provideResearchAssistance(
     researchTopic: string,
     specificQuestion: string,
-    model: string = "gemini-3.1-flash-lite-preview",
+    model: string = "gemini-3.1-flash-lite",
+    userId?: string,
   ): Promise<GeminiResponse> {
     try {
       const prompt = `You are a research assistant helping with academic research on: "${researchTopic}".
-      
+
 Specific Question:
 ${specificQuestion}
 
@@ -155,7 +163,7 @@ Provide:
 
 Focus on credible, peer-reviewed sources and academic best practices.`;
 
-      return await this.sendMessage(prompt, model, 2500, 0.6);
+      return await this.sendMessage(prompt, model, 2500, 0.6, userId);
     } catch (error: any) {
       logger.error("Error providing research assistance using Gemini:", error);
       throw new Error(`Research assistance failed: ${error.message}`);

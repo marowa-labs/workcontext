@@ -9,7 +9,11 @@ interface FloatingAIButtonProps {
   pathname?: string;
 }
 
-export function FloatingAIButton({ isOpen, onClick, pathname }: FloatingAIButtonProps) {
+export function FloatingAIButton({
+  isOpen,
+  onClick,
+  pathname,
+}: FloatingAIButtonProps) {
   // Don't render if panel is open or on full AI page
   if (isOpen || pathname === "/ai") return null;
 
@@ -23,7 +27,7 @@ export function FloatingAIButton({ isOpen, onClick, pathname }: FloatingAIButton
       >
         {/* Tooltip */}
         <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-gray-700 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          Notion AI
+          ScholarForge AI
           <span className="ml-1.5 text-xs text-gray-400">Ctrl+J</span>
         </div>
 

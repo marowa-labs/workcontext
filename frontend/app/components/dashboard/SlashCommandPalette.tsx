@@ -72,7 +72,7 @@ export function SlashCommandPalette({
           window.dispatchEvent(
             new CustomEvent("summarize-workspace", {
               detail: { workspaceId },
-            })
+            }),
           );
         }
       },
@@ -114,13 +114,13 @@ export function SlashCommandPalette({
     },
     {
       id: "go-workspace",
-      title: "Go to Workspace",
+      title: "Go to Workspaces",
       description: "Navigate to your workspaces",
       icon: <Command className="w-4 h-4" />,
       category: "navigate",
       action: () => {
         onClose();
-        router.push("/projects");
+        router.push("/spaces");
       },
     },
     {
@@ -162,15 +162,18 @@ export function SlashCommandPalette({
   const filteredCommands = commands.filter(
     (cmd) =>
       cmd.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cmd.description.toLowerCase().includes(searchQuery.toLowerCase())
+      cmd.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Group commands by category
-  const groupedCommands = filteredCommands.reduce((acc, cmd) => {
-    if (!acc[cmd.category]) acc[cmd.category] = [];
-    acc[cmd.category].push(cmd);
-    return acc;
-  }, {} as Record<string, CommandItem[]>);
+  const groupedCommands = filteredCommands.reduce(
+    (acc, cmd) => {
+      if (!acc[cmd.category]) acc[cmd.category] = [];
+      acc[cmd.category].push(cmd);
+      return acc;
+    },
+    {} as Record<string, CommandItem[]>,
+  );
 
   const categoryOrder = ["ai", "create", "navigate", "analyze"];
   const categoryLabels: Record<string, string> = {
@@ -189,7 +192,7 @@ export function SlashCommandPalette({
         case "ArrowDown":
           e.preventDefault();
           setSelectedIndex((prev) =>
-            prev < filteredCommands.length - 1 ? prev + 1 : prev
+            prev < filteredCommands.length - 1 ? prev + 1 : prev,
           );
           break;
         case "ArrowUp":
@@ -208,7 +211,7 @@ export function SlashCommandPalette({
           break;
       }
     },
-    [isOpen, filteredCommands, selectedIndex, onClose]
+    [isOpen, filteredCommands, selectedIndex, onClose],
   );
 
   useEffect(() => {
@@ -290,9 +293,7 @@ export function SlashCommandPalette({
                         onMouseEnter={() => setSelectedIndex(currentIndex)}
                         className={cn(
                           "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
-                          isSelected
-                            ? "bg-muted"
-                            : "hover:bg-muted/50"
+                          isSelected ? "bg-muted" : "hover:bg-muted/50",
                         )}
                       >
                         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground">

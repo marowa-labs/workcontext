@@ -24,7 +24,7 @@ CREATE TABLE "User" (
     "affiliate_ref" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "preferred_ai_model" TEXT DEFAULT 'gemini-3.1-flash-lite-preview',
+    "preferred_ai_model" TEXT DEFAULT 'gemini-3.1-flash-lite',
     "storage_used" DOUBLE PRECISION DEFAULT 0,
     "storage_limit" DOUBLE PRECISION DEFAULT 5,
     "last_backup" TIMESTAMP(3),

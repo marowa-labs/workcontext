@@ -385,9 +385,7 @@ async function handlePutAIUserPreferences(req: any, res: any) {
       where: { id: userId },
       data: {
         preferred_ai_model:
-          preferences.preferredModel ||
-          preferences.model ||
-          "gemini-3.1-flash-lite-preview",
+          preferences.preferredModel || preferences.model || null,
         ai_preferences: preferences,
       },
     });
@@ -436,8 +434,7 @@ async function handleGetAIUserPreferences(req: any, res: any) {
     return res.status(200).json({
       success: true,
       preferences: {
-        preferredModel:
-          user?.preferred_ai_model || "gemini-3.1-flash-lite-preview",
+        preferredModel: user?.preferred_ai_model || null,
         ...user?.ai_preferences,
       },
     });
@@ -462,6 +459,42 @@ router.put(
   handlePutPreferredModel,
 );
 
+// Get user's preferred AI model
+async function handleGetPreferredModel(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    const user: any = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { preferred_ai_model: true },
+    });
+
+    return res.status(200).json({
+      success: true,
+      preferredModel: user?.preferred_ai_model || null,
+    });
+  } catch (error: any) {
+    logger.error("Error fetching preferred AI model:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+}
+
+router.get(
+  "/preferred-model",
+  authenticateExpressRequest,
+  handleGetPreferredModel,
+);
+
 // Get available AI models for the user
 async function handleGetAvailableModels(req: any, res: any) {
   try {
@@ -479,8 +512,7 @@ async function handleGetAvailableModels(req: any, res: any) {
       where: { id: userId },
     });
 
-    const currentModel =
-      user?.preferred_ai_model || "gemini-3.1-flash-lite-preview";
+    const currentModel = user?.preferred_ai_model || null;
 
     // Get user's subscription to determine available models
     const subscription = await prisma.subscription.findUnique({
@@ -489,54 +521,21 @@ async function handleGetAvailableModels(req: any, res: any) {
 
     const planId = subscription?.plan || "free";
 
-    // Get actually available models based on configured API keys
-    const actuallyAvailableModels =
-      await AIService.getActuallyAvailableModels();
-    const actuallyAvailableModelIds = Object.keys(actuallyAvailableModels);
+    // Get BYOK-aware available models (user's keys first, then system keys)
+    const availableModelsMap = await AIService.getUserAvailableModels(userId);
+    const availableModelIds = Object.keys(availableModelsMap);
 
-    // Define available models per plan, filtered by actually available models
-    const planModels: Record<string, string[]> = {
-      free: [
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      onetime: [
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      student: [
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      researcher: [
-        "gemini-3.1-flash-lite-preview",
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      institutional: [
-        "gemini-3.1-flash-lite-preview",
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-    };
+    // Check if user has BYOK keys for display purposes
+    const byokSettings = await BYOKService.getSettings(userId);
+    const hasBYOK =
+      byokSettings.hasGoogleKey ||
+      byokSettings.hasOpenAIKey ||
+      byokSettings.hasClaudeKey ||
+      byokSettings.hasOpenRouterKey;
 
-    const availableModels = (planModels[planId] || planModels.free).filter(
-      (modelId) => actuallyAvailableModels[modelId],
-    );
-
-    // Get model details for actually available models
-    const models = availableModels.map((modelId) => {
-      const model = actuallyAvailableModels[modelId];
+    // Build model list
+    const models = availableModelIds.map((modelId) => {
+      const model = availableModelsMap[modelId];
       return {
         id: modelId,
         name: model.name,
@@ -550,6 +549,7 @@ async function handleGetAvailableModels(req: any, res: any) {
       success: true,
       models,
       currentModel,
+      byokEnabled: hasBYOK,
     });
   } catch (error: any) {
     logger.error("Error fetching available AI models:", error);
@@ -559,6 +559,47 @@ async function handleGetAvailableModels(req: any, res: any) {
     });
   }
 }
+
+// --- DEPRECATED: Old plan-based model filtering kept for reference ---
+/*
+    // Define available models per plan, filtered by actually available models
+    const planModels: Record<string, string[]> = {
+      free: [
+        "gemini-3.1-flash-lite",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      ],
+      onetime: [
+        "gemini-3.1-flash-lite",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      ],
+      student: [
+        "gemini-3.1-flash-lite",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      ],
+      researcher: [
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-flash-lite",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      ],
+      institutional: [
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-flash-lite",
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      ],
+    };
+    
+}
+*/
 
 router.get(
   "/available-models",
@@ -1295,6 +1336,99 @@ router.delete(
   handleDeleteBYOKKey,
 );
 router.post("/byok/test", authenticateExpressRequest, handleTestBYOKKey);
+
+// Get key status for all providers
+async function handleGetKeyStatus(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "User not authenticated" });
+    }
+    const statuses = await BYOKService.getKeyStatuses(userId);
+    return res.status(200).json({ success: true, statuses });
+  } catch (error: any) {
+    logger.error("Error fetching key statuses:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+}
+router.get("/byok/status", authenticateExpressRequest, handleGetKeyStatus);
+
+// Refresh models for a specific provider (re-fetch from provider API)
+async function handleRefreshModels(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+    const { provider } = req.body;
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "User not authenticated" });
+    }
+    if (
+      !provider ||
+      !["google", "anthropic", "openai", "openrouter"].includes(provider)
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid provider" });
+    }
+
+    // Get the user's decrypted key for this provider
+    const encryptedFieldMap: Record<string, string> = {
+      google: "byok_google_key_encrypted",
+      anthropic: "byok_claude_key_encrypted",
+      openai: "byok_openai_key_encrypted",
+      openrouter: "byok_openrouter_key_encrypted",
+    };
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { [encryptedFieldMap[provider]]: true },
+    });
+    const encryptedKey = user?.[
+      encryptedFieldMap[provider] as keyof typeof user
+    ] as string | null;
+    if (!encryptedKey) {
+      return res.status(400).json({
+        success: false,
+        message: `No API key configured for ${provider}`,
+      });
+    }
+
+    const { EncryptionService } =
+      await import("../../services/encryptionService");
+    const apiKey = EncryptionService.decrypt(encryptedKey);
+
+    // Fetch fresh models from provider
+    const models = await BYOKService.fetchProviderModels(
+      provider as any,
+      apiKey,
+    );
+    if (models.length > 0) {
+      await BYOKService.saveProviderModels(userId, provider, models);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Refreshed ${models.length} models for ${provider}`,
+      models,
+    });
+  } catch (error: any) {
+    logger.error("Error refreshing models:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to refresh models",
+    });
+  }
+}
+router.post(
+  "/byok/refresh-models",
+  authenticateExpressRequest,
+  handleRefreshModels,
+);
+
 logger.info("BYOK routes registered successfully");
 
 export default router;

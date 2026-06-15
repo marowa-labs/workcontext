@@ -52,17 +52,26 @@ interface PageContext {
 
 // Page descriptions for AI context
 const pageDescriptions: Record<string, string> = {
-  dashboard: "The main dashboard showing quick actions, workspaces overview, popular commands, and getting started guide",
-  projects: "Projects list page showing all user's projects with ability to create, open, or manage them",
-  editor: "The document editor where users write and edit their academic papers, essays, and research documents",
-  tasks: "Task management page showing tasks, to-dos, and assignments for the workspace or project",
-  workspace: "Workspace overview page showing projects, team members, and workspace-specific content",
-  notes: "Notes page for capturing quick ideas, research notes, and personal memos",
+  dashboard:
+    "The main dashboard showing quick actions, workspaces overview, popular commands, and getting started guide",
+  projects:
+    "Projects list page showing all user's projects with ability to create, open, or manage them",
+  editor:
+    "The document editor where users write and edit their academic papers, essays, and research documents",
+  tasks:
+    "Task management page showing tasks, to-dos, and assignments for the workspace or project",
+  workspace:
+    "Workspace overview page showing projects, team members, and workspace-specific content",
+  notes:
+    "Notes page for capturing quick ideas, research notes, and personal memos",
   wiki: "Knowledge base/wiki page for documentation, guides, and shared information",
   team: "Team management page showing members, roles, and collaboration settings",
-  settings: "Settings page for configuring preferences, account, and application options",
-  guide: "Help and guide page with tutorials, documentation, and how-to instructions",
-  search: "Search results page for finding content across workspaces and projects",
+  settings:
+    "Settings page for configuring preferences, account, and application options",
+  guide:
+    "Help and guide page with tutorials, documentation, and how-to instructions",
+  search:
+    "Search results page for finding content across workspaces and projects",
 };
 
 function getPageContext(): PageContext {
@@ -72,7 +81,7 @@ function getPageContext(): PageContext {
       icon: "🏠",
       route: "/dashboard",
       description: pageDescriptions.dashboard,
-      section: "main"
+      section: "main",
     };
   }
 
@@ -80,9 +89,13 @@ function getPageContext(): PageContext {
   const searchParams = new URLSearchParams(window.location.search);
 
   // Extract IDs from path
-  const pathParts = path.split('/');
-  const workspaceId = pathParts.find((_, i) => pathParts[i - 1] === 'workspace');
-  const projectId = pathParts.find((_, i) => pathParts[i - 1] === 'editor' || pathParts[i - 1] === 'project');
+  const pathParts = path.split("/");
+  const workspaceId = pathParts.find(
+    (_, i) => pathParts[i - 1] === "workspace",
+  );
+  const projectId = pathParts.find(
+    (_, i) => pathParts[i - 1] === "editor" || pathParts[i - 1] === "project",
+  );
 
   // Workspace pages
   if (path.includes("/workspace/")) {
@@ -96,7 +109,7 @@ function getPageContext(): PageContext {
         route: path,
         description: `${pageDescriptions.projects} within a specific workspace`,
         section: "workspace",
-        entityId: currentWorkspaceId
+        entityId: currentWorkspaceId,
       };
     }
     if (path.includes("/tasks")) {
@@ -106,7 +119,7 @@ function getPageContext(): PageContext {
         route: path,
         description: pageDescriptions.tasks,
         section: "workspace",
-        entityId: currentWorkspaceId
+        entityId: currentWorkspaceId,
       };
     }
     if (path.includes("/notes")) {
@@ -116,7 +129,7 @@ function getPageContext(): PageContext {
         route: path,
         description: pageDescriptions.notes,
         section: "workspace",
-        entityId: currentWorkspaceId
+        entityId: currentWorkspaceId,
       };
     }
     if (path.includes("/wiki")) {
@@ -126,7 +139,7 @@ function getPageContext(): PageContext {
         route: path,
         description: pageDescriptions.wiki,
         section: "workspace",
-        entityId: currentWorkspaceId
+        entityId: currentWorkspaceId,
       };
     }
     if (path.includes("/team")) {
@@ -136,7 +149,7 @@ function getPageContext(): PageContext {
         route: path,
         description: pageDescriptions.team,
         section: "workspace",
-        entityId: currentWorkspaceId
+        entityId: currentWorkspaceId,
       };
     }
     if (path.includes("/settings")) {
@@ -146,7 +159,7 @@ function getPageContext(): PageContext {
         route: path,
         description: pageDescriptions.settings,
         section: "workspace",
-        entityId: currentWorkspaceId
+        entityId: currentWorkspaceId,
       };
     }
     return {
@@ -155,7 +168,7 @@ function getPageContext(): PageContext {
       route: path,
       description: pageDescriptions.workspace,
       section: "workspace",
-      entityId: currentWorkspaceId
+      entityId: currentWorkspaceId,
     };
   }
 
@@ -169,7 +182,7 @@ function getPageContext(): PageContext {
       route: path,
       description: pageDescriptions.editor,
       section: "editor",
-      entityId: currentProjectId
+      entityId: currentProjectId,
     };
   }
 
@@ -180,7 +193,7 @@ function getPageContext(): PageContext {
       icon: "📖",
       route: path,
       description: pageDescriptions.guide,
-      section: "main"
+      section: "main",
     };
   }
   if (path.includes("/projects")) {
@@ -189,17 +202,17 @@ function getPageContext(): PageContext {
       icon: "📁",
       route: path,
       description: pageDescriptions.projects,
-      section: "main"
+      section: "main",
     };
   }
   if (path.includes("/search")) {
-    const query = searchParams.get('q') || '';
+    const query = searchParams.get("q") || "";
     return {
       name: "Search",
       icon: "🔍",
       route: path,
-      description: `${pageDescriptions.search}${query ? ` - Current search: "${query}"` : ''}`,
-      section: "main"
+      description: `${pageDescriptions.search}${query ? ` - Current search: "${query}"` : ""}`,
+      section: "main",
     };
   }
   if (path.includes("/settings")) {
@@ -208,7 +221,7 @@ function getPageContext(): PageContext {
       icon: "⚙️",
       route: path,
       description: pageDescriptions.settings,
-      section: "main"
+      section: "main",
     };
   }
 
@@ -217,7 +230,7 @@ function getPageContext(): PageContext {
     icon: "🏠",
     route: "/dashboard",
     description: pageDescriptions.dashboard,
-    section: "main"
+    section: "main",
   };
 }
 
@@ -328,9 +341,24 @@ function ChatContent({
                 <ellipse cx="50" cy="55" rx="20" ry="25" fill="#E8E8E8" />
                 <circle cx="42" cy="45" r="3" fill="#333" />
                 <circle cx="58" cy="45" r="3" fill="#333" />
-                <path d="M45 55 Q50 60 55 55" stroke="#333" strokeWidth="2" fill="none" />
-                <path d="M35 35 Q25 25 20 40" stroke="#666" strokeWidth="3" fill="none" />
-                <path d="M65 35 Q75 25 80 40" stroke="#666" strokeWidth="3" fill="none" />
+                <path
+                  d="M45 55 Q50 60 55 55"
+                  stroke="#333"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path
+                  d="M35 35 Q25 25 20 40"
+                  stroke="#666"
+                  strokeWidth="3"
+                  fill="none"
+                />
+                <path
+                  d="M65 35 Q75 25 80 40"
+                  stroke="#666"
+                  strokeWidth="3"
+                  fill="none"
+                />
               </svg>
             </div>
 
@@ -341,12 +369,36 @@ function ChatContent({
             {/* Quick Actions - Showcasing AI Action System capabilities */}
             <div className="w-full max-w-sm space-y-1 overflow-x-hidden">
               {[
-                { icon: "🏢", label: "Create a new workspace", prompt: "Create a workspace called My Research" },
-                { icon: "📄", label: "Create a new project", prompt: "Create a project called Research Paper" },
-                { icon: "✅", label: "Create a task", prompt: "Create a task called Review literature" },
-                { icon: "📋", label: "Show my tasks", prompt: "Show all my tasks" },
-                { icon: "📁", label: "Show my projects", prompt: "Show all my projects" },
-                { icon: "📊", label: "Summarize my document", prompt: "Summarize the current document" },
+                {
+                  icon: "🏢",
+                  label: "Create a new workspace",
+                  prompt: "Create a workspace called My Research",
+                },
+                {
+                  icon: "📄",
+                  label: "Create a new project",
+                  prompt: "Create a project called Research Paper",
+                },
+                {
+                  icon: "✅",
+                  label: "Create a task",
+                  prompt: "Create a task called Review literature",
+                },
+                {
+                  icon: "📋",
+                  label: "Show my tasks",
+                  prompt: "Show all my tasks",
+                },
+                {
+                  icon: "📁",
+                  label: "Show my projects",
+                  prompt: "Show all my projects",
+                },
+                {
+                  icon: "📊",
+                  label: "Summarize my document",
+                  prompt: "Summarize the current document",
+                },
               ].map((action) => (
                 <button
                   key={action.label}
@@ -366,7 +418,7 @@ function ChatContent({
                 key={message.id}
                 className={cn(
                   "flex gap-3",
-                  message.role === "user" ? "flex-row-reverse" : ""
+                  message.role === "user" ? "flex-row-reverse" : "",
                 )}
               >
                 {message.role === "assistant" && (
@@ -386,17 +438,49 @@ function ChatContent({
                 )}
                 <div
                   className={cn(
-                    "max-w-[85%] text-sm leading-relaxed overflow-x-hidden",
+                    "text-sm leading-relaxed",
                     message.role === "user"
-                      ? "bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 break-words"
-                      : "text-gray-700 prose prose-sm max-w-none break-words"
+                      ? "max-w-[85%] bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 break-words"
+                      : "max-w-[90%] text-gray-700 prose prose-sm max-w-none",
                   )}
                 >
                   {message.role === "user" ? (
                     <span className="break-words">{message.content}</span>
                   ) : (
-                    <div className="break-words overflow-x-auto">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <div className="overflow-x-auto max-w-full">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          table: ({ node, ...props }) => (
+                            <table
+                              className="border-collapse border border-gray-300 my-2 text-xs min-w-full"
+                              {...props}
+                            />
+                          ),
+                          thead: ({ node, ...props }) => (
+                            <thead className="bg-gray-100" {...props} />
+                          ),
+                          tbody: ({ node, ...props }) => <tbody {...props} />,
+                          tr: ({ node, ...props }) => (
+                            <tr
+                              className="border-b border-gray-300"
+                              {...props}
+                            />
+                          ),
+                          th: ({ node, ...props }) => (
+                            <th
+                              className="border border-gray-300 px-3 py-2 font-semibold text-left bg-gray-50"
+                              {...props}
+                            />
+                          ),
+                          td: ({ node, ...props }) => (
+                            <td
+                              className="border border-gray-300 px-3 py-1.5"
+                              {...props}
+                            />
+                          ),
+                        }}
+                      >
                         {message.content}
                       </ReactMarkdown>
                     </div>
@@ -420,30 +504,44 @@ function ChatContent({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input - Notion Style */}
+      {/* Input - ScholarForge AI Style */}
       <div className="p-4 bg-white border-t border-gray-100">
         <div className="relative bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-gray-100 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow">
           {/* AI Action Confirmation Dialog */}
           {internalPendingAction && (
             <div className="mx-4 mt-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className={`p-3 ${isDestructiveAction(internalPendingAction.actionType || '') ? 'bg-red-50 border-b border-red-100' : 'bg-blue-50 border-b border-blue-100'}`}>
+              <div
+                className={`p-3 ${isDestructiveAction(internalPendingAction.actionType || "") ? "bg-red-50 border-b border-red-100" : "bg-blue-50 border-b border-blue-100"}`}
+              >
                 <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-full ${isDestructiveAction(internalPendingAction.actionType || '') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                    {isDestructiveAction(internalPendingAction.actionType || '') ? (
+                  <div
+                    className={`p-1.5 rounded-full ${isDestructiveAction(internalPendingAction.actionType || "") ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"}`}
+                  >
+                    {isDestructiveAction(
+                      internalPendingAction.actionType || "",
+                    ) ? (
                       <AlertTriangle size={16} />
                     ) : (
-                      <span className="text-base">{getActionIcon(internalPendingAction.actionType || '')}</span>
+                      <span className="text-base">
+                        {getActionIcon(internalPendingAction.actionType || "")}
+                      </span>
                     )}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-gray-900">Confirm Action</h4>
-                    <p className="text-xs text-gray-600">{formatActionType(internalPendingAction.actionType || '')}</p>
+                    <h4 className="font-semibold text-sm text-gray-900">
+                      Confirm Action
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      {formatActionType(internalPendingAction.actionType || "")}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="p-3">
-                <p className="text-sm text-gray-700 mb-3 break-words">{internalPendingAction.message}</p>
+                <p className="text-sm text-gray-700 mb-3 break-words">
+                  {internalPendingAction.message}
+                </p>
 
                 <div className="flex gap-2">
                   <button
@@ -451,15 +549,22 @@ function ChatContent({
                     disabled={isConfirming}
                     className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                   >
-                    {getConfirmationButtonText(internalPendingAction.actionType || '').cancel}
+                    {
+                      getConfirmationButtonText(
+                        internalPendingAction.actionType || "",
+                      ).cancel
+                    }
                   </button>
                   <button
                     onClick={onConfirmAction}
                     disabled={isConfirming}
-                    className={`flex-1 px-3 py-1.5 rounded-lg text-white text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1 ${isDestructiveAction(internalPendingAction.actionType || '')
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
+                    className={`flex-1 px-3 py-1.5 rounded-lg text-white text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1 ${
+                      isDestructiveAction(
+                        internalPendingAction.actionType || "",
+                      )
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
                   >
                     {isConfirming ? (
                       <>
@@ -468,7 +573,11 @@ function ChatContent({
                       </>
                     ) : (
                       <>
-                        {getConfirmationButtonText(internalPendingAction.actionType || '').confirm}
+                        {
+                          getConfirmationButtonText(
+                            internalPendingAction.actionType || "",
+                          ).confirm
+                        }
                         <ArrowRight size={14} />
                       </>
                     )}
@@ -498,13 +607,25 @@ function ChatContent({
                 <Plus className="w-4 h-4" />
               </button>
               <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 6v6l4 2" />
                 </svg>
               </button>
               <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <line x1="8" y1="12" x2="16" y2="12" />
                 </svg>
@@ -513,7 +634,13 @@ function ChatContent({
             <div className="flex items-center gap-1">
               <span className="text-xs text-gray-400 px-2">Auto</span>
               <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z" />
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                   <line x1="12" y1="19" x2="12" y2="23" />
@@ -525,7 +652,13 @@ function ChatContent({
                 disabled={!input.trim() || loading}
                 className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:bg-transparent rounded-lg transition-colors"
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22,2 15,22 11,13 2,9 22,2" />
                 </svg>
@@ -551,15 +684,20 @@ export function AIChatDrawer({
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<{ id: string; title: string }[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
-  const [internalPendingAction, setInternalPendingAction] = useState<AIActionResult | null>(null);
+  const [internalPendingAction, setInternalPendingAction] =
+    useState<AIActionResult | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [viewMode, setViewMode] = useState<"sidebar" | "fullscreen">("sidebar");
   const [showViewDropdown, setShowViewDropdown] = useState(false);
   const [showSessionsDropdown, setShowSessionsDropdown] = useState(false);
+  const [drawerWidth, setDrawerWidth] = useState(420);
+  const [isResizing, setIsResizing] = useState(false);
   const viewDropdownRef = useRef<HTMLDivElement>(null);
   const sessionsDropdownRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const resizeStartXRef = useRef<number>(0);
+  const resizeStartWidthRef = useRef<number>(420);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -593,6 +731,29 @@ export function AIChatDrawer({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Drawer resizing logic
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isResizing) return;
+      const deltaX = event.clientX - resizeStartXRef.current;
+      const newWidth = resizeStartWidthRef.current - deltaX;
+      setDrawerWidth(Math.min(Math.max(newWidth, 320), 760));
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        setIsResizing(false);
+      }
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
 
   // Load sessions on mount
   useEffect(() => {
@@ -634,6 +795,8 @@ export function AIChatDrawer({
   const sendAIMessage = async (messageContent: string) => {
     try {
       const pageContext = getPageContext();
+      // Fetch user's preferred model from backend
+      const preferredModel = await AIService.getPreferredModel();
       const result = await aiActionService.sendMessage(
         messageContent,
         {
@@ -642,10 +805,11 @@ export function AIChatDrawer({
           pageRoute: pageContext.route,
           pageSection: pageContext.section,
           entityId: pageContext.entityId,
-          conversationHistory: messages.slice(-10).map(m => ({
+          conversationHistory: messages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,
           })),
+          model: preferredModel,
         },
         {
           onConfirmationRequired: (action, confirm, cancel) => {
@@ -663,21 +827,30 @@ export function AIChatDrawer({
             setMessages((prev) => [...prev, assistantMessage]);
           },
           onError: (error) => {
+            const msg = error || "Unknown error";
+            const isApiKeyError =
+              typeof msg === "string" && msg.includes("API key");
             const errorMessage: Message = {
               id: `assistant-${Date.now()}`,
               role: "assistant",
-              content: `Sorry, I encountered an error: ${error || "Unknown error"}`,
+              content: isApiKeyError
+                ? `${msg}\n\n[Configure API Keys →](/settings/ai-api-key)`
+                : `Sorry, I encountered an error: ${msg}`,
               created_at: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, errorMessage]);
           },
-        }
+        },
       );
     } catch (error: any) {
+      const msg = error.message || "Unknown error";
+      const isApiKeyError = typeof msg === "string" && msg.includes("API key");
       const errorMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: `Sorry, I encountered an error: ${error.message || "Unknown error"}`,
+        content: isApiKeyError
+          ? `${msg}\n\n[Configure API Keys →](/settings/ai-api-key)`
+          : `Sorry, I encountered an error: ${msg}`,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -708,9 +881,9 @@ export function AIChatDrawer({
   // Generate a title from the first user message
   const generateChatTitle = (content: string): string => {
     // Remove extra whitespace and truncate to first 50 chars
-    const cleaned = content.trim().replace(/\s+/g, ' ');
+    const cleaned = content.trim().replace(/\s+/g, " ");
     if (cleaned.length <= 50) return cleaned;
-    return cleaned.substring(0, 50).trim() + '...';
+    return cleaned.substring(0, 50).trim() + "...";
   };
 
   // Update session title in backend
@@ -718,9 +891,9 @@ export function AIChatDrawer({
     try {
       await apiClient.patch(`/api/ai/chat/session/${sessionId}`, { title });
       // Update local state
-      setSessions(prev => prev.map(s =>
-        s.id === sessionId ? { ...s, title } : s
-      ));
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, title } : s)),
+      );
     } catch (error) {
       console.error("Failed to update session title:", error);
     }
@@ -739,7 +912,9 @@ export function AIChatDrawer({
 
   const loadMessages = async (sessionId: string) => {
     try {
-      const data = await apiClient.get(`/api/ai/chat/session/${sessionId}/messages`);
+      const data = await apiClient.get(
+        `/api/ai/chat/session/${sessionId}/messages`,
+      );
       setMessages(data.messages || []);
     } catch (error) {
       console.error("Failed to load messages:", error);
@@ -748,7 +923,9 @@ export function AIChatDrawer({
 
   const createNewSession = async () => {
     try {
-      const data = await apiClient.post("/api/ai/chat/session", { title: "New Chat" });
+      const data = await apiClient.post("/api/ai/chat/session", {
+        title: "New Chat",
+      });
       setCurrentSession(data.session.id);
       setMessages([]);
       setSessions((prev) => [data.session, ...prev]);
@@ -764,7 +941,9 @@ export function AIChatDrawer({
       await apiClient.delete(`/api/ai/chat/session/${sessionIdToDelete}`, null);
 
       // Remove from local state
-      const updatedSessions = sessions.filter(s => s.id !== sessionIdToDelete);
+      const updatedSessions = sessions.filter(
+        (s) => s.id !== sessionIdToDelete,
+      );
       setSessions(updatedSessions);
 
       // If we deleted the current session, switch to another one or create new
@@ -836,8 +1015,12 @@ export function AIChatDrawer({
     try {
       // Auto-generate title if this is the first user message and session has default title
       // Note: messages.length is 0 here because setMessages hasn't updated state yet
-      const currentSessionData = sessions.find(s => s.id === currentSession);
-      if (currentSessionData && currentSessionData.title === "New Chat" && messages.length === 0) {
+      const currentSessionData = sessions.find((s) => s.id === currentSession);
+      if (
+        currentSessionData &&
+        currentSessionData.title === "New Chat" &&
+        messages.length === 0
+      ) {
         const autoTitle = generateChatTitle(userMessageContent);
         await updateSessionTitle(currentSession, autoTitle);
       }
@@ -853,7 +1036,7 @@ export function AIChatDrawer({
           pageRoute: pageContext.route,
           pageSection: pageContext.section,
           entityId: pageContext.entityId,
-          conversationHistory: messages.slice(-10).map(m => ({
+          conversationHistory: messages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,
           })),
@@ -868,7 +1051,7 @@ export function AIChatDrawer({
             const pendingMsg: Message = {
               id: `pending-${Date.now()}`,
               role: "assistant",
-              content: `I'll ${actionType.replace(/_/g, ' ')}. Please confirm to proceed.`,
+              content: `I'll ${actionType.replace(/_/g, " ")}. Please confirm to proceed.`,
               created_at: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, pendingMsg]);
@@ -892,7 +1075,7 @@ export function AIChatDrawer({
 
             // Add suggested actions if available
             if (result.suggestedActions && result.suggestedActions.length > 0) {
-              const suggestionContent = `**You can also ask me to:**\n${result.suggestedActions.map((a: string) => `- ${a}`).join('\n')}`;
+              const suggestionContent = `**You can also ask me to:**\n${result.suggestedActions.map((a: string) => `- ${a}`).join("\n")}`;
               const suggestionMessage: Message = {
                 id: `suggestion-${Date.now()}`,
                 role: "assistant",
@@ -938,7 +1121,11 @@ export function AIChatDrawer({
             } else if (page === "guide" || page === "help") {
               router.push("/guide");
             } else if (page === "search") {
-              router.push(params?.query ? `/search?q=${encodeURIComponent(params.query)}` : "/search");
+              router.push(
+                params?.query
+                  ? `/search?q=${encodeURIComponent(params.query)}`
+                  : "/search",
+              );
             }
             // Workspace-specific routes
             else if (page === "workspace" && workspaceId) {
@@ -961,7 +1148,7 @@ export function AIChatDrawer({
               router.push(params.path);
             }
           },
-        }
+        },
       );
     } catch (error: any) {
       console.error("Failed to send message:", error);
@@ -975,7 +1162,9 @@ export function AIChatDrawer({
 
       // Try to save user message even on error
       await saveUserMessage(userMessageContent);
-      await saveAIMessage(`I'm sorry, I encountered an error: ${error.message || "Please try again."}`);
+      await saveAIMessage(
+        `I'm sorry, I encountered an error: ${error.message || "Please try again."}`,
+      );
 
       setLoading(false);
     }
@@ -1022,6 +1211,13 @@ export function AIChatDrawer({
     if (e.key === "Escape") {
       onClose();
     }
+  };
+
+  const startResizing = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsResizing(true);
+    resizeStartXRef.current = event.clientX;
+    resizeStartWidthRef.current = drawerWidth;
   };
 
   const clearChat = () => {
@@ -1072,9 +1268,12 @@ export function AIChatDrawer({
                 <circle cx="5" cy="12" r="3" />
               </svg>
               <span className="max-w-[150px] truncate">
-                {sessions.find(s => s.id === currentSession)?.title || "New AI chat"}
+                {sessions.find((s) => s.id === currentSession)?.title ||
+                  "New AI chat"}
               </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showSessionsDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showSessionsDropdown ? "rotate-180" : ""}`}
+              />
             </button>
 
             {/* Sessions Dropdown Menu */}
@@ -1093,7 +1292,9 @@ export function AIChatDrawer({
                   </div>
                   <div className="text-left">
                     <p className="font-medium">Start new chat</p>
-                    <p className="text-xs text-gray-400">Create a fresh conversation</p>
+                    <p className="text-xs text-gray-400">
+                      Create a fresh conversation
+                    </p>
                   </div>
                 </button>
 
@@ -1106,8 +1307,9 @@ export function AIChatDrawer({
                     {sessions.map((session) => (
                       <div
                         key={session.id}
-                        className={`group flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors ${session.id === currentSession ? 'bg-blue-50/50' : ''
-                          }`}
+                        className={`group flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors ${
+                          session.id === currentSession ? "bg-blue-50/50" : ""
+                        }`}
                       >
                         <button
                           onClick={() => switchSession(session.id)}
@@ -1117,8 +1319,13 @@ export function AIChatDrawer({
                             <MessageSquare className="w-4 h-4 text-gray-500" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-medium truncate ${session.id === currentSession ? 'text-blue-700' : 'text-gray-700'
-                              }`}>
+                            <p
+                              className={`text-sm font-medium truncate ${
+                                session.id === currentSession
+                                  ? "text-blue-700"
+                                  : "text-gray-700"
+                              }`}
+                            >
                               {session.title}
                             </p>
                             <p className="text-xs text-gray-400 flex items-center gap-1">
@@ -1149,7 +1356,9 @@ export function AIChatDrawer({
 
                 {sessions.length === 0 && (
                   <div className="px-4 py-4 text-center">
-                    <p className="text-sm text-gray-400">No previous conversations</p>
+                    <p className="text-sm text-gray-400">
+                      No previous conversations
+                    </p>
                   </div>
                 )}
               </div>
@@ -1192,7 +1401,20 @@ export function AIChatDrawer({
       {/* BUG FIX #4 & #5: The outer drawer <div> was missing its closing tag,
           and the closing `)` + `}` were misplaced, making them close sendMessage()
           instead of the component's return statement. Both are now correct. */}
-      <div className="relative w-[420px] bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col h-full animate-in slide-in-from-right duration-200 overflow-hidden">
+      <div
+        className="relative bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col h-full animate-in slide-in-from-right duration-200 overflow-hidden"
+        style={{
+          width: viewMode === "fullscreen" ? "100vw" : `${drawerWidth}px`,
+          minWidth: viewMode === "fullscreen" ? undefined : "320px",
+        }}
+      >
+        <div
+          className="absolute left-0 top-0 bottom-0 w-5 z-50 cursor-col-resize"
+          onMouseDown={startResizing}
+          role="presentation"
+        >
+          <div className="h-full w-full bg-transparent hover:bg-gray-200/30" />
+        </div>
         {/* Header - Fixed height, always visible */}
         <div className="h-14 flex-none flex items-center justify-between px-4 border-b border-gray-100 bg-white shrink-0">
           <div className="flex items-center gap-2" ref={sessionsDropdownRef}>
@@ -1213,9 +1435,12 @@ export function AIChatDrawer({
                 <circle cx="5" cy="12" r="3" />
               </svg>
               <span className="max-w-[150px] truncate">
-                {sessions.find(s => s.id === currentSession)?.title || "New AI chat"}
+                {sessions.find((s) => s.id === currentSession)?.title ||
+                  "New AI chat"}
               </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showSessionsDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showSessionsDropdown ? "rotate-180" : ""}`}
+              />
             </button>
 
             {/* Sessions Dropdown Menu */}
@@ -1234,7 +1459,9 @@ export function AIChatDrawer({
                   </div>
                   <div className="text-left">
                     <p className="font-medium">Start new chat</p>
-                    <p className="text-xs text-gray-400">Create a fresh conversation</p>
+                    <p className="text-xs text-gray-400">
+                      Create a fresh conversation
+                    </p>
                   </div>
                 </button>
 
@@ -1247,8 +1474,9 @@ export function AIChatDrawer({
                     {sessions.map((session) => (
                       <div
                         key={session.id}
-                        className={`group flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors ${session.id === currentSession ? 'bg-blue-50/50' : ''
-                          }`}
+                        className={`group flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors ${
+                          session.id === currentSession ? "bg-blue-50/50" : ""
+                        }`}
                       >
                         <button
                           onClick={() => switchSession(session.id)}
@@ -1258,8 +1486,13 @@ export function AIChatDrawer({
                             <MessageSquare className="w-4 h-4 text-gray-500" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-medium truncate ${session.id === currentSession ? 'text-blue-700' : 'text-gray-700'
-                              }`}>
+                            <p
+                              className={`text-sm font-medium truncate ${
+                                session.id === currentSession
+                                  ? "text-blue-700"
+                                  : "text-gray-700"
+                              }`}
+                            >
                               {session.title}
                             </p>
                             <p className="text-xs text-gray-400 flex items-center gap-1">
@@ -1290,7 +1523,9 @@ export function AIChatDrawer({
 
                 {sessions.length === 0 && (
                   <div className="px-4 py-4 text-center">
-                    <p className="text-sm text-gray-400">No previous conversations</p>
+                    <p className="text-sm text-gray-400">
+                      No previous conversations
+                    </p>
                   </div>
                 )}
               </div>
@@ -1325,20 +1560,30 @@ export function AIChatDrawer({
               {showViewDropdown && (
                 <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                   <button
-                    onClick={() => { setViewMode("sidebar"); setShowViewDropdown(false); }}
+                    onClick={() => {
+                      setViewMode("sidebar");
+                      setShowViewDropdown(false);
+                    }}
                     className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${viewMode === "sidebar" ? "text-blue-600 bg-blue-50" : "text-gray-700"}`}
                   >
                     <PanelRight className="w-4 h-4" />
                     Sidebar
-                    {viewMode === "sidebar" && <CheckCircle2 className="w-4 h-4 ml-auto" />}
+                    {viewMode === "sidebar" && (
+                      <CheckCircle2 className="w-4 h-4 ml-auto" />
+                    )}
                   </button>
                   <button
-                    onClick={() => { setViewMode("fullscreen"); setShowViewDropdown(false); }}
+                    onClick={() => {
+                      setViewMode("fullscreen");
+                      setShowViewDropdown(false);
+                    }}
                     className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${viewMode === "fullscreen" ? "text-blue-600 bg-blue-50" : "text-gray-700"}`}
                   >
                     <Layout className="w-4 h-4" />
                     Full screen
-                    {viewMode === "fullscreen" && <CheckCircle2 className="w-4 h-4 ml-auto" />}
+                    {viewMode === "fullscreen" && (
+                      <CheckCircle2 className="w-4 h-4 ml-auto" />
+                    )}
                   </button>
                 </div>
               )}
@@ -1360,7 +1605,8 @@ export function AIChatDrawer({
         <div className="h-[calc(100%-3.5rem)] overflow-hidden">
           <ChatContent {...sharedProps} />
         </div>
-      </div>{/* ← BUG FIX #4: closing tag was missing */}
+      </div>
+      {/* ← BUG FIX #4: closing tag was missing */}
     </div>
   );
   // ↑ BUG FIX #5: return now properly closes here, not inside sendMessage()

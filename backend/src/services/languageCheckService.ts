@@ -1,4 +1,4 @@
-import { OpenAIService } from "./openaiService";
+import { UnifiedAIService } from "./unifiedAIService";
 import logger from "../monitoring/logger";
 
 export interface LanguageSuggestion {
@@ -14,7 +14,10 @@ export class LanguageCheckService {
   /**
    * Analyze text for language issues and return structured suggestions
    */
-  static async checkLanguage(text: string): Promise<LanguageSuggestion[]> {
+  static async checkLanguage(
+    text: string,
+    userId?: string,
+  ): Promise<LanguageSuggestion[]> {
     try {
       if (!text || text.trim().length === 0) {
         return [];
@@ -47,15 +50,19 @@ Ensure the "context" snippet is an EXACT match from the provided text to help lo
 
 Your response MUST be a valid JSON array.`;
 
-      const aiResponse = await OpenAIService.sendCompletion(
-        prompt,
-        "gemini-3.1-flash-lite-preview",
-        2000,
-        0.2,
-      );
+      if (!userId) {
+        throw new Error("User ID required for language check. Please log in.");
+      }
+
+      const aiResponse = await UnifiedAIService.processAIRequest({
+        userId,
+        capability: "grammar_check",
+        content: prompt,
+        options: { isAutomatic: true },
+      });
 
       try {
-        const jsonText = aiResponse.content.replace(/```json|```/g, "").trim();
+        const jsonText = aiResponse.result.replace(/```json|```/g, "").trim();
         const suggestions = JSON.parse(jsonText) as LanguageSuggestion[];
 
         // Ensure each suggestion has an ID
@@ -66,7 +73,7 @@ Your response MUST be a valid JSON array.`;
       } catch (parseError) {
         logger.error(
           "Failed to parse AI response for language check:",
-          aiResponse.content,
+          aiResponse.result,
         );
         throw new Error("Failed to parse language check results");
       }

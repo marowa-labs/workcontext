@@ -66,7 +66,7 @@ export const defaultSettings: EditorSettings = {
   autoSaveInterval: 30,
   spellCheck: false,
   aiSuggestions: false,
-  aiModel: "gemini-3.1-flash-lite-preview",
+  aiModel: "",
   aiTone: "professional",
   notifications: false,
   soundEffects: false,

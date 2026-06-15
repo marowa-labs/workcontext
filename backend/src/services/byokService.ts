@@ -193,9 +193,200 @@ export class BYOKService {
       });
 
       logger.info(`BYOK key saved for user ${userId}, provider: ${provider}`);
+
+      // Fetch and cache available models for this provider
+      try {
+        const models = await this.fetchProviderModels(provider, apiKey);
+        if (models.length > 0) {
+          await this.saveProviderModels(userId, provider, models);
+        }
+      } catch (modelError) {
+        logger.warn(
+          `Failed to fetch models for ${provider} after saving key:`,
+          modelError,
+        );
+        // Don't throw — key is saved, models can be fetched later
+      }
     } catch (error: any) {
       logger.error("Error saving API key:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Fetch available models from a provider's API
+   */
+  static async fetchProviderModels(
+    provider: "google" | "anthropic" | "openai" | "openrouter",
+    apiKey: string,
+  ): Promise<
+    Array<{ id: string; name: string; description: string; maxTokens: number }>
+  > {
+    switch (provider) {
+      case "openai": {
+        const { default: OpenAI } = await import("openai");
+        const client = new OpenAI({ apiKey });
+        const response = await client.models.list();
+        return response.data
+          .filter(
+            (m: any) =>
+              m.id.startsWith("gpt-") ||
+              m.id.startsWith("o1-") ||
+              m.id.startsWith("o3-"),
+          )
+          .map((m: any) => ({
+            id: `openai/${m.id}`,
+            name: m.id.toUpperCase().replace(/-/g, " "),
+            description: `OpenAI ${m.id} model`,
+            maxTokens: m.id.includes("gpt-4o")
+              ? 128000
+              : m.id.includes("mini")
+                ? 128000
+                : 4096,
+          }))
+          .sort((a: any, b: any) => a.id.localeCompare(b.id));
+      }
+
+      case "anthropic": {
+        // Anthropic doesn't have a models.list API, so we return known models
+        // In production, you could use the Anthropic API to validate the key
+        return [
+          {
+            id: "anthropic/claude-sonnet-4-20250514",
+            name: "Claude Sonnet 4",
+            description:
+              "Anthropic's latest Sonnet model with excellent reasoning",
+            maxTokens: 200000,
+          },
+          {
+            id: "anthropic/claude-3-5-haiku-20241022",
+            name: "Claude 3.5 Haiku",
+            description: "Anthropic's fastest model for quick tasks",
+            maxTokens: 200000,
+          },
+          {
+            id: "anthropic/claude-3-5-sonnet-20241022",
+            name: "Claude 3.5 Sonnet",
+            description: "Balanced performance and speed",
+            maxTokens: 200000,
+          },
+        ];
+      }
+
+      case "google": {
+        // Google doesn't have a simple models.list via API key, return known Gemini models
+        return [
+          {
+            id: "gemini-3.1-flash-lite",
+            name: "Gemini 3.1 Flash Lite",
+            description: "Google's fast multimodal model",
+            maxTokens: 1048576,
+          },
+          {
+            id: "gemini-2.0-flash",
+            name: "Gemini 2.0 Flash",
+            description: "Google's balanced multimodal model",
+            maxTokens: 1048576,
+          },
+        ];
+      }
+
+      case "openrouter": {
+        // OpenRouter has a models endpoint
+        const fetch = (await import("node-fetch")).default;
+        const response = await fetch("https://openrouter.ai/api/v1/models", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (!response.ok) throw new Error("Failed to fetch OpenRouter models");
+        const data = (await response.json()) as any;
+        return (data.data || [])
+          .filter((m: any) => m.context_length > 0)
+          .map((m: any) => ({
+            id: m.id,
+            name:
+              m.id
+                .split("/")
+                .pop()
+                ?.replace(/-/g, " ")
+                .replace(/\b\w/g, (c: string) => c.toUpperCase()) || m.id,
+            description: `${m.id} via OpenRouter`,
+            maxTokens: m.context_length || 4096,
+          }))
+          .sort((a: any, b: any) =>
+            a.id.includes(":free") ? -1 : b.id.includes(":free") ? 1 : 0,
+          );
+      }
+
+      default:
+        return [];
+    }
+  }
+
+  /**
+   * Save fetched provider models to the database for a user
+   */
+  static async saveProviderModels(
+    userId: string,
+    provider: string,
+    models: Array<{
+      id: string;
+      name: string;
+      description: string;
+      maxTokens: number;
+    }>,
+  ): Promise<void> {
+    try {
+      const fieldMap: Record<string, string> = {
+        google: "byok_google_models",
+        anthropic: "byok_claude_models",
+        openai: "byok_openai_models",
+        openrouter: "byok_openrouter_models",
+      };
+      const field = fieldMap[provider];
+      if (!field) return;
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { [field]: models },
+      });
+      logger.info(
+        `Saved ${models.length} models for user ${userId}, provider: ${provider}`,
+      );
+    } catch (error) {
+      logger.error("Error saving provider models:", error);
+    }
+  }
+
+  /**
+   * Get cached provider models for a user
+   */
+  static async getProviderModels(
+    userId: string,
+    provider: string,
+  ): Promise<Array<{
+    id: string;
+    name: string;
+    description: string;
+    maxTokens: number;
+  }> | null> {
+    try {
+      const fieldMap: Record<string, string> = {
+        google: "byok_google_models",
+        anthropic: "byok_claude_models",
+        openai: "byok_openai_models",
+        openrouter: "byok_openrouter_models",
+      };
+      const field = fieldMap[provider];
+      if (!field) return null;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { [field]: true },
+      });
+
+      return (user as any)?.[field] || null;
+    } catch {
+      return null;
     }
   }
 
@@ -284,6 +475,44 @@ export class BYOKService {
   }
 
   /**
+   * Get key status for all providers (for connection status display)
+   */
+  static async getKeyStatuses(
+    userId: string,
+  ): Promise<Record<string, "valid" | "invalid" | "missing" | "error">> {
+    const providers = ["google", "anthropic", "openai", "openrouter"] as const;
+    const statuses: Record<string, "valid" | "invalid" | "missing" | "error"> =
+      {};
+
+    for (const provider of providers) {
+      try {
+        const hasKey = await this.hasValidKey(userId, provider);
+        if (!hasKey) {
+          // Check if key exists but is invalid
+          const fieldMap = {
+            google: "byok_google_key_encrypted",
+            anthropic: "byok_claude_key_encrypted",
+            openai: "byok_openai_key_encrypted",
+            openrouter: "byok_openrouter_key_encrypted",
+          };
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { [fieldMap[provider]]: true },
+          });
+          const encrypted = user?.[fieldMap[provider] as keyof typeof user];
+          statuses[provider] = encrypted ? "invalid" : "missing";
+        } else {
+          statuses[provider] = "valid";
+        }
+      } catch {
+        statuses[provider] = "error";
+      }
+    }
+
+    return statuses;
+  }
+
+  /**
    * Test an API key to verify it works
    */
   static async testApiKey(
@@ -335,7 +564,7 @@ export class BYOKService {
       const { GoogleGenerativeAI } = await import("@google/generative-ai");
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       // Make a minimal test request

@@ -28,7 +28,13 @@ interface ActionTileProps {
   color: string;
 }
 
-function ActionTile({ icon, title, description, onClick, color }: ActionTileProps) {
+function ActionTile({
+  icon,
+  title,
+  description,
+  onClick,
+  color,
+}: ActionTileProps) {
   return (
     <button
       onClick={onClick}
@@ -81,25 +87,28 @@ export default function DashboardPage() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleAction = useCallback((action: string) => {
-    switch (action) {
-      case "ai-chat":
-        window.dispatchEvent(new CustomEvent("open-ai-chat"));
-        break;
-      case "create-space":
-        window.dispatchEvent(new CustomEvent("create-project"));
-        break;
-      case "search":
-        window.dispatchEvent(new CustomEvent("open-search"));
-        break;
-      case "workspace":
-        router.push("/projects");
-        break;
-      case "summarize":
-        window.dispatchEvent(new CustomEvent("summarize-workspace"));
-        break;
-    }
-  }, [router]);
+  const handleAction = useCallback(
+    (action: string) => {
+      switch (action) {
+        case "ai-chat":
+          window.dispatchEvent(new CustomEvent("open-ai-chat"));
+          break;
+        case "create-space":
+          window.dispatchEvent(new CustomEvent("create-project"));
+          break;
+        case "search":
+          window.dispatchEvent(new CustomEvent("open-search"));
+          break;
+        case "workspace":
+          router.push("/projects");
+          break;
+        case "summarize":
+          window.dispatchEvent(new CustomEvent("summarize-workspace"));
+          break;
+      }
+    },
+    [router],
+  );
 
   if (userLoading) {
     return (
@@ -143,12 +152,12 @@ export default function DashboardPage() {
             <div className="p-2 bg-primary/10 rounded-lg">
               <Command className="w-5 h-5 text-primary" />
             </div>
-            <span className="flex-1 text-muted-foreground">Type a command or search...</span>
+            <span className="flex-1 text-muted-foreground">
+              Type a command or search...
+            </span>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="hidden sm:inline">Press</span>
-              <kbd className="px-2 py-1 bg-muted rounded text-xs">
-                /
-              </kbd>
+              <kbd className="px-2 py-1 bg-muted rounded text-xs">/</kbd>
             </div>
           </button>
         </div>
@@ -195,11 +204,9 @@ export default function DashboardPage() {
           {/* Recent Workspaces */}
           <div className="bg-card rounded-2xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">
-                Your Workspaces
-              </h3>
+              <h3 className="font-semibold text-foreground">Your Workspaces</h3>
               <button
-                onClick={() => router.push("/projects")}
+                onClick={() => router.push("/spaces")}
                 className="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
               >
                 View all <ArrowRight className="w-4 h-4" />
@@ -207,7 +214,7 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-3">
               <button
-                onClick={() => router.push("/projects")}
+                onClick={() => router.push("/spaces")}
                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors text-left"
               >
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -237,7 +244,8 @@ export default function DashboardPage() {
                   New to ScholarForge?
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Learn how to use commands, AI features, and more to supercharge your productivity.
+                  Learn how to use commands, AI features, and more to
+                  supercharge your productivity.
                 </p>
                 <button
                   onClick={() => router.push("/guide")}
@@ -270,7 +278,9 @@ export default function DashboardPage() {
                 <code className="text-sm font-mono text-primary">
                   {item.cmd}
                 </code>
-                <span className="text-xs text-muted-foreground">{item.desc}</span>
+                <span className="text-xs text-muted-foreground">
+                  {item.desc}
+                </span>
               </button>
             ))}
           </div>

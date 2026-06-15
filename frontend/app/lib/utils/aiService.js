@@ -148,7 +148,7 @@ class AIService {
   }
 
   // Grammar and style checking
-  static async checkGrammar(text, model = "gemini-3.1-flash-lite-preview") {
+  static async checkGrammar(text, model) {
     try {
       console.log("=== Starting Grammar Check ===");
       const token = await this.getAuthToken();
@@ -237,17 +237,14 @@ class AIService {
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/research/language-check`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ text }),
+      const response = await fetch(`${API_BASE_URL}/api/ai/language-check`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ text }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -266,7 +263,7 @@ class AIService {
   static async summarizeDocument(
     content,
     summaryType = "long_document",
-    model = "gemini-3.1-flash-lite-preview",
+    model,
   ) {
     try {
       const token = await this.getAuthToken();
@@ -317,11 +314,7 @@ class AIService {
   }
 
   // Document Q&A
-  static async askDocumentQuestion(
-    documentContent,
-    question,
-    model = "gemini-3.1-flash-lite-preview",
-  ) {
+  static async askDocumentQuestion(documentContent, question, model) {
     try {
       const token = await this.getAuthToken();
       console.log(
@@ -381,7 +374,7 @@ class AIService {
     action = "assist",
     projectType = "research_paper",
     researchTopic = "",
-    model = "gemini-3.1-flash-lite-preview",
+    model,
   ) {
     try {
       const token = await this.getAuthToken();
@@ -617,6 +610,35 @@ class AIService {
     } catch (error) {
       console.error("Error deleting history item:", error);
       throw error;
+    }
+  }
+
+  // Get user's preferred AI model
+  static async getPreferredModel() {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/ai/preferred-model`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to get preferred model");
+      }
+
+      return data.preferredModel;
+    } catch (error) {
+      console.error("Error getting preferred model:", error);
+      return null;
     }
   }
 

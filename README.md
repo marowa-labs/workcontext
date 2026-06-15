@@ -98,7 +98,7 @@ SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 GEMINI_API_KEY=your_gemini_key          # optional
 OPENROUTER_API_KEY=your_openrouter_key  # optional
-RESEND_API_KEY=your_resend_key          # for emails
+PLUNK_API_KEY=sk_xxxxxxxxxxxx          # Secret API Key for emails (NOT Public Key)
 ```
 
 > You only need **one** AI provider key to get started.

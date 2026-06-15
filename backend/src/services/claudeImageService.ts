@@ -30,7 +30,7 @@ export class GeminiImageService {
   // Generate image description using Gemini that can be used with external image generation services
   static async generateImageDescription(
     imageUrl: string,
-    model: string = "gemini-3.1-flash-lite-preview",
+    model: string = "gemini-3.1-flash-lite",
   ): Promise<GeminiImageResponse> {
     try {
       const client = await getGeminiClient();

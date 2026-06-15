@@ -9,34 +9,34 @@ class AIModelAccessControl {
   // Define available models per plan
   static PLAN_MODELS = {
     free: [
-      "gemini-3.1-flash-lite-preview",
+      "gemini-3.1-flash-lite",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     onetime: [
-      "gemini-3.1-flash-lite-preview",
+      "gemini-3.1-flash-lite",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     student: [
-      "gemini-3.1-flash-lite-preview",
-      "gemini-3.1-flash-lite-preview",
+      "gemini-3.1-flash-lite",
+      "gemini-3.1-flash-lite",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     researcher: [
-      "gemini-3.1-flash-lite-preview",
-      "gemini-3.1-flash-lite-preview",
+      "gemini-3.1-flash-lite",
+      "gemini-3.1-flash-lite",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     ],
     institutional: [
-      "gemini-3.1-flash-lite-preview",
-      "gemini-3.1-flash-lite-preview",
+      "gemini-3.1-flash-lite",
+      "gemini-3.1-flash-lite",
       "openai/gpt-oss-120b:free",
       "nvidia/nemotron-3-super-120b-a12b:free",
       "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
@@ -45,13 +45,13 @@ class AIModelAccessControl {
 
   // Model details for UI display
   static MODEL_DETAILS = {
-    "gemini-3.1-flash-lite-preview": {
+    "gemini-3.1-flash-lite": {
       name: "Gemini 2.5 Flash",
       description: "Fast and efficient Gemini model",
       maxTokens: 1048576,
       planRequired: "free",
     },
-    "gemini-3.1-flash-lite-preview": {
+    "gemini-3.1-flash-lite": {
       name: "Gemini 3.1 Flash Lite",
       description: "Google's advanced multimodal model",
       maxTokens: 1048576,

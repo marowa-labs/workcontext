@@ -28,7 +28,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -42,10 +42,7 @@ export class AIService {
       const resultData = {
         suggestions: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -59,7 +56,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -73,10 +70,7 @@ export class AIService {
       const resultData = {
         improvedText: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -90,7 +84,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -104,10 +98,7 @@ export class AIService {
       const resultData = {
         paraphrasedText: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -121,7 +112,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -135,10 +126,7 @@ export class AIService {
       const resultData = {
         questions: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -154,7 +142,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -167,10 +155,7 @@ export class AIService {
       const resultData = {
         outline: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -184,7 +169,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -197,10 +182,7 @@ export class AIService {
       const resultData = {
         sources: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -214,7 +196,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -227,10 +209,7 @@ export class AIService {
       const resultData = {
         citations: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -244,7 +223,7 @@ export class AIService {
     try {
       const client = await getGeminiClient();
       const model = client.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-3.1-flash-lite",
       });
 
       const result = await model.generateContent([
@@ -258,10 +237,7 @@ export class AIService {
       const resultData = {
         analysis: responseText,
         tokensUsed: responseText.length, // Approximation
-        cost: this.calculateCost(
-          responseText.length,
-          "gemini-3.1-flash-lite-preview",
-        ),
+        cost: this.calculateCost(responseText.length, "gemini-3.1-flash-lite"),
       };
 
       return resultData;
@@ -280,14 +256,14 @@ export class AIService {
     let costPerMillionTokens = 0;
 
     if (
-      model.includes("gemini-3.1-flash-lite-preview") ||
+      model.includes("gemini-3.1-flash-lite") ||
       model.includes("gemini-pro")
     ) {
       // Gemini 3.1 Flash Lite pricing
       // Using average of input/output pricing: ($7.00 + $21.00) / 2 = $14.00 per 1M tokens
       costPerMillionTokens = 14.0;
     } else if (
-      model.includes("gemini-3.1-flash-lite-preview") ||
+      model.includes("gemini-3.1-flash-lite") ||
       model.includes("gemini-flash")
     ) {
       // Gemini 2.5 Flash pricing

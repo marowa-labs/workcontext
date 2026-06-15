@@ -71,7 +71,7 @@ interface OpenAIResponse {
 }
 
 // Default Gemini model
-const DEFAULT_MODEL = "gemini-3.1-flash-lite-preview";
+const DEFAULT_MODEL = "gemini-3.1-flash-lite";
 
 export class OpenAIService {
   // Send completion request using Gemini

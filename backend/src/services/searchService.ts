@@ -299,7 +299,7 @@ Please provide a concise summary of this content in relation to the research que
 
           const result = await multiAIService.generateContent(
             prompt,
-            "gemini-3.1-flash-lite-preview",
+            undefined,
           );
 
           const summary = result.content || "Unable to summarize content.";
@@ -355,7 +355,7 @@ Please provide:
 
       const result = await multiAIService.generateContent(
         fullPrompt,
-        "gemini-3.1-flash-lite-preview",
+        undefined,
       );
 
       const response = result.content || "Unable to analyze search results.";

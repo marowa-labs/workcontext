@@ -36,6 +36,7 @@ interface UserStats {
   aiInteractions: number;
   timeSpent: number; // in minutes
   productivity: number; // score 0-100
+  productivityPercentile: number; // percentile among all users
   weeklyActivity: { day: string; tasks: number; hours: number }[];
   achievements: {
     id: string;
@@ -119,7 +120,9 @@ export default function StatsPage() {
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Your Performance</h1>
+                <h1 className="text-2xl font-bold text-slate-900">
+                  Your Performance
+                </h1>
                 <p className="text-sm text-slate-500">
                   Personal KPIs and activity metrics
                 </p>
@@ -132,12 +135,17 @@ export default function StatsPage() {
                     key={range}
                     onClick={() => setTimeRange(range)}
                     disabled={isRefreshing}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${timeRange === range
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      timeRange === range
                         ? "bg-white text-slate-900 shadow-sm"
                         : "text-slate-600 hover:text-slate-900"
-                      }`}
+                    }`}
                   >
-                    {range === "week" ? "This Week" : range === "month" ? "This Month" : "All Time"}
+                    {range === "week"
+                      ? "This Week"
+                      : range === "month"
+                        ? "This Month"
+                        : "All Time"}
                   </button>
                 ))}
               </div>
@@ -155,9 +163,13 @@ export default function StatsPage() {
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 mb-8 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium mb-1">Productivity Score</p>
+              <p className="text-blue-100 text-sm font-medium mb-1">
+                Productivity Score
+              </p>
               <p className="text-5xl font-bold">{stats.productivity}</p>
-              <p className="text-blue-100 text-sm mt-2">Top 15% of all users</p>
+              <p className="text-blue-100 text-sm mt-2">
+                Top {100 - stats.productivityPercentile}% of all users
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="p-4 bg-white/10 rounded-2xl backdrop-blur">
@@ -207,18 +219,26 @@ export default function StatsPage() {
                 <BarChart3 className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Weekly Activity</h3>
+                <h3 className="font-semibold text-slate-900">
+                  Weekly Activity
+                </h3>
                 <p className="text-sm text-slate-500">Tasks and hours logged</p>
               </div>
             </div>
           </div>
           <div className="h-48 flex items-end gap-4">
             {stats.weeklyActivity.map((day) => (
-              <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
+              <div
+                key={day.day}
+                className="flex-1 flex flex-col items-center gap-2"
+              >
                 <div className="w-full flex flex-col gap-1">
                   <div
                     className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
-                    style={{ height: `${(day.tasks / 20) * 100}px`, minHeight: "4px" }}
+                    style={{
+                      height: `${(day.tasks / 20) * 100}px`,
+                      minHeight: "4px",
+                    }}
                     title={`${day.tasks} tasks`}
                   />
                   <div
@@ -253,7 +273,9 @@ export default function StatsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900">Achievements</h3>
-                <p className="text-sm text-slate-500">Unlocked {stats.achievements.length} badges</p>
+                <p className="text-sm text-slate-500">
+                  Unlocked {stats.achievements.length} badges
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -263,14 +285,25 @@ export default function StatsPage() {
                   className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200"
                 >
                   <div className="p-3 bg-white rounded-xl shadow-sm w-fit mb-3">
-                    {achievement.icon === "trophy" && <Trophy className="w-6 h-6 text-yellow-500" />}
-                    {achievement.icon === "flame" && <Flame className="w-6 h-6 text-orange-500" />}
-                    {achievement.icon === "zap" && <Zap className="w-6 h-6 text-purple-500" />}
+                    {achievement.icon === "trophy" && (
+                      <Trophy className="w-6 h-6 text-yellow-500" />
+                    )}
+                    {achievement.icon === "flame" && (
+                      <Flame className="w-6 h-6 text-orange-500" />
+                    )}
+                    {achievement.icon === "zap" && (
+                      <Zap className="w-6 h-6 text-purple-500" />
+                    )}
                   </div>
-                  <p className="font-semibold text-slate-900">{achievement.name}</p>
-                  <p className="text-sm text-slate-500 mt-1">{achievement.description}</p>
+                  <p className="font-semibold text-slate-900">
+                    {achievement.name}
+                  </p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {achievement.description}
+                  </p>
                   <p className="text-xs text-slate-400 mt-2">
-                    Unlocked {new Date(achievement.unlockedAt).toLocaleDateString()}
+                    Unlocked{" "}
+                    {new Date(achievement.unlockedAt).toLocaleDateString()}
                   </p>
                 </div>
               ))}
@@ -284,7 +317,9 @@ export default function StatsPage() {
                 <Activity className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Recent Milestones</h3>
+                <h3 className="font-semibold text-slate-900">
+                  Recent Milestones
+                </h3>
                 <p className="text-sm text-slate-500">Latest achievements</p>
               </div>
             </div>
@@ -292,13 +327,23 @@ export default function StatsPage() {
               {stats.recentMilestones.map((milestone) => (
                 <div key={milestone.id} className="flex items-start gap-3">
                   <div className="p-2 bg-slate-100 rounded-lg">
-                    {milestone.type === "task" && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                    {milestone.type === "streak" && <Flame className="w-4 h-4 text-orange-500" />}
-                    {milestone.type === "workspace" && <Folder className="w-4 h-4 text-blue-500" />}
-                    {milestone.type === "ai" && <Zap className="w-4 h-4 text-purple-500" />}
+                    {milestone.type === "task" && (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    )}
+                    {milestone.type === "streak" && (
+                      <Flame className="w-4 h-4 text-orange-500" />
+                    )}
+                    {milestone.type === "workspace" && (
+                      <Folder className="w-4 h-4 text-blue-500" />
+                    )}
+                    {milestone.type === "ai" && (
+                      <Zap className="w-4 h-4 text-purple-500" />
+                    )}
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">{milestone.title}</p>
+                    <p className="font-medium text-slate-900">
+                      {milestone.title}
+                    </p>
                     <p className="text-xs text-slate-500">
                       {new Date(milestone.date).toLocaleDateString()}
                     </p>
@@ -311,10 +356,26 @@ export default function StatsPage() {
 
         {/* Additional Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-          <SimpleStat icon={<FileText className="w-4 h-4" />} label="Tasks Created" value={stats.tasksCreated} />
-          <SimpleStat icon={<Folder className="w-4 h-4" />} label="Workspaces" value={stats.totalWorkspaces} />
-          <SimpleStat icon={<MessageSquare className="w-4 h-4" />} label="Messages" value={stats.totalMessages} />
-          <SimpleStat icon={<Star className="w-4 h-4" />} label="Completion" value={`${stats.completionRate}%`} />
+          <SimpleStat
+            icon={<FileText className="w-4 h-4" />}
+            label="Tasks Created"
+            value={stats.tasksCreated}
+          />
+          <SimpleStat
+            icon={<Folder className="w-4 h-4" />}
+            label="Workspaces"
+            value={stats.totalWorkspaces}
+          />
+          <SimpleStat
+            icon={<MessageSquare className="w-4 h-4" />}
+            label="Messages"
+            value={stats.totalMessages}
+          />
+          <SimpleStat
+            icon={<Star className="w-4 h-4" />}
+            label="Completion"
+            value={`${stats.completionRate}%`}
+          />
         </div>
       </div>
     </div>
@@ -339,7 +400,9 @@ function KpiCard({
       <div className="flex items-start justify-between">
         <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
         {trend !== "neutral" && (
-          <div className={`p-1 rounded ${trend === "up" ? "bg-emerald-50" : "bg-red-50"}`}>
+          <div
+            className={`p-1 rounded ${trend === "up" ? "bg-emerald-50" : "bg-red-50"}`}
+          >
             {trend === "up" ? (
               <TrendingUp className="w-4 h-4 text-emerald-500" />
             ) : (

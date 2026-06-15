@@ -13,6 +13,7 @@ import {
   Trash2,
   Shield,
   MessageSquare,
+  Key,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -92,6 +93,12 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
 
     { id: "ai", label: "AI Preferences", icon: Sparkles, path: "ai" },
     {
+      id: "ai-api-key",
+      label: "AI API Key",
+      icon: Key,
+      path: "ai-api-key",
+    },
+    {
       id: "billing",
       label: "Billing",
       icon: CreditCard,
@@ -159,7 +166,8 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       <div className="lg:hidden p-4 border-b border-border">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className={`flex items-center justify-between w-full p-3 text-left bg-card rounded-lg ${transitionClasses}`}>
+          className={`flex items-center justify-between w-full p-3 text-left bg-card rounded-lg ${transitionClasses}`}
+        >
           <span className="font-medium text-foreground">
             {navigationItems.find((item) => item.id)?.label || "Settings"}
           </span>
@@ -167,7 +175,8 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
             className={`w-5 h-5 text-foreground ${settings.animations && shouldApplyCustomLayout ? "transition-transform" : ""} ${mobileMenuOpen ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24">
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -180,7 +189,8 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
 
       {/* Sidebar Navigation */}
       <div
-        className={`${positionClasses.sidebar} ${positionClasses.sidebarTransform}`}>
+        className={`${positionClasses.sidebar} ${positionClasses.sidebarTransform}`}
+      >
         <div className="lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] overflow-y-auto border-r border-border">
           <nav className="p-4 space-y-1">
             {navigationItems.map((item) => {
@@ -194,7 +204,8 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
                       ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-500 accent-border tab-active"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   } ${transitionClasses}`}
-                  onClick={() => setMobileMenuOpen(false)}>
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
                   <span className="truncate">{item.label}</span>
                 </Link>

@@ -1,7 +1,7 @@
 // AI Intent Parser Service
 // Parses user messages to understand what action they want to perform
 
-import { OpenAIService } from "./openaiService";
+import { UnifiedAIService } from "./unifiedAIService";
 import logger from "../monitoring/logger";
 import {
   ParsedIntent,
@@ -13,8 +13,6 @@ import {
 } from "./aiActionTypes";
 
 export class AIIntentParser {
-  private static readonly PARSER_MODEL = "gemini-3.1-flash-lite-preview";
-
   /**
    * Parse user intent from a message
    */
@@ -103,14 +101,19 @@ export class AIIntentParser {
     ];
 
     try {
-      const response = await OpenAIService.sendMessage(
-        messages,
-        this.PARSER_MODEL,
-        1500,
-        0.1, // Low temperature for consistent parsing
-      );
+      // Build a single prompt from the messages array for UnifiedAIService
+      const prompt = messages
+        .map((m) => `${m.role}: ${m.content}`)
+        .join("\n\n");
 
-      const parsed = this.extractJSONFromResponse(response.content);
+      const response = await UnifiedAIService.processAIRequest({
+        userId: context.userId,
+        capability: "document_qa",
+        content: prompt,
+        options: { preferredModel: context.userPreferences?.preferredModel },
+      });
+
+      const parsed = this.extractJSONFromResponse(response.result);
 
       if (!parsed || !parsed.action_type) {
         return null;
@@ -118,17 +121,25 @@ export class AIIntentParser {
 
       const actionDef = ACTION_DEFINITIONS[parsed.action_type];
 
+      // If action type doesn't exist in definitions, treat as general chat
+      if (!actionDef) {
+        logger.warn(
+          `Unknown action type returned by AI: ${parsed.action_type}`,
+        );
+        return null;
+      }
+
       return {
         actionType: parsed.action_type,
         actionCategory: (parsed.action_category ||
-          actionDef?.category ||
+          actionDef.category ||
           "read") as ActionCategory,
         targetEntity: (parsed.target_entity ||
-          actionDef?.targetEntity ||
+          actionDef.targetEntity ||
           "project") as TargetEntity,
         parameters: parsed.parameters || {},
         confidence: parsed.confidence || 0.7,
-        requiresConfirmation: actionDef?.requiresConfirmation ?? true,
+        requiresConfirmation: actionDef.requiresConfirmation ?? true,
         suggestedResponse:
           parsed.suggested_response || `I'll help you with that.`,
       };

@@ -1138,7 +1138,7 @@ export class EditorService {
       // Return settings with aiModel included
       return {
         ...settings,
-        aiModel: user?.preferred_ai_model || "gemini-3.1-flash-lite-preview",
+        aiModel: user?.preferred_ai_model || null,
       };
     } catch (error) {
       logger.error("Error getting editor settings:", {

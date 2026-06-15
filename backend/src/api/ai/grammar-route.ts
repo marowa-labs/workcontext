@@ -9,7 +9,7 @@ import express, {
 // Express.js compatible handler
 export async function handleGrammarCheckExpress(
   req: ExpressRequest,
-  res: ExpressResponse
+  res: ExpressResponse,
 ) {
   try {
     const userId = (req as any).user?.id;
@@ -32,7 +32,7 @@ export async function handleGrammarCheckExpress(
     // Check usage limit
     const { hasLimit, remaining } = await UnifiedAIService.checkUsageLimit(
       userId,
-      "grammar_check"
+      "grammar_check",
     );
     if (hasLimit && remaining <= 0) {
       return res.status(429).json({
@@ -69,12 +69,79 @@ export async function handleGrammarCheckExpress(
   }
 }
 
+// Language check handler
+export async function handleLanguageCheckExpress(
+  req: ExpressRequest,
+  res: ExpressResponse,
+) {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const { text, model } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        message: "Text content is required",
+      });
+    }
+
+    // Check usage limit
+    const { hasLimit, remaining } = await UnifiedAIService.checkUsageLimit(
+      userId,
+      "grammar_check",
+    );
+    if (hasLimit && remaining <= 0) {
+      return res.status(429).json({
+        success: false,
+        message:
+          "Language check limit reached. Please upgrade your plan for more checks.",
+      });
+    }
+
+    // Process language check using the grammar_check capability
+    const result = await UnifiedAIService.processAIRequest({
+      userId,
+      capability: "grammar_check",
+      content: text,
+      options: { preferredModel: model, isAutomatic: true },
+    });
+
+    return res.status(200).json({
+      success: true,
+      suggestions: result.result,
+      tokensUsed: result.tokensUsed,
+      cost: result.cost,
+      modelUsed: result.modelUsed,
+    });
+  } catch (error: any) {
+    logger.error("Error processing language check request", {
+      error: error.message,
+    });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to process language check request",
+    });
+  }
+}
+
 // Express.js route setup
 export function setupGrammarRoute(app: any) {
   app.post(
     "/api/ai/grammar",
     authenticateExpressRequest,
-    handleGrammarCheckExpress
+    handleGrammarCheckExpress,
+  );
+  app.post(
+    "/api/ai/language-check",
+    authenticateExpressRequest,
+    handleLanguageCheckExpress,
   );
 }
 
@@ -91,7 +158,7 @@ async function handleGrammarCheck(request: Request & { user?: any }) {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -107,14 +174,14 @@ async function handleGrammarCheck(request: Request & { user?: any }) {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
     // Check usage limit
     const { hasLimit, remaining } = await UnifiedAIService.checkUsageLimit(
       userId,
-      "grammar_check"
+      "grammar_check",
     );
     if (hasLimit && remaining <= 0) {
       return new Response(
@@ -126,7 +193,7 @@ async function handleGrammarCheck(request: Request & { user?: any }) {
         {
           status: 429,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -150,7 +217,7 @@ async function handleGrammarCheck(request: Request & { user?: any }) {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error: any) {
     logger.error("Error processing grammar check request", {
@@ -164,7 +231,7 @@ async function handleGrammarCheck(request: Request & { user?: any }) {
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   }
 }

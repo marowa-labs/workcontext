@@ -17,6 +17,7 @@ import {
   Calendar,
   Download,
   Sparkles,
+  Github,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
@@ -200,12 +201,14 @@ export default function Navigation() {
               }
               onMouseLeave={() =>
                 handleMouseLeave(setSolutionsOpen, solutionsTimeoutRef)
-              }>
+              }
+            >
               <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
                 Solutions
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${solutionsOpen ? "rotate-180" : ""
-                    }`}
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    solutionsOpen ? "rotate-180" : ""
+                  }`}
                 />
               </div>
               {solutionsOpen && (
@@ -216,7 +219,8 @@ export default function Navigation() {
                   }
                   onMouseLeave={() =>
                     handleMouseLeave(setSolutionsOpen, solutionsTimeoutRef)
-                  }>
+                  }
+                >
                   <div className="container-custom py-8">
                     <div className="flex gap-12">
                       {/* Left: Links Grid */}
@@ -226,7 +230,8 @@ export default function Navigation() {
                             key={index}
                             href={item.href}
                             className="group cursor-pointer flex flex-col p-2 rounded-lg hover:bg-gray-200/50 transition-colors"
-                            onClick={() => setSolutionsOpen(false)}>
+                            onClick={() => setSolutionsOpen(false)}
+                          >
                             <div className="flex items-center mb-2">
                               <div className="flex items-center justify-center w-8 h-8 rounded-lg mr-3 text-blue-400 bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
                                 {item.icon}
@@ -257,7 +262,8 @@ export default function Navigation() {
                           </p>
                           <Link
                             href="/signup"
-                            className="inline-flex items-center text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+                            className="inline-flex items-center text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                          >
                             Explore Analytics Hub
                             <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
                           </Link>
@@ -279,12 +285,14 @@ export default function Navigation() {
               }
               onMouseLeave={() =>
                 handleMouseLeave(setProductOpen, productTimeoutRef)
-              }>
+              }
+            >
               <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
                 Product
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${productOpen ? "rotate-180" : ""
-                    }`}
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    productOpen ? "rotate-180" : ""
+                  }`}
                 />
               </div>
               {productOpen && (
@@ -295,7 +303,8 @@ export default function Navigation() {
                   }
                   onMouseLeave={() =>
                     handleMouseLeave(setProductOpen, productTimeoutRef)
-                  }>
+                  }
+                >
                   <div className="container-custom py-8">
                     <div className="flex gap-12">
                       {/* Left: Links Grid */}
@@ -305,7 +314,8 @@ export default function Navigation() {
                             key={index}
                             href={item.href}
                             className="group cursor-pointer flex flex-col p-2 rounded-lg hover:bg-gray-200/50 transition-colors"
-                            onClick={() => setProductOpen(false)}>
+                            onClick={() => setProductOpen(false)}
+                          >
                             <div className="flex items-center mb-2">
                               <div className="flex items-center justify-center w-8 h-8 rounded-lg mr-3 text-purple-400 bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
                                 {item.icon}
@@ -336,7 +346,8 @@ export default function Navigation() {
                           </p>
                           <Link
                             href="/changelog"
-                            className="inline-flex items-center text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors">
+                            className="inline-flex items-center text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                          >
                             View Changelog
                             <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
                           </Link>
@@ -350,10 +361,6 @@ export default function Navigation() {
               )}
             </div>
 
-            <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
-              <Link href="/pricing">Pricing</Link>
-            </div>
-
             {/* Resources Dropdown - 3 columns */}
             <div
               className="relative"
@@ -362,12 +369,14 @@ export default function Navigation() {
               }
               onMouseLeave={() =>
                 handleMouseLeave(setResourcesOpen, resourcesTimeoutRef)
-              }>
+              }
+            >
               <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
                 Resources
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${resourcesOpen ? "rotate-180" : ""
-                    }`}
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    resourcesOpen ? "rotate-180" : ""
+                  }`}
                 />
               </div>
               {resourcesOpen && (
@@ -378,7 +387,8 @@ export default function Navigation() {
                   }
                   onMouseLeave={() =>
                     handleMouseLeave(setResourcesOpen, resourcesTimeoutRef)
-                  }>
+                  }
+                >
                   <div className="container-custom py-8">
                     <div className="flex gap-12">
                       {/* Left: Links Grid */}
@@ -388,7 +398,8 @@ export default function Navigation() {
                             key={index}
                             href={item.href}
                             className="group cursor-pointer flex flex-col p-2 rounded-lg hover:bg-gray-200/50 transition-colors"
-                            onClick={() => setResourcesOpen(false)}>
+                            onClick={() => setResourcesOpen(false)}
+                          >
                             <div className="flex items-center mb-2">
                               <div className="flex items-center justify-center w-8 h-8 rounded-lg mr-3 text-green-400 bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
                                 {item.icon}
@@ -419,7 +430,8 @@ export default function Navigation() {
                           </p>
                           <Link
                             href="/blog"
-                            className="inline-flex items-center text-sm font-semibold text-green-400 hover:text-green-300 transition-colors">
+                            className="inline-flex items-center text-sm font-semibold text-green-400 hover:text-green-300 transition-colors"
+                          >
                             Read Guides
                             <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
                           </Link>
@@ -435,23 +447,29 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-8">
             <Button
               asChild
               variant="ghost"
-              className="text-gray-700 hover:text-gray-900">
+              className="text-gray-700 hover:text-gray-900"
+            >
               <Link href="/login">Sign In</Link>
             </Button>
+            <div className="w-px h-10 px-3 bg-gray-300 flex items-center">
+              <a
+                href="https://github.com/marowa-craig/scholarforge-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                <Github className="h-5 w-5" />
+              </a>
+            </div>
             <Button
               asChild
-              variant="outline"
-              className="text-gray-700 hover:text-gray-900 border-gray-300 bg-white">
-              <Link href="/schedule-demo">Schedule Demo</Link>
-            </Button>
-            <Button
-              asChild
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white btn-glow">
-              <Link href="/signup">Start ScholarForge AI Free</Link>
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white btn-glow"
+            >
+              <Link href="/signup">Sign Up</Link>
             </Button>
           </div>
 
@@ -461,7 +479,8 @@ export default function Navigation() {
               variant="ghost"
               size="sm"
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-gray-700 hover:text-gray-900">
+              className="p-2 text-gray-700 hover:text-gray-900"
+            >
               {isOpen ? (
                 <X className="h-5 w-5" />
               ) : (
@@ -483,7 +502,8 @@ export default function Navigation() {
                     ? "text-white nav-link-active"
                     : "text-gray-700",
                 )}
-                onClick={() => setIsOpen(false)}>
+                onClick={() => setIsOpen(false)}
+              >
                 Features
               </Link>
               <Link
@@ -494,7 +514,8 @@ export default function Navigation() {
                     ? "text-white nav-link-active"
                     : "text-gray-700",
                 )}
-                onClick={() => setIsOpen(false)}>
+                onClick={() => setIsOpen(false)}
+              >
                 About
               </Link>
               <Link
@@ -505,20 +526,11 @@ export default function Navigation() {
                     ? "text-white nav-link-active"
                     : "text-gray-700",
                 )}
-                onClick={() => setIsOpen(false)}>
+                onClick={() => setIsOpen(false)}
+              >
                 Contact
               </Link>
-              <Link
-                href="/pricing"
-                className={cn(
-                  "text-base font-medium transition-colors duration-200 px-2 py-1 text-gray-700 hover:text-gray-900",
-                  pathname === "/pricing"
-                    ? "text-white nav-link-active"
-                    : "text-gray-700",
-                )}
-                onClick={() => setIsOpen(false)}>
-                Pricing
-              </Link>
+
               <Link
                 href="/institutional"
                 className={cn(
@@ -527,7 +539,8 @@ export default function Navigation() {
                     ? "text-white nav-link-active"
                     : "text-gray-700",
                 )}
-                onClick={() => setIsOpen(false)}>
+                onClick={() => setIsOpen(false)}
+              >
                 Team & Institutional
               </Link>
               <Link
@@ -538,31 +551,38 @@ export default function Navigation() {
                     ? "text-white nav-link-active"
                     : "text-gray-700",
                 )}
-                onClick={() => setIsOpen(false)}>
+                onClick={() => setIsOpen(false)}
+              >
                 Help
               </Link>
               <div className="flex flex-col space-y-2 pt-4 border-t border-gray-300">
                 <Button
                   asChild
                   variant="ghost"
-                  className="justify-start text-gray-700 hover:text-gray-900">
+                  className="justify-start text-gray-700 hover:text-gray-900"
+                >
                   <Link href="/login" onClick={() => setIsOpen(false)}>
                     Sign In
                   </Link>
                 </Button>
+                <div className="justify-start text-gray-700 hover:text-gray-900">
+                  <a
+                    href="https://github.com/marowa-craig/scholarforge-ai"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Github className="h-5 w-5" />
+                    <span>GitHub</span>
+                  </a>
+                </div>
                 <Button
                   asChild
-                  variant="outline"
-                  className="justify-start text-gray-700 hover:text-gray-900 border-gray-300 bg-white">
-                  <Link href="/schedule-demo" onClick={() => setIsOpen(false)}>
-                    Schedule Demo
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  className="justify-start bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-6 rounded-lg btn-glow">
+                  className="justify-start bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-6 rounded-lg btn-glow"
+                >
                   <Link href="/signup" onClick={() => setIsOpen(false)}>
-                    Start ScholarForge AI Free
+                    Sign Up
                   </Link>
                 </Button>
               </div>

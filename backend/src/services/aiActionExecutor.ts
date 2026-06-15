@@ -3,7 +3,7 @@
 
 import { prisma } from "../lib/prisma";
 import logger from "../monitoring/logger";
-import { OpenAIService } from "./openaiService";
+import { UnifiedAIService } from "./unifiedAIService";
 import {
   ActionDefinition,
   ActionResult,
@@ -30,10 +30,11 @@ export class AIActionExecutor {
       // Get action definition
       const actionDef = ACTION_DEFINITIONS[intent.actionType];
       if (!actionDef) {
+        logger.warn(`Unknown action type attempted: ${intent.actionType}`);
         return {
           success: false,
           error: `Unknown action type: ${intent.actionType}`,
-          message: `I don't know how to ${intent.actionType.replace(/_/g, " ")}.`,
+          message: `I'm not sure how to help with that. Could you rephrase what you'd like me to do?`,
           affectedEntities: [],
         };
       }
@@ -951,17 +952,19 @@ ${currentContent}
 
 Provide the updated content in the same JSON format. Only return the JSON, no other text.`;
 
-    const result = await OpenAIService.sendCompletion(
-      prompt,
-      "gemini-3.1-flash-lite-preview",
-      4000,
-      0.3,
-    );
+    const result = await UnifiedAIService.processAIRequest({
+      userId: context.userId,
+      capability: "document_qa",
+      content: prompt,
+      options: {
+        preferredModel: context.userPreferences?.preferredModel,
+      },
+    });
 
     // Try to parse the result
     let newContent;
     try {
-      newContent = JSON.parse(result.content);
+      newContent = JSON.parse(result.result);
     } catch {
       // If parsing fails, wrap it as content
       newContent = {
@@ -969,7 +972,7 @@ Provide the updated content in the same JSON format. Only return the JSON, no ot
         content: [
           {
             type: "paragraph",
-            content: [{ type: "text", text: result.content }],
+            content: [{ type: "text", text: result.result }],
           },
         ],
       };
@@ -986,7 +989,7 @@ Provide the updated content in the same JSON format. Only return the JSON, no ot
 
     return {
       success: true,
-      data: { project: updatedProject, edit: result.content },
+      data: { project: updatedProject, edit: result.result },
       message: `I've edited the document based on your instructions.`,
       affectedEntities: [
         { type: "project", id: project.id, name: project.title },
@@ -1029,16 +1032,19 @@ ${content}
 
 Summary:`;
 
-    const result = await OpenAIService.sendCompletion(
-      prompt,
-      "gemini-3.1-flash-lite-preview",
-      1500,
-      0.3,
-    );
+    const result = await UnifiedAIService.processAIRequest({
+      userId: context.userId,
+      capability: "summarization",
+      content: prompt,
+      options: {
+        preferredModel: context.userPreferences?.preferredModel,
+        summaryType: style,
+      },
+    });
 
     return {
       success: true,
-      data: { summary: result.content, style },
+      data: { summary: result.result, style },
       message: `Here's a ${style} summary of "${project.title}":`,
       affectedEntities: [
         { type: "project", id: project.id, name: project.title },

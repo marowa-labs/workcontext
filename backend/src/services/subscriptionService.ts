@@ -79,7 +79,7 @@ export const plans = {
     features: {
       projects: -1, // unlimited
       plagiarismChecks: -1, // unlimited
-      aiRequests: -1, // unlimited gemini-3.1-flash-lite-preview
+      aiRequests: -1, // unlimited gemini-3.1-flash-lite
       aiChatMessages: -1, // unlimited
       aiWebSearches: -1, // unlimited
       aiDeepSearches: -1, // unlimited

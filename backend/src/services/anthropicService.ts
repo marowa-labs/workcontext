@@ -13,11 +13,13 @@ async function getGeminiClient(userId?: string): Promise<GoogleGenerativeAI> {
   if (userId) {
     const byokKey = await BYOKService.getDecryptedKey(userId, "google");
     if (byokKey) {
-      logger.info("AnthropicService using BYOK Google key for user", { userId: userId.slice(0, 8) + "..." });
+      logger.info("AnthropicService using BYOK Google key for user", {
+        userId: userId.slice(0, 8) + "...",
+      });
       return new GoogleGenerativeAI(byokKey);
     }
   }
-  
+
   // Fall back to system key
   if (!genAI) {
     const apiKey = await SecretsService.getSecret("GEMINI_API_KEY");
@@ -35,11 +37,13 @@ async function getAnthropicClient(userId?: string): Promise<Anthropic> {
   if (userId) {
     const byokKey = await BYOKService.getDecryptedKey(userId, "anthropic");
     if (byokKey) {
-      logger.info("AnthropicService using BYOK Claude key for user", { userId: userId.slice(0, 8) + "..." });
+      logger.info("AnthropicService using BYOK Claude key for user", {
+        userId: userId.slice(0, 8) + "...",
+      });
       return new Anthropic({ apiKey: byokKey });
     }
   }
-  
+
   // Fall back to system key
   const apiKey = await SecretsService.getSecret("ANTHROPIC_API_KEY");
   if (!apiKey) {
@@ -60,7 +64,7 @@ interface GeminiResponse {
 }
 
 // Default Gemini model
-const DEFAULT_MODEL = "gemini-3.1-flash-lite-preview";
+const DEFAULT_MODEL = "gemini-3.1-flash-lite";
 
 export class AnthropicService {
   // Send message using Gemini
@@ -74,7 +78,7 @@ export class AnthropicService {
       const client = await getGeminiClient();
 
       // Build prompt from messages
-      const prompt = messages.map(m => `${m.role}: ${m.content}`).join("\n");
+      const prompt = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
 
       const genModel = client.getGenerativeModel({ model });
       const result = await genModel.generateContent(prompt);
@@ -82,7 +86,8 @@ export class AnthropicService {
       const content = response.text();
 
       const tokensUsed = response.usageMetadata
-        ? response.usageMetadata.promptTokenCount + response.usageMetadata.candidatesTokenCount
+        ? response.usageMetadata.promptTokenCount +
+          response.usageMetadata.candidatesTokenCount
         : content.length;
 
       // Calculate cost based on Gemini pricing (approximate)
@@ -149,15 +154,15 @@ export class AnthropicService {
       const messages: GeminiMessage[] = [
         {
           role: "user",
-          content: `You are an expert assistant answering questions about the following document. 
+          content: `You are an expert assistant answering questions about the following document.
           Provide accurate, contextual answers based on the document content.
-          
+
           Document content:
           ${documentContent}
-          
+
           Question:
           ${question}
-          
+
           Please provide a detailed, accurate answer based on the document content.`,
         },
       ];

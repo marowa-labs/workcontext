@@ -10,11 +10,14 @@ export class ProjectServiceEnhanced {
     userId: string,
     includeArchived: boolean = false,
     archivedOnly: boolean = false,
-    workspaceId?: string | null
+    workspaceId?: string | null,
   ) {
     try {
       const where: any = {
-        OR: [{ user_id: userId }, { collaborators: { some: { user_id: userId } } }],
+        OR: [
+          { user_id: userId },
+          { collaborators: { some: { user_id: userId } } },
+        ],
       };
 
       if (archivedOnly) {
@@ -24,8 +27,10 @@ export class ProjectServiceEnhanced {
       }
 
       // Filter by workspace if provided
-      if (workspaceId && workspaceId !== "not-null") {
-        where.workspace_id = workspaceId === "null" ? null : workspaceId;
+      if (workspaceId === null) {
+        where.workspace_id = null;
+      } else if (workspaceId && workspaceId !== "not-null") {
+        where.workspace_id = workspaceId;
       } else if (workspaceId === "not-null") {
         where.workspace_id = { not: null };
       }
@@ -56,8 +61,13 @@ export class ProjectServiceEnhanced {
       logger.error("Error type:", typeof error);
       logger.error("Error message:", (error as Error).message);
       logger.error("Error stack:", (error as Error).stack);
-      logger.error("Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
-      throw new Error(`Error fetching user projects: ${(error as Error).message}`);
+      logger.error(
+        "Full error:",
+        JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      );
+      throw new Error(
+        `Error fetching user projects: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -67,7 +77,10 @@ export class ProjectServiceEnhanced {
       const project = await prisma.project.findFirst({
         where: {
           id: projectId,
-          OR: [{ user_id: userId }, { collaborators: { some: { user_id: userId } } }],
+          OR: [
+            { user_id: userId },
+            { collaborators: { some: { user_id: userId } } },
+          ],
         },
         include: {
           user: {
@@ -120,7 +133,11 @@ export class ProjectServiceEnhanced {
   }
 
   // Update a project
-  static async updateProject(projectId: string, updateData: any, userId: string) {
+  static async updateProject(
+    projectId: string,
+    updateData: any,
+    userId: string,
+  ) {
     try {
       // Verify ownership or membership
       const existing = await this.getProjectById(projectId, userId);
@@ -174,20 +191,29 @@ export class ProjectServiceEnhanced {
     try {
       const totalProjects = await prisma.project.count({
         where: {
-          OR: [{ user_id: userId }, { collaborators: { some: { user_id: userId } } }],
+          OR: [
+            { user_id: userId },
+            { collaborators: { some: { user_id: userId } } },
+          ],
         },
       });
 
       const activeProjects = await prisma.project.count({
         where: {
-          OR: [{ user_id: userId }, { collaborators: { some: { user_id: userId } } }],
+          OR: [
+            { user_id: userId },
+            { collaborators: { some: { user_id: userId } } },
+          ],
           status: { not: "archived" },
         },
       });
 
       const archivedProjects = await prisma.project.count({
         where: {
-          OR: [{ user_id: userId }, { collaborators: { some: { user_id: userId } } }],
+          OR: [
+            { user_id: userId },
+            { collaborators: { some: { user_id: userId } } },
+          ],
           status: "archived",
         },
       });
@@ -223,7 +249,9 @@ export class ProjectServiceEnhanced {
       return projects;
     } catch (error) {
       logger.error("Error fetching collaboration projects:", error);
-      throw new Error(`Error fetching collaborations: ${(error as Error).message}`);
+      throw new Error(
+        `Error fetching collaborations: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -249,7 +277,7 @@ export class ProjectServiceEnhanced {
   static async restoreDocumentVersion(
     projectId: string,
     versionId: string,
-    userId: string
+    userId: string,
   ) {
     try {
       // Verify access
@@ -283,7 +311,12 @@ export class ProjectServiceEnhanced {
   static async applyAIEdit(
     projectId: string,
     userId: string,
-    editOptions: { text: string; action: string; context?: string; preferences?: any }
+    editOptions: {
+      text: string;
+      action: string;
+      context?: string;
+      preferences?: any;
+    },
   ) {
     try {
       const project = await this.getProjectById(projectId, userId);
@@ -334,7 +367,7 @@ export class ProjectServiceEnhanced {
     // Basic heuristic: more content = higher progress
     const textContent = JSON.stringify(content);
     const wordCount = textContent.split(/\s+/).length;
-    
+
     // Assume 1000 words = 100% for this simple calculation
     const progress = Math.min(100, Math.round((wordCount / 1000) * 100));
     return progress;
@@ -349,18 +382,22 @@ export class ProjectServiceEnhanced {
       includeComments?: boolean;
       includeCitations?: boolean; // Deprecated - ignored
       citationStyle?: "apa" | "mla" | "chicago"; // Deprecated - ignored
-    }
+    },
   ) {
     try {
       const project = await this.getProjectById(projectId, userId);
 
       // Create a JSON export (academic formats like LaTeX/Docx removed)
-      const content = JSON.stringify({
-        title: project.title,
-        content: project.content,
-        format: options.format,
-        exportedAt: new Date().toISOString(),
-      }, null, 2);
+      const content = JSON.stringify(
+        {
+          title: project.title,
+          content: project.content,
+          format: options.format,
+          exportedAt: new Date().toISOString(),
+        },
+        null,
+        2,
+      );
 
       const buffer = Buffer.from(content, "utf-8");
 

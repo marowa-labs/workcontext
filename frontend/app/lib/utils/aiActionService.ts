@@ -15,6 +15,7 @@ export interface AIActionRequest {
   currentProjectId?: string;
   conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
   autoConfirm?: boolean;
+  model?: string;
 }
 
 export interface AIActionResult {
@@ -62,7 +63,9 @@ export interface ActionHistoryItem {
 /**
  * Send a message to the AI and process any resulting actions
  */
-export async function sendAIActionRequest(request: AIActionRequest): Promise<AIActionResult> {
+export async function sendAIActionRequest(
+  request: AIActionRequest,
+): Promise<AIActionResult> {
   try {
     const response = await apiClient.post("/api/ai/actions", request);
     return response;
@@ -70,17 +73,35 @@ export async function sendAIActionRequest(request: AIActionRequest): Promise<AIA
     console.error("AI Action request failed:", error);
     return {
       type: "error",
-      message: error.message || "Failed to process your request. Please try again.",
+      message:
+        error.message || "Failed to process your request. Please try again.",
     };
+  }
+}
+
+/**
+ * Get the user's preferred AI model from backend
+ */
+export async function getUserPreferredModel(): Promise<string | null> {
+  try {
+    const response = await apiClient.get("/api/ai/preferred-model");
+    return response.preferredModel || null;
+  } catch (error: any) {
+    console.error("Failed to get preferred model:", error);
+    return null;
   }
 }
 
 /**
  * Confirm a pending action
  */
-export async function confirmAIAction(actionId: string): Promise<AIActionResult> {
+export async function confirmAIAction(
+  actionId: string,
+): Promise<AIActionResult> {
   try {
-    const response = await apiClient.post("/api/ai/actions/confirm", { actionId });
+    const response = await apiClient.post("/api/ai/actions/confirm", {
+      actionId,
+    });
     return response;
   } catch (error: any) {
     console.error("Confirm action failed:", error);
@@ -94,9 +115,13 @@ export async function confirmAIAction(actionId: string): Promise<AIActionResult>
 /**
  * Cancel a pending action
  */
-export async function cancelAIAction(actionId: string): Promise<AIActionResult> {
+export async function cancelAIAction(
+  actionId: string,
+): Promise<AIActionResult> {
   try {
-    const response = await apiClient.post("/api/ai/actions/cancel", { actionId });
+    const response = await apiClient.post("/api/ai/actions/cancel", {
+      actionId,
+    });
     return response;
   } catch (error: any) {
     console.error("Cancel action failed:", error);
@@ -123,9 +148,13 @@ export async function getPendingActions(): Promise<PendingAction[]> {
 /**
  * Get action history for the current user
  */
-export async function getActionHistory(limit: number = 50): Promise<ActionHistoryItem[]> {
+export async function getActionHistory(
+  limit: number = 50,
+): Promise<ActionHistoryItem[]> {
   try {
-    const response = await apiClient.get(`/api/ai/actions?type=history&limit=${limit}`);
+    const response = await apiClient.get(
+      `/api/ai/actions?type=history&limit=${limit}`,
+    );
     return response.actions || [];
   } catch (error: any) {
     console.error("Get action history failed:", error);
@@ -136,9 +165,11 @@ export async function getActionHistory(limit: number = 50): Promise<ActionHistor
 /**
  * Handle navigation actions from AI
  */
-export function handleAINavigation(data: any): { page: string; params?: Record<string, string> } | null {
+export function handleAINavigation(
+  data: any,
+): { page: string; params?: Record<string, string> } | null {
   if (!data?.navigation) return null;
-  
+
   return {
     page: data.navigation.page,
     params: data.navigation.params,
@@ -177,8 +208,11 @@ export function formatActionType(actionType: string): string {
     invite_workspace_member: "Invite Member",
     create_project_with_tasks: "Create Project with Tasks",
   };
-  
-  return formatMap[actionType] || actionType.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+
+  return (
+    formatMap[actionType] ||
+    actionType.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+  );
 }
 
 /**
@@ -207,7 +241,7 @@ export function getActionIcon(actionType: string): string {
     navigate_to_page: "🧭",
     invite_workspace_member: "👤",
   };
-  
+
   return iconMap[actionType] || "🤖";
 }
 
@@ -227,14 +261,17 @@ export function isDestructiveAction(actionType: string): boolean {
 /**
  * Get confirmation button text
  */
-export function getConfirmationButtonText(actionType: string): { confirm: string; cancel: string } {
+export function getConfirmationButtonText(actionType: string): {
+  confirm: string;
+  cancel: string;
+} {
   if (isDestructiveAction(actionType)) {
     return {
       confirm: actionType.includes("delete") ? "Delete" : "Archive",
       cancel: "Cancel",
     };
   }
-  
+
   return {
     confirm: "Confirm",
     cancel: "Cancel",
@@ -261,27 +298,43 @@ class AIActionService {
       entityId?: string;
       currentWorkspaceId?: string;
       currentProjectId?: string;
-      conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
+      conversationHistory?: Array<{
+        role: "user" | "assistant";
+        content: string;
+      }>;
+      model?: string;
     },
     callbacks: {
-      onConfirmationRequired?: (action: AIActionResult, confirm: () => void, cancel: () => void) => void;
+      onConfirmationRequired?: (
+        action: AIActionResult,
+        confirm: () => void,
+        cancel: () => void,
+      ) => void;
       onResult?: (result: AIActionResult) => void;
       onError?: (error: string) => void;
       onNavigation?: (page: string, params?: Record<string, string>) => void;
       onCancel?: () => void;
-    }
+    },
   ): Promise<AIActionResult | null> {
     try {
+      // Get user's preferred model if not provided
+      const model =
+        context.model || (await getUserPreferredModel()) || undefined;
+
       // Send the request
       const result = await sendAIActionRequest({
         message,
+        model,
         ...context,
       });
 
       // Handle confirmation required
-      if (result.type === "confirmation_required" && result.requiresConfirmation) {
+      if (
+        result.type === "confirmation_required" &&
+        result.requiresConfirmation
+      ) {
         this.pendingConfirmation = result;
-        
+
         if (callbacks.onConfirmationRequired) {
           callbacks.onConfirmationRequired(
             result,
@@ -289,10 +342,10 @@ class AIActionService {
               // User confirmed
               const confirmedResult = await confirmAIAction(result.actionId!);
               this.pendingConfirmation = null;
-              
+
               // Check for navigation in confirmed result
               this.handleNavigation(confirmedResult, callbacks.onNavigation);
-              
+
               if (callbacks.onResult) {
                 callbacks.onResult(confirmedResult);
               }
@@ -303,14 +356,14 @@ class AIActionService {
                 await cancelAIAction(result.actionId);
               }
               this.pendingConfirmation = null;
-              
+
               if (callbacks.onCancel) {
                 callbacks.onCancel();
               }
-            }
+            },
           );
         }
-        
+
         return result;
       }
 
@@ -337,7 +390,7 @@ class AIActionService {
    */
   private handleNavigation(
     result: AIActionResult,
-    onNavigation?: (page: string, params?: Record<string, string>) => void
+    onNavigation?: (page: string, params?: Record<string, string>) => void,
   ): void {
     if (!onNavigation || !result.data?.navigation) return;
 

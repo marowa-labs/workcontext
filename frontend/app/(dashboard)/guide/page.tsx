@@ -19,6 +19,10 @@ import {
   Play,
   Check,
   X,
+  Key,
+  Shield,
+  ExternalLink,
+  ArrowUpRight,
 } from "lucide-react";
 import { SlashCommandPalette } from "../../components/dashboard/SlashCommandPalette";
 
@@ -36,9 +40,21 @@ const commandCategories = [
     color: "text-purple-600",
     bgColor: "bg-purple-100",
     commands: [
-      { command: "/ai chat", description: "Open AI assistant", example: "Ask anything about your work" },
-      { command: "/summarize", description: "Analyze and summarize workspace", example: "/summarize Q3 Marketing Plan" },
-      { command: "/analyze", description: "Deep analysis of content", example: "/analyze current document" },
+      {
+        command: "/ai chat",
+        description: "Open AI assistant",
+        example: "Ask anything about your work",
+      },
+      {
+        command: "/summarize",
+        description: "Analyze and summarize workspace",
+        example: "/summarize Q3 Marketing Plan",
+      },
+      {
+        command: "/analyze",
+        description: "Deep analysis of content",
+        example: "/analyze current document",
+      },
     ],
   },
   {
@@ -48,9 +64,21 @@ const commandCategories = [
     color: "text-green-600",
     bgColor: "bg-green-100",
     commands: [
-      { command: "/create task", description: "Add a new task", example: "/create task Review proposal by Friday" },
-      { command: "/create space", description: "Create new workspace", example: "/create space Product Launch 2026" },
-      { command: "/create note", description: "Quick note creation", example: "/create note Meeting ideas" },
+      {
+        command: "/create task",
+        description: "Add a new task",
+        example: "/create task Review proposal by Friday",
+      },
+      {
+        command: "/create space",
+        description: "Create new workspace",
+        example: "/create space Product Launch 2026",
+      },
+      {
+        command: "/create note",
+        description: "Quick note creation",
+        example: "/create note Meeting ideas",
+      },
     ],
   },
   {
@@ -60,9 +88,21 @@ const commandCategories = [
     color: "text-blue-600",
     bgColor: "bg-blue-100",
     commands: [
-      { command: "/go workspace", description: "Jump to workspace", example: "/go workspace Marketing" },
-      { command: "/go project", description: "Open specific project", example: "/go project Website Redesign" },
-      { command: "/search", description: "Search everything", example: "/search budget spreadsheet" },
+      {
+        command: "/go workspace",
+        description: "Jump to workspace",
+        example: "/go workspace Marketing",
+      },
+      {
+        command: "/go project",
+        description: "Open specific project",
+        example: "/go project Website Redesign",
+      },
+      {
+        command: "/search",
+        description: "Search everything",
+        example: "/search budget spreadsheet",
+      },
     ],
   },
   {
@@ -72,9 +112,21 @@ const commandCategories = [
     color: "text-amber-600",
     bgColor: "bg-amber-100",
     commands: [
-      { command: "/stats", description: "View workspace stats", example: "/stats this week" },
-      { command: "/progress", description: "Check project progress", example: "/progress Q4 Goals" },
-      { command: "/insights", description: "AI-generated insights", example: "/insights team productivity" },
+      {
+        command: "/stats",
+        description: "View workspace stats",
+        example: "/stats this week",
+      },
+      {
+        command: "/progress",
+        description: "Check project progress",
+        example: "/progress Q4 Goals",
+      },
+      {
+        command: "/insights",
+        description: "AI-generated insights",
+        example: "/insights team productivity",
+      },
     ],
   },
 ];
@@ -91,56 +143,65 @@ export default function GuidePage() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("ai");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [demoFeedback, setDemoFeedback] = useState<{ type: 'success' | 'info', message: string } | null>(null);
+  const [demoFeedback, setDemoFeedback] = useState<{
+    type: "success" | "info";
+    message: string;
+  } | null>(null);
   const [lastPressedKey, setLastPressedKey] = useState<string | null>(null);
 
   // Show feedback toast
-  const showFeedback = useCallback((type: 'success' | 'info', message: string) => {
-    setDemoFeedback({ type, message });
-    setTimeout(() => setDemoFeedback(null), 3000);
-  }, []);
+  const showFeedback = useCallback(
+    (type: "success" | "info", message: string) => {
+      setDemoFeedback({ type, message });
+      setTimeout(() => setDemoFeedback(null), 3000);
+    },
+    [],
+  );
 
   // Execute command action
-  const executeCommand = useCallback((commandId: string) => {
-    switch (commandId) {
-      case "/ai chat":
-      case "ai-chat":
-        window.dispatchEvent(new CustomEvent("open-ai-chat"));
-        showFeedback('success', 'AI Chat opened!');
-        break;
-      case "/summarize":
-      case "summarize":
-        window.dispatchEvent(new CustomEvent("summarize-workspace"));
-        showFeedback('success', 'Workspace summary requested!');
-        break;
-      case "/create task":
-      case "create-task":
-        window.dispatchEvent(new CustomEvent("create-quick-task"));
-        showFeedback('success', 'Quick task creation opened!');
-        break;
-      case "/create space":
-      case "create-space":
-        window.dispatchEvent(new CustomEvent("create-project"));
-        showFeedback('success', 'Create space dialog opened!');
-        break;
-      case "/search":
-      case "search":
-        window.dispatchEvent(new CustomEvent("open-search"));
-        showFeedback('success', 'Search opened!');
-        break;
-      case "/go workspace":
-      case "go-workspace":
-        router.push("/projects");
-        break;
-      case "/stats":
-      case "stats":
-        router.push("/projects");
-        showFeedback('success', 'Navigating to workspace stats!');
-        break;
-      default:
-        showFeedback('info', `Command "${commandId}" triggered!`);
-    }
-  }, [router, showFeedback]);
+  const executeCommand = useCallback(
+    (commandId: string) => {
+      switch (commandId) {
+        case "/ai chat":
+        case "ai-chat":
+          window.dispatchEvent(new CustomEvent("open-ai-chat"));
+          showFeedback("success", "AI Chat opened!");
+          break;
+        case "/summarize":
+        case "summarize":
+          window.dispatchEvent(new CustomEvent("summarize-workspace"));
+          showFeedback("success", "Workspace summary requested!");
+          break;
+        case "/create task":
+        case "create-task":
+          window.dispatchEvent(new CustomEvent("create-quick-task"));
+          showFeedback("success", "Quick task creation opened!");
+          break;
+        case "/create space":
+        case "create-space":
+          window.dispatchEvent(new CustomEvent("create-project"));
+          showFeedback("success", "Create space dialog opened!");
+          break;
+        case "/search":
+        case "search":
+          window.dispatchEvent(new CustomEvent("open-search"));
+          showFeedback("success", "Search opened!");
+          break;
+        case "/go workspace":
+        case "go-workspace":
+          router.push("/projects");
+          break;
+        case "/stats":
+        case "stats":
+          router.push("/projects");
+          showFeedback("success", "Navigating to workspace stats!");
+          break;
+        default:
+          showFeedback("info", `Command "${commandId}" triggered!`);
+      }
+    },
+    [router, showFeedback],
+  );
 
   // Listen for keyboard shortcuts demo
   useEffect(() => {
@@ -177,13 +238,23 @@ export default function GuidePage() {
 
       {/* Feedback Toast */}
       {demoFeedback && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all ${demoFeedback.type === 'success'
-          ? 'bg-emerald-500 text-white'
-          : 'bg-blue-500 text-white'
-          }`}>
-          {demoFeedback.type === 'success' ? <Check className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
+        <div
+          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all ${
+            demoFeedback.type === "success"
+              ? "bg-emerald-500 text-white"
+              : "bg-blue-500 text-white"
+          }`}
+        >
+          {demoFeedback.type === "success" ? (
+            <Check className="w-5 h-5" />
+          ) : (
+            <Zap className="w-5 h-5" />
+          )}
           <span className="font-medium">{demoFeedback.message}</span>
-          <button onClick={() => setDemoFeedback(null)} className="ml-2 opacity-80 hover:opacity-100">
+          <button
+            onClick={() => setDemoFeedback(null)}
+            className="ml-2 opacity-80 hover:opacity-100"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -223,31 +294,253 @@ export default function GuidePage() {
             <div>
               <h2 className="text-xl font-bold mb-2">Quick Start</h2>
               <p className="text-blue-100 mb-4">
-                ScholarForge is your AI-powered productivity workspace. Everything starts with a command.
+                ScholarForge is your AI-powered productivity workspace.
+                Everything starts with a command.
               </p>
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => setShowCommandPalette(true)}
-                  className={`px-3 py-1.5 rounded-lg font-mono text-sm transition-all ${lastPressedKey === "/"
-                    ? "bg-white text-blue-600 scale-110"
-                    : "bg-white/20 hover:bg-white/30"
-                    }`}
+                  className={`px-3 py-1.5 rounded-lg font-mono text-sm transition-all ${
+                    lastPressedKey === "/"
+                      ? "bg-white text-blue-600 scale-110"
+                      : "bg-white/20 hover:bg-white/30"
+                  }`}
                 >
                   Press /
                 </button>
                 <span className="text-blue-100 self-center">or</span>
                 <button
                   onClick={() => setShowCommandPalette(true)}
-                  className={`px-3 py-1.5 rounded-lg font-mono text-sm transition-all ${lastPressedKey === "⌘K"
-                    ? "bg-white text-blue-600 scale-110"
-                    : "bg-white/20 hover:bg-white/30"
-                    }`}
+                  className={`px-3 py-1.5 rounded-lg font-mono text-sm transition-all ${
+                    lastPressedKey === "⌘K"
+                      ? "bg-white text-blue-600 scale-110"
+                      : "bg-white/20 hover:bg-white/30"
+                  }`}
                 >
                   ⌘K
                 </button>
-                <span className="text-blue-100 self-center">to open commands</span>
-                <span className="text-blue-200 text-sm self-center ml-2">(Try it now!)</span>
+                <span className="text-blue-100 self-center">
+                  to open commands
+                </span>
+                <span className="text-blue-200 text-sm self-center ml-2">
+                  (Try it now!)
+                </span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI API Key Configuration */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
+              <Key className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Configure AI API Keys
+            </h2>
+          </div>
+
+          <p className="text-muted-foreground mb-8">
+            ScholarForge uses <strong>Bring Your Own Key (BYOK)</strong> — you
+            provide your own API key from any supported AI provider. No API key
+            means no AI features will work. This keeps your costs under your
+            control and ensures you use the models you prefer.
+          </p>
+
+          {/* Provider Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+            {/* Google Gemini */}
+            <div className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 text-white font-bold text-sm">
+                  G
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">
+                    Google Gemini
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    gemini-3.1-flash-lite & more
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Google's advanced multimodal models. Great for research, writing
+                assistance, and content generation with 1M+ token context.
+              </p>
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                Get API Key <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {/* OpenAI */}
+            <div className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold text-sm">
+                  O
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">OpenAI</h3>
+                  <p className="text-xs text-muted-foreground">
+                    GPT-4o, GPT-4o Mini & more
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Industry-leading models for complex reasoning, creative writing,
+                and multimodal tasks with 128K token context.
+              </p>
+              <a
+                href="https://platform.openai.com/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                Get API Key <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {/* Anthropic */}
+            <div className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white font-bold text-sm">
+                  A
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Anthropic</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Claude Sonnet 4, Haiku & more
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Excellent for nuanced analysis, long-form writing, and academic
+                reasoning with 200K token context.
+              </p>
+              <a
+                href="https://console.anthropic.com/settings/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                Get API Key <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {/* OpenRouter */}
+            <div className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-sm">
+                  OR
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">OpenRouter</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Access 200+ models from one key
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Unified API for hundreds of models including free open-source
+                options like Nemotron and GPT-OSS.
+              </p>
+              <a
+                href="https://openrouter.ai/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                Get API Key <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+
+          {/* Setup Steps */}
+          <div className="bg-card rounded-2xl border border-border p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2 bg-muted rounded-lg">
+                <Shield className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-foreground">
+                How to Set Up Your API Key
+              </h3>
+            </div>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-full flex items-center justify-center text-sm font-bold text-violet-600 dark:text-violet-400">
+                  1
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Get an API key from your chosen provider
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Click the &quot;Get API Key&quot; links above to sign up and
+                    generate a key. You can use multiple providers.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-full flex items-center justify-center text-sm font-bold text-violet-600 dark:text-violet-400">
+                  2
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Add your key in AI Settings
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Navigate to the AI API Key settings page and paste your key.
+                    It will be encrypted for security.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-full flex items-center justify-center text-sm font-bold text-violet-600 dark:text-violet-400">
+                  3
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Select your preferred model
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Choose from all models available through your configured
+                    providers. The system automatically shows only models you
+                    have keys for.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-full flex items-center justify-center text-sm font-bold text-violet-600 dark:text-violet-400">
+                  4
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Start using AI features
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Once configured, all AI features — chat, grammar check,
+                    summarization, writing projects — will use your selected
+                    model.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-border">
+              <button
+                onClick={() => router.push("/settings/ai-api-key")}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-medium transition-colors shadow-lg shadow-violet-500/25"
+              >
+                <Key className="w-4 h-4" />
+                Configure AI API Keys
+                <ArrowUpRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -263,10 +556,11 @@ export default function GuidePage() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${activeCategory === cat.id
-                  ? "bg-card shadow-md border border-border"
-                  : "hover:bg-muted"
-                  }`}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                  activeCategory === cat.id
+                    ? "bg-card shadow-md border border-border"
+                    : "hover:bg-muted"
+                }`}
               >
                 <div className={`p-2 rounded-lg ${cat.bgColor}`}>
                   <span className={cat.color}>{cat.icon}</span>
@@ -283,7 +577,8 @@ export default function GuidePage() {
           <div className="lg:col-span-2">
             <div className="bg-card rounded-2xl border border-border p-6">
               <h3 className="text-lg font-semibold text-foreground mb-6">
-                {commandCategories.find((c) => c.id === activeCategory)?.title} Commands
+                {commandCategories.find((c) => c.id === activeCategory)?.title}{" "}
+                Commands
               </h3>
               <div className="space-y-4">
                 {commandCategories
@@ -356,18 +651,27 @@ export default function GuidePage() {
               <div className="p-2 bg-card rounded-lg shadow-sm">
                 <Lightbulb className="w-5 h-5 text-amber-500" />
               </div>
-              <h3 className="font-semibold text-foreground">
-                Pro Tips
-              </h3>
+              <h3 className="font-semibold text-foreground">Pro Tips</h3>
             </div>
             <ul className="space-y-3 text-muted-foreground">
               <li className="flex items-start gap-2">
                 <span className="text-amber-500 mt-1">•</span>
-                <span>Use natural language with AI commands - no need to be exact</span>
+                <span>
+                  Configure your AI API key first — no key means no AI features
+                  will work
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500 mt-1">•</span>
-                <span>Create tasks directly from highlighted text in the editor</span>
+                <span>
+                  Use natural language with AI commands - no need to be exact
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-500 mt-1">•</span>
+                <span>
+                  Create tasks directly from highlighted text in the editor
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500 mt-1">•</span>
@@ -375,7 +679,22 @@ export default function GuidePage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500 mt-1">•</span>
-                <span>Use /summarize to get quick insights on any workspace</span>
+                <span>
+                  Use /summarize to get quick insights on any workspace
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-500 mt-1">•</span>
+                <span>
+                  Mix providers — use OpenAI for creative writing and Anthropic
+                  for analysis, all from your own keys.{" "}
+                  <button
+                    onClick={() => router.push("/settings/ai-api-key")}
+                    className="text-violet-600 dark:text-violet-400 hover:underline font-medium"
+                  >
+                    Set up now →
+                  </button>
+                </span>
               </li>
             </ul>
           </div>

@@ -1,132 +1,50 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Plus,
-  Search,
-  Settings,
-  Filter,
-  MoreHorizontal,
-  ChevronDown,
-  ChevronRight,
-  Globe,
-  Lock,
-  Users,
-  Building2,
-  Star,
-  Clock,
-  Folder,
-  FileText,
-  Bot,
-  Archive,
-  Trash2,
-  Copy,
-  Edit3,
-  ExternalLink,
-  Check,
-  X,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Plus, Grid3X3, List } from "lucide-react";
+import ProjectCards from "../../../components/dashboard/ProjectCards";
+import CreateProjectModal from "../../../components/dashboard/CreateProjectModal";
 import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
-import WorkspaceService from "../../../lib/utils/workspaceService";
+import ExportService from "../../../lib/utils/exportService";
 import { useToast } from "../../../hooks/use-toast";
 import BillingService from "../../../lib/utils/billingService";
-import CreateProjectModal from "../../../components/dashboard/CreateProjectModal";
 
-const TABS = [
-  { id: "teamspaces", label: "Teamspaces", icon: Building2 },
-  { id: "recents", label: "Recents", icon: Clock },
-  { id: "favorites", label: "Favorites", icon: Star },
-  { id: "shared", label: "Shared", icon: Users },
-  { id: "private", label: "Private", icon: Lock },
-  { id: "ai-meeting", label: "AI Meeting Notes", icon: Bot },
-  { id: "agents", label: "Agents", icon: Bot },
-];
-
-export default function SpacesLibraryPage() {
+export default function ProjectsListPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [spaces, setSpaces] = useState([]);
-  const [workspaces, setWorkspaces] = useState([]);
-  const [activeTab, setActiveTab] = useState("teamspaces");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState("grid");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedRows, setExpandedRows] = useState(new Set());
-  const [showSettings, setShowSettings] = useState(false);
-  const [includeArchived, setIncludeArchived] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(null);
-  const dropdownRef = useRef(null);
-  const [renamingSpace, setRenamingSpace] = useState(null);
-  const [newSpaceName, setNewSpaceName] = useState("");
-
+  const [renamingProject, setRenamingProject] = useState(null);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [selectedProjects, setSelectedProjects] = useState([]);
   const { data: user, loading: userLoading } = useUser();
 
-  // Load workspaces and their projects
+  // Load personal projects (not in any workspace)
   useEffect(() => {
     let isMounted = true;
 
-    const loadWorkspaces = async () => {
-      if (!user) return;
+    const loadProjects = async () => {
+      if (!user?.id) return;
 
       try {
         setIsLoading(true);
-
-        // Fetch all workspaces
-        const workspacesData = await WorkspaceService.getWorkspaces();
-        const workspacesList = workspacesData?.data || workspacesData || [];
-
-        // Fetch all projects to associate with workspaces
-        const projectsData = await ProjectService.getUserProjects();
-        const projectsList = projectsData?.data || projectsData || [];
-
-        // Group projects by workspace
-        const workspacesWithProjects = workspacesList.map((workspace) => {
-          const workspaceProjects = projectsList.filter(
-            (p) => p.workspace_id === workspace.id,
-          );
-          return {
-            ...workspace,
-            type: "teamspace",
-            access: workspace.access || "Default",
-            members: workspace.members?.length || 1,
-            children: workspaceProjects.map((p) => ({
-              ...p,
-              type: "project",
-              access: p.access || "Default",
-              members: p.members || 1,
-            })),
-          };
-        });
-
-        // Add private workspace for projects without workspace_id
-        const privateProjects = projectsList.filter((p) => !p.workspace_id);
-        if (privateProjects.length > 0) {
-          workspacesWithProjects.push({
-            id: "private",
-            name: "Private",
-            description: "Your personal projects",
-            type: "private",
-            access: "Private",
-            members: 1,
-            children: privateProjects.map((p) => ({
-              ...p,
-              type: "project",
-              access: "Private",
-              members: 1,
-            })),
-          });
-        }
-
+        setError(null);
+        const personalProjects = await ProjectService.getUserPersonalProjects(user.id, false);
         if (isMounted) {
-          setSpaces(workspacesWithProjects);
+          setProjects(personalProjects || []);
         }
-      } catch (err) {
-        console.error("Error loading workspaces:", err);
+      } catch (error) {
+        console.error("Failed to load personal projects:", error);
         if (isMounted) {
-          setError("Failed to load workspaces. Please try again.");
+          setError("Failed to load projects. Please try again.");
         }
       } finally {
         if (isMounted) {
@@ -135,12 +53,47 @@ export default function SpacesLibraryPage() {
       }
     };
 
-    loadWorkspaces();
+    loadProjects();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  // Load subscription data
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSubscriptionData = async () => {
+      if (!user) return;
+
+      try {
+        const subscription = await BillingService.getCurrentSubscription();
+        if (isMounted) {
+          setSubscriptionData(subscription);
+        }
+      } catch (error) {
+        console.error("Failed to load subscription data:", error);
+      }
+    };
+
+    loadSubscriptionData();
 
     return () => {
       isMounted = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    let filtered = projects;
+
+    // Apply status filter
+    if (activeFilter !== "all" && activeFilter !== "archived") {
+      filtered = filtered.filter((project) => project.status === activeFilter);
+    }
+
+    setFilteredProjects(filtered);
+  }, [projects, activeFilter]);
 
   const handleCreateProject = () => {
     setIsCreateModalOpen(true);
@@ -148,8 +101,8 @@ export default function SpacesLibraryPage() {
 
   const handleProjectCreate = async (newProject) => {
     try {
-      console.log("New project created:", newProject);
-      setSpaces((prev) => [newProject, ...prev]);
+      // Add the workProject_id to the newly created project
+      setProjects((prev) => [newProject, ...prev]);
       toast({
         title: "Success",
         description: "Project created successfully!",
@@ -167,32 +120,32 @@ export default function SpacesLibraryPage() {
   };
 
   const handleProjectClick = (project) => {
-    console.log("Opening project:", project.id);
-    // Use React Router navigation instead of window.location
     router.push(`/editor/${project.id}`);
   };
 
   const handleRenameProject = (project) => {
-    setRenamingSpace(project);
-    setNewSpaceName(project.title);
+    setRenamingProject(project);
+    setNewProjectName(project.title);
   };
 
   const handleRenameConfirm = async () => {
-    if (!renamingSpace || !newSpaceName.trim()) return;
+    if (!renamingProject || !newProjectName.trim()) return;
 
     try {
-      await ProjectService.updateProject(renamingSpace.id, {
-        title: newSpaceName.trim(),
+      await ProjectService.updateProject(renamingProject.id, {
+        title: newProjectName.trim(),
       });
 
-      setSpaces((prev) =>
+      setProjects((prev) =>
         prev.map((p) =>
-          p.id === renamingSpace.id ? { ...p, title: newSpaceName.trim() } : p,
+          p.id === renamingProject.id
+            ? { ...p, title: newProjectName.trim() }
+            : p,
         ),
       );
 
-      setRenamingSpace(null);
-      setNewSpaceName("");
+      setRenamingProject(null);
+      setNewProjectName("");
 
       toast({
         title: "Success",
@@ -218,12 +171,12 @@ export default function SpacesLibraryPage() {
       const duplicateData = {
         ...project,
         title: `${project.title} (Copy)`,
-        id: undefined, // Remove ID to create a new project
+        id: undefined,
       };
 
       const duplicatedProject =
         await ProjectService.createProject(duplicateData);
-      setSpaces((prev) => [duplicatedProject, ...prev]);
+      setProjects((prev) => [duplicatedProject, ...prev]);
 
       toast({
         title: "Success",
@@ -246,12 +199,10 @@ export default function SpacesLibraryPage() {
         description: `Exporting "${project.title}"... This may take a moment.`,
       });
 
-      // Use the real export service to get the blob
       const blob = await ExportService.exportProjectBlob(project.id, {
         format: "pdf",
       });
 
-      // Create a download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -263,7 +214,7 @@ export default function SpacesLibraryPage() {
 
       toast({
         title: "Export Complete",
-        description: `Project "${project.title}" has been exported successfully.`,
+        description: `"${project.title}" has been exported successfully.`,
       });
     } catch (error) {
       console.error("Failed to export project:", error);
@@ -279,14 +230,14 @@ export default function SpacesLibraryPage() {
     try {
       if (
         window.confirm(
-          `Are you sure you want to archive "${project.title}"? You can restore it later from the archived projects view.`,
+          `Are you sure you want to archive "${project.title}"? You can restore it later from the archived Projects view.`,
         )
       ) {
         await ProjectService.updateProject(project.id, {
           status: "archived",
         });
 
-        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
+        setProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -297,7 +248,7 @@ export default function SpacesLibraryPage() {
       console.error("Failed to archive project:", error);
       toast({
         title: "Error",
-        description: "Failed to archive project. Please try again.",
+        description: "Failed to archive Project. Please try again.",
         variant: "destructive",
       });
     }
@@ -307,12 +258,16 @@ export default function SpacesLibraryPage() {
     try {
       if (
         window.confirm(
-          `Are you sure you want to restore "${project.title}"? It will be moved back to your active projects.`,
+          `Are you sure you want to restore "${project.title}"? It will be moved back to your active Projects.`,
         )
       ) {
-        await ProjectService.restoreProject(project.id);
-        // Remove the restored project from the list (since we are likely in Archived view)
-        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
+        // Update project status to draft to restore from archived
+        await ProjectService.updateProject(project.id, {
+          status: "draft",
+        });
+
+        // Remove from current list since it's now restored
+        setProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -323,7 +278,7 @@ export default function SpacesLibraryPage() {
       console.error("Failed to restore project:", error);
       toast({
         title: "Error",
-        description: "Failed to restore project. Please try again.",
+        description: "Failed to restore Project. Please try again.",
         variant: "destructive",
       });
     }
@@ -333,11 +288,11 @@ export default function SpacesLibraryPage() {
     try {
       if (
         window.confirm(
-          "Are you sure you want to delete this project? This action cannot be undone.",
+          "Are you sure you want to delete this Project? This action cannot be undone.",
         )
       ) {
         await ProjectService.deleteProject(project.id);
-        setSpaces((prev) => prev.filter((p) => p.id !== project.id));
+        setProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -348,7 +303,7 @@ export default function SpacesLibraryPage() {
       console.error("Failed to delete project:", error);
       toast({
         title: "Error",
-        description: "Failed to delete project. Please try again.",
+        description: "Failed to delete Project. Please try again.",
         variant: "destructive",
       });
     }
@@ -385,7 +340,6 @@ export default function SpacesLibraryPage() {
       }
     } catch (error) {
       console.error(`Failed to perform action ${action}:`, error);
-      // Check if it's a network error
       let errorMessage = "Failed to perform action. Please try again later.";
       if (error.message && error.message.includes("fetch")) {
         errorMessage =
@@ -399,16 +353,81 @@ export default function SpacesLibraryPage() {
     }
   };
 
-  // Close dropdown when clicking outside - MUST be before any conditional returns
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(null);
+  const filterOptions = [
+    { id: "all", label: "All" },
+    { id: "draft", label: "Draft" },
+    { id: "in-progress", label: "In Progress" },
+    { id: "completed", label: "Completed" },
+    { id: "planning", label: "Planning" },
+    { id: "archived", label: "Archived" },
+  ];
+
+  // Handle batch export
+  const handleBatchExport = async () => {
+    if (selectedProjects.length === 0) {
+      toast({
+        title: "No Projects Selected",
+        description: "Please select at least one Project to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Batch Export Started",
+        description: `Exporting ${selectedProjects.length} Projects... This may take a moment.`,
+      });
+
+      // Since batch export API might not exist, export projects individually
+      for (const projectId of selectedProjects) {
+        const project = projects.find((p) => p.id === projectId);
+        if (project) {
+          const blob = await ExportService.exportProjectBlob(projectId, {
+            format: "pdf",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${project.title.replace(/\s+/g, "_")}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
+      toast({
+        title: "Batch Export Complete",
+        description: `${selectedProjects.length} Projects have been exported successfully.`,
+      });
+
+      setSelectedProjects([]);
+    } catch (error) {
+      console.error("Failed to batch export projects:", error);
+      toast({
+        title: "Batch Export Failed",
+        description:
+          error.message || "Failed to export Projects. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Select all projects
+  const selectAllProjects = () => {
+    if (selectedProjects.length === filteredProjects.length) {
+      setSelectedProjects([]);
+    } else {
+      setSelectedProjects(filteredProjects.map((p) => p.id));
+    }
+  };
+
+  // Check if user has Researcher plan
+  const isResearcherPlan =
+    subscriptionData?.plan === "Researcher" ||
+    subscriptionData?.plan?.name === "Researcher";
 
   if (userLoading) {
     return (
@@ -416,488 +435,265 @@ export default function SpacesLibraryPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading projects...</p>
+            <p className="text-muted-foreground">Loading Projects...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Get filtered spaces based on tab
-  const getFilteredSpaces = () => {
-    let filtered = spaces;
-
-    // Apply tab filter
-    switch (activeTab) {
-      case "teamspaces":
-        filtered = spaces.filter((s) => s.type === "teamspace");
-        break;
-      case "private":
-        filtered = spaces.filter(
-          (s) => s.type === "private" || s.id === "private",
-        );
-        break;
-      case "shared":
-        filtered = spaces.filter((s) => s.type === "shared");
-        break;
-      case "recents":
-        filtered = [...spaces]
-          .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-          .slice(0, 10);
-        break;
-      case "favorites":
-        filtered = spaces.filter((s) => s.is_favorite);
-        break;
-      case "archived":
-        filtered = spaces.filter((s) => s.status === "archived");
-        break;
-      default:
-        break;
-    }
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.name?.toLowerCase().includes(query) ||
-          s.title?.toLowerCase().includes(query) ||
-          s.description?.toLowerCase().includes(query),
-      );
-    }
-
-    // Apply archived filter
-    if (!includeArchived && activeTab !== "archived") {
-      filtered = filtered.filter((s) => s.status !== "archived");
-    }
-
-    return filtered;
-  };
-
-  const filteredSpaces = getFilteredSpaces();
-
-  // Toggle row expansion
-  const toggleRow = (id) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedRows(newExpanded);
-  };
-
-  // Space actions
-  const handleSpaceClick = (space) => {
-    // If it's a workspace, toggle expansion instead of navigating
-    if (space.type === "teamspace" || space.type === "private") {
-      toggleRow(space.id);
-      return;
-    }
-    // If it's a project, navigate to editor
-    router.push(`/editor/${space.id}`);
-  };
-
-  const handleRenameSpace = (space) => {
-    setRenamingSpace(space);
-    setNewSpaceName(space.name || space.title);
-    setDropdownOpen(null);
-  };
-
-  const handleRenameSpaceConfirm = async () => {
-    if (!renamingSpace || !newSpaceName.trim()) return;
-    try {
-      // Check if it's a workspace (has name property) or project (has title property)
-      const isWorkspace = renamingSpace.name !== undefined;
-      const updateField = isWorkspace ? "name" : "title";
-
-      if (isWorkspace) {
-        await WorkspaceService.updateWorkspace(renamingSpace.id, {
-          name: newSpaceName.trim(),
-        });
-      } else {
-        await ProjectService.updateProject(renamingSpace.id, {
-          title: newSpaceName.trim(),
-        });
-      }
-
-      setSpaces((prev) =>
-        prev.map((s) =>
-          s.id === renamingSpace.id
-            ? { ...s, [updateField]: newSpaceName.trim() }
-            : s,
-        ),
-      );
-      setRenamingSpace(null);
-      setNewSpaceName("");
-      toast({ title: "Success", description: "Space renamed successfully!" });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to rename space.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDuplicateSpace = async (space) => {
-    try {
-      const duplicateData = {
-        ...space,
-        title: `${space.title} (Copy)`,
-        id: undefined,
-      };
-      const duplicated = await ProjectService.createProject(duplicateData);
-      setSpaces((prev) => [duplicated, ...prev]);
-      toast({
-        title: "Success",
-        description: "Space duplicated successfully!",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to duplicate space.",
-        variant: "destructive",
-      });
-    }
-    setDropdownOpen(null);
-  };
-
-  const handleArchiveSpace = async (space) => {
-    if (window.confirm(`Archive "${space.title}"?`)) {
-      try {
-        await ProjectService.updateProject(space.id, { status: "archived" });
-        setSpaces((prev) => prev.filter((s) => s.id !== space.id));
-        toast({ title: "Success", description: "Space archived!" });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to archive space.",
-          variant: "destructive",
-        });
-      }
-    }
-    setDropdownOpen(null);
-  };
-
-  const handleDeleteSpace = async (space) => {
-    if (window.confirm(`Delete "${space.title}" permanently?`)) {
-      try {
-        await ProjectService.deleteProject(space.id);
-        setSpaces((prev) => prev.filter((s) => s.id !== space.id));
-        toast({ title: "Success", description: "Space deleted!" });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete space.",
-          variant: "destructive",
-        });
-      }
-    }
-    setDropdownOpen(null);
-  };
-
-  const handleCreateSpace = async (newSpace) => {
-    try {
-      setSpaces((prev) => [newSpace, ...prev]);
-      toast({
-        title: "Success",
-        description: "New space created successfully!",
-      });
-      return newSpace;
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create space.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="p-8 bg-background min-h-screen">
       {/* Header */}
-      <div className="px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Library</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-500 flex items-center gap-2">
+            My Personal Projects
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {projects.length === 0 && !isLoading
+              ? "Ready to create your first personal project?"
+              : `${projects.length} personal project${projects.length !== 1 ? "s" : ""}`}
+          </p>
+        </div>
+
+        <div className="flex gap-x-3">
+          {/* Batch Export Button - only for Researcher plan */}
+          {isResearcherPlan && projects.length > 0 && (
+            <button
+              onClick={handleBatchExport}
+              disabled={selectedProjects.length === 0}
+              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${selectedProjects.length > 0
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+                }`}
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Batch Export ({selectedProjects.length})
+            </button>
+          )}
+
           <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            onClick={handleCreateProject}
+            className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            New teamspace
+            <Plus className="w-5 h-5 mr-2" />
+            New Project
           </button>
         </div>
+      </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6 border-b border-gray-200">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            return (
+      {/* Rename Modal */}
+      {renamingProject && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-card rounded-lg p-6 w-full max-w-md border border-border shadow-lg">
+            <h3 className="text-lg font-medium text-foreground mb-4">
+              Rename Project
+            </h3>
+            <input
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary bg-background text-foreground"
+              placeholder="Enter new Project name"
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  handleRenameConfirm();
+                }
+              }}
+            />
+            <div className="mt-4 flex justify-end gap-x-3">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-t-lg transition-colors ${
-                  activeTab === tab.id
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                }`}
+                onClick={() => setRenamingProject(null)}
+                className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md"
               >
-                <Icon className="w-4 h-4" />
-                {tab.label}
+                Cancel
               </button>
-            );
-          })}
+              <button
+                onClick={handleRenameConfirm}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                Rename
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-        {/* Toolbar */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      {/* Filters */}
+      {projects.length >= 0 && (
+        <div className="flex items-center gap-x-2 mb-6">
+          {/* Select All Checkbox - only for Researcher plan */}
+          {isResearcherPlan && (
+            <div className="flex items-center mr-4">
               <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 w-64 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                type="checkbox"
+                id="select-all"
+                checked={
+                  selectedProjects.length === filteredProjects.length &&
+                  filteredProjects.length > 0
+                }
+                onChange={selectAllProjects}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-200 rounded"
               />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Settings */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="View settings"
+              <label
+                htmlFor="select-all"
+                className="ml-2 text-sm text-foreground"
               >
-                <Settings className="w-4 h-4" />
-              </button>
-
-              {showSettings && (
-                <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                    View settings
-                  </div>
-                  <label className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={includeArchived}
-                      onChange={(e) => setIncludeArchived(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 rounded"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Include archived pages
-                    </span>
-                  </label>
-                </div>
-              )}
+                Select All
+              </label>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="px-8">
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          {/* Table Header */}
-          <div className="flex items-center px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
-            <div className="w-8"></div>
-            <div className="flex-1">Name</div>
-            <div className="w-48">Description</div>
-            <div className="w-32">Access</div>
-            <div className="w-24">Members</div>
-            <div className="w-10"></div>
-          </div>
-
-          {/* Table Body */}
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading spaces...</p>
-            </div>
-          ) : filteredSpaces.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No spaces found</div>
-          ) : (
-            filteredSpaces.map((space) => (
-              <div key={space.id}>
-                {/* Main Row */}
-                <div className="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100 group">
-                  {/* Expand/Collapse */}
-                  <button
-                    onClick={() => toggleRow(space.id)}
-                    className="w-8 flex items-center justify-center"
-                  >
-                    {expandedRows.has(space.id) ? (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
-
-                  {/* Name */}
-                  <div
-                    className="flex-1 flex items-center gap-2 cursor-pointer"
-                    onClick={() => handleSpaceClick(space)}
-                  >
-                    <Building2 className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-900">
-                      {renamingSpace?.id === space.id ? (
-                        <input
-                          type="text"
-                          value={newSpaceName}
-                          onChange={(e) => setNewSpaceName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleRenameSpaceConfirm();
-                            if (e.key === "Escape") setRenamingSpace(null);
-                          }}
-                          onBlur={handleRenameSpaceConfirm}
-                          autoFocus
-                          className="px-2 py-1 text-sm border border-blue-500 rounded outline-none"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        space.name || space.title
-                      )}
-                    </span>
-                  </div>
-
-                  {/* Description */}
-                  <div className="w-48 text-sm text-gray-500 truncate">
-                    {space.description || "—"}
-                  </div>
-
-                  {/* Access */}
-                  <div className="w-32">
-                    <span className="inline-flex items-center gap-1 text-sm text-gray-600">
-                      <Globe className="w-3 h-3" />
-                      {space.access || "Default"}
-                    </span>
-                  </div>
-
-                  {/* Members */}
-                  <div className="w-24 text-sm text-gray-600">
-                    {space.members || 1}
-                  </div>
-
-                  {/* Actions */}
-                  <div
-                    className="w-10 relative"
-                    ref={dropdownOpen === space.id ? dropdownRef : null}
-                  >
-                    <button
-                      onClick={() =>
-                        setDropdownOpen(
-                          dropdownOpen === space.id ? null : space.id,
-                        )
-                      }
-                      className="p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-
-                    {dropdownOpen === space.id && (
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                        <button
-                          onClick={() => handleSpaceClick(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          Open
-                        </button>
-                        <button
-                          onClick={() => handleRenameSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                          Rename
-                        </button>
-                        <button
-                          onClick={() => handleDuplicateSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Copy className="w-4 h-4" />
-                          Duplicate
-                        </button>
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <button
-                          onClick={() => handleArchiveSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Archive className="w-4 h-4" />
-                          Archive
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Expanded Content - Sub-spaces */}
-                {expandedRows.has(space.id) && space.children?.length > 0 && (
-                  <div className="bg-gray-50/50">
-                    {space.children.map((child) => (
-                      <div
-                        key={child.id}
-                        className="flex items-center px-4 py-2 pl-12 hover:bg-gray-50 border-b border-gray-100"
-                      >
-                        <div className="flex-1 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">
-                            {child.title}
-                          </span>
-                        </div>
-                        <div className="w-48 text-sm text-gray-500 truncate">
-                          {child.description || "—"}
-                        </div>
-                        <div className="w-32">
-                          <span className="inline-flex items-center gap-1 text-sm text-gray-600">
-                            <Globe className="w-3 h-3" />
-                            {child.access || "Default"}
-                          </span>
-                        </div>
-                        <div className="w-24 text-sm text-gray-600">
-                          {child.members || 1}
-                        </div>
-                        <div className="w-10"></div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add new sub-space button */}
-                {expandedRows.has(space.id) && (
-                  <div className="flex items-center px-4 py-2 pl-12 bg-gray-50/30 border-b border-gray-100">
-                    <button
-                      onClick={() => setIsCreateModalOpen(true)}
-                      className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add new
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
           )}
-        </div>
-      </div>
 
-      {/* Create Modal */}
+          <span className="text-sm font-medium text-foreground mr-2">
+            Filter:
+          </span>
+          {filterOptions.map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => setActiveFilter(filter.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${activeFilter === filter.id
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+
+          {/* View Toggle */}
+          <div className="flex items-center bg-muted rounded-lg p-1 ml-auto">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-md transition-colors duration-200 ${viewMode === "grid"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-md transition-colors duration-200 ${viewMode === "list"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Messages */}
+      {error && (
+        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-destructive"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-destructive">
+                Error loading data
+              </h3>
+              <div className="mt-2 text-sm text-destructive">
+                <p>{error}</p>
+                <p className="mt-2">Please make sure:</p>
+                <ul className="list-disc list-inside mt-1 Project-y-1">
+                  <li>The backend API server is running on port 3001</li>
+                  <li>You have a stable internet connection</li>
+                  <li>You are properly authenticated</li>
+                </ul>
+              </div>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-destructive bg-destructive/10 hover:bg-destructive/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive"
+                >
+                  <svg
+                    className="-ml-0.5 mr-2 h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Content */}
+      <>
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-card rounded-xl border border-border p-6 animate-pulse"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 bg-muted rounded-lg"></div>
+                  <div className="w-6 h-6 bg-muted rounded"></div>
+                </div>
+                <div className="gap-y-3">
+                  <div className="h-5 bg-muted rounded w-3/4"></div>
+                  <div className="h-4 bg-muted rounded w-full"></div>
+                  <div className="h-4 bg-muted rounded w-2/3"></div>
+                  <div className="h-6 bg-muted rounded w-1/3"></div>
+                  <div className="h-2 bg-muted rounded w-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <ProjectCards
+            projects={filteredProjects}
+            viewMode={viewMode}
+            onProjectClick={handleProjectClick}
+            onProjectAction={handleProjectAction}
+            onCreateProject={handleCreateProject}
+            selectedProjects={selectedProjects}
+            onProjectSelect={(projectId) => {
+              if (selectedProjects.includes(projectId)) {
+                setSelectedProjects(
+                  selectedProjects.filter((id) => id !== projectId),
+                );
+              } else {
+                setSelectedProjects([...selectedProjects, projectId]);
+              }
+            }}
+            isResearcherPlan={isResearcherPlan}
+          />
+        )}
+      </>
+
+      {/* Create Project Modal */}
       <CreateProjectModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onProjectCreate={handleCreateSpace}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+        }}
+        onProjectCreate={handleProjectCreate}
       />
     </div>
   );

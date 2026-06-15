@@ -170,7 +170,6 @@ Summary statistics:
         body: JSON.stringify({
           content,
           summaryType: "workspace_analysis",
-          model: "gemini-3.1-flash-lite-preview",
         }),
       });
 

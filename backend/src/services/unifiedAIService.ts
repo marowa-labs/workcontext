@@ -1,8 +1,32 @@
 import logger from "../monitoring/logger";
 import { GeminiService } from "./geminiService";
-import { SubscriptionService } from "./subscriptionService";
 import { prisma } from "../lib/prisma";
 import { AIService } from "./aiService";
+import { BYOKService } from "./byokService";
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
+
+// Lazy initialization of OpenAI client — BYOK ONLY, no system fallback
+async function getOpenAIClient(userId?: string): Promise<OpenAI | null> {
+  if (!userId) return null;
+  const byokKey = await BYOKService.getDecryptedKey(userId, "openai");
+  if (!byokKey) return null;
+  logger.info("Using BYOK OpenAI key for user", {
+    userId: userId.slice(0, 8) + "...",
+  });
+  return new OpenAI({ apiKey: byokKey });
+}
+
+// Lazy initialization of Anthropic client — BYOK ONLY, no system fallback
+async function getAnthropicClient(userId?: string): Promise<Anthropic | null> {
+  if (!userId) return null;
+  const byokKey = await BYOKService.getDecryptedKey(userId, "anthropic");
+  if (!byokKey) return null;
+  logger.info("Using BYOK Anthropic key for user", {
+    userId: userId.slice(0, 8) + "...",
+  });
+  return new Anthropic({ apiKey: byokKey });
+}
 
 interface AIRequest {
   userId: string;
@@ -32,26 +56,21 @@ export class UnifiedAIService {
     try {
       const { userId, capability, content, options = {} } = request;
 
-      // Check user subscription plan
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
+      // Check if user has BYOK keys — if so, skip plan-based model restrictions
+      const byokSettings = await BYOKService.getSettings(userId);
+      const hasBYOK =
+        byokSettings.hasGoogleKey ||
+        byokSettings.hasOpenAIKey ||
+        byokSettings.hasClaudeKey ||
+        byokSettings.hasOpenRouterKey;
 
-      const planId = subscription?.plan || "free";
-
-      // Check if user has access to the requested model
+      // Validate requested model against BYOK-aware available models
       const preferredModel = options.preferredModel;
       if (preferredModel) {
-        const planModels: Record<string, string[]> = {
-          free: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"], // Free plan
-          student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"], // Student plan
-          researcher: Object.keys(AIService.getAvailableModels()), // Researcher plan: All models
-        };
-
-        const availableModels = planModels[planId] || planModels.free;
-        if (!availableModels.includes(preferredModel)) {
+        const availableModels = await AIService.getUserAvailableModels(userId);
+        if (!availableModels[preferredModel]) {
           throw new Error(
-            `Model ${preferredModel} is not available for your ${planId} plan. Please upgrade your subscription or select a different model.`,
+            `Model ${preferredModel} is not available. Please configure the required API key in your AI settings or select a different model.`,
           );
         }
       }
@@ -64,100 +83,105 @@ export class UnifiedAIService {
       }
 
       let result: any;
-      let modelUsed: string;
+      let modelUsed: string | null;
 
-      // Route to appropriate service based on capability and plan
+      // Route to appropriate service based on capability — BYOK-aware model selection
       switch (capability) {
         case "grammar_check":
-          // Grammar & Style Checking: Route based on model
-          modelUsed = this.selectGrammarModel(planId, options.preferredModel);
-          if (modelUsed.startsWith("gemini")) {
-            result = await GeminiService.sendMessage(
-              `Check the following text for grammar, style, and clarity improvements:\n\n${content}`,
-              modelUsed,
-              1500,
-              0.3,
+          modelUsed = await this.selectGrammarModel(
+            userId,
+            options.preferredModel,
+          );
+          if (!modelUsed)
+            throw new Error(
+              "No AI model available. Please configure an API key in your AI settings.",
             );
-          } else {
-            // For OpenRouter models (openai/*, nvidia/*)
-            result = await AIService.processChatMessage({
-              sessionId: `grammar-${Date.now()}`,
-              userId,
-              content: `Check the following text for grammar, style, and clarity improvements:\n\n${content}`,
-              model: modelUsed,
-            });
-          }
+          result = await this.routeToProvider(
+            modelUsed,
+            userId,
+            `Check the following text for grammar, style, and clarity improvements:\n\n${content}`,
+            { maxTokens: 1500, temperature: 0.3 },
+          );
           break;
 
         case "summarization":
-          // Document Summarization: Route based on model
-          modelUsed = this.selectSummarizationModel(
-            planId,
+          modelUsed = await this.selectSummarizationModel(
+            userId,
             options.preferredModel,
           );
-          if (modelUsed.startsWith("gemini")) {
-            result = await GeminiService.sendMessage(
-              `Please provide a ${options.summaryType || "concise"} summary of the following content:\n\n${content}`,
-              modelUsed,
-              2000,
-              0.3,
+          if (!modelUsed)
+            throw new Error(
+              "No AI model available. Please configure an API key in your AI settings.",
             );
-          } else {
-            // For OpenRouter models
-            result = await AIService.processChatMessage({
-              sessionId: `summary-${Date.now()}`,
-              userId,
-              content: `Please provide a ${options.summaryType || "concise"} summary of the following content:\n\n${content}`,
-              model: modelUsed,
-            });
-          }
+          result = await this.routeToProvider(
+            modelUsed,
+            userId,
+            `Please provide a ${options.summaryType || "concise"} summary of the following content:\n\n${content}`,
+            { maxTokens: 2000, temperature: 0.3 },
+          );
           break;
 
         case "document_qa":
-          // AI Chat Assistant for Document Q&A: Route based on model
-          modelUsed = this.selectQAModel(planId, options.preferredModel);
-          if (modelUsed.startsWith("gemini")) {
-            result = await GeminiService.sendMessage(
-              `Document content:\n${options.documentContent}\n\nQuestion:\n${content}`,
-              modelUsed,
-              2048,
-              0.5,
+          modelUsed = await this.selectQAModel(userId, options.preferredModel);
+          if (!modelUsed)
+            throw new Error(
+              "No AI model available. Please configure an API key in your AI settings.",
             );
-          } else {
-            // For OpenRouter models (openai/*, nvidia/*)
-            result = await AIService.processChatMessage({
-              sessionId: `docqa-${Date.now()}`,
-              userId,
-              content: `Document content:\n${options.documentContent}\n\nQuestion:\n${content}`,
-              model: modelUsed,
-            });
-          }
+          result = await this.routeToProvider(
+            modelUsed,
+            userId,
+            `Document content:\n${options.documentContent}\n\nQuestion:\n${content}`,
+            { maxTokens: 2048, temperature: 0.5 },
+          );
           break;
 
         case "writing_project":
-          // Writing Project AI Assistant: Gemini models for reasoning, coding, and multimodal tasks
-          modelUsed = this.selectWritingProjectModel(
-            planId,
+          modelUsed = await this.selectWritingProjectModel(
+            userId,
             options.preferredModel,
           );
-          if (options.action === "outline") {
-            result = await GeminiService.generateProjectOutline(
-              content,
-              options.projectType,
-              modelUsed,
+          if (!modelUsed)
+            throw new Error(
+              "No AI model available. Please configure an API key in your AI settings.",
             );
-          } else if (options.action === "research") {
-            result = await GeminiService.provideResearchAssistance(
-              options.researchTopic,
-              content,
-              modelUsed,
-            );
+          // Use GeminiService for Gemini models, routeToProvider for other providers
+          if (modelUsed.startsWith("gemini")) {
+            if (options.action === "outline") {
+              result = await GeminiService.generateProjectOutline(
+                content,
+                options.projectType,
+                modelUsed,
+                userId,
+              );
+            } else if (options.action === "research") {
+              result = await GeminiService.provideResearchAssistance(
+                options.researchTopic,
+                content,
+                modelUsed,
+                userId,
+              );
+            } else {
+              result = await GeminiService.assistWithWritingProject(
+                options.projectDescription,
+                content,
+                modelUsed,
+                userId,
+              );
+            }
           } else {
-            result = await GeminiService.assistWithWritingProject(
-              options.projectDescription,
-              content,
-              modelUsed,
-            );
+            // Route non-Gemini models through routeToProvider
+            let prompt: string;
+            if (options.action === "outline") {
+              prompt = `Create a detailed academic outline for a ${options.projectType || "research_paper"} on the topic: "${content}".\n\nInclude:\n1. Main sections with clear headings\n2. Subsections with brief descriptions\n3. Key points to cover in each section\n4. Suggested word count for each section\n5. Research sources and references to consider\n\nFormat the outline in a clear, hierarchical structure.`;
+            } else if (options.action === "research") {
+              prompt = `You are a research assistant helping with academic research on: "${content}".\n\nSpecific Question:\n${options.researchTopic}\n\nProvide:\n1. Relevant academic sources and references\n2. Key concepts and terminology\n3. Current research trends and findings\n4. Methodology suggestions\n5. Potential research gaps to explore\n\nFocus on credible, peer-reviewed sources and academic best practices.`;
+            } else {
+              prompt = `You are an expert writing project assistant. Help the user with their writing project.\n\nProject Description:\n${options.projectDescription}\n\nUser Request:\n${content}\n\nProvide comprehensive assistance including:\n1. Project planning and structure suggestions\n2. Content generation for specific sections\n3. Research guidance and resources\n4. Writing tips and best practices\n5. Timeline and milestone recommendations\n\nBe specific, actionable, and focused on academic writing excellence.`;
+            }
+            result = await this.routeToProvider(modelUsed, userId, prompt, {
+              maxTokens: 3000,
+              temperature: 0.7,
+            });
           }
           break;
 
@@ -190,197 +214,154 @@ export class UnifiedAIService {
     }
   }
 
-  // Select appropriate model for grammar checking based on plan
-  private static selectGrammarModel(
-    planId: string,
-    preferredModel?: string,
-  ): string {
-    // Define available models per plan
-    const planModels: Record<string, string[]> = {
-      free: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-super-120b-a12b:free"],
-      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
-      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
-      researcher: [
-        "gemini-2.5-flash",
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-    };
-
-    // Filter by actually available models
-    const actuallyAvailableModels = Object.keys(AIService.getAvailableModels());
-    const availableModels =
-      planModels[planId]?.filter((model) =>
-        actuallyAvailableModels.includes(model),
-      ) ||
-      planModels.free.filter((model) =>
-        actuallyAvailableModels.includes(model),
+  /**
+   * Route a request to the appropriate AI provider based on model name.
+   * Supports: Gemini (google/*), OpenAI (openai/*), Anthropic (anthropic/*), OpenRouter (openai/gpt-*, nvidia/*)
+   */
+  private static async routeToProvider(
+    model: string,
+    userId: string,
+    prompt: string,
+    options: { maxTokens: number; temperature: number },
+  ): Promise<{ content: string; tokensUsed: number; cost: number }> {
+    // Gemini models
+    if (model.startsWith("gemini")) {
+      return await GeminiService.sendMessage(
+        prompt,
+        model,
+        options.maxTokens,
+        options.temperature,
+        userId,
       );
-
-    // If user has a preferred model and it's available, use it
-    if (preferredModel && availableModels.includes(preferredModel)) {
-      return preferredModel;
     }
 
-    // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
-  }
-
-  // Select appropriate model for document Q&A based on plan
-  private static selectQAModel(
-    planId: string,
-    preferredModel?: string,
-  ): string {
-    // Define available models per plan
-    const planModels: Record<string, string[]> = {
-      free: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
-      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
-      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
-      researcher: [
-        "gemini-2.5-flash",
-        "gemini-3.1-flash-lite-preview",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-        "openai/gpt-oss-120b:free",
-      ],
-    };
-
-    // Filter by actually available models
-    const actuallyAvailableModels = Object.keys(AIService.getAvailableModels());
-    const availableModels =
-      planModels[planId]?.filter((model) =>
-        actuallyAvailableModels.includes(model),
-      ) ||
-      planModels.free.filter((model) =>
-        actuallyAvailableModels.includes(model),
+    // OpenAI models (gpt-4o, gpt-4o-mini, etc.)
+    if (model.startsWith("openai/") && !model.includes(":free")) {
+      const openaiClient = await getOpenAIClient(userId);
+      if (openaiClient) {
+        const response = await openaiClient.chat.completions.create({
+          model: model.replace("openai/", ""),
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: options.maxTokens,
+          temperature: options.temperature,
+        });
+        const content = response.choices[0]?.message?.content || "";
+        const inputTokens = response.usage?.prompt_tokens || 0;
+        const outputTokens = response.usage?.completion_tokens || 0;
+        const totalTokens = inputTokens + outputTokens;
+        // Approximate cost: GPT-4o ~$2.50/1M input, $10/1M output; GPT-4o-mini ~$0.15/1M input, $0.60/1M output
+        const isMini = model.includes("mini");
+        const cost = isMini
+          ? (inputTokens / 1000000) * 0.15 + (outputTokens / 1000000) * 0.6
+          : (inputTokens / 1000000) * 2.5 + (outputTokens / 1000000) * 10.0;
+        return { content, tokensUsed: totalTokens, cost };
+      }
+      throw new Error(
+        "OpenAI client not available. Please configure an OpenAI API key.",
       );
-
-    // If user has a preferred model and it's available, use it
-    if (preferredModel && availableModels.includes(preferredModel)) {
-      return preferredModel;
     }
 
-    // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
-  }
-
-  // Select appropriate model for writing project based on plan
-  private static selectWritingProjectModel(
-    planId: string,
-    preferredModel?: string,
-  ): string {
-    // Define available models per plan
-    const planModels: Record<string, string[]> = {
-      free: ["gemini-2.5-flash"],
-      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
-      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
-      researcher: [
-        "gemini-2.5-flash",
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-    };
-
-    // Filter by actually available models
-    const actuallyAvailableModels = Object.keys(AIService.getAvailableModels());
-    const availableModels =
-      planModels[planId]?.filter((model) =>
-        actuallyAvailableModels.includes(model),
-      ) ||
-      planModels.free.filter((model) =>
-        actuallyAvailableModels.includes(model),
+    // Anthropic models (claude-*)
+    if (model.startsWith("anthropic/") || model.startsWith("claude-")) {
+      const anthropicClient = await getAnthropicClient(userId);
+      if (anthropicClient) {
+        const modelName = model.replace("anthropic/", "");
+        const response = await anthropicClient.messages.create({
+          model: modelName,
+          max_tokens: options.maxTokens,
+          messages: [{ role: "user", content: prompt }],
+        });
+        const content =
+          response.content[0]?.type === "text" ? response.content[0].text : "";
+        const inputTokens = response.usage.input_tokens || 0;
+        const outputTokens = response.usage.output_tokens || 0;
+        const totalTokens = inputTokens + outputTokens;
+        // Approximate cost: Claude 3.5 Sonnet ~$3/1M input, $15/1M output
+        const cost =
+          (inputTokens / 1000000) * 3.0 + (outputTokens / 1000000) * 15.0;
+        return { content, tokensUsed: totalTokens, cost };
+      }
+      throw new Error(
+        "Anthropic client not available. Please configure an Anthropic API key.",
       );
-
-    // If user has a preferred model and it's available, use it
-    if (preferredModel && availableModels.includes(preferredModel)) {
-      return preferredModel;
     }
 
-    // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
-  }
-
-  // Select appropriate model for structured tasks and fast responses
-  private static selectStructuredTaskModel(
-    planId: string,
-    preferredModel?: string,
-  ): string {
-    // Define available models per plan
-    const planModels: Record<string, string[]> = {
-      free: ["gemini-2.5-flash"],
-      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
-      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
-      researcher: [
-        "gemini-2.5-flash",
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
+    // OpenRouter models (openai/gpt-*:free, nvidia/*:free, etc.)
+    // Fall back to AIService.processChatMessage which handles OpenRouter
+    const chatResult = await AIService.processChatMessage({
+      sessionId: `unified-${Date.now()}`,
+      userId,
+      content: prompt,
+      model,
+    });
+    return {
+      content: chatResult.content || "",
+      tokensUsed: chatResult.content?.length || 0,
+      cost: 0,
     };
-
-    // Filter by actually available models
-    const actuallyAvailableModels = Object.keys(AIService.getAvailableModels());
-    const availableModels =
-      planModels[planId]?.filter((model) =>
-        actuallyAvailableModels.includes(model),
-      ) ||
-      planModels.free.filter((model) =>
-        actuallyAvailableModels.includes(model),
-      );
-
-    // If user has a preferred model and it's available, use it
-    if (preferredModel && availableModels.includes(preferredModel)) {
-      return preferredModel;
-    }
-
-    // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
   }
 
-  // Select appropriate model for summarization based on plan
-  private static selectSummarizationModel(
-    planId: string,
+  // Select appropriate model for grammar checking — BYOK-aware
+  private static async selectGrammarModel(
+    userId: string,
     preferredModel?: string,
-  ): string {
-    // Define available models per plan
-    const planModels: Record<string, string[]> = {
-      free: ["gemini-2.5-flash"],
-      onetime: ["gemini-2.5-flash", "openai/gpt-oss-120b:free"],
-      student: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview", "openai/gpt-oss-120b:free"],
-      researcher: [
-        "gemini-2.5-flash",
-        "gemini-3.1-flash-lite-preview",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-    };
-
-    // Filter by actually available models
-    const actuallyAvailableModels = Object.keys(AIService.getAvailableModels());
-    const availableModels =
-      planModels[planId]?.filter((model) =>
-        actuallyAvailableModels.includes(model),
-      ) ||
-      planModels.free.filter((model) =>
-        actuallyAvailableModels.includes(model),
-      );
-
-    // If user has a preferred model and it's available, use it
-    if (preferredModel && availableModels.includes(preferredModel)) {
+  ): Promise<string | null> {
+    const availableModels = await AIService.getUserAvailableModels(userId);
+    const availableIds = Object.keys(availableModels);
+    if (preferredModel && availableIds.includes(preferredModel))
       return preferredModel;
-    }
-
-    // Otherwise, use the best available model for the plan
-    return availableModels.length > 0 ? availableModels[0] : "gemini-2.5-flash";
+    return availableIds.length > 0 ? availableIds[0] : null;
   }
 
-  // Track AI usage for billing and analytics
+  // Select appropriate model for document Q&A — BYOK-aware
+  private static async selectQAModel(
+    userId: string,
+    preferredModel?: string,
+  ): Promise<string | null> {
+    const availableModels = await AIService.getUserAvailableModels(userId);
+    const availableIds = Object.keys(availableModels);
+    if (preferredModel && availableIds.includes(preferredModel))
+      return preferredModel;
+    return availableIds.length > 0 ? availableIds[0] : null;
+  }
+
+  // Select appropriate model for writing project — BYOK-aware
+  private static async selectWritingProjectModel(
+    userId: string,
+    preferredModel?: string,
+  ): Promise<string | null> {
+    const availableModels = await AIService.getUserAvailableModels(userId);
+    const availableIds = Object.keys(availableModels);
+    if (preferredModel && availableIds.includes(preferredModel))
+      return preferredModel;
+    return availableIds.length > 0 ? availableIds[0] : null;
+  }
+
+  // Select appropriate model for structured tasks — BYOK-aware
+  private static async selectStructuredTaskModel(
+    userId: string,
+    preferredModel?: string,
+  ): Promise<string | null> {
+    const availableModels = await AIService.getUserAvailableModels(userId);
+    const availableIds = Object.keys(availableModels);
+    if (preferredModel && availableIds.includes(preferredModel))
+      return preferredModel;
+    return availableIds.length > 0 ? availableIds[0] : null;
+  }
+
+  // Select appropriate model for summarization — BYOK-aware
+  private static async selectSummarizationModel(
+    userId: string,
+    preferredModel?: string,
+  ): Promise<string | null> {
+    const availableModels = await AIService.getUserAvailableModels(userId);
+    const availableIds = Object.keys(availableModels);
+    if (preferredModel && availableIds.includes(preferredModel))
+      return preferredModel;
+    return availableIds.length > 0 ? availableIds[0] : null;
+  }
+
+  // Track AI usage for billing and analytics with BYOK cost attribution
   static async trackAIUsage(
     userId: string,
     capability: string,
@@ -390,6 +371,14 @@ export class UnifiedAIService {
       // Get current usage for the user this month
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Check if user has BYOK keys for cost attribution
+      const byokSettings = await BYOKService.getSettings(userId);
+      const hasBYOK =
+        byokSettings.hasGoogleKey ||
+        byokSettings.hasOpenAIKey ||
+        byokSettings.hasClaudeKey ||
+        byokSettings.hasOpenRouterKey;
 
       const usage: any = await prisma.aIUsage.findUnique({
         where: {
@@ -478,7 +467,7 @@ export class UnifiedAIService {
         });
       }
 
-      // If metadata is provided, update tokens and cost
+      // If metadata is provided, update tokens and cost with BYOK attribution
       if (metadata) {
         const costUpdateData: any = {
           updated_at: new Date(),
@@ -491,9 +480,26 @@ export class UnifiedAIService {
         }
 
         if (metadata.cost) {
-          costUpdateData.total_cost = usage?.total_cost
-            ? usage.total_cost + metadata.cost
+          costUpdateData.total_cost_estimate = usage?.total_cost_estimate
+            ? usage.total_cost_estimate + metadata.cost
             : metadata.cost;
+
+          // Track BYOK vs system cost attribution
+          if (hasBYOK) {
+            costUpdateData.byok_cost_estimate = usage?.byok_cost_estimate
+              ? usage.byok_cost_estimate + metadata.cost
+              : metadata.cost;
+            costUpdateData.byok_request_count = usage?.byok_request_count
+              ? usage.byok_request_count + 1
+              : 1;
+          } else {
+            costUpdateData.system_cost_estimate = usage?.system_cost_estimate
+              ? usage.system_cost_estimate + metadata.cost
+              : metadata.cost;
+            costUpdateData.system_request_count = usage?.system_request_count
+              ? usage.system_request_count + 1
+              : 1;
+          }
         }
 
         await prisma.aIUsage.update({
@@ -505,6 +511,7 @@ export class UnifiedAIService {
       logger.info("AI usage tracked", {
         userId,
         capability,
+        byok: hasBYOK,
         metadata,
       });
     } catch (error) {
@@ -512,9 +519,21 @@ export class UnifiedAIService {
     }
   }
 
-  // Check if user has reached their AI usage limit
+  // Check if user has reached their AI usage limit — BYOK users have no limits
   static async checkUsageLimit(userId: string, capability: string) {
     try {
+      // BYOK users have no platform-imposed limits
+      const byokSettings = await BYOKService.getSettings(userId);
+      const hasBYOK =
+        byokSettings.hasGoogleKey ||
+        byokSettings.hasOpenAIKey ||
+        byokSettings.hasClaudeKey ||
+        byokSettings.hasOpenRouterKey;
+
+      if (hasBYOK) {
+        return { hasLimit: false, remaining: 1000000 };
+      }
+
       const subscription = await prisma.subscription.findUnique({
         where: { user_id: userId },
       });

@@ -36,7 +36,9 @@ export class PlatformAnalyticsService {
       const [newUsers, newWorkspaces, newTasks] = await Promise.all([
         prisma.user.count({ where: { created_at: { gte: yesterday } } }),
         prisma.workspace.count({ where: { created_at: { gte: yesterday } } }),
-        prisma.workspaceTask.count({ where: { created_at: { gte: yesterday } } }),
+        prisma.workspaceTask.count({
+          where: { created_at: { gte: yesterday } },
+        }),
       ]);
 
       // 3. Activity by day for chart
@@ -56,24 +58,47 @@ export class PlatformAnalyticsService {
       // 5. AI usage stats
       const aiUsage = await this.getAIUsageByDay(days);
 
+      // 6. Platform-wide completion rate
+      const totalDoneTasks = await prisma.workspaceTask.count({
+        where: { status: "done" },
+      });
+      const completionRate =
+        totalTasks > 0 ? Math.round((totalDoneTasks / totalTasks) * 100) : 0;
+
+      // 7. Average AI response time (from AIPerformanceMetric)
+      const avgResponseResult = await prisma.aIPerformanceMetric.aggregate({
+        _avg: { response_time: true },
+      });
+      const avgResponseTime = avgResponseResult._avg.response_time
+        ? `${avgResponseResult._avg.response_time.toFixed(1)}s`
+        : "N/A";
+
       return {
         totalUsers,
         totalWorkspaces,
         totalTasks,
         totalMessages,
         activeUsers,
+        completionRate,
+        avgResponseTime,
         dailyGrowth: {
           users: newUsers,
           workspaces: newWorkspaces,
           tasks: newTasks,
         },
         activityByDay,
-        topWorkspaces: topWorkspaces.map((w: { id: string; name: string; _count: { tasks: number; members: number } }) => ({
-          id: w.id,
-          name: w.name,
-          tasks: w._count.tasks,
-          users: w._count.members,
-        })),
+        topWorkspaces: topWorkspaces.map(
+          (w: {
+            id: string;
+            name: string;
+            _count: { tasks: number; members: number };
+          }) => ({
+            id: w.id,
+            name: w.name,
+            tasks: w._count.tasks,
+            users: w._count.members,
+          }),
+        ),
         aiUsage: {
           totalRequests: await prisma.aIChatMessage.count(),
           byDay: aiUsage,
