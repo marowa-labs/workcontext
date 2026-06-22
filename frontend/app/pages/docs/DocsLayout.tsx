@@ -347,7 +347,7 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="flex items-center">
               <Link href="/docs" className="flex items-center space-x-2">
                 <img
-                  src="/assets/images/WorkContext-AI-Logo.png"
+                  src="/assets/images/WorkContext-Logo.png"
                   alt="WorkContextLogo"
                   className="h-10 w-auto"
                   style={{ color: `hsl(var(--accent))` }}
@@ -381,7 +381,8 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
                         <button
                           key={`${result.section}-${result.id}`}
                           onClick={() => handleResultClick(result.path)}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-white transition-colors duration-150">
+                          className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-white transition-colors duration-150"
+                        >
                           <div className="font-medium text-black text-black">
                             {result.label}
                           </div>
@@ -405,24 +406,28 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="hidden md:flex items-center space-x-4">
               <Link
                 href="/help"
-                className="text-black hover:text-blue-600 dark:text-black dark:hover:text-blue-400 accent-link">
+                className="text-black hover:text-blue-600 dark:text-black dark:hover:text-blue-400 accent-link"
+              >
                 Help Center
               </Link>
               <Link
                 href="/docs/features"
-                className="text-black hover:text-blue-600 dark:text-black dark:hover:text-blue-400 accent-link">
+                className="text-black hover:text-blue-600 dark:text-black dark:hover:text-blue-400 accent-link"
+              >
                 Features
               </Link>
               <Link
                 href="/docs/billing"
-                className="text-black hover:text-blue-600 dark:text-black dark:hover:text-blue-400 accent-link">
+                className="text-black hover:text-blue-600 dark:text-black dark:hover:text-blue-400 accent-link"
+              >
                 Pricing
               </Link>
             </div>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={`md:hidden p-2 rounded-md text-black hover:text-black hover:bg-gray-100 dark:text-black dark:hover:text-white dark:hover:bg-white ${transitionClasses}`}>
+              className={`md:hidden p-2 rounded-md text-black hover:text-black hover:bg-gray-100 dark:text-black dark:hover:text-white dark:hover:bg-white ${transitionClasses}`}
+            >
               {mobileMenuOpen ? (
                 <X className="h-6 w-6" />
               ) : (
@@ -439,7 +444,8 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
           className={`
           ${positionClasses.sidebar} transform transition-transform duration-300 ease-in-out md:translate-x-0
           ${positionClasses.sidebarTransform}
-        `}>
+        `}
+        >
           <div className="flex flex-col h-full pt-16">
             <div className="flex-1 overflow-y-auto p-4">
               {/* Sidebar content */}
@@ -456,11 +462,13 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
                           <li key={item.id}>
                             <Link
                               href={item.path}
-                              className={`flex items-center justify-between px-3 py-2 text-sm rounded-md ${isActive
-                                ? "bg-blue-50 text-blue-700 font-medium dark:bg-blue-900/30 dark:text-blue-400 tab-active"
-                                : "text-black hover:bg-gray-50 dark:text-black dark:hover:bg-white"
-                                } ${transitionClasses}`}
-                              onClick={() => setMobileMenuOpen(false)}>
+                              className={`flex items-center justify-between px-3 py-2 text-sm rounded-md ${
+                                isActive
+                                  ? "bg-blue-50 text-blue-700 font-medium dark:bg-blue-900/30 dark:text-blue-400 tab-active"
+                                  : "text-black hover:bg-gray-50 dark:text-black dark:hover:bg-white"
+                              } ${transitionClasses}`}
+                              onClick={() => setMobileMenuOpen(false)}
+                            >
                               <span>{item.label}</span>
                               {isActive && (
                                 <ChevronRight
@@ -481,7 +489,8 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="p-4 border-t border-white border-white">
               <Link
                 href="/help"
-                className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 accent-button">
+                className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 accent-button"
+              >
                 Visit Help Center
               </Link>
             </div>

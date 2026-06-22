@@ -619,7 +619,7 @@ export default function DashboardLayout({
                   >
                     {item.isLogo ? (
                       <Image
-                        src="/assets/images/WorkContext-AI-Logo.png"
+                        src="/assets/images/WorkContext-Logo.png"
                         alt="WorkContext"
                         width={20}
                         height={20}

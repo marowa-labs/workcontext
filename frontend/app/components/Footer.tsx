@@ -55,7 +55,7 @@ export default function Footer() {
             <div className="lg:col-span-1">
               <Link href="/" className="flex items-center space-x-2 mb-4">
                 <img
-                  src="/assets/images/WorkContext-AI-Logo.png"
+                  src="/assets/images/WorkContext-Logo.png"
                   alt="WorkContext Logo"
                   className="h-15 w-auto"
                 />
@@ -64,8 +64,8 @@ export default function Footer() {
                 </span>
               </Link>
               <p className="text-gray-600 text-sm mb-6 max-w-xs">
-                Your context-aware workspace. Connect docs, tasks, and team
-                with intelligent flow.
+                Your context-aware workspace. Connect docs, tasks, and team with
+                intelligent flow.
               </p>
               <div className="flex space-x-4">
                 {socialLinks.map((social) => (
@@ -74,7 +74,8 @@ export default function Footer() {
                     href={social.href}
                     className="p-2 rounded-lg bg-white border border-gray-200 hover:border-blue-500 hover:shadow-sm transition-all duration-200 group"
                     target="_blank"
-                    rel="noopener noreferrer">
+                    rel="noopener noreferrer"
+                  >
                     <social.icon className="h-4 w-4 text-gray-600 font-bold group-hover:text-blue-400 transition-colors" />
                     <span className="sr-only">{social.name}</span>
                   </a>
@@ -92,7 +93,8 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm">
+                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -110,7 +112,8 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm">
+                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -128,7 +131,8 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm">
+                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -146,7 +150,8 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm">
+                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -164,7 +169,8 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm">
+                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -179,8 +185,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex items-center space-x-4">
               <p className="text-gray-600 text-sm">
-                © {new Date().getFullYear()} WorkContext. All rights
-                reserved.
+                © {new Date().getFullYear()} WorkContext. All rights reserved.
               </p>
               <p className="text-gray-600 text-sm">
                 Made with ❤️ for students and researchers worldwide

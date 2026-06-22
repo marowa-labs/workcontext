@@ -182,13 +182,11 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
             <img
-              src="/assets/images/WorkContext-AI-Logo.png"
+              src="/assets/images/WorkContext-Logo.png"
               alt="WorkContext Logo"
               className="h-20 w-auto group-hover:shadow-lg transition-all duration-300"
             />
-            <span className="text-xl font-bold text-gray-700">
-              WorkContext
-            </span>
+            <span className="text-xl font-bold text-gray-700">WorkContext</span>
           </Link>
 
           {/* Desktop Navigation */}

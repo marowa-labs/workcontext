@@ -149,7 +149,7 @@ const MobileLandingPage = () => {
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center space-x-2">
               <img
-                src="/assets/images/WorkContext-AI-Logo.png"
+                src="/assets/images/WorkContext-Logo.png"
                 alt="WorkContextLogo"
                 className="h-8 w-auto"
               />
@@ -161,7 +161,8 @@ const MobileLandingPage = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 rounded-md text-gray-200 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white">
+              className="lg:hidden p-2 rounded-md text-gray-200 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white"
+            >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
               ) : (
@@ -173,32 +174,38 @@ const MobileLandingPage = () => {
             <div className="hidden lg:flex items-center space-x-8">
               <Link
                 href="/"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+              >
                 Home
               </Link>
               <Link
                 href="/features"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+              >
                 Features
               </Link>
               <Link
                 href="/pricing"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+              >
                 Pricing
               </Link>
               <Link
                 href="/contact"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+              >
                 Contact
               </Link>
               <Link
                 href="/login"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+              >
                 Log in
               </Link>
               <Link
                 href="/signup"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              >
                 Sign up
               </Link>
             </div>
@@ -211,7 +218,8 @@ const MobileLandingPage = () => {
                 <Link
                   href="/mobile"
                   className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
-                  onClick={() => setIsMenuOpen(false)}>
+                  onClick={() => setIsMenuOpen(false)}
+                >
                   Home
                 </Link>
               </div>
@@ -234,11 +242,11 @@ const MobileLandingPage = () => {
             </h1>
 
             <p className="text-xl text-gray-200 mb-10 dark:text-gray-200 max-w-2xl mx-auto">
-              The full power of WorkContext, now in your pocket. Ensure
-              academic defensibility on the go with our five core
-              functionalities: The Explainable Originality Map, Citation
-              Confidence Auditor, Submission-Safe Writing Mode, Defensibility
-              Log, and One-Click Publication Suite.
+              The full power of WorkContext, now in your pocket. Ensure academic
+              defensibility on the go with our five core functionalities: The
+              Explainable Originality Map, Citation Confidence Auditor,
+              Submission-Safe Writing Mode, Defensibility Log, and One-Click
+              Publication Suite.
             </p>
 
             <div className="flex justify-center mb-12">
@@ -292,8 +300,8 @@ const MobileLandingPage = () => {
                 Optimized for Larger Screens
               </h2>
               <p className="text-lg text-gray-200 dark:text-gray-200 max-w-2xl mx-auto">
-                WorkContextis designed to provide the best experience on
-                laptops and desktop computers. Our five core functionalities for
+                WorkContextis designed to provide the best experience on laptops
+                and desktop computers. Our five core functionalities for
                 academic defensibility require the precision and space that
                 larger screens offer.
               </p>
@@ -380,17 +388,20 @@ const MobileLandingPage = () => {
                 {/* Status Message */}
                 {submitStatus.type && (
                   <div
-                    className={`mb-4 p-3 rounded-lg text-sm ${submitStatus.type === "success"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
-                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
-                      }`}>
+                    className={`mb-4 p-3 rounded-lg text-sm ${
+                      submitStatus.type === "success"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
+                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
+                    }`}
+                  >
                     {submitStatus.message}
                   </div>
                 )}
 
                 <form
                   onSubmit={handleSubmit}
-                  className="flex flex-col sm:flex-row gap-3">
+                  className="flex flex-col sm:flex-row gap-3"
+                >
                   <input
                     type="email"
                     value={email}
@@ -401,9 +412,11 @@ const MobileLandingPage = () => {
                   />
                   <button
                     type="submit"
-                    className={`px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center justify-center ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-                      }`}
-                    disabled={isSubmitting}>
+                    className={`px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center justify-center ${
+                      isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
@@ -439,7 +452,8 @@ const MobileLandingPage = () => {
                 {votingFeatures.map((feature) => (
                   <div
                     key={feature.id}
-                    className="bg-white dark:bg-white rounded-xl p-5 border border-white border-white">
+                    className="bg-white dark:bg-white rounded-xl p-5 border border-white border-white"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mr-4 dark:bg-indigo-900/30 dark:text-indigo-300">
@@ -461,10 +475,12 @@ const MobileLandingPage = () => {
                       <button
                         onClick={() => handleVote(feature.id, feature.name)}
                         disabled={votedFeatures.includes(feature.id)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm ${votedFeatures.includes(feature.id)
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200 cursor-not-allowed"
-                          : "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-200 dark:hover:bg-indigo-800"
-                          }`}>
+                        className={`px-4 py-2 rounded-lg font-medium text-sm ${
+                          votedFeatures.includes(feature.id)
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200 cursor-not-allowed"
+                            : "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-200 dark:hover:bg-indigo-800"
+                        }`}
+                      >
                         {votedFeatures.includes(feature.id) ? "Voted" : "Vote"}
                       </button>
                     </div>
@@ -475,7 +491,8 @@ const MobileLandingPage = () => {
               <div className="text-center mt-6">
                 <Link
                   href="/docs/feature-request"
-                  className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium dark:text-indigo-400 dark:hover:text-indigo-300">
+                  className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
                   View all feature requests
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
@@ -505,7 +522,8 @@ const MobileLandingPage = () => {
                     className="h-8 w-8"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor">
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -530,7 +548,8 @@ const MobileLandingPage = () => {
                     className="h-8 w-8"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor">
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -554,7 +573,8 @@ const MobileLandingPage = () => {
                     className="h-8 w-8"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor">
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -584,9 +604,10 @@ const MobileLandingPage = () => {
             <div className="text-center">
               <Link
                 href="/"
-                className="inline-flex items-center space-x-2 mb-6">
+                className="inline-flex items-center space-x-2 mb-6"
+              >
                 <img
-                  src="/assets/images/WorkContext-AI-Logo.png"
+                  src="/assets/images/WorkContext-Logo.png"
                   alt="WorkContextLogo"
                   className="h-8 w-auto"
                 />
@@ -604,17 +625,20 @@ const MobileLandingPage = () => {
               <div className="flex flex-wrap justify-center gap-6 mb-8">
                 <Link
                   href="/docs/features"
-                  className="hover:text-white transition-colors">
+                  className="hover:text-white transition-colors"
+                >
                   Features
                 </Link>
                 <Link
                   href="/docs/contact-support"
-                  className="hover:text-white transition-colors">
+                  className="hover:text-white transition-colors"
+                >
                   Contact
                 </Link>
                 <Link
                   href="/docs"
-                  className="hover:text-white transition-colors">
+                  className="hover:text-white transition-colors"
+                >
                   Documentation
                 </Link>
               </div>
