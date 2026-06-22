@@ -49,7 +49,8 @@ function InviteModal({
           <h2 className="text-xl font-bold tracking-tight">Invite Member</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-muted rounded-full transition-colors">
+            className="p-1 hover:bg-muted rounded-full transition-colors"
+          >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
@@ -86,7 +87,8 @@ function InviteModal({
                     role === r
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background hover:bg-muted border-border text-foreground"
-                  }`}>
+                  }`}
+                >
                   {r}
                 </button>
               ))}
@@ -102,13 +104,15 @@ function InviteModal({
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">
+            className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors"
+          >
             Cancel
           </button>
           <button
             onClick={() => onInvite(email, role)}
             disabled={!email || isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-all">
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
+          >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -129,7 +133,8 @@ export default function WorkspaceMembersPage() {
   const workspaceId = params.workspaceId as string;
 
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null); // To check if self
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string>("viewer");
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -141,8 +146,15 @@ export default function WorkspaceMembersPage() {
       setLoading(true);
       const list = await workspaceService.getWorkspaceMembers(workspaceId);
       setMembers(list);
-      // Rough way to get current user ID context - ideally from auth context, but
-      // we can infer it or fetch simplistic user info (omitted for brevity here, assume we fetch user or check against list)
+      // Also fetch current user and determine role
+      try {
+        const u = await apiClient.get("/api/auth/me");
+        setCurrentUser(u.user);
+        const membership = list.find((m: any) => m.user_id === u.user?.id);
+        setCurrentUserRole(membership?.role ?? "viewer");
+      } catch {
+        setCurrentUserRole("viewer");
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -152,12 +164,9 @@ export default function WorkspaceMembersPage() {
 
   useEffect(() => {
     fetchMembers();
-    // Fetch current user for "Leave" vs "Remove" logic - simplified:
-    apiClient
-      .get("/api/auth/me")
-      .then((u) => setCurrentUser(u.user))
-      .catch(() => {});
   }, [fetchMembers]);
+
+  const canManage = currentUserRole === "admin";
 
   const handleUpdateRole = async (
     userId: string,
@@ -235,12 +244,15 @@ export default function WorkspaceMembersPage() {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setInviteModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm">
-          <Plus className="w-4 h-4" />
-          Invite Member
-        </button>
+        {canManage && (
+          <button
+            onClick={() => setInviteModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Invite Member
+          </button>
+        )}
       </div>
 
       {/* ── Search ── */}
@@ -278,7 +290,8 @@ export default function WorkspaceMembersPage() {
               <tr>
                 <td
                   colSpan={4}
-                  className="px-6 py-12 text-center text-muted-foreground">
+                  className="px-6 py-12 text-center text-muted-foreground"
+                >
                   <div className="flex justify-center items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading
                     members...
@@ -289,7 +302,8 @@ export default function WorkspaceMembersPage() {
               <tr>
                 <td
                   colSpan={4}
-                  className="px-6 py-12 text-center text-muted-foreground">
+                  className="px-6 py-12 text-center text-muted-foreground"
+                >
                   No members found.
                 </td>
               </tr>
@@ -297,7 +311,8 @@ export default function WorkspaceMembersPage() {
               filtered.map((member) => (
                 <tr
                   key={member.id}
-                  className="hover:bg-muted/20 transition-colors group">
+                  className="hover:bg-muted/20 transition-colors group"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400 flex items-center justify-center text-white font-bold shadow-sm">
@@ -325,11 +340,13 @@ export default function WorkspaceMembersPage() {
                           )
                         }
                         disabled={
+                          !canManage ||
                           isUpdating === member.user_id ||
                           currentUser?.id === member.user_id
                         }
                         className={`appearance-none bg-transparent font-medium py-1 pl-2 pr-8 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 hover:bg-muted transition-colors
-                          ${member.role === "admin" ? "text-violet-600" : member.role === "editor" ? "text-blue-600" : "text-slate-600"}`}>
+                          ${member.role === "admin" ? "text-violet-600" : member.role === "editor" ? "text-blue-600" : "text-slate-600"}`}
+                      >
                         <option value="admin">Admin</option>
                         <option value="editor">Editor</option>
                         <option value="viewer">Viewer</option>
@@ -344,12 +361,13 @@ export default function WorkspaceMembersPage() {
                     {new Date(member.joined_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {currentUser?.id !== member.user_id && (
+                    {canManage && currentUser?.id !== member.user_id && (
                       <button
                         onClick={() => handleRemoveMember(member.user_id)}
                         disabled={isUpdating === member.user_id}
                         className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                        title="Remove member">
+                        title="Remove member"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}

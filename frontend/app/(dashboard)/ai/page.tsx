@@ -3,15 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Loader2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   SquarePen,
   Plus,
-  MoreHorizontal,
   MessageSquare,
   Edit,
   Trash2,
@@ -23,7 +20,6 @@ import { cn } from "../../lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  aiActionService,
   AIActionResult,
   formatActionType,
   getActionIcon,
@@ -134,23 +130,49 @@ function ChatContent({
           <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
             {/* Logo */}
             <div className="mb-8">
-              <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
                 <svg viewBox="0 0 100 100" className="w-10 h-10">
-                  <circle cx="50" cy="50" r="45" fill="#F5F5F5" />
-                  <ellipse cx="50" cy="55" rx="20" ry="25" fill="#E8E8E8" />
-                  <circle cx="42" cy="45" r="3" fill="#333" />
-                  <circle cx="58" cy="45" r="3" fill="#333" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="currentColor"
+                    className="text-muted-foreground/20"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="55"
+                    rx="20"
+                    ry="25"
+                    fill="currentColor"
+                    className="text-muted-foreground/30"
+                  />
+                  <circle
+                    cx="42"
+                    cy="45"
+                    r="3"
+                    fill="currentColor"
+                    className="text-foreground"
+                  />
+                  <circle
+                    cx="58"
+                    cy="45"
+                    r="3"
+                    fill="currentColor"
+                    className="text-foreground"
+                  />
                   <path
                     d="M45 55 Q50 60 55 55"
-                    stroke="#333"
+                    stroke="currentColor"
                     strokeWidth="2"
                     fill="none"
+                    className="text-foreground"
                   />
                 </svg>
               </div>
             </div>
 
-            <h2 className="text-3xl font-semibold text-gray-800 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground mb-6">
               How can I help you today?
             </h2>
 
@@ -181,7 +203,7 @@ function ChatContent({
                 <button
                   key={action.label}
                   onClick={() => setInput(action.prompt)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors text-left"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-muted-foreground bg-muted hover:bg-muted/80 rounded-xl transition-colors text-left"
                 >
                   <span className="text-lg">{action.icon}</span>
                   <span>{action.label}</span>
@@ -200,10 +222,10 @@ function ChatContent({
                 )}
               >
                 {message.role === "assistant" && (
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
                     <svg
                       viewBox="0 0 24 24"
-                      className="w-3.5 h-3.5 text-gray-500"
+                      className="w-3.5 h-3.5 text-muted-foreground"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
@@ -225,7 +247,7 @@ function ChatContent({
                       "text-sm leading-relaxed",
                       message.role === "user"
                         ? "bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5"
-                        : "max-w-[95%] text-gray-700 prose prose-sm max-w-full break-words overflow-hidden",
+                        : "max-w-[95%] text-foreground prose prose-sm max-w-full break-words overflow-hidden prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-headings:text-foreground prose-li:text-foreground prose-a:text-blue-500",
                     )}
                     style={
                       message.role === "user"
@@ -249,10 +271,10 @@ function ChatContent({
 
             {loading && (
               <div className="flex gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-500" />
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
                 </div>
-                <div className="text-sm text-gray-500">Thinking...</div>
+                <div className="text-sm text-muted-foreground">Thinking...</div>
               </div>
             )}
           </>
@@ -261,13 +283,13 @@ function ChatContent({
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-white border-t border-gray-100">
+      <div className="p-4 bg-background border-t border-border">
         <div className="max-w-3xl mx-auto">
           {/* AI Action Confirmation Dialog */}
           {pendingAction && (
-            <div className="mb-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="mb-4 bg-background rounded-xl shadow-lg border border-border overflow-hidden">
               <div
-                className={`p-3 ${isDestructiveAction(pendingAction.actionType || "") ? "bg-red-50 border-b border-red-100" : "bg-blue-50 border-b border-blue-100"}`}
+                className={`p-3 ${isDestructiveAction(pendingAction.actionType || "") ? "bg-red-500/10 border-b border-red-500/20" : "bg-blue-500/10 border-b border-blue-500/20"}`}
               >
                 <div className="flex items-center gap-2">
                   <div
@@ -282,10 +304,10 @@ function ChatContent({
                     )}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-gray-900">
+                    <h4 className="font-semibold text-sm text-foreground">
                       Confirm Action
                     </h4>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-muted-foreground">
                       {formatActionType(pendingAction.actionType || "")}
                     </p>
                   </div>
@@ -293,7 +315,7 @@ function ChatContent({
               </div>
 
               <div className="p-3">
-                <p className="text-sm text-gray-700 mb-3 break-words">
+                <p className="text-sm text-foreground mb-3 break-words">
                   {pendingAction.message}
                 </p>
 
@@ -301,7 +323,7 @@ function ChatContent({
                   <button
                     onClick={onCancelAction}
                     disabled={isConfirming}
-                    className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    className="flex-1 px-3 py-1.5 bg-muted text-foreground text-sm rounded-lg hover:bg-muted/80 transition-colors disabled:opacity-50"
                   >
                     {
                       getConfirmationButtonText(pendingAction.actionType || "")
@@ -338,30 +360,30 @@ function ChatContent({
             </div>
           )}
 
-          <div className="relative bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow">
+          <div className="relative bg-background rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow border border-border">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Do anything with AI..."
-              className="w-full min-h-[60px] px-4 py-3 text-sm text-gray-700 bg-transparent border-0 resize-none focus:outline-none focus:ring-0"
+              className="w-full min-h-[60px] px-4 py-3 text-sm text-foreground bg-transparent border-0 resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
               rows={1}
             />
 
             <div className="flex items-center justify-between px-3 pb-3">
               <div className="flex items-center gap-1">
-                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+                <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400">Auto</span>
+                <span className="text-xs text-muted-foreground">Auto</span>
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || loading}
-                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:bg-transparent rounded-lg transition-colors"
+                  className="p-1.5 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 disabled:opacity-30 disabled:hover:text-muted-foreground disabled:hover:bg-transparent rounded-lg transition-colors"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -595,6 +617,7 @@ export default function AIPage() {
       const response = await apiClient.post(
         `/api/ai/chat/session/${currentSession}/messages`,
         {
+          sessionId: currentSession,
           content: userMessage.content,
           messageType: "text",
         },
@@ -683,13 +706,13 @@ export default function AIPage() {
   };
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Left Sidebar - Chat History */}
       <div
-        className={`${sidebarCollapsed ? "w-14" : "w-72"} border-r border-gray-200 flex flex-col bg-gray-50/50 h-screen shrink-0 transition-all duration-300`}
+        className={`${sidebarCollapsed ? "w-14" : "w-72"} border-r border-border flex flex-col bg-muted/30 h-screen shrink-0 transition-all duration-300`}
       >
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200 shrink-0">
+        <div className="p-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between mb-3">
             {sidebarCollapsed ? (
               <Link
@@ -711,7 +734,7 @@ export default function AIPage() {
             ) : (
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+                className="flex items-center gap-2 text-foreground hover:text-foreground"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -730,7 +753,7 @@ export default function AIPage() {
               {!sidebarCollapsed && (
                 <button
                   onClick={createNewSession}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                   title="New chat"
                 >
                   <SquarePen className="w-4 h-4" />
@@ -739,7 +762,7 @@ export default function AIPage() {
               {/* Collapse/Expand Toggle */}
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                 title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
                 {sidebarCollapsed ? (
@@ -753,13 +776,13 @@ export default function AIPage() {
 
           {!sidebarCollapsed && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search or start new chat"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-foreground"
               />
             </div>
           )}
@@ -769,16 +792,18 @@ export default function AIPage() {
         {!sidebarCollapsed ? (
           <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
             {filteredSessions.length > 0 && (
-              <div className="text-xs font-medium text-gray-500 px-3 py-2 uppercase tracking-wide">
+              <div className="text-xs font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide">
                 Chat History
               </div>
             )}
 
             {filteredSessions.length === 0 && (
               <div className="px-3 py-8 text-center">
-                <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-xs text-gray-400">No chat history yet</p>
-                <p className="text-xs text-gray-400 mt-1">
+                <MessageSquare className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">
+                  No chat history yet
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
                   Start a new conversation
                 </p>
               </div>
@@ -788,8 +813,8 @@ export default function AIPage() {
                 key={session.id}
                 className={`group flex items-start gap-2 px-3 py-2.5 rounded-lg text-left transition-colors cursor-pointer ${
                   currentSession === session.id
-                    ? "bg-white shadow-sm border border-gray-200"
-                    : "hover:bg-gray-100"
+                    ? "bg-background shadow-sm border border-border"
+                    : "hover:bg-muted"
                 }`}
                 onClick={() => {
                   setCurrentSession(session.id);
@@ -797,7 +822,7 @@ export default function AIPage() {
                 }}
               >
                 <div className="flex-1 flex items-start gap-3 min-w-0">
-                  <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     {renamingSession === session.id ? (
                       <input
@@ -822,7 +847,7 @@ export default function AIPage() {
                           }
                         }}
                         autoFocus
-                        className="w-full px-2 py-1 text-sm bg-white border border-blue-500 rounded outline-none"
+                        className="w-full px-2 py-1 text-sm bg-background border border-blue-500 rounded outline-none text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
@@ -850,7 +875,7 @@ export default function AIPage() {
                       e.stopPropagation();
                       startRenaming(session);
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded"
+                    className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                     title="Rename"
                   >
                     <Edit className="w-3.5 h-3.5" />
@@ -864,7 +889,7 @@ export default function AIPage() {
                         deleteSession(session.id);
                       }
                     }}
-                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                    className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded"
                     title="Delete"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

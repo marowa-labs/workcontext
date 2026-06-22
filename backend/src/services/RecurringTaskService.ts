@@ -299,6 +299,57 @@ export class RecurringTaskService {
       return "Custom recurrence pattern";
     }
   }
+
+  /**
+   * Generate instances for ALL active recurring tasks across all workspaces
+   * Designed to be called by a cron job
+   */
+  static async generateAllRecurringInstances(weeksAhead: number = 2) {
+    try {
+      // Get all active recurring parent tasks across all workspaces
+      const recurringTasks = await prisma.workspaceTask.findMany({
+        where: {
+          is_recurring: true,
+          parent_recurring_task_id: null,
+        },
+        select: {
+          id: true,
+          workspace_id: true,
+          title: true,
+        },
+      });
+
+      let totalCreated = 0;
+      const errors: string[] = [];
+
+      for (const task of recurringTasks) {
+        try {
+          const instances = await this.generateTaskInstances(
+            task.id,
+            weeksAhead,
+          );
+          totalCreated += instances.length;
+        } catch (err) {
+          const errorMsg = `Task ${task.id} (${task.title}): ${(err as Error).message}`;
+          errors.push(errorMsg);
+          logger.error(errorMsg);
+        }
+      }
+
+      logger.info(
+        `Cron: Generated ${totalCreated} total instances from ${recurringTasks.length} recurring tasks`,
+      );
+
+      return {
+        totalTasks: recurringTasks.length,
+        totalInstancesCreated: totalCreated,
+        errors,
+      };
+    } catch (error) {
+      logger.error("Error in generateAllRecurringInstances:", error);
+      throw error;
+    }
+  }
 }
 
 export default RecurringTaskService;

@@ -11,110 +11,11 @@ class ApiClient {
 
   private async getAuthToken() {
     try {
-      console.log("Getting auth token from Supabase");
-      // Get Supabase token
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
-
-      console.log("Session data:", session);
-      console.log("Session error:", error);
-
-      if (error) {
-        console.error("Error getting session:", error);
-        // Don't redirect immediately on session error during page load
-        // Let the route components handle authentication state
-        return null;
-      }
-
-      if (!session) {
-        console.warn("No active session found");
-        // Try to get user directly to see if there's a session issue
-        const { data: userData, error: userError } =
-          await supabase.auth.getUser();
-        console.log("Direct user check:", userData, userError);
-
-        if (userData?.user && !userError) {
-          // If we can get the user but not the session, try to refresh
-          console.log("User exists but no session, attempting to refresh");
-          const { data: refreshedData, error: refreshError } =
-            await supabase.auth.refreshSession();
-          console.log("Refresh session result:", refreshedData);
-          console.log("Refresh session error:", refreshError);
-          if (refreshError) {
-            console.error("Failed to refresh session:", refreshError);
-            return null;
-          }
-          return refreshedData.session?.access_token || null;
-        }
-
-        // Don't redirect immediately if there's no session
-        // Let the route components handle authentication state
-        return null;
-      }
-
-      console.log("Session expires at:", session.expires_at);
-      console.log("Current time:", new Date().getTime() / 1000);
-
-      // Check if token is about to expire (within 5 minutes)
-      if (!session.expires_at) {
-        return session.access_token;
-      }
-      const expirationTime = new Date(session.expires_at * 1000);
-      const now = new Date();
-      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-
-      console.log("Token expiration check in apiClient:", {
-        expiresAt: session.expires_at,
-        expirationTime,
-        now,
-        fiveMinutesFromNow,
-        isExpiringSoon: expirationTime < fiveMinutesFromNow,
-        timeUntilExpiration: expirationTime.getTime() - now.getTime(),
-        timeUntilRefresh: fiveMinutesFromNow.getTime() - now.getTime(),
-      });
-
-      console.log("Expiration time:", expirationTime);
-      console.log("Five minutes from now:", fiveMinutesFromNow);
-
-      if (expirationTime < fiveMinutesFromNow) {
-        console.warn(
-          "Token is about to expire or already expired, attempting to refresh",
-        );
-        // Try to refresh the session
-        console.log("Attempting to refresh session");
-        const { data: refreshedData, error: refreshError } =
-          await supabase.auth.refreshSession();
-        console.log("Refresh session result:", refreshedData);
-        console.log("Refresh session error:", refreshError);
-        if (refreshError) {
-          console.error("Failed to refresh session:", refreshError);
-          // If refresh fails, try to get a new session
-          console.log("Trying to get new session after refresh failure");
-          const { data: newData, error: newError } =
-            await supabase.auth.getSession();
-          console.log("New session data:", newData);
-          console.log("New session error:", newError);
-          if (newError || !newData.session) {
-            console.error("Failed to get new session:", newError);
-            // Don't redirect immediately if we can't get a new session
-            // Let the route components handle authentication state
-            return null;
-          }
-          return newData.session?.access_token || null;
-        }
-        return refreshedData.session?.access_token || null;
-      }
-
-      const token = session?.access_token;
-      console.log(
-        "Returning token:",
-        token ? token.substring(0, 20) + "..." : null,
-      );
-      return token;
-    } catch (error) {
-      console.error("Error getting auth token:", error);
+      return session?.access_token || null;
+    } catch {
       return null;
     }
   }
@@ -250,7 +151,15 @@ class ApiClient {
       // If response is not ok, try to parse error message
       if (!response.ok) {
         try {
-          const errorData = await response.json();
+          const errorText = await response.text();
+          let errorData: any = {};
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {}
+          console.error(
+            `API Error ${response.status} for ${url}:`,
+            errorData.message || errorText,
+          );
           throw new Error(
             errorData.message || `HTTP error! status: ${response.status}`,
           );

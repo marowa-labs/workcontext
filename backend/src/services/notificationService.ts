@@ -459,6 +459,7 @@ export async function createNotification(
     // Create the notification in database
     const notification = await prisma.notification.create({
       data: {
+        user_id: userId,
         type,
         title,
         message,

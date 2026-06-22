@@ -792,7 +792,7 @@ export default function AttachmentAnnotationPage() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-white">
+      <div className="h-full flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     );
@@ -800,7 +800,7 @@ export default function AttachmentAnnotationPage() {
 
   if (error || !attachment) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-white text-gray-500">
+      <div className="h-full flex flex-col items-center justify-center bg-background text-muted-foreground">
         <File className="w-12 h-12 mb-3 text-gray-300" />
         <p>{error || "Attachment not found"}</p>
         <button
@@ -814,26 +814,26 @@ export default function AttachmentAnnotationPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-background">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
           <div className="h-5 w-px bg-gray-200" />
-          <h2 className="font-semibold text-gray-900 truncate max-w-md">
+          <h2 className="font-semibold text-foreground truncate max-w-md">
             {attachment.name}
           </h2>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {formatSize(attachment.file_size)}
           </span>
           {attachment.task && (
-            <span className="text-xs text-gray-400 px-2 py-0.5 bg-gray-100 rounded-full">
+            <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded-full">
               {attachment.task.title}
             </span>
           )}
@@ -852,8 +852,8 @@ export default function AttachmentAnnotationPage() {
                 className={cn(
                   "p-2 rounded-lg text-sm transition-colors",
                   activeTool === "pdf-highlight"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "text-gray-500 hover:bg-gray-100",
+                    ? "bg-yellow-500/10 text-yellow-500"
+                    : "text-muted-foreground hover:bg-muted",
                 )}
                 title="Highlight text in PDF"
               >
@@ -866,8 +866,8 @@ export default function AttachmentAnnotationPage() {
                 className={cn(
                   "p-2 rounded-lg text-sm transition-colors",
                   activeTool === "eraser"
-                    ? "bg-red-100 text-red-600"
-                    : "text-gray-500 hover:bg-gray-100",
+                    ? "bg-red-500/10 text-red-500"
+                    : "text-muted-foreground hover:bg-muted",
                 )}
                 title="Erase highlights"
               >
@@ -900,7 +900,7 @@ export default function AttachmentAnnotationPage() {
                       setPdfHighlights([]);
                     }
                   }}
-                  className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50"
+                  className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                   title="Clear all highlights"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -924,8 +924,8 @@ export default function AttachmentAnnotationPage() {
                 className={cn(
                   "p-2 rounded-lg text-sm transition-colors",
                   activeTool === "highlight"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "text-gray-500 hover:bg-gray-100",
+                    ? "bg-yellow-500/10 text-yellow-500"
+                    : "text-muted-foreground hover:bg-muted",
                 )}
                 title="Highlighter"
               >
@@ -939,8 +939,8 @@ export default function AttachmentAnnotationPage() {
                 className={cn(
                   "p-2 rounded-lg text-sm transition-colors",
                   activeTool === "draw"
-                    ? "bg-red-100 text-red-600"
-                    : "text-gray-500 hover:bg-gray-100",
+                    ? "bg-red-500/10 text-red-500"
+                    : "text-muted-foreground hover:bg-muted",
                 )}
                 title="Draw annotation"
               >
@@ -966,23 +966,23 @@ export default function AttachmentAnnotationPage() {
                 </div>
               )}
 
-              <div className="h-5 w-px bg-gray-200" />
+              <div className="h-5 w-px bg-border" />
               <button
                 onClick={() => setZoom((z) => Math.min(200, z + 25))}
-                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                className="p-2 rounded-lg text-muted-foreground hover:bg-muted"
               >
                 <ZoomIn className="w-4 h-4" />
               </button>
-              <span className="text-xs text-gray-500 w-10 text-center">
+              <span className="text-xs text-muted-foreground w-10 text-center">
                 {zoom}%
               </span>
               <button
                 onClick={() => setZoom((z) => Math.max(25, z - 25))}
-                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                className="p-2 rounded-lg text-muted-foreground hover:bg-muted"
               >
                 <ZoomOut className="w-4 h-4" />
               </button>
-              <div className="h-5 w-px bg-gray-200" />
+              <div className="h-5 w-px bg-border" />
 
               <button
                 onClick={saveAnnotations}
@@ -992,7 +992,7 @@ export default function AttachmentAnnotationPage() {
               </button>
               <button
                 onClick={clearAnnotations}
-                className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50"
+                className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -1001,26 +1001,26 @@ export default function AttachmentAnnotationPage() {
 
           {/* PDF Zoom & Page Controls */}
           {isPDF && pdfNumPages > 0 && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-lg">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-lg">
               <button
                 onClick={() => setPdfScale((s) => Math.max(0.5, s - 0.2))}
-                className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded transition-colors"
                 title="Zoom out"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-xs text-gray-600 w-10 text-center font-medium">
+              <span className="text-xs text-muted-foreground w-10 text-center font-medium">
                 {Math.round(pdfScale * 100)}%
               </span>
               <button
                 onClick={() => setPdfScale((s) => Math.min(3, s + 0.2))}
-                className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded transition-colors"
                 title="Zoom in"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
-              <div className="h-4 w-px bg-gray-300" />
-              <span className="text-xs text-gray-500">
+              <div className="h-4 w-px bg-border" />
+              <span className="text-xs text-muted-foreground">
                 {pdfNumPages} page{pdfNumPages > 1 ? "s" : ""}
               </span>
             </div>
@@ -1032,8 +1032,8 @@ export default function AttachmentAnnotationPage() {
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm",
               showAIPanel
-                ? "bg-purple-100 text-purple-700"
-                : "text-gray-600 hover:bg-gray-100",
+                ? "bg-purple-500/10 text-purple-500"
+                : "text-muted-foreground hover:bg-muted",
             )}
             title="AI Assistant"
           >
@@ -1046,7 +1046,7 @@ export default function AttachmentAnnotationPage() {
             download={attachment.name}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-900"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background text-sm rounded-lg hover:bg-foreground/80"
           >
             <Download className="w-3.5 h-3.5" /> Download
           </a>
@@ -1083,7 +1083,7 @@ export default function AttachmentAnnotationPage() {
                   )}
                 />
                 {activeTool && (
-                  <div className="absolute top-2 left-2 bg-white/90 text-xs px-2 py-1 rounded shadow">
+                  <div className="absolute top-2 left-2 bg-background/90 text-xs px-2 py-1 rounded shadow text-foreground">
                     {activeTool === "highlight"
                       ? "Click & drag to highlight"
                       : "Click & drag to draw annotation"}
@@ -1104,14 +1104,14 @@ export default function AttachmentAnnotationPage() {
             />
           ) : (
             <div className="text-center">
-              <File className="w-24 h-24 mx-auto text-gray-300 mb-4" />
-              <p className="text-lg font-medium text-gray-700 mb-2">
+              <File className="w-24 h-24 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-foreground mb-2">
                 {attachment.name}
               </p>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 {formatSize(attachment.file_size)}
               </p>
-              <p className="text-sm text-gray-400 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Preview not available for this file type
               </p>
               <a
@@ -1129,21 +1129,21 @@ export default function AttachmentAnnotationPage() {
 
         {/* AI Assistant Panel */}
         {showAIPanel && (
-          <div className="w-96 border-l border-gray-200 bg-white flex flex-col min-h-0">
+          <div className="w-96 border-l border-border bg-background flex flex-col min-h-0">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-600" />
                   PDF AI Assistant
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Document + Annotations Context
                 </p>
               </div>
               <button
                 onClick={() => setShowAIPanel(false)}
-                className="p-1 text-gray-400 hover:text-gray-600"
+                className="p-1 text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>

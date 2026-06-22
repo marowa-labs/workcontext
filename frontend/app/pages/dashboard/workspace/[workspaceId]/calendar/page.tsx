@@ -11,14 +11,14 @@ import { format } from "date-fns";
 const PRIORITY_COLORS: Record<string, string> = {
   high: "text-red-500",
   medium: "text-amber-500",
-  low: "text-slate-400",
+  low: "text-slate-500",
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  todo: "bg-slate-100 text-slate-600",
-  "in-progress": "bg-blue-100 text-blue-700",
-  "in-review": "bg-violet-100 text-violet-700",
-  done: "bg-emerald-100 text-emerald-700",
+  todo: "bg-slate-500/10 text-slate-500",
+  "in-progress": "bg-blue-500/10 text-blue-500",
+  "in-review": "bg-violet-500/10 text-violet-500",
+  done: "bg-emerald-500/10 text-emerald-500",
 };
 
 export default function WorkspaceCalendarPage() {
@@ -116,11 +116,11 @@ export default function WorkspaceCalendarPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-            <CalendarDays className="w-7 h-7 text-violet-600" />
+          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+            <CalendarDays className="w-7 h-7 text-violet-500" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-500 flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400 flex items-center gap-2">
               Calendar
             </h1>
             <p className="text-xs text-muted-foreground">
@@ -287,12 +287,12 @@ export default function WorkspaceCalendarPage() {
                 {selectedTask.status}
               </span>
               <span
-                className={`text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1 bg-slate-50 ${PRIORITY_COLORS[selectedTask.priority]}`}>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1 bg-muted ${PRIORITY_COLORS[selectedTask.priority]}`}>
                 <Flag className="w-3 h-3" />
                 {selectedTask.priority}
               </span>
               {selectedTask.due_date && (
-                <span className="text-xs px-2 py-1 rounded-full bg-violet-50 text-violet-700 font-medium">
+                <span className="text-xs px-2 py-1 rounded-full bg-violet-500/10 text-violet-500 font-medium">
                   Due: {format(new Date(selectedTask.due_date), "MMM d, yyyy")}
                 </span>
               )}
@@ -350,7 +350,7 @@ export default function WorkspaceCalendarPage() {
                       : u.email[0].toUpperCase();
                     return (
                       <div key={u.id} className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold flex items-center justify-center flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-semibold flex items-center justify-center flex-shrink-0">
                           {initials}
                         </div>
                         <span className="text-sm text-foreground">
@@ -380,7 +380,7 @@ export default function WorkspaceCalendarPage() {
                         className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                           sub.is_done
                             ? "bg-emerald-500 border-emerald-500"
-                            : "border-slate-300"
+                            : "border-muted-foreground"
                         }`}>
                         {sub.is_done && (
                           <svg

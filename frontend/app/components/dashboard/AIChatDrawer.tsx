@@ -879,7 +879,7 @@ export function AIChatDrawer({
             (window as any).__aiDrawerConfirm = confirm;
             (window as any).__aiDrawerCancel = cancel;
           },
-          onResult: (result) => {
+          onResult: async (result) => {
             const assistantMessage: Message = {
               id: `assistant-${Date.now()}`,
               role: "assistant",
@@ -887,6 +887,21 @@ export function AIChatDrawer({
               created_at: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, assistantMessage]);
+
+            // Save messages to database so they persist across refreshes
+            if (currentSession) {
+              try {
+                await apiClient.post(
+                  `/api/ai/chat/session/${currentSession}/messages`,
+                  {
+                    content: messageContent,
+                    messageType: "text",
+                  },
+                );
+              } catch {
+                // Silently fail — messages shown in UI are enough
+              }
+            }
           },
           onError: (error) => {
             const msg = error || "Unknown error";
@@ -1130,18 +1145,9 @@ export function AIChatDrawer({
             };
             setMessages((prev) => [...prev, assistantMessage]);
 
-            // Save both messages to database
-            try {
-              await apiClient.post(
-                `/api/ai/chat/session/${currentSession}/messages`,
-                {
-                  content: userMessageContent,
-                  messageType: "text",
-                },
-              );
-            } catch {
-              // Silently fail — messages shown in UI are enough
-            }
+            // Save both messages to database using existing helpers
+            await saveUserMessage(userMessageContent);
+            await saveAIMessage(result.message);
 
             // Add suggested actions if available
             if (result.suggestedActions && result.suggestedActions.length > 0) {

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  Settings,
   MoreHorizontal,
   ChevronDown,
   ChevronRight,
@@ -333,11 +332,11 @@ export default function SpacesLibraryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="px-8 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Your Spaces</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Your Spaces</h1>
+        <p className="text-sm text-muted-foreground">
           Manage your teamspaces, projects, and private work in one place.
         </p>
       </div>
@@ -345,7 +344,7 @@ export default function SpacesLibraryPage() {
       <div className="px-8">
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6 border-b border-gray-200">
+        <div className="flex items-center gap-1 mb-6 border-b border-border">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -353,8 +352,8 @@ export default function SpacesLibraryPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeTab === tab.id
-                  ? "text-gray-900 bg-gray-100"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  ? "text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -369,46 +368,14 @@ export default function SpacesLibraryPage() {
           <div className="flex items-center gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 w-64 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                className="pl-9 pr-4 py-2 w-64 text-sm border border-border rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-background text-foreground"
               />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Settings */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="View settings"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-
-              {showSettings && (
-                <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                    View settings
-                  </div>
-                  <label className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={includeArchived}
-                      onChange={(e) => setIncludeArchived(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 rounded"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Include archived pages
-                    </span>
-                  </label>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -416,9 +383,9 @@ export default function SpacesLibraryPage() {
 
       {/* Table */}
       <div className="px-8">
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
           {/* Table Header */}
-          <div className="flex items-center px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <div className="flex items-center px-4 py-3 bg-muted border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
             <div className="w-8"></div>
             <div className="flex-1">Name</div>
             <div className="w-48">Description</div>
@@ -431,24 +398,24 @@ export default function SpacesLibraryPage() {
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading spaces...</p>
+              <p className="text-muted-foreground">Loading spaces...</p>
             </div>
           ) : filteredSpaces.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No spaces found</div>
+            <div className="p-8 text-center text-muted-foreground">No spaces found</div>
           ) : (
             filteredSpaces.map((space) => (
               <div key={space.id}>
                 {/* Main Row */}
-                <div className="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100 group">
+                <div className="flex items-center px-4 py-3 hover:bg-muted/50 border-b border-border group">
                   {/* Expand/Collapse */}
                   <button
                     onClick={() => toggleRow(space.id)}
                     className="w-8 flex items-center justify-center"
                   >
                     {expandedRows.has(space.id) ? (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     )}
                   </button>
 
@@ -458,7 +425,7 @@ export default function SpacesLibraryPage() {
                     onClick={() => handleSpaceClick(space)}
                   >
                     <Building2 className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-foreground">
                       {renamingSpace?.id === space.id ? (
                         <input
                           type="text"
@@ -470,7 +437,7 @@ export default function SpacesLibraryPage() {
                           }}
                           onBlur={handleRenameSpaceConfirm}
                           autoFocus
-                          className="px-2 py-1 text-sm border border-blue-500 rounded outline-none"
+                          className="px-2 py-1 text-sm border border-blue-500 rounded outline-none bg-background text-foreground"
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
@@ -480,124 +447,53 @@ export default function SpacesLibraryPage() {
                   </div>
 
                   {/* Description */}
-                  <div className="w-48 text-sm text-gray-500 truncate">
+                  <div className="w-48 text-sm text-muted-foreground truncate">
                     {space.description || "—"}
                   </div>
 
                   {/* Access */}
                   <div className="w-32">
-                    <span className="inline-flex items-center gap-1 text-sm text-gray-600">
+                    <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
                       <Globe className="w-3 h-3" />
                       {space.access || "Default"}
                     </span>
                   </div>
 
                   {/* Members */}
-                  <div className="w-24 text-sm text-gray-600">
+                  <div className="w-24 text-sm text-muted-foreground">
                     {space.members || 1}
-                  </div>
-
-                  {/* Actions */}
-                  <div
-                    className="w-10 relative"
-                    ref={dropdownOpen === space.id ? dropdownRef : null}
-                  >
-                    <button
-                      onClick={() =>
-                        setDropdownOpen(
-                          dropdownOpen === space.id ? null : space.id,
-                        )
-                      }
-                      className="p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-
-                    {dropdownOpen === space.id && (
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                        <button
-                          onClick={() => handleSpaceClick(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          Open
-                        </button>
-                        <button
-                          onClick={() => handleRenameSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                          Rename
-                        </button>
-                        <button
-                          onClick={() => handleDuplicateSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Copy className="w-4 h-4" />
-                          Duplicate
-                        </button>
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <button
-                          onClick={() => handleArchiveSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Archive className="w-4 h-4" />
-                          Archive
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSpace(space)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
 
                 {/* Expanded Content - Sub-spaces */}
                 {expandedRows.has(space.id) && space.children?.length > 0 && (
-                  <div className="bg-gray-50/50">
+                  <div className="bg-muted/30">
                     {space.children.map((child) => (
                       <div
                         key={child.id}
-                        className="flex items-center px-4 py-2 pl-12 hover:bg-gray-50 border-b border-gray-100"
+                        className="flex items-center px-4 py-2 pl-12 hover:bg-muted/50 border-b border-border"
                       >
                         <div className="flex-1 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">
+                          <FileText className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">
                             {child.title}
                           </span>
                         </div>
-                        <div className="w-48 text-sm text-gray-500 truncate">
+                        <div className="w-48 text-sm text-muted-foreground truncate">
                           {child.description || "—"}
                         </div>
                         <div className="w-32">
-                          <span className="inline-flex items-center gap-1 text-sm text-gray-600">
+                          <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
                             <Globe className="w-3 h-3" />
                             {child.access || "Default"}
                           </span>
                         </div>
-                        <div className="w-24 text-sm text-gray-600">
+                        <div className="w-24 text-sm text-muted-foreground">
                           {child.members || 1}
                         </div>
                         <div className="w-10"></div>
                       </div>
                     ))}
-                  </div>
-                )}
-
-                {/* Add new sub-space button */}
-                {expandedRows.has(space.id) && (
-                  <div className="flex items-center px-4 py-2 pl-12 bg-gray-50/30 border-b border-gray-100">
-                    <button
-                      onClick={() => setIsCreateModalOpen(true)}
-                      className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add new
-                    </button>
                   </div>
                 )}
               </div>

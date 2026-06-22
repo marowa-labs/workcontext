@@ -16,6 +16,9 @@ interface Config {
     url: string;
     environment: string;
   };
+  cron: {
+    jobSecret: string | null;
+  };
 }
 
 export const config: Config = {
@@ -37,6 +40,11 @@ export const config: Config = {
   app: {
     url: "http://localhost:3000",
     environment: "development",
+  },
+
+  // Cron job authentication
+  cron: {
+    jobSecret: process.env.CRON_JOB_SECRET || null,
   },
 };
 

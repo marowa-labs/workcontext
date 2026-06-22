@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Plus, Grid3X3, List } from "lucide-react";
+import { Plus, Grid3X3, List, Download } from "lucide-react";
 import ProjectCards from "../../../components/dashboard/ProjectCards";
 import CreateProjectModal from "../../../components/dashboard/CreateProjectModal";
 import { ExportModal } from "../../../components/editor/export-modal";
@@ -28,6 +28,7 @@ export default function ProjectsListPage() {
 
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [archivedProjects, setArchivedProjects] = useState([]);
+  const [isBatchExporting, setIsBatchExporting] = useState(false);
   const { data: user, loading: userLoading } = useUser();
 
   // Load projects — active or archived based on filter
@@ -331,6 +332,7 @@ export default function ProjectsListPage() {
 
   // Handle batch export
   const handleBatchExport = async () => {
+    if (isBatchExporting) return;
     if (selectedProjects.length === 0) {
       toast({
         title: "No Projects Selected",
@@ -341,37 +343,56 @@ export default function ProjectsListPage() {
     }
 
     try {
+      setIsBatchExporting(true);
       toast({
         title: "Batch Export Started",
         description: `Exporting ${selectedProjects.length} Projects... This may take a moment.`,
       });
 
-      // Since batch export API might not exist, export projects individually
+      // Export projects individually
+      let exportedCount = 0;
       for (const projectId of selectedProjects) {
-        const project = projects.find((p) => p.id === projectId);
+        const project = filteredProjects.find((p) => p.id === projectId) || projects.find((p) => p.id === projectId);
         if (project) {
-          const blob = await ExportService.exportProjectBlob(projectId, {
-            format: "pdf",
-          });
+          try {
+            const blob = await ExportService.exportProjectBlob(projectId, {
+              format: "pdf",
+            });
 
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `${project.title.replace(/\s+/g, "_")}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${project.title.replace(/\s+/g, "_")}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            exportedCount++;
+            // Small delay between downloads to prevent browser blocking
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          } catch (err) {
+            console.error(`Failed to export project ${project.title}:`, err);
+          }
         }
       }
 
-      toast({
-        title: "Batch Export Complete",
-        description: `${selectedProjects.length} Projects have been exported successfully.`,
-      });
-
+      setIsBatchExporting(false);
       setSelectedProjects([]);
+
+      if (exportedCount > 0) {
+        toast({
+          title: "Batch Export Complete",
+          description: `${exportedCount} of ${selectedProjects.length} Projects exported successfully.`,
+        });
+      } else {
+        toast({
+          title: "Batch Export Failed",
+          description: "No Projects could be exported. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      setIsBatchExporting(false);
       console.error("Failed to batch export projects:", error);
       toast({
         title: "Batch Export Failed",
@@ -424,14 +445,17 @@ export default function ProjectsListPage() {
           {projects.length > 0 && (
             <button
               onClick={handleBatchExport}
-              disabled={selectedProjects.length === 0}
-              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${selectedProjects.length > 0
+              disabled={selectedProjects.length === 0 || isBatchExporting}
+              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${selectedProjects.length > 0 && !isBatchExporting
                 ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                 : "bg-muted text-muted-foreground cursor-not-allowed"
                 }`}
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Batch Export ({selectedProjects.length})
+              {isBatchExporting ? (
+                <><span className="w-5 h-5 mr-2 animate-spin">↻</span>Exporting...</>
+              ) : (
+                <><Download className="w-5 h-5 mr-2" />Batch Export ({selectedProjects.length})</>
+              )}
             </button>
           )}
 

@@ -157,7 +157,14 @@ async function handleGetChatMessages(req: any, res: any) {
 router.get(
   "/session/:sessionId/messages",
   authenticateExpressRequest,
-  handleGetChatMessages
+  handleGetChatMessages,
+);
+
+// Send a message in a chat session (REST-style URL)
+router.post(
+  "/session/:sessionId/messages",
+  authenticateExpressRequest,
+  handlePostChatMessage,
 );
 
 // Send a message in a chat session
@@ -204,7 +211,7 @@ async function handlePostChatMessage(req: any, res: any) {
     // Check if user can send chat messages based on their subscription
     const canPerform = await SubscriptionService.canPerformAction(
       userId,
-      "ai_chat_message"
+      "ai_chat_message",
     );
     if (!canPerform.allowed) {
       // Send notification about limit reached
@@ -213,7 +220,7 @@ async function handlePostChatMessage(req: any, res: any) {
         "ai_limit",
         "AI Chat Limit Reached",
         "You've reached your AI chat message limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true }
+        { limitReached: true },
       );
 
       return res.status(429).json({
@@ -291,7 +298,7 @@ async function handlePostChatMessage(req: any, res: any) {
         "ai_suggestion",
         "Chat Milestone",
         `You've reached ${messageCount} messages in this chat session. Consider saving this conversation for future reference.`,
-        { sessionId, messageCount }
+        { sessionId, messageCount },
       );
     }
 
@@ -353,7 +360,7 @@ async function handlePostChatMessageStream(req: any, res: any) {
     // Check if user can send chat messages based on their subscription
     const canPerform = await SubscriptionService.canPerformAction(
       userId,
-      "ai_chat_message"
+      "ai_chat_message",
     );
     if (!canPerform.allowed) {
       // Send notification about limit reached
@@ -362,7 +369,7 @@ async function handlePostChatMessageStream(req: any, res: any) {
         "ai_limit",
         "AI Chat Limit Reached",
         "You've reached your AI chat message limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true }
+        { limitReached: true },
       );
 
       return res.status(429).json({
@@ -451,7 +458,7 @@ async function handlePostChatMessageStream(req: any, res: any) {
         "ai_suggestion",
         "Chat Milestone",
         `You've reached ${messageCount} messages in this chat session. Consider saving this conversation for future reference.`,
-        { sessionId, messageCount }
+        { sessionId, messageCount },
       );
     }
 
@@ -470,7 +477,7 @@ router.post("/message", authenticateExpressRequest, handlePostChatMessage);
 router.post(
   "/message/stream",
   authenticateExpressRequest,
-  handlePostChatMessageStream
+  handlePostChatMessageStream,
 );
 
 // Update chat session
@@ -588,7 +595,7 @@ async function handlePatchChatSession(req: any, res: any) {
 router.patch(
   "/session/:sessionId",
   authenticateExpressRequest,
-  handlePatchChatSession
+  handlePatchChatSession,
 );
 
 // Delete chat session
@@ -641,7 +648,11 @@ async function handleDeleteChatSession(req: any, res: any) {
   }
 }
 
-router.delete("/session/:sessionId", authenticateExpressRequest, handleDeleteChatSession);
+router.delete(
+  "/session/:sessionId",
+  authenticateExpressRequest,
+  handleDeleteChatSession,
+);
 
 // Delete chat message
 async function handleDeleteChatMessage(req: any, res: any) {
@@ -746,7 +757,7 @@ async function handleGetChatHistory(req: any, res: any) {
 router.get(
   "/sessions/history",
   authenticateExpressRequest,
-  handleGetChatHistory
+  handleGetChatHistory,
 );
 
 // Save a message directly without AI processing (used for action responses)
@@ -808,6 +819,10 @@ async function handlePostDirectMessage(req: any, res: any) {
   }
 }
 
-router.post("/message/direct", authenticateExpressRequest, handlePostDirectMessage);
+router.post(
+  "/message/direct",
+  authenticateExpressRequest,
+  handlePostDirectMessage,
+);
 
 export default router;

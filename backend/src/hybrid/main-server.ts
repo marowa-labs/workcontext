@@ -181,6 +181,14 @@ app.use(
       }
     },
     credentials: true,
+    allowedHeaders: [
+      "Authorization",
+      "Content-Type",
+      "Accept",
+      "Origin",
+      "X-Requested-With",
+    ],
+    exposedHeaders: ["Content-Length", "Content-Type"],
   }),
 );
 
@@ -1348,7 +1356,7 @@ app.post("/api/webhooks/lemonsqueezy", async (req, res) => {
       .default;
 
     // Call the webhook handler directly
-    return webhookRouter(req, res, () => { });
+    return webhookRouter(req, res, () => {});
   } catch (error: any) {
     logger.error("LemonSqueezy webhook processing failed", {
       error: error.message,
@@ -1381,7 +1389,7 @@ app.post("/api/webhooks/lemonsqueezy/test/:eventType", async (req, res) => {
       ...req,
       params: { eventType: req.params.eventType, body: req.body },
     };
-    return testWebhookRouter(mockReq as any, res, () => { });
+    return testWebhookRouter(mockReq as any, res, () => {});
   } catch (error: any) {
     logger.error("LemonSqueezy webhook TEST processing failed", {
       error: error.message,
@@ -3814,7 +3822,6 @@ function getFileExtensionFromMimeType(mimeType: string): string {
   return mimeToExt[mimeType] || "bin";
 }
 
-
 // Public feedback endpoint (no auth required for submission)
 app.post("/api/feedback/public", async (req, res) => {
   try {
@@ -4081,4 +4088,3 @@ process.on("uncaughtException", (error) => {
 });
 
 export default app;
-

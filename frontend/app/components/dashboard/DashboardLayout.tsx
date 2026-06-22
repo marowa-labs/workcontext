@@ -8,7 +8,6 @@ import {
   Home,
   Folder,
   Settings,
-  CreditCard,
   LogOut,
   Crown,
   Plus,
@@ -27,7 +26,6 @@ import {
   CalendarDays,
   GanttChart,
   BarChart2,
-  MessageCircle,
   Activity,
   Loader2,
   Paperclip,
@@ -49,6 +47,7 @@ import { SearchModal } from "./SearchModal";
 import { QuickTaskModal } from "./QuickTaskModal";
 import { AIChatDrawer } from "./AIChatDrawer";
 import { FloatingAIButton } from "./FloatingAIButton";
+import { InboxPanel } from "./NotificationBell";
 import {
   Dialog,
   DialogContent,
@@ -828,20 +827,6 @@ export default function DashboardLayout({
                               Analytics
                             </Link>
                             <Link
-                              href={`/dashboard/workspace/${ws.id}/chat`}
-                              className={`
-                                flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
-                                ${
-                                  pathname.includes(`/workspace/${ws.id}/chat`)
-                                    ? "text-emerald-600 bg-emerald-50/50"
-                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                                }
-                              `}
-                            >
-                              <MessageCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                              Chat
-                            </Link>
-                            <Link
                               href={`/dashboard/workspace/${ws.id}/notifications`}
                               className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
@@ -1080,6 +1065,7 @@ export default function DashboardLayout({
                   <NotificationBell
                     isPinned={isInboxPinned}
                     onPinChange={setIsInboxPinned}
+                    sidebarCollapsed={sidebarCollapsed}
                   />
                 </div>
               )}
@@ -1257,7 +1243,10 @@ export default function DashboardLayout({
             positionClasses.mainContent,
             "min-w-0 h-full flex flex-col transition-all duration-300",
             showAIChat && "lg:mr-[420px]",
-            isInboxPinned && "lg:ml-[calc(16rem+22.5rem)]",
+            isInboxPinned &&
+              (sidebarCollapsed
+                ? "lg:ml-[calc(5rem+22.5rem)]"
+                : "lg:ml-[calc(16rem+22.5rem)]"),
             "overflow-x-hidden",
           )}
         >
@@ -1303,14 +1292,18 @@ export default function DashboardLayout({
 
         {/* Pinned Inbox Sidebar - Between sidebar and main content */}
         {isInboxPinned && (
-          <div className="hidden lg:block fixed left-64 top-0 bottom-0 w-[360px] bg-white border-r border-gray-200 shadow-sm z-30">
+          <div
+            className={`hidden lg:block fixed top-0 bottom-0 w-[360px] bg-background border-r border-border shadow-sm z-30 transition-all duration-300 ${
+              sidebarCollapsed ? "left-20" : "left-64"
+            }`}
+          >
             <div className="h-full flex flex-col">
               {/* Inbox Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <h2 className="text-lg font-semibold text-foreground">Inbox</h2>
                 <button
                   onClick={() => setIsInboxPinned(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+                  className="p-2 hover:bg-muted rounded-lg text-muted-foreground"
                   title="Unpin inbox"
                 >
                   <svg
@@ -1324,9 +1317,7 @@ export default function DashboardLayout({
                   </svg>
                 </button>
               </div>
-              <div className="p-4 text-center text-gray-500">
-                Pinned Inbox Panel
-              </div>
+              <InboxPanel isPinned onPinChange={setIsInboxPinned} />
             </div>
           </div>
         )}
