@@ -89,7 +89,7 @@ export class MultiAIService {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,
-            "HTTP-Referer": "https://WorkContext-ai.com",
+            "HTTP-Referer": "https://workcontext.com",
             "X-Title": "WorkContext",
             "Content-Type": "application/json",
           },
@@ -154,4 +154,3 @@ export class MultiAIService {
 }
 
 export const multiAIService = MultiAIService.getInstance();
-

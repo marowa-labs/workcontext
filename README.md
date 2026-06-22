@@ -49,7 +49,7 @@ An open-source, AI-powered context-aware productivity workspace for teams. Organ
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/marowa-craig/workcontext.git
+git clone https://github.com/marowa-labs/workcontext.git
 cd workcontext
 ```
 
@@ -127,7 +127,7 @@ You can configure which providers are active via your environment variables.
 ## 📁 Project Structure
 
 ```
-WorkContext-ai/
+workcontext/
 ├── backend/
 │   ├── src/
 │   │   ├── api/           # REST API route handlers
@@ -149,13 +149,12 @@ WorkContext-ai/
 ## 🗺️ Roadmap
 
 - [ ] Mobile app (React Native)
-- [ ] Browser extension for paper capture
-- [ ] Zotero / Mendeley import
+- [ ] Browser extension for content capture
 - [ ] Offline mode improvements
 - [ ] Self-hosted deployment guide (Docker)
 - [ ] Plugin/extension system
 
-Have an idea? [Open a feature request →](https://github.com/marowa-craig/workcontext/issues)
+Have an idea? [Open a feature request →](https://github.com/marowa-labs/workcontext/issues)
 
 ---
 
@@ -175,13 +174,13 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for full guidelines.
 
 ### Good First Issues
 
-New to the codebase? Look for issues tagged [`good first issue`](https://github.com/marowa-craig/workcontext/issues?q=label%3A%22good+first+issue%22) — these are beginner-friendly and well-scoped.
+New to the codebase? Look for issues tagged [`good first issue`](https://github.com/marowa-labs/workcontext/issues?q=label%3A%22good+first+issue%22) — these are beginner-friendly and well-scoped.
 
 ---
 
 ## 🐛 Reporting Issues
 
-Found a bug or have a suggestion? [Open an issue](https://github.com/marowa-craig/workcontext/issues/new) and include:
+Found a bug or have a suggestion? [Open an issue](https://github.com/marowa-labs/workcontext/issues/new) and include:
 
 - What you expected to happen
 - What actually happened
@@ -202,7 +201,7 @@ You are free to use, modify, and distribute this software — even commercially.
 
 Built with love using:
 
-- [Google Gemini](https://gemini.google.com) — AI backbone
+- [Open Router](https://openrouter.ai) — AI backbone
 - [Supabase](https://supabase.com) — Auth and storage
 - [TipTap](https://tiptap.dev) — Rich text editor
 - [Hocuspocus](https://hocuspocus.dev) — Real-time collaboration
@@ -214,8 +213,8 @@ Built with love using:
 
 Built by **Craig** — Bioinformatics student, builder, and open-source contributor.
 
-- GitHub: [marowa-craig](https://github.com/marowa-craig)
-- LinkedIn: [Craig Marowa](https://linkedin.com/in/craig-marowa-1b2132332)
+- GitHub: [marowa-labs](https://github.com/marowa-labs)
+- LinkedIn: [Marowa Labs](https://linkedin.com/in/craig-marowa-1b2132332)
 - X/Twitter: [@craigmarowa](https://x.com/craigmarowa)
 
 If WorkContext has helped your team, consider giving it a ⭐ on GitHub — it helps more people find the project!

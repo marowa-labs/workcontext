@@ -455,7 +455,7 @@ export default function Navigation() {
             </Button>
             <div className="w-px h-10 px-3 bg-gray-300 flex items-center">
               <a
-                href="https://github.com/marowa-craig/WorkContext-ai"
+                href="https://github.com/marowa-labs/workcontext"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-700 hover:text-gray-900 transition-colors"
@@ -565,7 +565,7 @@ export default function Navigation() {
                 </Button>
                 <div className="justify-start text-gray-700 hover:text-gray-900">
                   <a
-                    href="https://github.com/marowa-craig/WorkContext-ai"
+                    href="https://github.com/marowa-labs/workcontext"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"

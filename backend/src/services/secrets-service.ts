@@ -174,23 +174,21 @@ export class SecretsService {
   // Get feedback email
   static async getFeedbackEmail(): Promise<string> {
     return (
-      (await this.getSecret("FEEDBACK_EMAIL")) || "feedback@WorkContext-ai.com"
+      (await this.getSecret("FEEDBACK_EMAIL")) || "feedback@workcontext.com"
     );
   }
 
   // Get contact admin email
   static async getContactAdminEmail(): Promise<string> {
     return (
-      (await this.getSecret("CONTACT_ADMIN_EMAIL")) ||
-      "hello@WorkContext-ai.com"
+      (await this.getSecret("CONTACT_ADMIN_EMAIL")) || "hello@workcontext.com"
     );
   }
 
   // Get compliance email
   static async getComplianceEmail(): Promise<string> {
     return (
-      (await this.getSecret("COMPLIANCE_EMAIL")) ||
-      "compliance@WorkContext-ai.com"
+      (await this.getSecret("COMPLIANCE_EMAIL")) || "compliance@workcontext.com"
     );
   }
 
@@ -349,4 +347,3 @@ export class SecretsService {
 }
 
 export default SecretsService;
-

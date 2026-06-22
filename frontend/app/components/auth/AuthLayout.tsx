@@ -30,7 +30,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               style={{
                 backgroundImage:
                   "url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop')",
-              }}>
+              }}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 via-blue-800/80 to-purple-900/90 backdrop-blur-sm" />
             </div>
 
@@ -39,7 +40,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
                 <img
-                  src="/assets/images/WorkContext-AI-Logo.png"
+                  src="/assets/images/WorkContext-Logo.png"
                   alt="WorkContextLogo"
                   className="h-12 w-auto"
                 />
@@ -98,8 +99,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               {/* Footer */}
               <div className="text-blue-200">
                 <p className="text-sm">
-                  © {new Date().getFullYear()} WorkContext. All rights
-                  reserved.
+                  © {new Date().getFullYear()} WorkContext. All rights reserved.
                 </p>
               </div>
             </div>
@@ -111,15 +111,17 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
           className={cn(
             "flex-1 flex items-center justify-center p-8",
             showSidebar ? "lg:w-3/5 xl:w-1/2" : "w-full",
-          )}>
+          )}
+        >
           <div className="w-full max-w-md space-y-8">
             {/* Mobile Logo */}
             <div className="lg:hidden text-center">
               <Link
                 href="/"
-                className="inline-flex items-center space-x-3 text-gray-300">
+                className="inline-flex items-center space-x-3 text-gray-300"
+              >
                 <img
-                  src="/assets/images/WorkContext-AI-Logo.png"
+                  src="/assets/images/WorkContext-Logo.png"
                   alt="WorkContextLogo"
                   className="h-8 w-auto text-blue-600"
                 />

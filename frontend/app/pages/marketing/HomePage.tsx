@@ -128,7 +128,7 @@ function HeroSection() {
               className="border-gray-300 text-gray-600 bg-gray-200 hover:bg-gray-400 backdrop-blur-sm px-8 py-6 text-lg"
             >
               <a
-                href="https://github.com/marowa-craig/WorkContext-ai"
+                href="https://github.com/marowa-labs/workcontext"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center"
