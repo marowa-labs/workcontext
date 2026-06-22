@@ -126,7 +126,7 @@ export class ContactService {
         ],
         timestamp: new Date().toISOString(),
         footer: {
-          text: "ScholarForge AIContact Form",
+          text: "WorkContextContact Form",
         },
       };
 
@@ -190,7 +190,7 @@ export class ContactService {
     message: string;
   }): Promise<boolean> {
     try {
-      const subjectLine = "We've Received Your Message - ScholarForge AI";
+      const subjectLine = "We've Received Your Message - WorkContext";
 
       const htmlBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -207,15 +207,15 @@ export class ContactService {
             <p style="white-space: pre-wrap; line-height: 1.5;">${data.message}</p>
           </div>
 
-          <p>In the meantime, you might find answers to common questions in our <a href="https://scholarforgeai.com/help" style="color: #3B82F6;">Help Center</a>.</p>
+          <p>In the meantime, you might find answers to common questions in our <a href="https://WorkContextai.com/help" style="color: #3B82F6;">Help Center</a>.</p>
           
           <p>Best regards,<br/>
-          The ScholarForge AITeam</p>
+          The WorkContextTeam</p>
           
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">
           
           <p style="font-size: 12px; color: #64748b;">
-            This is an automated confirmation. Please do not reply to this email. If you need immediate assistance, contact us at hello@ScholarForge AI.com.
+            This is an automated confirmation. Please do not reply to this email. If you need immediate assistance, contact us at hello@WorkContext.com.
           </p>
         </div>
       `;
@@ -296,3 +296,4 @@ export class ContactService {
     }
   }
 }
+

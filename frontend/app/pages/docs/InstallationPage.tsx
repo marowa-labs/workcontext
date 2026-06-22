@@ -71,7 +71,7 @@ const InstallationPage = () => {
   const steps = [
     {
       title: "Sign Up",
-      description: "Create your ScholarForge AIaccount",
+      description: "Create your WorkContextaccount",
       icon: "1",
     },
     {
@@ -112,7 +112,7 @@ const InstallationPage = () => {
               Installation Guide
             </h1>
             <p className="text-lg text-black dark:text-black">
-              Install ScholarForge AIon any device for seamless academic writing
+              Install WorkContexton any device for seamless academic writing
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ const InstallationPage = () => {
             <div className="flex-1 mb-4 md:mb-0">
               <h2 className="text-2xl font-bold mb-2">System Requirements</h2>
               <p className="opacity-90">
-                ScholarForge AIworks on all major platforms with minimal system
+                WorkContextworks on all major platforms with minimal system
                 requirements
               </p>
             </div>

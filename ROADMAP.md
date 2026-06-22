@@ -1,9 +1,9 @@
-# ScholarForge AI - Product Pivot Roadmap
+# WorkContext - Product Pivot Roadmap
 
 ## Vision
 Transform from an academic research assistant into a **context-aware productivity workspace** for teams.
 
-**Tagline:** *"Notion makes you organize. Asana makes you manage. ScholarForge just makes you productive."*
+**Tagline:** *"Notion makes you organize. Asana makes you manage. WorkContext just makes you productive."*
 
 ---
 
@@ -89,7 +89,7 @@ Transform from an academic research assistant into a **context-aware productivit
 #### New Landing Page
 - [ ] Hero: "Your workspace, understood"
 - [ ] Feature blocks: Smart Mentions, Quick Tasks, Related Items
-- [ ] Comparison section: Notion (manual) vs Asana (rigid) vs ScholarForge (smart)
+- [ ] Comparison section: Notion (manual) vs Asana (rigid) vs WorkContext (smart)
 - [ ] Open source CTA
 
 #### Documentation
@@ -109,7 +109,7 @@ Transform from an academic research assistant into a **context-aware productivit
 
 ### What Makes Us Different
 
-| Notion | Asana | ScholarForge |
+| Notion | Asana | WorkContext |
 |--------|-------|--------------|
 | Manual linking | No content relationships | Automatic relationships |
 | Static pages | Task-focused | Context-aware pages |
@@ -221,3 +221,4 @@ frontend/app/
 
 *Last updated: 2026-04-26*
 *Status: Phase 1 Planning Complete*
+

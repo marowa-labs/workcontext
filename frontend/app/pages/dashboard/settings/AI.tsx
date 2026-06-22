@@ -180,7 +180,7 @@ const AISettingsPage = () => {
     if (usage.remaining > 0) {
       return `You have ${usage.remaining} requests remaining this month`;
     }
-    return `You've reached your monthly limit`;
+    return `All requests available`;
   };
 
   // Get most used action

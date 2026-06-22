@@ -206,7 +206,7 @@ export default function GuidePage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                How to Use ScholarForge
+                How to Use WorkContext
               </h1>
               <p className="text-slate-500 dark:text-slate-400">
                 Master the command palette and boost your productivity
@@ -224,7 +224,7 @@ export default function GuidePage() {
             <div>
               <h2 className="text-xl font-bold mb-2">Quick Start</h2>
               <p className="text-blue-100 mb-4">
-                ScholarForge is your AI-powered productivity workspace. Everything starts with a command.
+                WorkContext is your AI-powered productivity workspace. Everything starts with a command.
               </p>
               <div className="flex flex-wrap gap-3">
                 <button

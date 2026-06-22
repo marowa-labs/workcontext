@@ -17,9 +17,13 @@ interface Suggestion {
 
 interface LanguageCheckPanelProps {
   editor?: any;
+  onClose?: () => void;
 }
 
-export function LanguageCheckPanel({ editor }: LanguageCheckPanelProps) {
+export function LanguageCheckPanel({
+  editor,
+  onClose,
+}: LanguageCheckPanelProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -29,26 +33,151 @@ export function LanguageCheckPanel({ editor }: LanguageCheckPanelProps) {
 
     setIsLoading(true);
     try {
-      const text = editor.getText();
-      const results = await AIService.checkLanguage(text);
-      setSuggestions(results);
+      const text = editor.state?.doc?.textContent || "";
+      if (!text.trim()) {
+        toast({ title: "Empty Document", description: "No text to check." });
+        setIsLoading(false);
+        return;
+      }
+      const rawResults = await AIService.checkLanguage(text);
 
-      if (results.length === 0) {
-        toast({
-          title: "All clear!",
-          description: "No language issues found in your document.",
-        });
+      // Parse structured suggestions from AI response
+      const parsed = parseLanguageCheckResults(rawResults, text);
+      setSuggestions(parsed);
+
+      if (parsed.length === 0) {
+        toast({ title: "All clear!", description: "No issues found." });
       }
     } catch (error) {
       console.error("Language check failed:", error);
       toast({
         title: "Check Failed",
-        description: "Could not analyze document language.",
+        description: "Could not analyze document.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Parse the AI response into structured suggestions
+  const parseLanguageCheckResults = (
+    results: any,
+    documentText: string,
+  ): Suggestion[] => {
+    // If the backend already returned structured data, use it directly
+    if (Array.isArray(results)) return results;
+
+    // If results is an object with suggestions array (directly from backend)
+    if (results && Array.isArray(results.suggestions))
+      return results.suggestions;
+
+    // Try to parse as JSON string
+    const raw = typeof results === "string" ? results : JSON.stringify(results);
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed?.suggestions && Array.isArray(parsed.suggestions))
+        return parsed.suggestions;
+    } catch {
+      /* not JSON, fall through to regex extraction */
+    }
+
+    // Regex: extract snippets like ' "old" → "new" ' or bullet-point suggestions
+    const suggestions: Suggestion[] = [];
+    const lines = raw.split("\n").filter((l: string) => l.trim());
+
+    for (const line of lines) {
+      // Pattern: Original: "text" → Suggestion: "text" [reason]
+      const arrowMatch = line.match(/"(.+?)"\s*(?:→|->|→|->)\s*"(.+?)"/);
+      if (arrowMatch) {
+        const original = arrowMatch[1];
+        const suggestion = arrowMatch[2];
+        if (original && suggestion && documentText.includes(original)) {
+          suggestions.push({
+            id: `s-${suggestions.length}`,
+            type: detectType(line),
+            original,
+            suggestion,
+            reason:
+              line
+                .replace(arrowMatch[0], "")
+                .trim()
+                .replace(/^[-\s]+/, "") || "Improvement suggested",
+            context: "",
+          });
+          continue;
+        }
+      }
+
+      // Pattern: **Original**: "text" **Suggestion**: "text"
+      const boldMatch = line.match(
+        /\*\*Original\*\*:\s*"(.+?)"\s*\*\*Suggestion\*\*:\s*"(.+?)"/i,
+      );
+      if (boldMatch) {
+        suggestions.push({
+          id: `s-${suggestions.length}`,
+          type: detectType(line),
+          original: boldMatch[1],
+          suggestion: boldMatch[2],
+          reason: "Improvement suggested",
+          context: "",
+        });
+        continue;
+      }
+
+      // Pattern: bullet-point "Original: text → text"
+      const bulletMatch = line.match(
+        /(?:Original|Found):\s*"?(.+?)"?\s*(?:→|->)\s*"?(.+?)"?$/i,
+      );
+      if (
+        bulletMatch &&
+        bulletMatch[1].length > 2 &&
+        documentText.includes(bulletMatch[1].trim())
+      ) {
+        suggestions.push({
+          id: `s-${suggestions.length}`,
+          type: detectType(line),
+          original: bulletMatch[1].trim(),
+          suggestion: bulletMatch[2].trim(),
+          reason: "Improvement suggested",
+          context: "",
+        });
+      }
+    }
+
+    return suggestions;
+  };
+
+  const detectType = (text: string): Suggestion["type"] => {
+    const lower = text.toLowerCase();
+    if (
+      lower.includes("grammar") ||
+      lower.includes("verb") ||
+      lower.includes("tense") ||
+      lower.includes("agreement")
+    )
+      return "grammar";
+    if (
+      lower.includes("spell") ||
+      lower.includes("typo") ||
+      lower.includes("misspell")
+    )
+      return "spelling";
+    if (
+      lower.includes("tone") ||
+      lower.includes("formal") ||
+      lower.includes("academic")
+    )
+      return "tone";
+    if (
+      lower.includes("concise") ||
+      lower.includes("wordy") ||
+      lower.includes("redundant") ||
+      lower.includes("shorten")
+    )
+      return "conciseness";
+    return "style";
   };
 
   const handleAccept = (suggestion: Suggestion) => {
@@ -149,18 +278,50 @@ export function LanguageCheckPanel({ editor }: LanguageCheckPanelProps) {
 
   if (suggestions.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-6 text-center text-gray-500">
-        <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-          <Check className="w-8 h-8 text-green-600" />
+      <div className="h-full flex flex-col bg-gray-50/50">
+        {onClose && (
+          <div className="flex justify-end px-3 pt-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 hover:bg-gray-200"
+              onClick={onClose}
+              title="Close language check"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-gray-500">
+          <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+            <Check className="w-8 h-8 text-green-600" />
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-1">All clear!</h3>
+          <p className="text-sm">
+            Your document meets academic standards. Click "Check Now" above to
+            analyze.
+          </p>
         </div>
-        <h3 className="font-semibold text-gray-900 mb-1">All clear!</h3>
-        <p className="text-sm">Your document meets academic standards.</p>
       </div>
     );
   }
 
   return (
     <div className="h-full flex flex-col bg-gray-50/50">
+      {/* Close Button */}
+      {onClose && (
+        <div className="flex justify-end px-3 pt-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 hover:bg-gray-200"
+            onClick={onClose}
+            title="Close language check"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between">
@@ -184,7 +345,8 @@ export function LanguageCheckPanel({ editor }: LanguageCheckPanelProps) {
             variant="outline"
             onClick={runCheck}
             disabled={isLoading}
-            className="h-8 text-xs gap-1.5">
+            className="h-8 text-xs gap-1.5"
+          >
             {isLoading ? (
               <Loader2 className="w-3 h-3 animate-spin" />
             ) : (
@@ -199,7 +361,8 @@ export function LanguageCheckPanel({ editor }: LanguageCheckPanelProps) {
             <Button
               size="sm"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs gap-1.5"
-              onClick={handleAcceptAll}>
+              onClick={handleAcceptAll}
+            >
               <Check className="w-3.5 h-3.5" /> Accept All {suggestions.length}{" "}
               Corrections
             </Button>
@@ -234,7 +397,8 @@ export function LanguageCheckPanel({ editor }: LanguageCheckPanelProps) {
         {suggestions.map((suggestion) => (
           <div
             key={suggestion.id}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
             {/* Header / Reason */}
             <div className="bg-gray-50/80 px-4 py-2 border-b border-gray-100 flex items-center gap-2">
               {suggestion.type === "tone" && (
@@ -279,14 +443,16 @@ export function LanguageCheckPanel({ editor }: LanguageCheckPanelProps) {
                 <Button
                   size="sm"
                   className="flex-1 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 gap-1.5 h-8 text-[11px] font-bold shadow-none"
-                  onClick={() => handleAccept(suggestion)}>
+                  onClick={() => handleAccept(suggestion)}
+                >
                   <Check className="w-3.5 h-3.5" /> Accept
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100"
-                  onClick={() => handleDismiss(suggestion.id)}>
+                  onClick={() => handleDismiss(suggestion.id)}
+                >
                   <X className="w-4 h-4" />
                 </Button>
               </div>

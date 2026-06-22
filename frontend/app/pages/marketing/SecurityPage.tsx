@@ -273,7 +273,7 @@ function ReportingSecurityIssues() {
               <Button
                 variant="outline"
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-none">
-                security@scholarforgeai.com
+                security@WorkContextai.com
               </Button>
               <Button
                 variant="outline"

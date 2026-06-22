@@ -18,7 +18,6 @@ import { useRouter } from "next/navigation";
 import apiClient from "../../../lib/utils/apiClient";
 import feedbackService from "../../../lib/utils/feedbackService";
 import WaitlistService from "../../../lib/utils/waitlistService";
-import BillingService from "../../../lib/utils/billingService";
 
 interface HelpArticle {
   id: string;
@@ -66,7 +65,7 @@ const HelpSettingsPage: React.FC = () => {
   const helpArticles: HelpArticle[] = [
     {
       id: "1",
-      title: "Getting Started with ScholarForge AI",
+      title: "Getting Started with WorkContext",
       category: "Getting Started",
       views: 1250,
     },
@@ -184,19 +183,7 @@ const HelpSettingsPage: React.FC = () => {
       const browserInfo = navigator.userAgent;
       const osInfo = navigator.platform;
       const screenSize = `${window.screen.width}x${window.screen.height}`;
-
-      // Get the user's current subscription plan
-      let userPlan = "free"; // Default to free plan
-      try {
-        const subscription = await BillingService.getCurrentSubscription();
-        userPlan = subscription.plan.id; // Use plan ID (free, student, researcher)
-      } catch (planError) {
-        console.warn(
-          "Could not fetch user plan, defaulting to free:",
-          planError,
-        );
-        userPlan = "free";
-      }
+      const userPlan = "free";
 
       // Upload attachment if present (in a real implementation, you would upload to storage service)
       let attachmentUrl = null;
@@ -281,7 +268,7 @@ const HelpSettingsPage: React.FC = () => {
     try {
       // Gather system information
       const systemInfo = `
-ScholarForge AISystem Information
+WorkContextSystem Information
 ============================
 Version: v1.2.3
 Platform: Web
@@ -469,7 +456,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                 <div
                   key={article.id}
                   onClick={() => handleArticleClick(article.id)}
-                  className="border border-border rounded-lg p-4 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors duration-200">
+                  className="border border-border rounded-lg p-4 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors duration-200"
+                >
                   <h3 className="font-medium text-foreground">
                     {article.title}
                   </h3>
@@ -500,7 +488,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
               {videoTutorials.map((video) => (
                 <div
                   key={video.id}
-                  className="border border-border rounded-lg overflow-hidden hover:border-blue-300 dark:hover:border-blue-500 cursor-pointer">
+                  className="border border-border rounded-lg overflow-hidden hover:border-blue-300 dark:hover:border-blue-500 cursor-pointer"
+                >
                   <div className="bg-muted h-32 flex items-center justify-center text-4xl">
                     {video.thumbnail}
                   </div>
@@ -538,7 +527,7 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                 <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
                 <h3 className="font-medium text-foreground">Email Support</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  support@scholarforgeai.com
+                  support@WorkContextai.com
                 </p>
                 <button className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                   Send Email
@@ -557,7 +546,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   href="https://calendly.com/audacityimpact/30min"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 block">
+                  className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 block"
+                >
                   Schedule Now
                 </a>
               </div>
@@ -572,7 +562,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   onClick={() =>
                     window.open("https://discord.gg/2MMSdX3Uee", "_blank")
-                  }>
+                  }
+                >
                   Join Community
                 </button>
               </div>
@@ -591,7 +582,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   <select
                     value={ticketSubject}
                     onChange={(e) => setTicketSubject(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground">
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"
+                  >
                     <option value="technical">Technical Issue</option>
                     <option value="billing">Billing Question</option>
                     <option value="feature">Feature Request</option>
@@ -609,7 +601,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                     onChange={(e) => setTicketMessage(e.target.value)}
                     rows={4}
                     className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"
-                    placeholder="Describe your issue or question..."></textarea>
+                    placeholder="Describe your issue or question..."
+                  ></textarea>
                 </div>
 
                 <div>
@@ -643,7 +636,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   <select
                     value={ticketPriority}
                     onChange={(e) => setTicketPriority(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground">
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"
+                  >
                     <option value="normal">Normal</option>
                     <option value="high">High</option>
                     <option value="urgent">Urgent</option>
@@ -662,7 +656,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   <button
                     onClick={handleSubmitTicket}
                     disabled={submittingTicket || !ticketMessage}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
                     {submittingTicket ? (
                       <>
                         <div className="animate-spin h-4 w-4 border-2 border-gray-200 border-t-transparent rounded-full mr-2"></div>
@@ -700,7 +695,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   copyStatus.type === "success"
                     ? "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                     : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                }`}>
+                }`}
+              >
                 {copyStatus.message}
               </div>
             )}
@@ -753,7 +749,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   </button>
                   <button
                     onClick={handleCopySystemInfo}
-                    className="flex items-center text-sm text-foreground hover:text-blue-600 transition-colors">
+                    className="flex items-center text-sm text-foreground hover:text-blue-600 transition-colors"
+                  >
                     <Copy className="h-4 w-4 mr-2" />
                     Copy System Info
                   </button>
@@ -775,14 +772,15 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  What do you think of ScholarForge AI?
+                  What do you think of WorkContext?
                 </label>
                 <div className="flex space-x-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       onClick={() => setFeedbackRating(star)}
-                      className="text-2xl focus:outline-none">
+                      className="text-2xl focus:outline-none"
+                    >
                       {star <= feedbackRating ? "★" : "☆"}
                     </button>
                   ))}
@@ -798,14 +796,16 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   onChange={(e) => setFeedbackComment(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"
-                  placeholder="Tell us what you like or how we can improve..."></textarea>
+                  placeholder="Tell us what you like or how we can improve..."
+                ></textarea>
               </div>
 
               <div className="flex justify-end">
                 <button
                   onClick={handleSubmitFeedback}
                   disabled={submittingFeedback || feedbackRating === 0}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
                   {submittingFeedback ? (
                     <>
                       <div className="animate-spin h-4 w-4 border-2 border-gray-200 border-t-transparent rounded-full mr-2"></div>
@@ -847,7 +847,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
               <button
                 onClick={handleCreateFeatureRequest}
                 disabled={submittingFeature}
-                className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
                 <Lightbulb className="h-4 w-4 mr-1" />
                 {submittingFeature ? "Requesting..." : "Request"}
               </button>
@@ -878,7 +879,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                     onChange={(e) => setNewFeatureDescription(e.target.value)}
                     rows={3}
                     placeholder="Describe your feature request in detail..."
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"></textarea>
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"
+                  ></textarea>
                 </div>
 
                 {featureSubmitted && (
@@ -911,7 +913,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                       ? "text-green-600 dark:text-green-400"
                       : "text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   }`}
-                  disabled={votedFeatures.includes("dark-mode")}>
+                  disabled={votedFeatures.includes("dark-mode")}
+                >
                   {votedFeatures.includes("dark-mode")
                     ? "Voted"
                     : "Vote for this feature"}
@@ -938,7 +941,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                       ? "text-green-600 dark:text-green-400"
                       : "text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   }`}
-                  disabled={votedFeatures.includes("offline-mode")}>
+                  disabled={votedFeatures.includes("offline-mode")}
+                >
                   {votedFeatures.includes("offline-mode")
                     ? "Voted"
                     : "Vote for this feature"}
@@ -965,7 +969,8 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                       ? "text-green-600 dark:text-green-400"
                       : "text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   }`}
-                  disabled={votedFeatures.includes("mobile-app")}>
+                  disabled={votedFeatures.includes("mobile-app")}
+                >
                   {votedFeatures.includes("mobile-app")
                     ? "Voted"
                     : "Vote for this feature"}

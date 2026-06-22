@@ -41,7 +41,7 @@ function IntroHero() {
             </h1>
 
             <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-              Experience how ScholarForge AI's core defensibility tools can
+              Experience how WorkContext's core defensibility tools can
               transform your academic workflow. Schedule a 30-minute
               personalized demo with our academic defensibility experts.
             </p>
@@ -106,7 +106,7 @@ function DemoBenefits() {
             Why Schedule a Demo?
           </h2>
           <p className="text-lg text-gray-200">
-            A personalized demo is the best way to understand how ScholarForge
+            A personalized demo is the best way to understand how WorkContext
             AIcan benefit your specific academic workflow.
           </p>
         </div>
@@ -491,8 +491,8 @@ function ContactInfo() {
     {
       icon: Mail,
       title: "Email Us",
-      description: "demo@scholarforgeai.com",
-      action: "mailto:demo@scholarforgeai.com",
+      description: "demo@WorkContextai.com",
+      action: "mailto:demo@WorkContextai.com",
     },
     {
       icon: Phone,

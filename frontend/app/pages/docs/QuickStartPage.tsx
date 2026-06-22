@@ -24,7 +24,7 @@ const QuickStartPage = () => {
     {
       id: 1,
       title: "Create Your Account",
-      description: "Sign up for a free ScholarForge AIaccount to get started",
+      description: "Sign up for a free WorkContextaccount to get started",
       icon: <CheckCircle className="h-6 w-6 text-blue-600" />,
       time: "2 minutes",
     },
@@ -110,7 +110,7 @@ const QuickStartPage = () => {
               Quick Start Guide
             </h1>
             <p className="text-lg text-black dark:text-black">
-              Get up and running with ScholarForge AIin under 30 minutes
+              Get up and running with WorkContextin under 30 minutes
             </p>
           </div>
         </div>
@@ -122,7 +122,7 @@ const QuickStartPage = () => {
         </h2>
         <p className="text-blue-800 mb-4 dark:text-blue-200">
           This guide will walk you through the essential steps to start using
-          ScholarForge AIeffectively. No prior experience is required - just a
+          WorkContexteffectively. No prior experience is required - just a
           willingness to improve your academic writing.
         </p>
         <div className="flex items-center text-sm text-blue-700 dark:text-blue-300">

@@ -13,18 +13,9 @@ import {
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
-import {
-  Download,
-  FileText,
-  FileIcon,
-  File,
-  Loader2,
-  Lock,
-  Cloud,
-} from "lucide-react";
+import { Download, FileText, FileIcon, File, Loader2 } from "lucide-react";
 import ExportService from "../../lib/utils/exportService";
-import BillingService from "../../lib/utils/billingService";
-import { useBilling } from "../../contexts/BillingContext";
+
 // Import project service to fetch project details
 import ProjectService from "../../lib/utils/projectService";
 import { useToast } from "../../hooks/use-toast";
@@ -57,10 +48,7 @@ export function ExportModal({
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [includeHistory, setIncludeHistory] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [userPlan, setUserPlan] = useState<
-    "free" | "onetime" | "student" | "researcher" | "institutional"
-  >("free");
-  const [loadingPlan, setLoadingPlan] = useState(true);
+
   // Add state for project template and citation style
   const [projectTemplate, setProjectTemplate] = useState<string | null>(null);
   const [projectCitationStyle, setProjectCitationStyle] = useState<
@@ -68,8 +56,6 @@ export function ExportModal({
   >(null);
   const [loadingProjectData, setLoadingProjectData] = useState(true);
   const { toast } = useToast();
-
-  const { subscription } = useBilling();
 
   // Load project template and citation style
   useEffect(() => {
@@ -123,34 +109,9 @@ export function ExportModal({
     loadProjectData();
   }, [projectId, editor, isOpen, projectTemplate, projectCitationStyle]);
 
-  // Determine user's plan and available formats
-  useEffect(() => {
-    const loadUserPlan = async () => {
-      try {
-        setLoadingPlan(true);
-        // Get plan from billing context if available, otherwise fetch
-        if (subscription?.plan?.id) {
-          setUserPlan(subscription.plan.id as any);
-        } else {
-          const sub = await BillingService.getCurrentSubscription();
-          setUserPlan((sub?.plan?.id as any) || "free");
-        }
-      } catch (error) {
-        console.error("Error loading user plan:", error);
-        setUserPlan("free");
-      } finally {
-        setLoadingPlan(false);
-      }
-    };
-
-    if (isOpen) {
-      loadUserPlan();
-    }
-  }, [isOpen, subscription]);
-
-  // Define download formats available for each plan
+  // All export formats available to all users
   const getDownloadFormats = () => {
-    const baseFormats = [
+    return [
       {
         id: "pdf",
         label: "PDF Document",
@@ -163,10 +124,6 @@ export function ExportModal({
         icon: <FileIcon className="h-5 w-5 text-blue-500" />,
         ext: ".docx",
       },
-    ];
-
-    const extendedFormats = [
-      ...baseFormats,
       {
         id: "txt",
         label: "Plain Text",
@@ -185,10 +142,6 @@ export function ExportModal({
         icon: <File className="h-5 w-5 text-purple-500" />,
         ext: ".rtf",
       },
-    ];
-
-    const allFormats = [
-      ...extendedFormats,
       {
         id: "journal-pdf",
         label: "Journal-Ready PDF",
@@ -202,19 +155,6 @@ export function ExportModal({
         ext: "-journal.tex",
       },
     ];
-
-    switch (userPlan) {
-      case "free":
-        return baseFormats;
-      case "onetime":
-      case "student":
-        return extendedFormats;
-      case "researcher":
-      case "institutional":
-        return allFormats;
-      default:
-        return baseFormats;
-    }
   };
 
   const handleExport = async () => {
@@ -270,7 +210,7 @@ export function ExportModal({
     }
   };
 
-  if (loadingPlan || loadingProjectData) {
+  if (loadingProjectData) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md bg-white rounded-lg border border-gray-300">
@@ -301,15 +241,18 @@ export function ExportModal({
             <Label>Export Format</Label>
             <RadioGroup
               value={format}
-              onValueChange={(v) => setFormat(v as ExportFormat)}>
+              onValueChange={(v) => setFormat(v as ExportFormat)}
+            >
               {getDownloadFormats().map((f) => (
                 <div
                   key={f.id}
-                  className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 hover:bg-accent transition-colors">
+                  className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 hover:bg-accent transition-colors"
+                >
                   <RadioGroupItem value={f.id} id={f.id} />
                   <Label
                     htmlFor={f.id}
-                    className="flex items-center gap-3 flex-1 cursor-pointer">
+                    className="flex items-center gap-3 flex-1 cursor-pointer"
+                  >
                     {f.icon}
                     <span>{f.label}</span>
                     <span className="text-xs text-muted-foreground ml-auto">
@@ -318,129 +261,6 @@ export function ExportModal({
                   </Label>
                 </div>
               ))}
-
-              {/* Show locked formats for lower-tier users */}
-              {userPlan === "free" && (
-                <>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 bg-cw-light-gray opacity-75">
-                    <RadioGroupItem value="tex" id="tex" disabled />
-                    <Label
-                      htmlFor="tex"
-                      className="flex items-center gap-3 flex-1 cursor-not-allowed">
-                      <FileText className="h-5 w-5 text-blue-500" />
-                      <span>Plain Text</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        .txt
-                      </span>
-                      <Lock className="h-4 w-4 text-black" />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 bg-cw-light-gray opacity-75">
-                    <RadioGroupItem value="tex" id="tex" disabled />
-                    <Label
-                      htmlFor="tex"
-                      className="flex items-center gap-3 flex-1 cursor-not-allowed">
-                      <FileText className="h-5 w-5 text-blue-500" />
-                      <span>LaTeX Document</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        .tex
-                      </span>
-                      <Lock className="h-4 w-4 text-black" />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 bg-cw-light-gray opacity-75">
-                    <RadioGroupItem value="rtf" id="rtf" disabled />
-                    <Label
-                      htmlFor="rtf"
-                      className="flex items-center gap-3 flex-1 cursor-not-allowed"
-                      title="Available with One-Time, Student, or higher plan">
-                      <File className="h-5 w-5 text-purple-500" />
-                      <span>Rich Text Format</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        .rtf
-                      </span>
-                      <Lock className="h-4 w-4 text-black" />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 bg-cw-light-gray opacity-75">
-                    <RadioGroupItem
-                      value="journal-pdf"
-                      id="journal-pdf"
-                      disabled
-                    />
-                    <Label
-                      htmlFor="journal-pdf"
-                      className="flex items-center gap-3 flex-1 cursor-not-allowed"
-                      title="Available with Researcher or Institutional plan">
-                      <FileText className="h-5 w-5 text-purple-500" />
-                      <span>Journal-Ready PDF</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        -journal.pdf
-                      </span>
-                      <Lock className="h-4 w-4 text-black" />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 bg-cw-light-gray opacity-75">
-                    <RadioGroupItem
-                      value="journal-latex"
-                      id="journal-latex"
-                      disabled
-                    />
-                    <Label
-                      htmlFor="journal-latex"
-                      className="flex items-center gap-3 flex-1 cursor-not-allowed"
-                      title="Available with Researcher or Institutional plan">
-                      <FileText className="h-5 w-5 text-green-500" />
-                      <span>Journal-Ready LaTeX</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        -journal.tex
-                      </span>
-                      <Lock className="h-4 w-4 text-black" />
-                    </Label>
-                  </div>
-                </>
-              )}
-
-              {(userPlan === "onetime" || userPlan === "student") && (
-                <>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 bg-cw-light-gray opacity-75">
-                    <RadioGroupItem
-                      value="journal-pdf"
-                      id="journal-pdf"
-                      disabled
-                    />
-                    <Label
-                      htmlFor="journal-pdf"
-                      className="flex items-center gap-3 flex-1 cursor-not-allowed"
-                      title="Available with Researcher or Institutional plan">
-                      <FileText className="h-5 w-5 text-purple-500" />
-                      <span>Journal-Ready PDF</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        -journal.pdf
-                      </span>
-                      <Lock className="h-4 w-4 text-black" />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-300 bg-cw-light-gray opacity-75">
-                    <RadioGroupItem
-                      value="journal-latex"
-                      id="journal-latex"
-                      disabled
-                    />
-                    <Label
-                      htmlFor="journal-latex"
-                      className="flex items-center gap-3 flex-1 cursor-not-allowed"
-                      title="Available with Researcher or Institutional plan">
-                      <FileText className="h-5 w-5 text-green-500" />
-                      <span>Journal-Ready LaTeX</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        -journal.tex
-                      </span>
-                      <Lock className="h-4 w-4 text-black" />
-                    </Label>
-                  </div>
-                </>
-              )}
             </RadioGroup>
           </div>
 
@@ -466,14 +286,16 @@ export function ExportModal({
           <Button
             variant="outline"
             className="border-white text-black bg-gray-500 hover:bg-white rounded-lg transition-colors"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
 
           <Button
             onClick={handleExport}
             className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            disabled={isExporting}>
+            disabled={isExporting}
+          >
             {isExporting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

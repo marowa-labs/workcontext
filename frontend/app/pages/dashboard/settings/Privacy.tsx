@@ -520,7 +520,7 @@ const PrivacySettingsPage: React.FC = () => {
                   Share Anonymous Usage Data
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  Help us improve ScholarForge AIby sharing usage statistics
+                  Help us improve WorkContextby sharing usage statistics
                 </p>
               </div>
               <button

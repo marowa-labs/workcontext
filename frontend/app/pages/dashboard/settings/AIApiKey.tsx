@@ -60,12 +60,44 @@ const AIApiKeyPage = () => {
   } | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
   const [models, setModels] = useState<any[]>([]);
+  const [modelSearchQuery, setModelSearchQuery] = useState("");
+  const [modelFilterProvider, setModelFilterProvider] = useState("all");
   const [byokEnabled, setByokEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // BYOK State
+  // Filtered models based on search query and provider filter
+  const filteredModels = models.filter((model: any) => {
+    // Provider filter
+    if (modelFilterProvider !== "all") {
+      const modelProvider = model.id.startsWith("gemini")
+        ? "google"
+        : model.id.startsWith("openai/")
+          ? "openai"
+          : model.id.startsWith("anthropic/") || model.id.startsWith("claude")
+            ? "anthropic"
+            : "openrouter";
+      if (modelProvider !== modelFilterProvider) return false;
+    }
+    // Search filter
+    if (modelSearchQuery.trim()) {
+      const query = modelSearchQuery.toLowerCase();
+      const name = (model.name || "").toLowerCase();
+      const desc = (model.description || "").toLowerCase();
+      const id = (model.id || "").toLowerCase();
+      if (
+        !name.includes(query) &&
+        !desc.includes(query) &&
+        !id.includes(query)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+
   const [byokSettings, setByokSettings] = useState<BYOKSettings | null>(null);
   const [byokInputKeys, setByokInputKeys] = useState({
     google: "",
@@ -554,8 +586,8 @@ const AIApiKeyPage = () => {
                   {configuredProviderCount !== 1 ? "s" : ""} configured
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {models.length} model{models.length !== 1 ? "s" : ""}{" "}
-                  available
+                  {filteredModels.length} of {models.length} model
+                  {models.length !== 1 ? "s" : ""} available
                 </p>
               </div>
             </div>
@@ -948,68 +980,147 @@ const AIApiKeyPage = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {models.map((model) => (
+              <>
+                {/* Search / Filter */}
+                <div className="relative mb-4">
+                  <input
+                    type="text"
+                    value={modelSearchQuery}
+                    onChange={(e) => setModelSearchQuery(e.target.value)}
+                    placeholder="Search models by name, provider, or description..."
+                    className="w-full px-4 py-2.5 pr-10 border border-input rounded-lg bg-background text-foreground text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                  />
+                  {modelSearchQuery && (
+                    <button
+                      onClick={() => setModelSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Provider filter pills */}
+                <div className="flex flex-wrap gap-2 mb-4">
                   <button
-                    key={model.id}
-                    onClick={() => applySettingChange("model", model.id)}
-                    className={`p-4 rounded-lg border text-left transition-all ${
-                      model.isCurrent
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500"
-                        : "border-border hover:border-purple-300 dark:hover:border-purple-700 hover:bg-muted/50"
+                    onClick={() => setModelFilterProvider("all")}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                      modelFilterProvider === "all"
+                        ? "bg-purple-600 text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium text-foreground">
-                        {model.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5">
+                    All ({models.length})
+                  </button>
+                  {["google", "openai", "anthropic", "openrouter"].map((p) => {
+                    const count = models.filter((m) => {
+                      const modelProvider = m.id.startsWith("gemini")
+                        ? "google"
+                        : m.id.startsWith("openai/")
+                          ? "openai"
+                          : m.id.startsWith("anthropic/") ||
+                              m.id.startsWith("claude")
+                            ? "anthropic"
+                            : "openrouter";
+                      return modelProvider === p;
+                    }).length;
+                    if (count === 0) return null;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setModelFilterProvider(p)}
+                        className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                          modelFilterProvider === p
+                            ? "bg-purple-600 text-white"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {p.charAt(0).toUpperCase() + p.slice(1)} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredModels.length === 0 && (
+                    <div className="col-span-full p-8 text-center bg-muted/50 rounded-lg">
+                      <Info className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        No models match your search.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setModelSearchQuery("");
+                          setModelFilterProvider("all");
+                        }}
+                        className="mt-2 text-xs text-purple-600 hover:text-purple-700 underline"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
+                  {filteredModels.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => applySettingChange("model", model.id)}
+                      className={`p-4 rounded-lg border text-left transition-all ${
+                        model.isCurrent
+                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500"
+                          : "border-border hover:border-purple-300 dark:hover:border-purple-700 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-foreground">
+                          {model.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5">
+                          {model.custom && (
+                            <span className="px-1.5 py-0.5 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
+                              Custom
+                            </span>
+                          )}
+                          {model.isCurrent && (
+                            <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {model.description}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Max tokens: {model.maxTokens?.toLocaleString()}
+                        </p>
                         {model.custom && (
-                          <span className="px-1.5 py-0.5 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
-                            Custom
-                          </span>
-                        )}
-                        {model.isCurrent && (
-                          <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full">
-                            Active
-                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Determine provider from model id prefix
+                              let provider = "openrouter";
+                              if (model.id.startsWith("gemini"))
+                                provider = "google";
+                              else if (model.id.startsWith("openai/"))
+                                provider = "openai";
+                              else if (
+                                model.id.startsWith("anthropic/") ||
+                                model.id.startsWith("claude-")
+                              )
+                                provider = "anthropic";
+                              handleRemoveCustomModel(provider, model.id);
+                            }}
+                            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
+                            title="Remove custom model"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         )}
                       </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {model.description}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-muted-foreground">
-                        Max tokens: {model.maxTokens?.toLocaleString()}
-                      </p>
-                      {model.custom && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Determine provider from model id prefix
-                            let provider = "openrouter";
-                            if (model.id.startsWith("gemini"))
-                              provider = "google";
-                            else if (model.id.startsWith("openai/"))
-                              provider = "openai";
-                            else if (
-                              model.id.startsWith("anthropic/") ||
-                              model.id.startsWith("claude-")
-                            )
-                              provider = "anthropic";
-                            handleRemoveCustomModel(provider, model.id);
-                          }}
-                          className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
-                          title="Remove custom model"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Add Custom Model */}
@@ -1277,7 +1388,7 @@ const AIApiKeyPage = () => {
                 Limits are provider-based.
               </strong>{" "}
               Rate limits (RPM/TPM) are determined by your API provider, not
-              ScholarForge. Check your provider&apos;s dashboard for current
+              WorkContext. Check your provider&apos;s dashboard for current
               rate limits and billing details.
               {!hasAnyApiKey &&
                 " Configure an API key to remove all platform-imposed limits."}

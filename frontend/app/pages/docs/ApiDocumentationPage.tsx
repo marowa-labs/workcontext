@@ -25,7 +25,7 @@ const ApiDocumentationPage = () => {
     {
       icon: <Code className="h-8 w-8 text-blue-600" />,
       title: "Getting Started",
-      description: "Introduction to the ScholarForge AIAPI and authentication",
+      description: "Introduction to the WorkContextAPI and authentication",
     },
     {
       icon: <Database className="h-8 w-8 text-green-600" />,
@@ -83,7 +83,7 @@ const ApiDocumentationPage = () => {
             API Documentation
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Comprehensive reference for integrating with ScholarForge AI
+            Comprehensive reference for integrating with WorkContext
           </p>
         </div>
       </div>
@@ -184,7 +184,7 @@ const ApiDocumentationPage = () => {
                 Download API Specifications
               </h3>
               <p className="text-blue-800 mb-4 dark:text-blue-200">
-                Get the OpenAPI specification for the ScholarForge AIAPI.
+                Get the OpenAPI specification for the WorkContextAPI.
               </p>
               <div className="flex space-x-3">
                 <a
@@ -220,7 +220,7 @@ const ApiDocumentationPage = () => {
                   JavaScript
                 </h3>
                 <pre className="bg-gray-100 dark:bg-white p-3 rounded text-sm mb-3">
-                  <code>npm install @ScholarForge AI/api</code>
+                  <code>npm install @WorkContext/api</code>
                 </pre>
                 <a href="#" className={`text-sm ${planDocLinkClasses}`}>
                   View Documentation
@@ -233,7 +233,7 @@ const ApiDocumentationPage = () => {
                   Python
                 </h3>
                 <pre className="bg-gray-100 dark:bg-white p-3 rounded text-sm mb-3">
-                  <code>pip install ScholarForge AI-api</code>
+                  <code>pip install WorkContext-api</code>
                 </pre>
                 <a href="#" className={`text-sm ${planDocLinkClasses}`}>
                   View Documentation
@@ -246,7 +246,7 @@ const ApiDocumentationPage = () => {
                   Java
                 </h3>
                 <pre className="bg-gray-100 dark:bg-white p-3 rounded text-sm mb-3">
-                  <code>gradle install ScholarForge AI-java</code>
+                  <code>gradle install WorkContext-java</code>
                 </pre>
                 <a href="#" className={`text-sm ${planDocLinkClasses}`}>
                   View Documentation
@@ -258,11 +258,11 @@ const ApiDocumentationPage = () => {
               Quick Start Example
             </h3>
             <pre className="bg-gray-100 dark:bg-white p-4 rounded-lg text-sm mb-4 overflow-x-auto">
-              <code>{`import { ScholarForge AIClient } from '@ScholarForge AI/api';
+              <code>{`import { WorkContextClient } from '@WorkContext/api';
 
-const client = new ScholarForge AIClient({
+const client = new WorkContextClient({
   apiKey: 'your_api_key_here',
-  baseUrl: 'https://api.scholarforgeai.com/v1'
+  baseUrl: 'https://api.WorkContextai.com/v1'
 });
 
 // Create a new project

@@ -124,8 +124,6 @@ router.post("/:taskId/clone", async (req: any, res) => {
   }
 });
 
-
-
 // --- Bulk Operations ---
 
 // PATCH /api/workspaces/tasks/bulk - Bulk update tasks
@@ -265,6 +263,16 @@ router.post(
 
       if (!file) {
         return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // Only allow PDF files
+      if (file.mimetype !== "application/pdf") {
+        return res.status(400).json({ error: "Only PDF files are allowed" });
+      }
+
+      // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
+        return res.status(400).json({ error: "File size exceeds 10MB limit" });
       }
 
       const attachment = await TaskAttachmentService.uploadAttachment(

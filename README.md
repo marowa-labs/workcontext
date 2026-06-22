@@ -1,8 +1,8 @@
-# ScholarForge AI 🎓
+# WorkContext 🧠
 
-> **Turn Academic Overwhelm into Actionable Insights**
+> **Your Team's Context, Connected**
 
-An open-source, AI-powered academic research and writing platform for students, researchers, and academics. Discover papers, manage citations, write collaboratively, and export publication-ready documents — all in one place.
+An open-source, AI-powered context-aware productivity workspace for teams. Organize work, collaborate in real-time, and let AI handle the busywork — all in one place.
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)
@@ -13,11 +13,10 @@ An open-source, AI-powered academic research and writing platform for students, 
 
 ## ✨ Features
 
-- **AI Research Co-Pilot** — Context-aware writing assistance, autocomplete, and literature gap analysis powered by Gemini and OpenRouter
-- **250M+ Paper Discovery** — Search across CrossRef, OpenAlex, arXiv, and PubMed with advanced filters
-- **Smart Citation Management** — APA, MLA, Chicago, and more — with confidence scoring and hallucination checks
-- **Real-time Collaboration** — Live multi-user editing powered by Yjs/CRDT (like Google Docs, for research)
-- **Multi-format Export** — PDF, DOCX, LaTeX, RTF, and more — including journal-ready formats
+- **AI Workspace Assistant** — Context-aware writing, planning, and brainstorming powered by Gemini, OpenAI, and Anthropic
+- **Smart Task Extraction** — Highlight text, create tasks, and assign work in one click
+- **Real-time Collaboration** — Live multi-user editing powered by Yjs/CRDT (like Google Docs, for teams)
+- **Multi-format Export** — PDF, DOCX, LaTeX, RTF, and more — including professional formats
 - **Workspace & Task Management** — Organize projects, assign tasks, and track progress with your team
 - **Team Chat** — Built-in threaded discussions per project
 - **Version Control & Backups** — Automatic history with one-click restore
@@ -50,8 +49,8 @@ An open-source, AI-powered academic research and writing platform for students, 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/marowa-craig/scholarforge-ai.git
-cd scholarforge-ai
+git clone https://github.com/marowa-craig/workcontext.git
+cd workcontext
 ```
 
 ### 2. Start the Local Database
@@ -93,7 +92,7 @@ The app will be running at `http://localhost:3000`.
 ### Backend `.env`
 
 ```env
-DATABASE_URL=postgresql://postgres:password@localhost:5435/scholarforge
+DATABASE_URL=postgresql://postgres:password@localhost:5435/workcontext
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 GEMINI_API_KEY=your_gemini_key          # optional
@@ -115,7 +114,7 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
 
 ## 🤖 AI Provider Fallback System
 
-ScholarForge uses an intelligent fallback chain so the app works even if one provider is down:
+WorkContext uses an intelligent fallback chain so the app works even if one provider is down:
 
 ```
 Request → Gemini (Primary) → OpenRouter (Free)
@@ -128,7 +127,7 @@ You can configure which providers are active via your environment variables.
 ## 📁 Project Structure
 
 ```
-scholarforge-ai/
+WorkContext-ai/
 ├── backend/
 │   ├── src/
 │   │   ├── api/           # REST API route handlers
@@ -156,7 +155,7 @@ scholarforge-ai/
 - [ ] Self-hosted deployment guide (Docker)
 - [ ] Plugin/extension system
 
-Have an idea? [Open a feature request →](https://github.com/marowa-craig/scholarforge-ai/issues)
+Have an idea? [Open a feature request →](https://github.com/marowa-craig/workcontext/issues)
 
 ---
 
@@ -176,13 +175,13 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for full guidelines.
 
 ### Good First Issues
 
-New to the codebase? Look for issues tagged [`good first issue`](https://github.com/marowa-craig/scholarforge-ai/issues?q=label%3A%22good+first+issue%22) — these are beginner-friendly and well-scoped.
+New to the codebase? Look for issues tagged [`good first issue`](https://github.com/marowa-craig/workcontext/issues?q=label%3A%22good+first+issue%22) — these are beginner-friendly and well-scoped.
 
 ---
 
 ## 🐛 Reporting Issues
 
-Found a bug or have a suggestion? [Open an issue](https://github.com/marowa-craig/scholarforge-ai/issues/new) and include:
+Found a bug or have a suggestion? [Open an issue](https://github.com/marowa-craig/workcontext/issues/new) and include:
 
 - What you expected to happen
 - What actually happened
@@ -219,4 +218,4 @@ Built by **Craig** — Bioinformatics student, builder, and open-source contribu
 - LinkedIn: [Craig Marowa](https://linkedin.com/in/craig-marowa-1b2132332)
 - X/Twitter: [@craigmarowa](https://x.com/craigmarowa)
 
-If ScholarForge has helped your research, consider giving it a ⭐ on GitHub — it helps more researchers find the project!
+If WorkContext has helped your team, consider giving it a ⭐ on GitHub — it helps more people find the project!

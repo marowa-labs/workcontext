@@ -14,22 +14,16 @@ import {
   BookOpen,
   File,
   FileText,
-  Crown,
-  Rocket,
   Zap,
   AlertCircle,
   Users,
+  Rocket,
 } from "lucide-react";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onProjectCreate: (project: any) => void;
-  isFreeUser?: boolean;
-  isStudentUser?: boolean;
-  isResearcherUser?: boolean;
-  maxProjects?: number; // Maximum projects allowed for the user's plan
-  currentProjectCount?: number; // Current number of projects user has
   initialWorkspaceId?: string;
 }
 
@@ -43,14 +37,10 @@ export default function CreateProjectModal({
   const { user, loading: userLoading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [userPlan, setUserPlan] = useState<"free" | "student" | "researcher">(
-    "free"
-  );
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
-    initialWorkspaceId || null
+    initialWorkspaceId || null,
   );
 
   // Load workspaces when the modal opens
@@ -65,7 +55,7 @@ export default function CreateProjectModal({
           if (initialWorkspaceId) {
             // Verify the initial workspace exists in the user's workspaces
             const workspaceExists = userWorkspaces.some(
-              (ws) => ws.id === initialWorkspaceId
+              (ws) => ws.id === initialWorkspaceId,
             );
             if (workspaceExists) {
               setSelectedWorkspace(initialWorkspaceId);
@@ -86,10 +76,6 @@ export default function CreateProjectModal({
     }
   }, [isOpen, user, initialWorkspaceId, selectedWorkspace]);
 
-  // Derive user plan flags from the actual user plan state
-  const isStudentUser = userPlan === "student";
-  const isResearcherUser = userPlan === "researcher";
-
   const {
     register,
     handleSubmit,
@@ -109,54 +95,11 @@ export default function CreateProjectModal({
   });
 
   const watchedFields = watch();
-  // Load user's current plan
-  useEffect(() => {
-    const loadUserPlan = async () => {
-      if (user && !userLoading) {
-        try {
-          const BillingService = (
-            await import("../../lib/utils/billingService")
-          ).default;
-          const subscriptionData =
-            await BillingService.getCurrentSubscription();
-          setUserPlan(
-            subscriptionData.plan.id as "free" | "student" | "researcher"
-          );
-        } catch (err) {
-          console.error("Failed to load subscription data:", err);
-          setUserPlan("free");
-        }
-      }
-    };
-
-    loadUserPlan();
-  }, [user, userLoading]);
 
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setError(null);
-
-      // Refresh subscription data when modal opens
-      const refreshSubscriptionData = async () => {
-        if (user && !userLoading) {
-          try {
-            const BillingService = (
-              await import("../../lib/utils/billingService")
-            ).default;
-            const subscriptionData =
-              await BillingService.getCurrentSubscription();
-            setUserPlan(
-              subscriptionData.plan.id as "free" | "student" | "researcher"
-            );
-          } catch (err) {
-            console.error("Failed to refresh subscription data:", err);
-            setUserPlan("free");
-          }
-        }
-      };
-
-      refreshSubscriptionData();
 
       // Reset form to default values when modal opens
       const defaultValues = {
@@ -649,30 +592,6 @@ export default function CreateProjectModal({
     fetchTemplate();
   };
 
-  // Get plan-specific styling
-  const getPlanStyling = () => {
-    if (isResearcherUser) {
-      return {
-        headerBg: "bg-gradient-to-r from-purple-500 to-indigo-600 text-white",
-        button:
-          "bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700",
-      };
-    } else if (isStudentUser) {
-      return {
-        headerBg: "bg-gradient-to-r from-blue-500 to-cyan-600 text-white",
-        button:
-          "bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-500 hover:to-cyan-700",
-      };
-    } else {
-      return {
-        headerBg: "bg-white text-gray-700 text-gray-700",
-        button: "bg-blue-600 hover:bg-blue-700",
-      };
-    }
-  };
-
-  const planStyling = getPlanStyling();
-
   if (!isOpen) return null;
 
   return (
@@ -682,26 +601,15 @@ export default function CreateProjectModal({
           {/* Modal */}
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative bg-white rounded-2xl shadow-xl border border-gray-300 w-full max-w-2xl">
-              {/* Header with plan-specific styling */}
-              <div
-                className={`flex items-center justify-between p-6 rounded-t-2xl ${planStyling.headerBg}`}
-              >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 rounded-t-2xl bg-white text-gray-700">
                 <div className="flex items-center space-x-3">
                   <h2 className="text-xl font-semibold">Create New Space</h2>
-                  {isResearcherUser ? (
-                    <Crown className="w-5 h-5" />
-                  ) : isStudentUser ? (
-                    <Rocket className="w-5 h-5" />
-                  ) : (
-                    <Zap className="w-5 h-5" />
-                  )}
+                  <Zap className="w-5 h-5" />
                 </div>
                 <button
                   onClick={onClose}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${isResearcherUser || isStudentUser
-                    ? "text-white hover:bg-white/20"
-                    : "text-gray-700 hover:text-gray-700 dark:hover:text-gray-700"
-                    }`}
+                  className="p-2 rounded-lg transition-colors duration-200 text-gray-700 hover:text-gray-700 dark:hover:text-gray-700"
                 >
                   <X className="w-5 h-5" />
                 </button>

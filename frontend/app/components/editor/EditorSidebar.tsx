@@ -19,11 +19,13 @@ interface EditorSidebarProps {
   className?: string;
   onNavigate?: (id: string) => void;
   allowedPanels?: string[];
+  onOpenSettings?: () => void;
 }
 
 export function EditorSidebar({
   className,
   onNavigate,
+  onOpenSettings,
   allowedPanels = [
     "writing",
     "my-documents",
@@ -75,17 +77,20 @@ export function EditorSidebar({
         "h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 z-20 shadow-sm overflow-x-hidden",
         isCollapsed ? "w-16 items-center" : "w-64",
         className,
-      )}>
+      )}
+    >
       {/* Header / Toggle */}
       <div
         className={cn(
           "flex items-center h-14 border-b border-gray-100 px-3 overflow-x-hidden",
           isCollapsed ? "justify-center" : "justify-between",
-        )}>
+        )}
+      >
         {!isCollapsed && (
           <button
             onClick={handleBack}
-            className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors group">
+            className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors group"
+          >
             <ArrowLeft className="h-5 w-5 text-[#475569] group-hover:text-[#0F172A] transition-colors" />{" "}
             <span className="font-semibold text-gray-800 ml-2">
               Display
@@ -96,7 +101,8 @@ export function EditorSidebar({
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-          onClick={() => setIsCollapsed(!isCollapsed)}>
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
           {isCollapsed ? (
             <Menu className="h-5 w-5" />
           ) : (
@@ -120,7 +126,8 @@ export function EditorSidebar({
                 ? "bg-amber-50 text-amber-900"
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
               isCollapsed && "justify-center",
-            )}>
+            )}
+          >
             {/* Active Indicator Line */}
             {activeItem === item.id && (
               <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-amber-400 rounded-r-full" />
@@ -156,10 +163,12 @@ export function EditorSidebar({
       {/* Footer Actions */}
       <div className="p-3 border-t border-gray-100 mt-auto">
         <button
+          onClick={onOpenSettings}
           className={cn(
             "w-full flex items-center p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors",
             isCollapsed && "justify-center",
-          )}>
+          )}
+        >
           <Settings className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
           {!isCollapsed && (
             <span className="text-sm font-medium">Settings</span>

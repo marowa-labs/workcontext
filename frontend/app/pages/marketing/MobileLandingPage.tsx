@@ -149,12 +149,12 @@ const MobileLandingPage = () => {
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center space-x-2">
               <img
-                src="/assets/images/ScholarForge-AI-Logo.png"
-                alt="ScholarForge AILogo"
+                src="/assets/images/WorkContext-AI-Logo.png"
+                alt="WorkContextLogo"
                 className="h-8 w-auto"
               />
               <span className="text-xl font-bold text-gray-200 text-gray-200">
-                ScholarForge AI
+                WorkContext
               </span>
             </Link>
 
@@ -230,11 +230,11 @@ const MobileLandingPage = () => {
             </div>
 
             <h1 className="text-3xl md:text-5xl font-bold text-gray-200 text-gray-200 mb-6">
-              ScholarForge AIMobile App
+              WorkContextMobile App
             </h1>
 
             <p className="text-xl text-gray-200 mb-10 dark:text-gray-200 max-w-2xl mx-auto">
-              The full power of ScholarForge AI, now in your pocket. Ensure
+              The full power of WorkContext, now in your pocket. Ensure
               academic defensibility on the go with our five core
               functionalities: The Explainable Originality Map, Citation
               Confidence Auditor, Submission-Safe Writing Mode, Defensibility
@@ -251,7 +251,7 @@ const MobileLandingPage = () => {
                       <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
-                    <div className="text-xs text-gray-200">ScholarForge AI</div>
+                    <div className="text-xs text-gray-200">WorkContext</div>
                   </div>
                   <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-4 mb-4">
                     <div className="text-white font-bold text-lg">
@@ -292,7 +292,7 @@ const MobileLandingPage = () => {
                 Optimized for Larger Screens
               </h2>
               <p className="text-lg text-gray-200 dark:text-gray-200 max-w-2xl mx-auto">
-                ScholarForge AIis designed to provide the best experience on
+                WorkContextis designed to provide the best experience on
                 laptops and desktop computers. Our five core functionalities for
                 academic defensibility require the precision and space that
                 larger screens offer.
@@ -333,7 +333,7 @@ const MobileLandingPage = () => {
                 </h3>
                 <p className="text-gray-200 dark:text-gray-200 max-w-2xl mx-auto">
                   We're actively developing native iOS and Android apps to bring
-                  the full ScholarForge AIexperience to your mobile devices.
+                  the full WorkContextexperience to your mobile devices.
                 </p>
               </div>
 
@@ -491,7 +491,7 @@ const MobileLandingPage = () => {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-2xl md:text-3xl font-bold text-gray-200 text-gray-200 mb-4">
-                About ScholarForge AI
+                About WorkContext
               </h2>
               <p className="text-lg text-gray-200 dark:text-gray-200 max-w-2xl mx-auto">
                 Your entire academic workflow, unified in one powerful platform
@@ -586,12 +586,12 @@ const MobileLandingPage = () => {
                 href="/"
                 className="inline-flex items-center space-x-2 mb-6">
                 <img
-                  src="/assets/images/ScholarForge-AI-Logo.png"
-                  alt="ScholarForge AILogo"
+                  src="/assets/images/WorkContext-AI-Logo.png"
+                  alt="WorkContextLogo"
                   className="h-8 w-auto"
                 />
                 <span className="text-xl font-bold text-white">
-                  ScholarForge AI
+                  WorkContext
                 </span>
               </Link>
 
@@ -621,7 +621,7 @@ const MobileLandingPage = () => {
 
               <div className="pt-6 border-t border-white text-sm">
                 <p>
-                  &copy; {new Date().getFullYear()} ScholarForge AI. All rights
+                  &copy; {new Date().getFullYear()} WorkContext. All rights
                   reserved.
                 </p>
               </div>

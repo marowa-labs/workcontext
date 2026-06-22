@@ -36,7 +36,7 @@ router.get("/", async (req: any, res: any) => {
 router.post("/", async (req: any, res: any) => {
   try {
     const userId = req.user?.id;
-    const { type = "manual", destination = "ScholarForge AI" } = req.body;
+    const { type = "manual", destination = "WorkContext" } = req.body;
 
     // In a real implementation, this would trigger an async backup process
     // For now, we'll simulate it by updating the last_backup timestamp
@@ -92,7 +92,7 @@ router.get("/schedule", async (req: any, res: any) => {
           frequency: "weekly",
           time: "02:00",
           retention_count: 7,
-          destination: "ScholarForge AI",
+          destination: "WorkContext",
         },
       });
     }
@@ -319,3 +319,4 @@ router.get("/stats/summary", async (req: any, res: any) => {
 });
 
 export default router;
+

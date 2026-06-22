@@ -25,7 +25,7 @@ const ApiOverviewPage = () => {
       icon: <Code className="h-8 w-8 text-blue-600" />,
       title: "RESTful API",
       description:
-        "Access all ScholarForge AIfeatures through our intuitive REST API",
+        "Access all WorkContextfeatures through our intuitive REST API",
     },
     {
       icon: <Shield className="h-8 w-8 text-green-600" />,
@@ -82,7 +82,7 @@ const ApiOverviewPage = () => {
             API Overview
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Integrate ScholarForge AIfunctionality into your applications
+            Integrate WorkContextfunctionality into your applications
           </p>
         </div>
       </div>

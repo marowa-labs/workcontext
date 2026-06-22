@@ -1,6 +1,6 @@
 # Keyboard Shortcuts
 
-This document provides a comprehensive list of keyboard shortcuts available in the ScholarForge AIeditor to help you work more efficiently.
+This document provides a comprehensive list of keyboard shortcuts available in the WorkContexteditor to help you work more efficiently.
 
 ## Text Formatting
 
@@ -74,3 +74,4 @@ This document provides a comprehensive list of keyboard shortcuts available in t
 - On Windows/Linux, replace "Cmd" with "Ctrl"
 - Some shortcuts may vary depending on your keyboard layout
 - All shortcuts work in the main editor area when it's focused
+

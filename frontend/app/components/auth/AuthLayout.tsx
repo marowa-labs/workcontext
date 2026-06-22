@@ -39,12 +39,12 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
                 <img
-                  src="/assets/images/ScholarForge-AI-Logo.png"
-                  alt="ScholarForge AILogo"
+                  src="/assets/images/WorkContext-AI-Logo.png"
+                  alt="WorkContextLogo"
                   className="h-12 w-auto"
                 />
                 <span className="text-xl font-bold text-white">
-                  ScholarForge AI
+                  WorkContext
                 </span>
               </Link>
 
@@ -98,7 +98,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               {/* Footer */}
               <div className="text-blue-200">
                 <p className="text-sm">
-                  © {new Date().getFullYear()} ScholarForge AI. All rights
+                  © {new Date().getFullYear()} WorkContext. All rights
                   reserved.
                 </p>
               </div>
@@ -119,11 +119,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
                 href="/"
                 className="inline-flex items-center space-x-3 text-gray-300">
                 <img
-                  src="/assets/images/ScholarForge-AI-Logo.png"
-                  alt="ScholarForge AILogo"
+                  src="/assets/images/WorkContext-AI-Logo.png"
+                  alt="WorkContextLogo"
                   className="h-8 w-auto text-blue-600"
                 />
-                <span className="text-xl font-bold">ScholarForge AI</span>
+                <span className="text-xl font-bold">WorkContext</span>
               </Link>
             </div>
 

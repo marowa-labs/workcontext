@@ -100,8 +100,25 @@ export class UnifiedAIService {
           result = await this.routeToProvider(
             modelUsed,
             userId,
-            `Check the following text for grammar, style, and clarity improvements:\n\n${content}`,
-            { maxTokens: 1500, temperature: 0.3 },
+            `You are a professional language editor. Analyze the following text and return a JSON array of corrections. Return ONLY valid JSON — no explanations outside the JSON.
+
+Format exactly like this:
+[
+  {"type": "grammar", "original": "exact text found", "suggestion": "corrected version", "reason": "Subject-verb agreement error"},
+  {"type": "spelling", "original": "exact text found", "suggestion": "corrected spelling", "reason": "Misspelled word"},
+  {"type": "tone", "original": "exact text found", "suggestion": "more formal version", "reason": "Too casual for academic writing"},
+  {"type": "conciseness", "original": "exact text found", "suggestion": "shorter version", "reason": "Wordy — can be shortened"}
+]
+
+Rules:
+- "original" MUST be the EXACT substring from the text below — character-for-character
+- Only include real issues — ignore stylistic preferences that aren't clearly wrong
+- Keep "suggestion" as a direct replacement
+- Return [] if the text has no issues
+
+Text to check:
+${content}`,
+            { maxTokens: 2000, temperature: 0.2 },
           );
           break;
 
@@ -599,56 +616,15 @@ export class UnifiedAIService {
     }
   }
 
-  // Check if user has reached their AI usage limit — BYOK users have no limits
+  // Check if user has reached their AI usage limit — all users have unlimited access
   static async checkUsageLimit(userId: string, capability: string) {
+    // No subscription-based limits — all features are fully open
+    return { hasLimit: false, remaining: 1000000 };
+  }
+
+  // Legacy method — kept for compatibility but no longer enforces limits
+  static async _checkUsageLimitLegacy(userId: string, capability: string) {
     try {
-      // BYOK users have no platform-imposed limits
-      const byokSettings = await BYOKService.getSettings(userId);
-      const hasBYOK =
-        byokSettings.hasGoogleKey ||
-        byokSettings.hasOpenAIKey ||
-        byokSettings.hasClaudeKey ||
-        byokSettings.hasOpenRouterKey;
-
-      if (hasBYOK) {
-        return { hasLimit: false, remaining: 1000000 };
-      }
-
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
-
-      const planId = subscription?.plan || "free";
-
-      // Define limits per plan (requests per month)
-      const limits: Record<string, Record<string, number>> = {
-        free: {
-          grammar_check: 50,
-          summarization: 10,
-          document_qa: 20,
-          writing_project: 5,
-        },
-        student: {
-          grammar_check: 500,
-          summarization: 100,
-          document_qa: 200,
-          writing_project: 50,
-        },
-        researcher: {
-          grammar_check: -1, // Unlimited
-          summarization: -1, // Unlimited
-          document_qa: -1, // Unlimited
-          writing_project: -1, // Unlimited
-        },
-      };
-
-      const planLimits = limits[planId] || limits.free;
-      const limit = planLimits[capability] || 0;
-
-      if (limit === -1) {
-        return { hasLimit: false, remaining: 1000000 }; // Unlimited
-      }
-
       // Get current usage
       const now = new Date();
       const usage: any = await prisma.aIUsage.findUnique({
@@ -662,7 +638,7 @@ export class UnifiedAIService {
       });
 
       if (!usage) {
-        return { hasLimit: limit > 0, remaining: limit };
+        return { hasLimit: false, remaining: 1000000 };
       }
 
       let used = 0;
@@ -683,10 +659,10 @@ export class UnifiedAIService {
           used = usage.request_count || 0;
       }
 
-      const remaining = limit - used;
+      const remaining = 1000000 - used;
       return {
-        hasLimit: remaining <= 0,
-        remaining: remaining > 0 ? remaining : 0,
+        hasLimit: false,
+        remaining: remaining > 0 ? remaining : 1000000,
       };
     } catch (error) {
       logger.error("Error checking AI usage limit:", error);

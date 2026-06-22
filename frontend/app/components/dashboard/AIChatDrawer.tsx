@@ -293,6 +293,7 @@ function ChatContent({
   handleKeyDown,
   textareaRef,
   messagesEndRef,
+  messagesContainerRef,
   internalPendingAction,
   isConfirming,
   onConfirmAction,
@@ -306,6 +307,7 @@ function ChatContent({
   handleKeyDown: (e: React.KeyboardEvent) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  messagesContainerRef: React.RefObject<HTMLDivElement | null>;
   internalPendingAction: AIActionResult | null;
   isConfirming: boolean;
   onConfirmAction: () => void;
@@ -314,33 +316,49 @@ function ChatContent({
   return (
     <div className="flex flex-col h-full">
       {/* Messages - with overflow handling for code blocks */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-6 min-h-0">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-6 min-h-0 scrollbar-none"
+      >
         <style jsx>{`
-          .prose pre {
-            overflow-x: auto;
+          .prose > * {
             max-width: 100%;
           }
+          .prose pre,
           .prose pre code {
-            word-break: break-all;
+            overflow-x: auto;
+            max-width: 100%;
             white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
           }
           .prose code {
-            word-break: break-all;
+            max-width: 100%;
+            word-break: break-word;
+            overflow-wrap: anywhere;
           }
-          .prose p {
+          .prose p,
+          .prose ul,
+          .prose ol {
             overflow-wrap: break-word;
             word-wrap: break-word;
           }
           .prose table {
             display: block;
+            width: 100%;
             max-width: 100%;
             overflow-x: auto;
+            border-collapse: collapse;
             -webkit-overflow-scrolling: touch;
           }
-          .prose ul,
-          .prose ol {
+          .prose table th,
+          .prose table td {
+            max-width: 18rem;
             overflow-wrap: break-word;
             word-wrap: break-word;
+          }
+          .overflow-wrap-anywhere {
+            overflow-wrap: anywhere;
           }
         `}</style>
         {messages.length === 0 ? (
@@ -447,55 +465,59 @@ function ChatContent({
                     </svg>
                   </div>
                 )}
-                <div
-                  className={cn(
-                    "text-sm leading-relaxed min-w-0",
-                    message.role === "user"
-                      ? "max-w-[85%] bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 break-words"
-                      : "max-w-[90%] text-gray-700 prose prose-sm max-w-full overflow-hidden",
-                  )}
-                >
-                  {message.role === "user" ? (
-                    <span className="break-words">{message.content}</span>
-                  ) : (
-                    <div className="overflow-x-auto max-w-full">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          table: ({ node, ...props }) => (
-                            <table
-                              className="border-collapse border border-gray-300 my-2 text-xs min-w-full"
-                              {...props}
-                            />
-                          ),
-                          thead: ({ node, ...props }) => (
-                            <thead className="bg-gray-100" {...props} />
-                          ),
-                          tbody: ({ node, ...props }) => <tbody {...props} />,
-                          tr: ({ node, ...props }) => (
-                            <tr
-                              className="border-b border-gray-300"
-                              {...props}
-                            />
-                          ),
-                          th: ({ node, ...props }) => (
-                            <th
-                              className="border border-gray-300 px-3 py-2 font-semibold text-left bg-gray-50"
-                              {...props}
-                            />
-                          ),
-                          td: ({ node, ...props }) => (
-                            <td
-                              className="border border-gray-300 px-3 py-1.5"
-                              {...props}
-                            />
-                          ),
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
-                    </div>
-                  )}
+                <div className="min-w-0 flex-1">
+                  <div
+                    className={cn(
+                      "text-sm leading-relaxed min-w-0",
+                      message.role === "user"
+                        ? "ml-auto w-fit max-w-[75%] bg-blue-500 text-white rounded-xl rounded-br-sm px-3 py-1.5 break-words"
+                        : "max-w-[90%] text-gray-700 prose prose-sm max-w-full overflow-hidden",
+                    )}
+                  >
+                    {message.role === "user" ? (
+                      <span className="break-words">{message.content}</span>
+                    ) : (
+                      <div className="overflow-x-auto max-w-full">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            table: ({ node, ...props }) => (
+                              <div className="overflow-x-auto max-w-full">
+                                <table
+                                  className="border-collapse border border-gray-300 my-2 text-xs"
+                                  {...props}
+                                />
+                              </div>
+                            ),
+                            thead: ({ node, ...props }) => (
+                              <thead className="bg-gray-100" {...props} />
+                            ),
+                            tbody: ({ node, ...props }) => <tbody {...props} />,
+                            tr: ({ node, ...props }) => (
+                              <tr
+                                className="border-b border-gray-300"
+                                {...props}
+                              />
+                            ),
+                            th: ({ node, ...props }) => (
+                              <th
+                                className="border border-gray-300 px-3 py-2 font-semibold text-left bg-gray-50 max-w-[12rem] overflow-wrap-anywhere"
+                                {...props}
+                              />
+                            ),
+                            td: ({ node, ...props }) => (
+                              <td
+                                className="border border-gray-300 px-3 py-1.5 max-w-[12rem] overflow-wrap-anywhere"
+                                {...props}
+                              />
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -515,7 +537,7 @@ function ChatContent({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input - ScholarForge AI Style */}
+      {/* Input - WorkContext Style */}
       <div className="p-4 bg-white border-t border-gray-100">
         <div className="relative bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-gray-100 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow">
           {/* AI Action Confirmation Dialog */}
@@ -710,9 +732,28 @@ export function AIChatDrawer({
   const resizeStartXRef = useRef<number>(0);
   const resizeStartWidthRef = useRef<number>(420);
 
-  // Auto-scroll to bottom
+  // Smart auto-scroll: only scroll when user is near the bottom
+  const isNearBottomRef = useRef(true);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [isOpen]);
+
+  // Auto-scroll to bottom when messages change, only if near bottom
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   // Focus input when opened
@@ -1089,11 +1130,18 @@ export function AIChatDrawer({
             };
             setMessages((prev) => [...prev, assistantMessage]);
 
-            // Save user message to database
-            await saveUserMessage(userMessageContent);
-
-            // Save AI response to database
-            await saveAIMessage(result.message);
+            // Save both messages to database
+            try {
+              await apiClient.post(
+                `/api/ai/chat/session/${currentSession}/messages`,
+                {
+                  content: userMessageContent,
+                  messageType: "text",
+                },
+              );
+            } catch {
+              // Silently fail — messages shown in UI are enough
+            }
 
             // Add suggested actions if available
             if (result.suggestedActions && result.suggestedActions.length > 0) {
@@ -1105,7 +1153,6 @@ export function AIChatDrawer({
                 created_at: new Date().toISOString(),
               };
               setMessages((prev) => [...prev, suggestionMessage]);
-              await saveAIMessage(suggestionContent);
             }
             setLoading(false);
           },
@@ -1117,17 +1164,10 @@ export function AIChatDrawer({
               created_at: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, errorMessage]);
-
-            // Save user message to database
-            await saveUserMessage(userMessageContent);
-            // Save error response to database
-            await saveAIMessage(`Sorry, I encountered an error: ${errorMsg}`);
             setLoading(false);
           },
           onNavigation: (page, params) => {
-            // Handle navigation from AI actions - comprehensive route support
             const workspaceId = params?.workspaceId || pageContext.entityId;
-
             if (page === "editor" && params?.projectId) {
               router.push(`/editor/${params.projectId}`);
             } else if (page === "dashboard") {
@@ -1148,9 +1188,7 @@ export function AIChatDrawer({
                   ? `/search?q=${encodeURIComponent(params.query)}`
                   : "/search",
               );
-            }
-            // Workspace-specific routes
-            else if (page === "workspace" && workspaceId) {
+            } else if (page === "workspace" && workspaceId) {
               router.push(`/workspace/${workspaceId}`);
             } else if (page === "workspace_projects" && workspaceId) {
               router.push(`/workspace/${workspaceId}/projects`);
@@ -1164,9 +1202,7 @@ export function AIChatDrawer({
               router.push(`/workspace/${workspaceId}/team`);
             } else if (page === "workspace_settings" && workspaceId) {
               router.push(`/workspace/${workspaceId}/settings`);
-            }
-            // Navigation with full path
-            else if (params?.path) {
+            } else if (params?.path) {
               router.push(params.path);
             }
           },
@@ -1252,6 +1288,7 @@ export function AIChatDrawer({
     handleKeyDown,
     textareaRef,
     messagesEndRef,
+    messagesContainerRef,
     internalPendingAction,
     isConfirming,
     onConfirmAction: handleConfirmAction,
@@ -1419,7 +1456,7 @@ export function AIChatDrawer({
           className="fixed top-0 bottom-0 z-[60] cursor-col-resize group flex items-center justify-center"
           role="presentation"
           style={{
-            right: `${drawerWidth}px`,
+            right: `${Math.min(drawerWidth, window.innerWidth)}px`,
             width: "14px",
             transform: "translateX(50%)",
           }}
@@ -1438,10 +1475,11 @@ export function AIChatDrawer({
 
       {/* Drawer container */}
       <div
-        className="fixed inset-y-0 right-0 z-50 bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col animate-in slide-in-from-right duration-200"
+        className="fixed inset-y-0 right-0 z-50 bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col animate-in slide-in-from-right duration-200 overflow-hidden"
         style={{
           width: viewMode === "fullscreen" ? "100vw" : `${drawerWidth}px`,
           minWidth: "320px",
+          maxWidth: "100vw",
         }}
       >
         {/* Header - Fixed height, always visible */}

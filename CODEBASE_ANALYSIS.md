@@ -1,9 +1,9 @@
-# ScholarForge AI - Comprehensive Codebase Analysis
+# WorkContext - Comprehensive Codebase Analysis
 
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [What is ScholarForge AI?](#what-is-scholarforge-ai)
+2. [What is WorkContext?](#what-is-WorkContext-ai)
 3. [Architecture Overview](#architecture-overview)
 4. [Technology Stack](#technology-stack)
 5. [Core Features](#core-features)
@@ -20,34 +20,34 @@
 
 ## Executive Summary
 
-**ScholarForge AI** is a comprehensive AI-powered academic research and writing platform designed for students, researchers, and academics. It combines advanced AI capabilities with collaborative tools to streamline the entire research workflow—from paper discovery to publication-ready documents.
+**WorkContext** is a comprehensive AI-powered context-aware productivity workspace for teams. It combines advanced AI capabilities with collaborative tools to streamline team productivity—from task management to real-time document collaboration.
 
-**Key Value Proposition**: "Turn Academic Overwhelm into Actionable Insights" - The platform helps researchers discover, synthesize, and innovate with confidence using AI, while ensuring academic integrity through verified citations and hallucination-free outputs.
+**Key Value Proposition**: "Your Team's Context, Connected" - The platform helps teams organize, collaborate, and get work done with AI that understands your workspace.
 
 ---
 
-## What is ScholarForge AI?
+## What is WorkContext?
 
 ### Primary Purpose
 
-ScholarForge AI is an **AI Research Co-Pilot** that helps academics:
+WorkContext is an **AI Workspace Assistant** that helps teams:
 
-- Discover relevant research papers from a database of 250M+ papers
-- Generate accurate summaries and identify research gaps
-- Manage citations with confidence scoring
-- Write collaboratively with real-time editing
-- Export publication-ready documents in multiple formats
+- Organize work across spaces, projects, and tasks
+- Extract tasks from text with one-click action creation
+- Collaborate in real-time with multi-user editing
+- Export documents in multiple professional formats
+- Let AI handle busywork and context switching
 
 ### Target Audience
 
-- **PhD Candidates** - Thesis and dissertation writing
-- **Graduate Students** - Research papers and literature reviews
-- **Professors** - Publication management and collaboration
-- **Research Teams** - Collaborative research projects
+- **Startups & Small Teams** - All-in-one workspace for growing teams
+- **Project Managers** - Task tracking, timelines, and team coordination
+- **Remote Teams** - Real-time collaboration and communication
+- **Freelancers** - Personal productivity with AI assistance
 
 ### Core Philosophy
 
-1. **Accuracy & Ethics First** - Built-in citation verification and human-in-the-loop safeguards
+1. **Context First** - AI that understands your entire workspace, not just single documents
 2. **Focus on Writing** - Everything needed in one place
 3. **Made for Collaboration** - Real-time editing, comments, and version control
 
@@ -94,7 +94,7 @@ ScholarForge AI is an **AI Research Co-Pilot** that helps academics:
 ### Project Structure
 
 ```
-scholarforge-ai/
+WorkContext-ai/
 ├── backend/                    # Express.js + Next.js hybrid server
 │   ├── src/
 │   │   ├── api/               # API route handlers
@@ -812,7 +812,7 @@ npx prisma db seed
 
 ## Summary
 
-ScholarForge AI is a **production-ready, enterprise-grade academic research platform** featuring:
+WorkContext is a **production-ready, enterprise-grade productivity workspace** featuring:
 
 ✅ **Comprehensive AI Integration** - Multiple providers, intelligent fallbacks  
 ✅ **Real-time Collaboration** - Yjs-powered CRDT editing  
@@ -829,4 +829,4 @@ ScholarForge AI is a **production-ready, enterprise-grade academic research plat
 **API Endpoints**: 100+ routes  
 **Services**: 50+ business logic services
 
-This platform represents a complete solution for modern academic research, combining the power of AI with the rigor required for scholarly work.
+This platform represents a complete solution for modern team productivity, combining the power of AI with the flexibility required for any kind of work.

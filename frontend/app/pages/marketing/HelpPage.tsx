@@ -62,7 +62,7 @@ function HelpHero() {
 
           <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed max-w-3xl mx-auto">
             Get instant answers to your questions about our core functionalities
-            and make the most of ScholarForge AI's academic defensibility tools
+            and make the most of WorkContext's academic defensibility tools
             with our comprehensive help center.
           </p>
 
@@ -213,7 +213,7 @@ function CommunityFeedback() {
               <CardContent className="text-center px-8 pb-8">
                 <p className="text-gray-200 mb-6 leading-relaxed">
                   Connect with fellow students and researchers. Share tips, ask
-                  questions, and learn from the ScholarForge AIcommunity.
+                  questions, and learn from the WorkContextcommunity.
                 </p>
                 <Button className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 btn-glow">
                   Join Community Forum
@@ -316,7 +316,7 @@ function DocumentationLinks() {
   const docLinks = [
     {
       title: "Quick Start Guide",
-      description: "Get up and running with ScholarForge AIin under 30 minutes",
+      description: "Get up and running with WorkContextin under 30 minutes",
       path: "/docs/quickstart",
       icon: "⚡",
     },
@@ -330,7 +330,7 @@ function DocumentationLinks() {
     {
       title: "Account Management",
       description:
-        "Control all aspects of your ScholarForge AIaccount settings",
+        "Control all aspects of your WorkContextaccount settings",
       path: "/docs/account",
       icon: "🔑",
     },
@@ -343,7 +343,7 @@ function DocumentationLinks() {
     {
       title: "Installation",
       description:
-        "Install ScholarForge AIon any device for seamless academic writing",
+        "Install WorkContexton any device for seamless academic writing",
       path: "/docs/installation",
       icon: "💻",
     },
@@ -368,7 +368,7 @@ function DocumentationLinks() {
     },
     {
       title: "FAQ",
-      description: "Find answers to common questions about ScholarForge AI",
+      description: "Find answers to common questions about WorkContext",
       path: "/docs/faq",
       icon: "❓",
     },
@@ -427,7 +427,7 @@ function DocumentationLinks() {
     {
       title: "Beta Program",
       description:
-        "Get early access to new features and help shape ScholarForge AI",
+        "Get early access to new features and help shape WorkContext",
       path: "/docs/beta-program",
       icon: "⚡",
     },
@@ -455,7 +455,7 @@ function DocumentationLinks() {
             Core Functionality Documentation
           </h2>
           <p className="text-lg text-gray-200 max-w-2xl mx-auto">
-            Dive deeper into ScholarForge AI's academic defensibility tools with
+            Dive deeper into WorkContext's academic defensibility tools with
             our detailed documentation
           </p>
         </div>

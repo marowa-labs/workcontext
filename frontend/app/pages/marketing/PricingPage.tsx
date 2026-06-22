@@ -20,7 +20,6 @@ import { Switch } from "../../components/ui/switch";
 import Layout from "../../components/Layout";
 import { cn } from "../../lib/utils";
 import React from "react";
-import BillingService from "../../lib/utils/billingService";
 import { toast } from "../../hooks/use-toast";
 import { supabase } from "../../lib/supabase/client";
 
@@ -38,7 +37,8 @@ function PricingToggle({
         className={cn(
           "font-medium",
           !isAnnual ? "text-white" : "text-gray-200",
-        )}>
+        )}
+      >
         Monthly
       </span>
       <div className="relative">
@@ -59,12 +59,14 @@ function PricingToggle({
           className={cn(
             "font-medium",
             isAnnual ? "text-white" : "text-gray-200",
-          )}>
+          )}
+        >
           Annual
         </span>
         <Badge
           variant="secondary"
-          className="bg-green-900/50 text-green-400 hover:bg-green-900/50">
+          className="bg-green-900/50 text-green-400 hover:bg-green-900/50"
+        >
           Save 30%
         </Badge>
       </div>
@@ -101,7 +103,7 @@ function PricingPlans({
         "Basic writing suggestions",
         "Community support",
       ],
-      cta: "Start ScholarForge AIFree",
+      cta: "Start WorkContextFree",
       popular: false,
       color: "border-white",
       planId: "free",
@@ -185,7 +187,8 @@ function PricingPlans({
             "relative bg-white border",
             plan.color,
             plan.popular && "scale-105",
-          )}>
+          )}
+        >
           {(plan.popular || plan.badge) && (
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
               <Badge
@@ -194,7 +197,8 @@ function PricingPlans({
                   plan.popular
                     ? "bg-blue-900/50 hover:bg-blue-900/50 text-blue-300"
                     : "bg-green-900/50 hover:bg-green-900/50 text-green-300",
-                )}>
+                )}
+              >
                 {plan.popular ? (
                   <>
                     <Star className="h-3 w-3 mr-1" />
@@ -260,7 +264,8 @@ function PricingPlans({
                   : plan.planId === "onetime"
                     ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 btn-glow"
                     : "bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-gray-950 btn-glow",
-              )}>
+              )}
+            >
               {loading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -624,14 +629,16 @@ function FeatureComparisonTable() {
                   <tr className="bg-white sticky top-16 z-10">
                     <td
                       colSpan={5}
-                      className="py-3 px-6 font-semibold text-gray-200 text-sm uppercase tracking-wide">
+                      className="py-3 px-6 font-semibold text-gray-200 text-sm uppercase tracking-wide"
+                    >
                       {category.category}
                     </td>
                   </tr>
                   {category.items.map((item, itemIndex) => (
                     <tr
                       key={itemIndex}
-                      className="border-b border-white hover:bg-white/30 transition-colors">
+                      className="border-b border-white hover:bg-white/30 transition-colors"
+                    >
                       <td className="py-3 pr-6 text-gray-200 font-medium">
                         {item.name}
                       </td>
@@ -667,7 +674,8 @@ function FeatureComparisonTable() {
           <Button
             variant="outline"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="gap-2 border-white text-gray-200 hover:bg-white">
+            className="gap-2 border-white text-gray-200 hover:bg-white"
+          >
             {isExpanded ? (
               <>
                 Show Less
@@ -693,7 +701,7 @@ function TrustSection() {
       icon: Users,
       number: "10,000+",
       label: "Students",
-      description: "Trust ScholarForge AIdaily",
+      description: "Trust WorkContextdaily",
     },
     {
       icon: Shield,
@@ -775,7 +783,8 @@ function FAQSection() {
             <CardContent className="p-0">
               <button
                 className="w-full p-6 text-left flex items-center justify-between hover:bg-white/50 transition-colors"
-                onClick={() => setOpenFAQ(openFAQ === index ? null : index)}>
+                onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
+              >
                 <h4 className="font-semibold text-white pr-4">
                   {faq.question}
                 </h4>
@@ -817,7 +826,8 @@ function BottomCTA() {
         <Button
           asChild
           size="lg"
-          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 font-semibold px-8 py-6 btn-glow mb-4">
+          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 font-semibold px-8 py-6 btn-glow mb-4"
+        >
           <Link href="/signup" className="flex items-center">
             Start Your Free Trial
             <Zap className="ml-2 h-5 w-5" />
@@ -859,37 +869,8 @@ export default function PricingPage() {
         return;
       }
 
-      // For institutional plan, redirect to institutional page
-      if (planId === "institutional") {
-        window.location.href = "/institutional";
-        return;
-      }
-
-      // For subscription plans, check if user is authenticated
-      // If not authenticated, show signup form first
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        // User is not authenticated, redirect to signup with plan parameter
-        window.location.href = `/signup?plan=${planId}&checkout=true`;
-        return;
-      }
-
-      // For authenticated users, create a checkout session
-      const response = await BillingService.createCheckoutSession(planId);
-
-      if (response.success && response.checkoutUrl) {
-        // Redirect to checkout
-        window.location.href = response.checkoutUrl;
-      } else {
-        toast({
-          title: "Error",
-          description: response.message || "Failed to create checkout session",
-          variant: "destructive",
-        });
-      }
+      // WorkContext is free and open source - redirect to signup
+      window.location.href = "/signup";
     } catch (error: any) {
       console.error("Error selecting plan:", error);
       toast({
@@ -993,7 +974,8 @@ export default function PricingPage() {
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=800&fit=crop')",
-          }}></div>
+          }}
+        ></div>
         <div className="container-custom relative z-10">
           {/* Header */}
           <div className="text-center mb-16">

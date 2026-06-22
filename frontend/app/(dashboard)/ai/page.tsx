@@ -44,6 +44,9 @@ interface ChatSession {
   title: string;
   lastMessage?: string;
   updatedAt: string;
+  message_count?: number;
+  last_message_at?: string;
+  created_at?: string;
 }
 
 // ── Chat Content Component ────────────────────────────────────────────────────
@@ -56,6 +59,7 @@ function ChatContent({
   handleKeyDown,
   textareaRef,
   messagesEndRef,
+  messagesContainerRef,
   pendingAction,
   isConfirming,
   onConfirmAction,
@@ -69,6 +73,7 @@ function ChatContent({
   handleKeyDown: (e: React.KeyboardEvent) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  messagesContainerRef: React.RefObject<HTMLDivElement | null>;
   pendingAction: AIActionResult | null;
   isConfirming: boolean;
   onConfirmAction: () => void;
@@ -77,62 +82,52 @@ function ChatContent({
   return (
     <div className="flex flex-col h-full">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-6 min-h-0">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-6 min-h-0 scrollbar-none"
+      >
         <style jsx>{`
-          .prose pre {
-            overflow-x: auto;
+          .prose > * {
             max-width: 100%;
           }
+          .prose pre,
           .prose pre code {
-            word-break: break-all;
+            overflow-x: auto;
+            max-width: 100%;
             white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
           }
           .prose code {
-            word-break: break-all;
+            max-width: 100%;
+            word-break: break-word;
+            overflow-wrap: anywhere;
           }
-          .prose p {
+          .prose p,
+          .prose ul,
+          .prose ol {
             overflow-wrap: break-word;
             word-wrap: break-word;
           }
           .prose table {
             display: block;
             width: 100%;
+            max-width: 100%;
             overflow-x: auto;
             border-collapse: collapse;
-            margin: 1rem 0;
-            font-size: 0.875rem;
-            line-height: 1.5;
+            -webkit-overflow-scrolling: touch;
           }
-          .prose thead {
-            border-bottom: 2px solid #d1d5db;
+          .prose table th,
+          .prose table td {
+            max-width: 18rem;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
           }
-          .prose th {
-            padding: 0.5rem 0.75rem;
-            text-align: left;
-            font-weight: 600;
-            color: #111827;
-            white-space: nowrap;
-            background: #f9fafb;
+          .prose table th {
+            white-space: normal;
           }
-          .prose td {
-            padding: 0.5rem 0.75rem;
-            border-bottom: 1px solid #e5e7eb;
-            color: #374151;
-            vertical-align: top;
-          }
-          .prose tbody tr:last-child td {
-            border-bottom: none;
-          }
-          .prose table::-webkit-scrollbar {
-            height: 6px;
-          }
-          .prose table::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-          }
-          .prose table::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
+          .overflow-wrap-anywhere {
+            overflow-wrap: anywhere;
           }
         `}</style>
         {messages.length === 0 ? (
@@ -221,21 +216,33 @@ function ChatContent({
                 )}
                 <div
                   className={cn(
-                    "max-w-[85%] text-sm leading-relaxed overflow-x-hidden",
-                    message.role === "user"
-                      ? "bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 break-words"
-                      : "text-gray-700 prose prose-sm max-w-none break-words",
+                    "min-w-0",
+                    message.role === "user" ? "flex justify-end" : "flex-1",
                   )}
                 >
-                  {message.role === "user" ? (
-                    <span className="break-words">{message.content}</span>
-                  ) : (
-                    <div className="break-words overflow-x-auto">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {message.content}
-                      </ReactMarkdown>
-                    </div>
-                  )}
+                  <div
+                    className={cn(
+                      "text-sm leading-relaxed",
+                      message.role === "user"
+                        ? "bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5"
+                        : "max-w-[95%] text-gray-700 prose prose-sm max-w-full break-words overflow-hidden",
+                    )}
+                    style={
+                      message.role === "user"
+                        ? { maxWidth: "85%", width: "fit-content" }
+                        : undefined
+                    }
+                  >
+                    {message.role === "user" ? (
+                      <span>{message.content}</span>
+                    ) : (
+                      <div className="break-words overflow-hidden max-w-full">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -383,7 +390,19 @@ export default function AIPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [currentSession, setCurrentSession] = useState<string | null>(null);
+  const [currentSession, setCurrentSession] = useState<string | null>(() => {
+    // Restore from localStorage on initial load
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("ai_current_session");
+  });
+
+  // Save current session to localStorage whenever it changes
+  useEffect(() => {
+    if (currentSession) {
+      localStorage.setItem("ai_current_session", currentSession);
+    }
+  }, [currentSession]);
+
   const [pendingAction, setPendingAction] = useState<AIActionResult | null>(
     null,
   );
@@ -393,6 +412,8 @@ export default function AIPage() {
   const [newTitle, setNewTitle] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Filter sessions based on search
@@ -404,9 +425,25 @@ export default function AIPage() {
       ),
   );
 
-  // Auto-scroll to bottom
+  // Smart auto-scroll: only scroll when user is near the bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Auto-scroll to bottom when messages change, only if near bottom
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   // Focus input on mount
@@ -426,32 +463,37 @@ export default function AIPage() {
       setSessions(sessions);
 
       if (!sessions.length) {
-        createNewSession();
+        // No existing sessions — start a fresh one
+        await createNewSession();
       } else {
-        setCurrentSession(sessions[0].id);
-        loadMessages(sessions[0].id);
+        // Try to restore the previously active session from localStorage
+        const savedSessionId = localStorage.getItem("ai_current_session");
+        const savedSession = savedSessionId
+          ? sessions.find((s: ChatSession) => s.id === savedSessionId)
+          : null;
+
+        if (savedSession) {
+          // Restore the saved session
+          setCurrentSession(savedSession.id);
+          await loadMessages(savedSession.id);
+        } else {
+          // Load the most recent session
+          setCurrentSession(sessions[0].id);
+          await loadMessages(sessions[0].id);
+        }
       }
     } catch (error) {
       console.error("Failed to load sessions:", error);
-      // Create mock sessions for demo
-      setSessions([
-        {
-          id: "1",
-          title: "Help with dashboard charts",
-          lastMessage: "Here's how to create charts...",
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          title: "Create ScholarForge AI dashboard instructions",
-          lastMessage: "Let me help you set up...",
-          updatedAt: new Date().toISOString(),
-        },
-      ]);
+      // If API is unavailable, just create a new session
+      await createNewSession();
     }
   };
 
   const loadMessages = async (sessionId: string) => {
+    if (!sessionId) {
+      setMessages([]);
+      return;
+    }
     try {
       const data = await apiClient.get(
         `/api/ai/chat/session/${sessionId}/messages`,
@@ -527,8 +569,11 @@ export default function AIPage() {
     setNewTitle(session.title);
   };
 
+  const isSendingRef = useRef(false);
+
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || isSendingRef.current) return;
+    isSendingRef.current = true;
 
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
@@ -542,64 +587,64 @@ export default function AIPage() {
     setLoading(true);
 
     try {
-      await aiActionService.sendMessage(
-        userMessage.content,
+      // Use the chat endpoint that saves messages to the database
+      if (!currentSession) {
+        throw new Error("No active session");
+      }
+
+      const response = await apiClient.post(
+        `/api/ai/chat/session/${currentSession}/messages`,
         {
-          conversationHistory: messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        },
-        {
-          onConfirmationRequired: (action, confirm, cancel) => {
-            setPendingAction(action);
-            (window as any).__aiPageConfirm = confirm;
-            (window as any).__aiPageCancel = cancel;
-          },
-          onResult: (result) => {
-            const assistantMessage: Message = {
-              id: `assistant-${Date.now()}`,
-              role: "assistant",
-              content: result.message,
-              created_at: new Date().toISOString(),
-            };
-            setMessages((prev) => [...prev, assistantMessage]);
-          },
-          onError: (errorMsg) => {
-            const errorMessage: Message = {
-              id: `error-${Date.now()}`,
-              role: "assistant",
-              content: `Sorry, I encountered an error: ${errorMsg}`,
-              created_at: new Date().toISOString(),
-            };
-            setMessages((prev) => [...prev, errorMessage]);
-          },
-          onNavigation: (page, params) => {
-            if (page === "editor" && params?.projectId) {
-              router.push(`/editor/${params.projectId}`);
-            } else if (page === "dashboard") {
-              router.push("/dashboard");
-            } else if (page === "workspaces") {
-              router.push("/workspaces");
-            } else if (page === "projects") {
-              router.push("/projects");
-            } else if (page === "tasks") {
-              router.push("/tasks");
-            }
-          },
+          content: userMessage.content,
+          messageType: "text",
         },
       );
-    } catch (error) {
+
+      if (response.success) {
+        // Add assistant message from the saved response
+        const assistantMessage: Message = {
+          id: response.aiMessage.id,
+          role: "assistant",
+          content: response.aiMessage.content,
+          created_at: response.aiMessage.created_at,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        throw new Error(response.message || "Failed to send message");
+      }
+    } catch (error: any) {
       console.error("Failed to send message:", error);
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: "assistant",
-        content: "I'm sorry, I encountered an error. Please try again.",
+        content: `Sorry, I encountered an error: ${error.message || "Unknown error"}. Please try again.`,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
+      isSendingRef.current = false;
+
+      // Auto-update session title based on first message
+      const currentMsgCount = messages.length + 1; // +1 for the user message just added
+      if (currentMsgCount <= 2 && currentSession) {
+        const title =
+          userMessage.content.length > 40
+            ? userMessage.content.substring(0, 40).trim() + "..."
+            : userMessage.content;
+        // Update title in backend
+        apiClient
+          .patch(`/api/ai/chat/session/${currentSession}`, { title })
+          .then(() => {
+            // Update local state
+            setSessions((prev) =>
+              prev.map((s) => (s.id === currentSession ? { ...s, title } : s)),
+            );
+          })
+          .catch(() => {
+            // Silently fail — title update is not critical
+          });
+      }
     }
   };
 
@@ -723,26 +768,35 @@ export default function AIPage() {
         {/* Chat List */}
         {!sidebarCollapsed ? (
           <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
-            <div className="text-xs font-medium text-gray-500 px-3 py-2 uppercase tracking-wide">
-              Older
-            </div>
+            {filteredSessions.length > 0 && (
+              <div className="text-xs font-medium text-gray-500 px-3 py-2 uppercase tracking-wide">
+                Chat History
+              </div>
+            )}
 
+            {filteredSessions.length === 0 && (
+              <div className="px-3 py-8 text-center">
+                <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-xs text-gray-400">No chat history yet</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Start a new conversation
+                </p>
+              </div>
+            )}
             {filteredSessions.map((session) => (
               <div
                 key={session.id}
-                className={`group flex items-start gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                className={`group flex items-start gap-2 px-3 py-2.5 rounded-lg text-left transition-colors cursor-pointer ${
                   currentSession === session.id
                     ? "bg-white shadow-sm border border-gray-200"
                     : "hover:bg-gray-100"
                 }`}
+                onClick={() => {
+                  setCurrentSession(session.id);
+                  loadMessages(session.id);
+                }}
               >
-                <button
-                  onClick={() => {
-                    setCurrentSession(session.id);
-                    loadMessages(session.id);
-                  }}
-                  className="flex-1 flex items-start gap-3 min-w-0"
-                >
+                <div className="flex-1 flex items-start gap-3 min-w-0">
                   <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     {renamingSession === session.id ? (
@@ -781,8 +835,14 @@ export default function AIPage() {
                         {session.lastMessage}
                       </p>
                     )}
+                    {session.message_count !== undefined && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {session.message_count} message
+                        {session.message_count !== 1 ? "s" : ""}
+                      </p>
+                    )}
                   </div>
-                </button>
+                </div>
                 {/* Action buttons - visible on hover */}
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -838,6 +898,7 @@ export default function AIPage() {
           handleKeyDown={handleKeyDown}
           textareaRef={textareaRef}
           messagesEndRef={messagesEndRef}
+          messagesContainerRef={messagesContainerRef}
           pendingAction={pendingAction}
           isConfirming={isConfirming}
           onConfirmAction={handleConfirmAction}

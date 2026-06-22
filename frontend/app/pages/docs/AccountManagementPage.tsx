@@ -117,7 +117,7 @@ const AccountManagementPage = () => {
               Account Management
             </h1>
             <p className="text-lg text-black dark:text-black">
-              Control all aspects of your ScholarForge AIaccount settings
+              Control all aspects of your WorkContextaccount settings
             </p>
           </div>
         </div>

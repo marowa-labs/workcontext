@@ -106,7 +106,7 @@ const CookiesPage = () => {
             </h2>
             <p className="text-black mb-4 dark:text-black">
               We use cookies for various purposes to enhance your experience on
-              ScholarForge AI:
+              WorkContext:
             </p>
 
             <div className="space-y-6">
@@ -329,7 +329,7 @@ const CookiesPage = () => {
                   Most web browsers automatically accept cookies, but you can
                   modify your browser settings to decline cookies if you prefer.
                   If you choose to decline cookies, you may not be able to fully
-                  experience the interactive features of the ScholarForge
+                  experience the interactive features of the WorkContext
                   AIservices or websites you visit.
                 </p>
                 <ul className="space-y-2 text-black text-sm dark:text-black">

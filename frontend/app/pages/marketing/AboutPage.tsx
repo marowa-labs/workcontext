@@ -51,7 +51,7 @@ function AboutHero() {
           <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed max-w-3xl mx-auto">
             We believe every academic deserves tools that ensure their work is
             original, properly cited, and defensible. That's why we built
-            ScholarForge AI- to provide the five core functionalities needed for
+            WorkContext- to provide the five core functionalities needed for
             academic success: The Explainable Originality Map, Citation
             Confidence Auditor, Submission-Safe Writing Mode, Defensibility Log,
             and One-Click Publication Suite.
@@ -92,7 +92,7 @@ function OurStory() {
             </p>
 
             <p>
-              That vision became ScholarForge AI. We've spent years perfecting
+              That vision became WorkContext. We've spent years perfecting
               five core functionalities: The Explainable Originality Map for
               comprehensive plagiarism detection, Citation Confidence Auditor
               for validating references, Submission-Safe Writing Mode with AI
@@ -365,7 +365,7 @@ function MeetTheTeam() {
           {/* Original Founders Description */}
           <div className="mt-8 text-center">
             <p className="text-lg text-gray-200 max-w-2xl mx-auto px-4">
-              Dr. Craig Marowa and Dr. Zviko Musembwa founded ScholarForge AIto
+              Dr. Craig Marowa and Dr. Zviko Musembwa founded WorkContextto
               democratize access to quality academic tools for students of all
               academic levels.
             </p>

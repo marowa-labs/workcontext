@@ -31,8 +31,7 @@ export function StatisticsPopover({
   useEffect(() => {
     const fetchAIWordInfo = async () => {
       try {
-        const wordLimitService = WordLimitService.getInstance();
-        const info = await wordLimitService.getAIWordLimitInfo();
+        const info = await WordLimitService.getAIWordLimitInfo();
         setAiWordInfo(info);
       } catch (error) {
         console.error("Error fetching AI word info:", error);
@@ -98,14 +97,16 @@ export function StatisticsPopover({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 gap-1.5 text-xs font-medium text-gray-600 hover:text-black">
+          className="h-7 gap-1.5 text-xs font-medium text-gray-600 hover:text-black"
+        >
           <BarChart3 className="h-3.5 w-3.5 text-black" />
           {wordCount.toLocaleString()} words
         </Button>
       </PopoverTrigger>
       <PopoverContent
         className="w-80 bg-white border border-gray-200"
-        align="start">
+        align="start"
+      >
         <div className="space-y-4">
           <h4 className="text-sm font-medium">Document Statistics</h4>
 
@@ -156,7 +157,8 @@ export function StatisticsPopover({
                         100,
                         (aiWordInfo.wordsUsed / aiWordInfo.wordLimit) * 100,
                       )}%`,
-                    }}></div>
+                    }}
+                  ></div>
                 </div>
               </>
             )}

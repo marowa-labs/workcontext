@@ -44,7 +44,7 @@ export class OpenAlexService {
 
   // Clean email for the "User-Agent" to be polite to OpenAlex API
   // Using a generic one or the project one
-  private static MAILTO = "mailto:dev@scholarforgeai.com";
+  private static MAILTO = "mailto:dev@WorkContextai.com";
 
   /**
    * Search for works on OpenAlex
@@ -63,7 +63,7 @@ export class OpenAlexService {
 
       const response = await fetch(url, {
         headers: {
-          "User-Agent": `ScholarForge/1.0 (${this.MAILTO})`,
+          "User-Agent": `WorkContext/1.0 (${this.MAILTO})`,
         },
       });
 
@@ -127,3 +127,4 @@ export class OpenAlexService {
     };
   }
 }
+

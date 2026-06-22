@@ -75,7 +75,7 @@ const ApiAuthPage = () => {
             API Authentication
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Secure access to ScholarForge AIAPI endpoints
+            Secure access to WorkContextAPI endpoints
           </p>
         </div>
       </div>

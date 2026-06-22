@@ -22,7 +22,7 @@
   --plan-card-border-width: 1px;
   --plan-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-  /* Documentation styling using official ScholarForge AIcolors */
+  /* Documentation styling using official WorkContextcolors */
   --plan-doc-text: hsl(var(--cw-gray));
   --plan-doc-heading: hsl(var(--foreground));
   --plan-doc-border: hsl(var(--border));
@@ -56,7 +56,7 @@
   --plan-card-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 
-  /* Documentation styling using official ScholarForge AIcolors */
+  /* Documentation styling using official WorkContextcolors */
   --plan-doc-text: hsl(var(--cw-blue));
   --plan-doc-heading: hsl(var(--cw-blue));
   --plan-doc-border: hsl(var(--cw-light-gray));
@@ -90,7 +90,7 @@
   --plan-card-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
-  /* Documentation styling using official ScholarForge AIcolors */
+  /* Documentation styling using official WorkContextcolors */
   --plan-doc-text: hsl(var(--cw-blue));
   --plan-doc-heading: hsl(var(--cw-purple));
   --plan-doc-border: hsl(var(--cw-light-gray));

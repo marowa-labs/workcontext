@@ -48,7 +48,7 @@ class BackupService {
   // Create a new backup
   async createBackup(
     type: string = "manual",
-    destination: string = "ScholarForge AI",
+    destination: string = "WorkContext",
   ): Promise<Backup> {
     const response = await apiClient.post(
       "/api/backup",

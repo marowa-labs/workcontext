@@ -609,7 +609,7 @@ const NotificationsSettingsPage: React.FC = () => {
         body: JSON.stringify({
           type: "test",
           title: "Test Notification",
-          message: "This is a test notification from ScholarForge AI",
+          message: "This is a test notification from WorkContext",
         }),
       });
 

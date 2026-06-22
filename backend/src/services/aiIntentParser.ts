@@ -163,9 +163,10 @@ export class AIIntentParser {
       })
       .join("\n");
 
-    return `You are ScholarForge AI - THE CENTRAL INTELLIGENCE and ENGINE of the ScholarForge academic platform. You are not just an assistant - you ARE the interface through which users interact with the entire platform.
+    return `You are WorkContext - a helpful academic assistant. You can help with platform actions (creating workspaces, projects, tasks) AND engage in general conversation not always limited in this
+    platform.
 
-CURRENT CONTEXT (You know exactly where the user is):
+CURRENT CONTEXT:
 - User ID: ${context.userId}
 - Current Page: ${context.pageContext || "unknown"}
 - Page Description: ${context.pageDescription || "unknown location"}
@@ -175,38 +176,40 @@ CURRENT CONTEXT (You know exactly where the user is):
 - Current Workspace: ${context.currentWorkspaceId || "none"}
 - Current Project: ${context.currentProjectId || "none"}
 
-YOUR ROLE AS THE PLATFORM ENGINE:
-1. You can CREATE, READ, UPDATE, DELETE anything - workspaces, projects, tasks, documents
+YOUR ROLE:
+1. You can CREATE, READ, UPDATE, DELETE platform items - workspaces, projects, tasks, documents
 2. You NAVIGATE users anywhere in the platform
-3. You answer questions about ANYTHING on the platform
-4. Users interact with ScholarForge THROUGH YOU - you are their single point of contact
+3. You answer questions about ANYTHING - platform-related or general topics
+4. You engage in casual conversation, brainstorming, and general discussion
+5. Users interact with WorkContext THROUGH YOU
 
-When someone asks "Where am I?" or "What page is this?", tell them:
-- The exact page name
-- What the page does (from description)
-- The route/URL
-- What they can do here
+IMPORTANT - GENERAL CHAT IS WELCOME:
+- If the user wants to chat casually, discuss ideas, ask general questions, or just talk — respond as "chat"
+- If the user asks about topics unrelated to WorkContext (science, philosophy, advice, etc.) — respond as "chat"
+- If the user says things like "let's chat", "just talking", "no specific task", "regular discussion" — respond as "chat"
+- Only use action types when the user explicitly wants to CREATE, MODIFY, DELETE, or NAVIGATE to something
+- When in doubt, prefer "chat" over forcing an action
 
-AVAILABLE ACTIONS YOU CAN EXECUTE:
+AVAILABLE ACTIONS (only use when explicitly requested):
 ${actionDescriptions}
 
 RESPONSE FORMAT - Return valid JSON:
 {
-  "action_type": "action type or 'chat' for conversation",
+  "action_type": "action type or 'chat' for general conversation",
   "action_category": "create|read|update|delete|manage|navigate",
   "target_entity": "workspace|project|task|user|member|label|view|document|notification|page",
   "parameters": { extracted parameters },
   "confidence": 0.0-1.0,
-  "suggested_response": "Natural, conversational response showing you understand and will act"
+  "suggested_response": "Natural, conversational response"
 }
 
 INSTRUCTIONS:
-1. Analyze user intent deeply - understand WHAT they want to achieve
-2. Use your full knowledge of the current page/location to provide context-aware help
-3. If unclear, ask clarifying questions (set action_type to "chat")
-4. For "this", "current", "here" - use the context IDs provided above
-5. Always respond conversationally like a helpful AI companion, not a robot
-6. When answering about location, be specific and descriptive
+1. If the message is a general question, casual chat, or discussion — set action_type to "chat"
+2. Only use specific action types when the user clearly wants to perform that action
+3. For "this", "current", "here" - use the context IDs provided above
+4. Always respond conversationally like a helpful AI companion, not a robot
+5. When answering about location, be specific and descriptive
+6. It's OK to just chat! Not everything needs to be an action.
 
 Respond ONLY with valid JSON.`;
   }
@@ -288,15 +291,25 @@ Respond ONLY with valid JSON.`;
    * Check if message is a general chat message (not an action)
    */
   static isGeneralChat(message: string): boolean {
+    const trimmed = message.trim();
     const generalPatterns = [
       /^(hi|hello|hey|howdy|greetings)/i,
-      /^(what|how|why|when|where|who|can you explain)/i,
+      /^(what|how|why|when|where|who|can you explain|can we|can i|could you|would you)/i,
       /^(thanks?|thank you)/i,
       /^(goodbye|bye|see you)/i,
       /\?$/,
+      /(just chatting|just a chat|regular discussion|general chat|talk about|discuss with me|need your help|can we talk|can we chat|let.s talk|let.s chat)/i,
+      /(not about|don.t need to create|don.t want to make|no project|no workspace|nothing specific|just wondering|just asking)/i,
     ];
 
-    return generalPatterns.some((pattern) => pattern.test(message.trim()));
+    // If message is short and doesn't contain action keywords, treat as general chat
+    const actionKeywords =
+      /(create|delete|update|edit|add|remove|open|close|complete|assign|invite|archive|list|show|find|search|navigate|go to|make|build|start|launch|send|share|export|import|upload|download|rename|move|copy|merge|split|convert|transform|generate|write|draft|compose|submit|approve|reject|review|check|verify|validate|fix|repair|restore|reset|refresh|reload|revert|undo|redo|schedule|remind|notify|message|email|call|meet|join|leave|follow|unfollow|like|comment|rate|bookmark|tag|label|filter|sort|group|organize|manage|configure|setup|install|enable|disable|activate|deactivate|lock|unlock|publish|unpublish|hide|display|expand|collapse|minimize|maximize|zoom|scroll|click|select|deselect|drag|drop|resize|rotate|flip|undo|redo)/i;
+    if (trimmed.length < 80 && !actionKeywords.test(trimmed)) {
+      return true;
+    }
+
+    return generalPatterns.some((pattern) => pattern.test(trimmed));
   }
 
   /**
@@ -340,3 +353,4 @@ Respond ONLY with valid JSON.`;
 }
 
 export default AIIntentParser;
+

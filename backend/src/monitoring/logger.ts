@@ -15,7 +15,7 @@ const logger = createLogger({
     format.splat(),
     format.json(),
   ),
-  defaultMeta: { service: "ScholarForge AI" },
+  defaultMeta: { service: "WorkContext" },
   transports: [
     // Write all logs with level `error` and below to `error.log`
     new transports.File({ filename: "logs/error.log", level: "error" }),
@@ -35,3 +35,4 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export default logger;
+

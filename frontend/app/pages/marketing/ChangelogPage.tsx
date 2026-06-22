@@ -67,7 +67,7 @@ const releases: ReleaseEntry[] = [
     date: "Jan 15, 2026",
     title: "Initial Release",
     description:
-      "Launch of ScholarForge AI Editor MVP. Features include Smart Source Guide, NotebookLM integration, and core writing assistant tools.",
+      "Launch of WorkContext Editor MVP. Features include Smart Source Guide, NotebookLM integration, and core writing assistant tools.",
     patches: ["Initial public beta release"],
   },
 ];
@@ -81,7 +81,7 @@ export default function ChangelogPage() {
           <div className="container mx-auto max-w-5xl px-6 flex justify-between items-start">
             <div>
               <h1 className="text-5xl font-medium tracking-tight text-gray-900 mb-2">
-                ScholarForge AI
+                WorkContext
               </h1>
               <div className="flex items-center gap-2">
                 <h1 className="text-5xl font-medium tracking-tight text-gray-900">
@@ -97,7 +97,7 @@ export default function ChangelogPage() {
                 View docs
               </Link>
               <Link
-                href="https://twitter.com/scholarforge"
+                href="https://twitter.com/WorkContext"
                 className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-full transition-colors">
                 Follow us on X
               </Link>

@@ -30,6 +30,7 @@ import {
   MessageCircle,
   Activity,
   Loader2,
+  Paperclip,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import Link from "next/link";
@@ -39,7 +40,7 @@ import useAuth from "../../lib/utils/useAuth";
 import NotificationBell from "./NotificationBell";
 import WorkspaceService, { Workspace } from "../../lib/utils/workspaceService";
 import ProjectService from "../../lib/utils/projectService";
-import SubscriptionService from "../../lib/utils/subscriptionService";
+
 import { usePresence } from "../../lib/hooks/usePresence";
 import { useTheme } from "../../contexts/ThemeContext";
 import { ModeToggle } from "../ModeToggle";
@@ -96,7 +97,7 @@ export default function DashboardLayout({
     );
   };
   const [projectsCount, setProjectsCount] = useState(0);
-  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -183,7 +184,6 @@ export default function DashboardLayout({
     if (path === "/spaces" || path.startsWith("/spaces/")) return "spaces";
     if (path.startsWith("/dashboard/admin")) return "admin";
     if (path.startsWith("/settings/")) return "settings";
-    if (path.startsWith("/billing/")) return "billing";
     if (path.startsWith("/help")) return "help";
     if (path.startsWith("/dashboard/workspace/")) return "workspace";
     if (path === "/analytics") return "analytics";
@@ -282,11 +282,6 @@ export default function DashboardLayout({
         } else if (projects && Array.isArray(projects.projects)) {
           setProjectsCount(projects.projects.length);
         }
-
-        // Fetch subscription data
-        const subService = new SubscriptionService();
-        const subData = await subService.getUserPlan();
-        setSubscriptionData(subData);
       } catch (err) {
         console.error("Failed to fetch sidebar data:", err);
         setApiError("Failed to load project/plan info");
@@ -396,7 +391,7 @@ export default function DashboardLayout({
     },
     {
       id: "ai",
-      label: "ScholarForge AI",
+      label: "WorkContext",
       icon: null,
       href: "/ai",
       isLogo: true,
@@ -417,12 +412,6 @@ export default function DashboardLayout({
       icon: Settings,
       href: "/settings/profile",
     },
-    {
-      id: "billing",
-      label: "Billing",
-      icon: CreditCard,
-      href: "/billing/subscription",
-    },
   ].filter((item) => {
     if (item.id === "admin") {
       return adminWorkspaces.length > 0;
@@ -430,7 +419,7 @@ export default function DashboardLayout({
     return true;
   });
 
-  const userPlan = subscriptionData?.plan?.name || "Free Plan";
+  const userPlan: string = "Free Plan";
 
   const projectsUsed = projectsCount;
   // All plans now have unlimited projects
@@ -555,7 +544,7 @@ export default function DashboardLayout({
         `}
         >
           <div className="flex flex-col h-full">
-            {/* Sidebar Header - ScholarForge AI Style */}
+            {/* Sidebar Header - WorkContext Style */}
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
                 {/* Logo */}
@@ -582,7 +571,7 @@ export default function DashboardLayout({
                     )}
                   {!sidebarCollapsed && (
                     <span className="font-bold text-foreground text-lg tracking-tight">
-                      ScholarForge AI
+                      WorkContext
                     </span>
                   )}
                 </Link>
@@ -630,8 +619,8 @@ export default function DashboardLayout({
                   >
                     {item.isLogo ? (
                       <Image
-                        src="/assets/images/ScholarForge-AI-Logo.png"
-                        alt="ScholarForge AI"
+                        src="/assets/images/WorkContext-AI-Logo.png"
+                        alt="WorkContext"
                         width={20}
                         height={20}
                         className="flex-shrink-0"
@@ -773,6 +762,22 @@ export default function DashboardLayout({
                             >
                               <Trello className="w-3.5 h-3.5 flex-shrink-0" />
                               Kanban
+                            </Link>
+                            <Link
+                              href={`/dashboard/workspace/${ws.id}/attachments`}
+                              className={`
+                                flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${transitionClasses}
+                                ${
+                                  pathname.includes(
+                                    `/workspace/${ws.id}/attachments`,
+                                  )
+                                    ? "text-emerald-600 bg-emerald-50/50"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                }
+                              `}
+                            >
+                              <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                              Attachments
                             </Link>
                             <Link
                               href={`/dashboard/workspace/${ws.id}/calendar`}
@@ -1253,6 +1258,7 @@ export default function DashboardLayout({
             "min-w-0 h-full flex flex-col transition-all duration-300",
             showAIChat && "lg:mr-[420px]",
             isInboxPinned && "lg:ml-[calc(16rem+22.5rem)]",
+            "overflow-x-hidden",
           )}
         >
           {children}

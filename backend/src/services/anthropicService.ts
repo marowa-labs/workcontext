@@ -63,17 +63,19 @@ interface GeminiResponse {
   cost: number;
 }
 
-// Default Gemini model
-const DEFAULT_MODEL = "gemini-3.1-flash-lite";
-
 export class AnthropicService {
-  // Send message using Gemini
+  // Send message using Gemini (misnamed class — uses Gemini for image analysis)
   static async sendMessage(
     messages: GeminiMessage[],
-    model: string = DEFAULT_MODEL,
+    model: string,
     maxTokens: number = 1024,
     temperature: number = 0.7,
   ): Promise<GeminiResponse> {
+    if (!model) {
+      throw new Error(
+        "Model name is required. No hardcoded default — pass the user's preferred model.",
+      );
+    }
     try {
       const client = await getGeminiClient();
 

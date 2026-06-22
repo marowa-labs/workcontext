@@ -93,7 +93,7 @@ const ApiDocumentsPage = () => {
             Documents API
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Manage documents and content through the ScholarForge AIAPI
+            Manage documents and content through the WorkContextAPI
           </p>
         </div>
       </div>

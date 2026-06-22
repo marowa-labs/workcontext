@@ -262,7 +262,7 @@ export class SearchService {
           const response = await fetch(url, {
             headers: {
               "User-Agent":
-                "Mozilla/5.0 (compatible; ScholarForge AIBot/1.0; +https://scholarforgeai.com/bot)",
+                "Mozilla/5.0 (compatible; WorkContextBot/1.0; +https://WorkContextai.com/bot)",
             },
           });
 
@@ -485,3 +485,4 @@ Please provide:
     }
   }
 }
+

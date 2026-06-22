@@ -138,7 +138,7 @@ const NotificationsPage = () => {
               Notifications
             </h1>
             <p className="text-lg text-black dark:text-black">
-              Customize how and when you receive notifications from ScholarForge
+              Customize how and when you receive notifications from WorkContext
               AI
             </p>
           </div>

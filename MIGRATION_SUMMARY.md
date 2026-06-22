@@ -44,7 +44,7 @@
    - ⚠️ Use Secret API Key (starts with `sk_`), NOT Public API Key (`pk_`)
 
 3. **Optional - Domain Verification:**
-   - Configure `email.scholarforge.ai` in Plunk dashboard
+   - Configure `email.WorkContext.ai` in Plunk dashboard
    - Add DNS records for better deliverability
 
 4. **Test Email Functionality:**
@@ -78,7 +78,7 @@ import { Resend } from "resend";
 const resend = new Resend(apiKey);
 
 const { data, error } = await resend.emails.send({
-  from: "ScholarForge AI<noreply@email.scholarforge.ai>",
+  from: "WorkContext<noreply@email.WorkContext.ai>",
   to: email,
   subject: "Subject",
   html: content,
@@ -114,3 +114,4 @@ If needed, rollback instructions are in `PLUNK_MIGRATION.md`.
 **Migration completed on:** 2026-05-30  
 **Tested:** ⏳ Pending dependency installation  
 **Status:** Ready for deployment after `npm install`
+

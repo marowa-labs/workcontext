@@ -33,7 +33,7 @@ function IntroHero() {
           </h1>
 
           <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-            Connect ScholarForge AIwith your favorite tools and services to
+            Connect WorkContextwith your favorite tools and services to
             create a unified academic environment that enhances your research
             defensibility, writing integrity, and collaboration processes.
           </p>

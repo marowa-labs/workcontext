@@ -280,7 +280,7 @@ const DataSettingsPage: React.FC = () => {
       // Use BackupService for consistency with other backup operations
       const backup = await BackupService.createBackup(
         "manual",
-        backupSettings?.destination || "ScholarForge AI",
+        backupSettings?.destination || "WorkContext",
       );
 
       if (!backup) {
@@ -353,7 +353,7 @@ const DataSettingsPage: React.FC = () => {
         "manual",
         schedule?.destination ||
           backupSettings?.destination ||
-          "ScholarForge AI",
+          "WorkContext",
       );
 
       if (!backup) {
@@ -471,10 +471,6 @@ const DataSettingsPage: React.FC = () => {
     return "bg-red-500";
   };
 
-  const handleUpgrade = () => {
-    router.push("billing/subscription");
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
@@ -563,7 +559,8 @@ const DataSettingsPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowCleanUp(true)}
-                className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700">
+                className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
                 <Trash2 className="h-4 w-4 mr-1" />
                 Clean Up Storage
               </button>
@@ -572,33 +569,11 @@ const DataSettingsPage: React.FC = () => {
             <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
               <div
                 className={`h-3 rounded-full ${getStorageColor()}`}
-                style={{ width: `${getStoragePercentage()}%` }}></div>
+                style={{ width: `${getStoragePercentage()}%` }}
+              ></div>
             </div>
 
-            {/* Upgrade Button - Shown when storage is near limit */}
-            {(getStoragePercentage() > 80 ||
-              (storageInfo?.used || 0) >= (storageInfo?.limit || 0)) && (
-              <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg border border-blue-200 border-border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <ArrowUpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-200">
-                        Upgrade Your Plan
-                      </p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        You're approaching your storage limit
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleUpgrade}
-                    className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
-                    Upgrade
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Storage info - all users have unlimited storage */}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -657,7 +632,8 @@ const DataSettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="oldExports"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     Delete old exports
                   </label>
                 </div>
@@ -677,7 +653,8 @@ const DataSettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="oldDrafts"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     Delete drafts older than 30 days
                   </label>
                 </div>
@@ -686,12 +663,14 @@ const DataSettingsPage: React.FC = () => {
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   onClick={() => setShowCleanUp(false)}
-                  className="px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-md hover:bg-muted">
+                  className="px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-md hover:bg-muted"
+                >
                   Cancel
                 </button>
                 <button
                   onClick={handleCleanUp}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                >
                   Free up{" "}
                   {(cleanUpOptions.oldExports ? 0.1 : 0) +
                     (cleanUpOptions.oldDrafts ? 0.2 : 0)}{" "}
@@ -727,7 +706,8 @@ const DataSettingsPage: React.FC = () => {
                 <button
                   onClick={handleExport}
                   disabled={exporting}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
                   {exporting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -756,7 +736,8 @@ const DataSettingsPage: React.FC = () => {
                       exportFormat === format.id
                         ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                         : "border-border hover:border-muted-foreground/50 transition-colors"
-                    }`}>
+                    }`}
+                  >
                     <div className="flex items-center">
                       {format.icon}
                       <div className="ml-3">
@@ -797,7 +778,8 @@ const DataSettingsPage: React.FC = () => {
                     />
                     <label
                       htmlFor="projects"
-                      className="ml-3 block text-sm text-black dark:text-black">
+                      className="ml-3 block text-sm text-black dark:text-black"
+                    >
                       All projects
                     </label>
                   </div>
@@ -819,7 +801,8 @@ const DataSettingsPage: React.FC = () => {
                     />
                     <label
                       htmlFor="citations"
-                      className="ml-3 block text-sm text-black">
+                      className="ml-3 block text-sm text-black"
+                    >
                       All citations
                     </label>
                   </div>
@@ -841,7 +824,8 @@ const DataSettingsPage: React.FC = () => {
                     />
                     <label
                       htmlFor="comments"
-                      className="ml-3 block text-sm text-black">
+                      className="ml-3 block text-sm text-black"
+                    >
                       Comments
                     </label>
                   </div>
@@ -863,7 +847,8 @@ const DataSettingsPage: React.FC = () => {
                     />
                     <label
                       htmlFor="activityHistory"
-                      className="ml-3 block text-sm text-black">
+                      className="ml-3 block text-sm text-black"
+                    >
                       Activity history
                     </label>
                   </div>
@@ -885,7 +870,8 @@ const DataSettingsPage: React.FC = () => {
                     />
                     <label
                       htmlFor="deletedItems"
-                      className="ml-3 block text-sm text-black">
+                      className="ml-3 block text-sm text-black"
+                    >
                       Deleted items (recycle bin)
                     </label>
                   </div>
@@ -922,7 +908,8 @@ const DataSettingsPage: React.FC = () => {
                 }
                 className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                   backupSettings?.enabled ? "bg-blue-600" : "bg-gray-200"
-                }`}>
+                }`}
+              >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                     backupSettings?.enabled ? "translate-x-6" : "translate-x-1"
@@ -942,7 +929,8 @@ const DataSettingsPage: React.FC = () => {
                     onChange={(e) =>
                       handleBackupSettingsChange({ frequency: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white dark:bg-white text-black text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white dark:bg-white text-black text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -960,9 +948,10 @@ const DataSettingsPage: React.FC = () => {
                         destination: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white dark:bg-white text-black text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <option value="ScholarForge AI">
-                      ScholarForge AICloud (included)
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white dark:bg-white text-black text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="WorkContext">
+                      WorkContextCloud (included)
                     </option>
                     <option value="google-drive">Google Drive</option>
                     <option value="onedrive">OneDrive</option>
@@ -982,7 +971,8 @@ const DataSettingsPage: React.FC = () => {
                   </div>
                   <button
                     onClick={handleBackupNow}
-                    className="flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700">
+                    className="flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
                     <Clock className="h-4 w-4 mr-1" />
                     Backup Now
                   </button>
@@ -1014,7 +1004,8 @@ const DataSettingsPage: React.FC = () => {
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="space-y-6">
+              className="space-y-6"
+            >
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="backups">Backups</TabsTrigger>
@@ -1114,7 +1105,8 @@ const DataSettingsPage: React.FC = () => {
                       <Button
                         className="w-full"
                         onClick={handleCreateBackup}
-                        disabled={isCreatingBackup}>
+                        disabled={isCreatingBackup}
+                      >
                         {isCreatingBackup ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -1147,7 +1139,8 @@ const DataSettingsPage: React.FC = () => {
                         <Badge
                           variant={
                             schedule?.enabled ? "default" : "destructive"
-                          }>
+                          }
+                        >
                           {schedule?.enabled ? "Enabled" : "Disabled"}
                         </Badge>
                       </div>
@@ -1173,7 +1166,8 @@ const DataSettingsPage: React.FC = () => {
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setActiveTab("settings")}>
+                        onClick={() => setActiveTab("settings")}
+                      >
                         <Settings className="w-4 h-4 mr-2" />
                         Configure Settings
                       </Button>
@@ -1205,7 +1199,8 @@ const DataSettingsPage: React.FC = () => {
                         <Button
                           className="mt-4"
                           onClick={handleCreateBackup}
-                          disabled={isCreatingBackup}>
+                          disabled={isCreatingBackup}
+                        >
                           {isCreatingBackup ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-200 mr-2"></div>
@@ -1221,7 +1216,8 @@ const DataSettingsPage: React.FC = () => {
                         {backups.map((backup) => (
                           <div
                             key={backup.id}
-                            className="flex items-center justify-between p-4 border rounded-lg">
+                            className="flex items-center justify-between p-4 border rounded-lg"
+                          >
                             <div className="flex items-center space-x-4">
                               <div>
                                 <p className="font-medium text-black text-black">
@@ -1246,9 +1242,8 @@ const DataSettingsPage: React.FC = () => {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() =>
-                                    handleRestoreBackup(backup.id)
-                                  }>
+                                  onClick={() => handleRestoreBackup(backup.id)}
+                                >
                                   <Play className="w-4 h-4 mr-1" />
                                   Restore
                                 </Button>
@@ -1256,7 +1251,8 @@ const DataSettingsPage: React.FC = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleDeleteBackup(backup.id)}>
+                                onClick={() => handleDeleteBackup(backup.id)}
+                              >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -1294,7 +1290,8 @@ const DataSettingsPage: React.FC = () => {
                         {restores.map((restore) => (
                           <div
                             key={restore.id}
-                            className="flex items-center justify-between p-4 border rounded-lg">
+                            className="flex items-center justify-between p-4 border rounded-lg"
+                          >
                             <div className="flex items-center space-x-4">
                               <div>
                                 <p className="font-medium text-black text-black">
@@ -1346,7 +1343,8 @@ const DataSettingsPage: React.FC = () => {
                             handleUpdateSchedule({
                               enabled: !schedule?.enabled,
                             })
-                          }>
+                          }
+                        >
                           {schedule?.enabled ? "Enabled" : "Enable"}
                         </Button>
                       </div>
@@ -1354,14 +1352,16 @@ const DataSettingsPage: React.FC = () => {
                       <div className="space-y-2">
                         <Label
                           htmlFor="frequency"
-                          className="text-black text-black">
+                          className="text-black text-black"
+                        >
                           Backup Frequency
                         </Label>
                         <Select
                           value={schedule?.frequency || "weekly"}
                           onValueChange={(value) =>
                             handleUpdateSchedule({ frequency: value })
-                          }>
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select frequency" />
                           </SelectTrigger>
@@ -1376,7 +1376,8 @@ const DataSettingsPage: React.FC = () => {
                       <div className="space-y-2">
                         <Label
                           htmlFor="retention"
-                          className="text-black text-black">
+                          className="text-black text-black"
+                        >
                           Retention Count
                         </Label>
                         <Select
@@ -1385,7 +1386,8 @@ const DataSettingsPage: React.FC = () => {
                             handleUpdateSchedule({
                               retention_count: parseInt(value),
                             })
-                          }>
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select retention count" />
                           </SelectTrigger>
@@ -1406,20 +1408,22 @@ const DataSettingsPage: React.FC = () => {
                       <div className="space-y-2">
                         <Label
                           htmlFor="destination"
-                          className="text-black text-black">
+                          className="text-black text-black"
+                        >
                           Backup Destination
                         </Label>
                         <Select
-                          value={schedule?.destination || "ScholarForge AI"}
+                          value={schedule?.destination || "WorkContext"}
                           onValueChange={(value) =>
                             handleUpdateSchedule({ destination: value })
-                          }>
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select destination" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="ScholarForge AI">
-                              ScholarForge AICloud
+                            <SelectItem value="WorkContext">
+                              WorkContextCloud
                             </SelectItem>
                             <SelectItem value="google-drive">
                               Google Drive
@@ -1443,7 +1447,8 @@ const DataSettingsPage: React.FC = () => {
                       <Button
                         className="w-full"
                         onClick={handleCreateBackup}
-                        disabled={isCreatingBackup}>
+                        disabled={isCreatingBackup}
+                      >
                         {isCreatingBackup ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-200 mr-2"></div>

@@ -98,7 +98,7 @@ const VerifyEmailPage: React.FC = () => {
           {/* Success Message */}
           <div className="space-y-2">
             <p className="text-black text-lg">
-              Welcome to ScholarForge AI! Your email has been successfully
+              Welcome to WorkContext! Your email has been successfully
               verified.
             </p>
           </div>

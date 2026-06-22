@@ -86,7 +86,7 @@ const ApiProjectsPage = () => {
             Projects API
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Manage research projects through the ScholarForge AIAPI
+            Manage research projects through the WorkContextAPI
           </p>
         </div>
       </div>

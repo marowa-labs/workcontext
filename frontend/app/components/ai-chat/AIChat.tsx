@@ -9,18 +9,13 @@ import {
 } from "react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "../ui/button";
-import { ScrollArea } from "../ui/scroll-area";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import {
   X,
   Copy,
   Check,
   RefreshCw,
-  Wand2,
-  BookOpen,
   FileText,
-  Lightbulb,
-  PenLine,
   CheckCircle2,
   Plus,
   Trash2,
@@ -33,8 +28,7 @@ import { cn } from "../../lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import AIService from "../../lib/utils/aiService";
-import BillingService from "../../lib/utils/billingService";
-import AIModelAccessControl from "../../lib/utils/aiModelAccessControl";
+import apiClient from "../../lib/utils/apiClient";
 import { ChatModeSelector, type ChatMode } from "../research/ChatModeSelector";
 import {
   aiActionService,
@@ -214,7 +208,6 @@ export function AIChatPanel({
   }, [panelWidth]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Enhanced state for AI chat functionality
   const [inputValue, setInputValue] = useState("");
@@ -233,8 +226,6 @@ export function AIChatPanel({
   const [newSessionTitle, setNewSessionTitle] = useState("");
   const [notifications] = useState<Notification[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  // AI Mode States
-  const [aiModeState] = useState<"chat" | "editor">("chat");
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [deepSearchEnabled, setDeepSearchEnabled] = useState(false);
   const [usageLimits, setUsageLimits] = useState({
@@ -264,12 +255,8 @@ export function AIChatPanel({
   const lastInitializedProjectId = useRef<string | null>(null);
   const isInitializing = useRef<boolean>(false);
 
-  // Research Co-Pilot state (stubbed - feature removed in productivity pivot)
+  // Chat mode selector
   const [chatMode, setChatMode] = useState<ChatMode>("general");
-  const [showCitationPanel, setShowCitationPanel] = useState(false);
-  const [showPaperPanel, setShowPaperPanel] = useState(false);
-  const [showGapPanel, setShowGapPanel] = useState(false);
-  const research = { isLoading: false, error: null, data: null };
 
   // AI Action System State
   const [pendingAction, setPendingAction] = useState<AIActionResult | null>(
@@ -278,53 +265,18 @@ export function AIChatPanel({
   const [isConfirming, setIsConfirming] = useState(false);
   const router = useRouter();
 
-  // Check user plan
+  // All users have access to AI chat
   const checkUserPlan = useCallback(async () => {
-    try {
-      const subscription = await BillingService.getCurrentSubscription();
-      const planId = subscription.plan.id;
-      setUserPlan(planId);
-      // All users have access to AI chat, but with different limits
-      setHasAccess(true);
-    } catch (err) {
-      console.error("Error checking subscription:", err);
-      // Even if we can't verify the subscription, we still allow access
-      setHasAccess(true);
-    }
+    setUserPlan("free");
+    setHasAccess(true);
   }, []);
 
-  // Fetch usage limits for AI features
+  // Fetch usage limits for AI features - all unlimited
   const fetchUsageLimits = useCallback(async () => {
-    try {
-      const usageMetrics = await BillingService.getUsageMetrics();
-
-      // Extract specific AI feature limits
-      const webSearchMetric = usageMetrics.find(
-        (metric) => metric.name === "AI Web Searches",
-      );
-      const deepSearchMetric = usageMetrics.find(
-        (metric) => metric.name === "AI Deep Searches",
-      );
-
-      setUsageLimits({
-        webSearches: {
-          used: webSearchMetric?.used || 0,
-          limit:
-            typeof webSearchMetric?.limit === "number"
-              ? webSearchMetric.limit
-              : 0,
-        },
-        deepSearches: {
-          used: deepSearchMetric?.used || 0,
-          limit:
-            typeof deepSearchMetric?.limit === "number"
-              ? deepSearchMetric.limit
-              : 0,
-        },
-      });
-    } catch (err) {
-      console.error("Error fetching usage limits:", err);
-    }
+    setUsageLimits({
+      webSearches: { used: 0, limit: -1 },
+      deepSearches: { used: 0, limit: -1 },
+    });
   }, []);
 
   const selectSearchMode = (mode: "web" | "deep" | "none") => {
@@ -454,7 +406,7 @@ export function AIChatPanel({
         console.log("Determined userName:", userName);
         const welcomeMessage: ChatMessage = {
           id: "welcome-" + Date.now(),
-          content: `Hello ${userName}! I'm ScholarForge ai. How can I help you with your research paper today?`,
+          content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
           role: "assistant",
           message_type: "text",
           created_at: new Date().toISOString(),
@@ -505,7 +457,7 @@ export function AIChatPanel({
           console.log("Determined userName:", userName);
           const welcomeMessage: ChatMessage = {
             id: "welcome-" + Date.now(),
-            content: `Hello ${userName}! I'm ScholarForge AI. How can I help you with your research paper today?`,
+            content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
             role: "assistant",
             message_type: "text",
             created_at: new Date().toISOString(),
@@ -526,63 +478,69 @@ export function AIChatPanel({
 
   // Load available models, user plan, and INITIALIZE HISTORY
   useEffect(() => {
-    if (isOpen && projectId) {
-      // 1. Core initialization for every open
-      loadAvailableModels();
-      checkUserPlan();
-      fetchUsageLimits();
+    if (!isOpen || !projectId) return;
 
-      // 2. History Hydration - ONLY if we haven't already initialized this project in this mount lifecycle
-      const initializeHistory = async () => {
-        if (
-          isInitializing.current ||
-          lastInitializedProjectId.current === projectId
-        ) {
-          return;
-        }
-
-        try {
-          isInitializing.current = true;
-          console.log("Initializing AI Chat history for project:", projectId);
-
-          const chatSessions = await AIService.getChatSessions(projectId);
-          setSessions(chatSessions);
-
-          if (chatSessions && chatSessions.length > 0) {
-            // Pick most recent session
-            const latestSession = chatSessions[0]; // Assuming backend sorts by desc date
-            setSessionId(latestSession.id);
-            await loadMessages(latestSession.id);
-          } else {
-            // No history, show welcome message
-            const userName =
-              user?.user_metadata?.name ||
-              user?.user_metadata?.full_name ||
-              user?.user_metadata?.first_name ||
-              user?.email ||
-              "there";
-
-            const welcomeMessage: ChatMessage = {
-              id: "welcome-" + Date.now(),
-              content: `Hello ${userName}! I'm ScholarForge AI. How can I help you with your research paper today?`,
-              role: "assistant",
-              message_type: "text",
-              created_at: new Date().toISOString(),
-            };
-            setMessages([welcomeMessage]);
-            setSessionId(null);
-          }
-
-          lastInitializedProjectId.current = projectId;
-        } catch (err) {
-          console.error("Failed to initialize AI Chat history:", err);
-        } finally {
-          isInitializing.current = false;
-        }
-      };
-
-      initializeHistory();
+    // CRITICAL: Skip re-initialization if this specific project was already initialized.
+    // This prevents the chat from resetting when browser tab focus changes
+    // (Supabase auth fires onAuthStateChange → new user ref → effect re-runs),
+    // BUT still allows chat to load when switching to a different project
+    // (lastInitializedProjectId won't match the new projectId).
+    if (lastInitializedProjectId.current === projectId) {
+      return;
     }
+
+    // 1. Core initialization for every open
+    loadAvailableModels();
+    checkUserPlan();
+    fetchUsageLimits();
+
+    // 2. History Hydration - ONLY if we haven't already initialized this project in this mount lifecycle
+    const initializeHistory = async () => {
+      if (isInitializing.current) {
+        return;
+      }
+
+      try {
+        isInitializing.current = true;
+        console.log("Initializing AI Chat history for project:", projectId);
+
+        const chatSessions = await AIService.getChatSessions(projectId);
+        setSessions(chatSessions);
+
+        if (chatSessions && chatSessions.length > 0) {
+          // Pick most recent session
+          const latestSession = chatSessions[0]; // Assuming backend sorts by desc date
+          setSessionId(latestSession.id);
+          await loadMessages(latestSession.id);
+        } else {
+          // No history, show welcome message
+          const userName =
+            user?.user_metadata?.name ||
+            user?.user_metadata?.full_name ||
+            user?.user_metadata?.first_name ||
+            user?.email ||
+            "there";
+
+          const welcomeMessage: ChatMessage = {
+            id: "welcome-" + Date.now(),
+            content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
+            role: "assistant",
+            message_type: "text",
+            created_at: new Date().toISOString(),
+          };
+          setMessages([welcomeMessage]);
+          setSessionId(null);
+        }
+
+        lastInitializedProjectId.current = projectId;
+      } catch (err) {
+        console.error("Failed to initialize AI Chat history:", err);
+      } finally {
+        isInitializing.current = false;
+      }
+    };
+
+    initializeHistory();
   }, [
     isOpen,
     projectId,
@@ -595,30 +553,6 @@ export function AIChatPanel({
 
   // Send a message
   const sendMessage = async () => {
-    // Check if user has reached their web search limit
-    if (
-      webSearchEnabled &&
-      usageLimits.webSearches.used >= usageLimits.webSearches.limit &&
-      usageLimits.webSearches.limit !== -1
-    ) {
-      setError(
-        "You've reached your web search limit. Please upgrade your plan or wait for your usage to reset.",
-      );
-      return;
-    }
-
-    // Check if user has reached their deep search limit
-    if (
-      deepSearchEnabled &&
-      usageLimits.deepSearches.used >= usageLimits.deepSearches.limit &&
-      usageLimits.deepSearches.limit !== -1
-    ) {
-      setError(
-        "You've reached your deep search limit. Please upgrade your plan or wait for your usage to reset.",
-      );
-      return;
-    }
-
     if ((!inputValue.trim() && !selectedImage) || isLoading) return;
 
     try {
@@ -644,107 +578,168 @@ export function AIChatPanel({
         }
       }
 
-      // Prepare message data
+      // Add user message to chat IMMEDIATELY (before API call) for instant feedback
+      const userMessage: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: inputValue,
+        message_type: selectedImage ? "image" : "text",
+        image_url: imageUrl || undefined,
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+      const userContent = inputValue;
+      const hadImage = !!selectedImage;
+      setInputValue("");
+      removeImage();
+
+      // Prepare message data — include LIVE editor content so the AI
+      // can read what the user is writing and complete/continue it
+      const liveDocContent = getFullDocumentText();
+      const cursorContext = getContextBeforeCursor();
+
       const messageData: any = {
         sessionId: currentSessionId,
-        content: inputValue,
-        messageType: selectedImage ? "image" : "text",
+        content: userContent,
+        messageType: hadImage ? "image" : "text",
         imageUrl: imageUrl,
         fileUrl: null,
         metadata: {
           webSearchEnabled,
           deepSearchEnabled,
+          liveDocumentContent: liveDocContent,
+          cursorContext: cursorContext,
+          chatMode: chatMode,
         },
         model: currentModel,
       };
 
-      // Regular chat mode
+      // Send message to backend using the chat endpoint that saves messages
+      const result = await apiClient.post(
+        `/api/ai/chat/session/${currentSessionId}/messages`,
+        {
+          content: userContent,
+          messageType: hadImage ? "image" : "text",
+          imageUrl: imageUrl,
+          fileUrl: null,
+          metadata: {
+            webSearchEnabled,
+            deepSearchEnabled,
+            liveDocumentContent: liveDocContent,
+            cursorContext: cursorContext,
+            chatMode: chatMode,
+          },
+        },
+      );
 
-      // Send message to backend
-      const result = await AIService.sendChatMessage(messageData);
+      const aiResponse = result.aiMessage?.content || result.content || "";
 
-      // Handle different AI modes and features
-      console.log("Current AI mode:", aiModeState);
-      if (aiModeState === "editor") {
-        // In editor mode, we need to process the AI response differently
-        // We'll check if the response contains content that should be inserted into the editor
-        const aiResponse = result.aiMessage.content;
-        console.log("Editor mode response:", aiResponse);
-
-        console.log("Raw aiMessage:", result.aiMessage);
-        console.log("aiResponse:", aiResponse);
-
-        // Extract content specifically marked for editor insertion
-        let contentToInsert = extractEditorContent(aiResponse);
-        console.log("contentToInsert before cleaning:", contentToInsert);
-        console.log("Extracted content for insertion:", contentToInsert);
-
-        // Remove any remaining markers before inserting
-        contentToInsert = contentToInsert
-          .replace(/\[INSERT INTO EDITOR\]/g, "")
-          .replace(/\[\/INSERT INTO EDITOR\]/g, "")
-          .replace(/\[WEB SEARCH\](.*?)\[\/WEB SEARCH\]/g, "")
-          .replace(/\[DEEP SEARCH\](.*?)\[\/DEEP SEARCH\]/g, "")
-          .replace(/\[IMAGE REQUEST\](.*?)\[\/IMAGE REQUEST\]/g, "");
-
-        console.log("Content to insert after marker removal:", contentToInsert);
-
-        // Clean the content
-        const cleanedContent = contentToInsert
-          .trim()
-          .replace(/^\n+/, "") // Remove leading newlines
-          .replace(/\n+$/, ""); // Remove trailing newlines
-
-        console.log("cleanedContent:", cleanedContent);
-        console.log("onInsertContent in AIChat:", typeof onInsertContent);
-
-        // Insert content into the editor with proper formatting
-        // Using insertContent directly for better control over formatting
-        if (onInsertContent) {
-          console.log("Cleaned AI content:", cleanedContent);
-
-          // Ensure we don't have empty content that would cause Tiptap warnings
-          if (cleanedContent.trim() !== "") {
-            // Format content properly for Tiptap insertion
-            const formattedContent = formatContentForTiptap(cleanedContent);
-
-            console.log("Formatted content for Tiptap:", formattedContent);
-
-            // Insert the formatted content
-            console.log("Attempting to insert content into editor");
-            onInsertContent(formattedContent);
-            console.log("Content insertion attempt completed");
-          } else {
-            console.log("Skipping empty content insertion");
+      // MODE-SPECIFIC BEHAVIOR
+      if (chatMode === "autocomplete") {
+        // AUTOCOMPLETE: insert response directly at cursor, minimal chat display
+        if (editor) {
+          try {
+            const formattedContent = formatContentForTiptap(aiResponse.trim());
+            if (formattedContent) {
+              editor.chain().focus().insertContent(formattedContent).run();
+            }
+          } catch (e) {
+            console.error("Autocomplete insert failed:", e);
           }
         }
       } else {
-        // In chat mode, ensure no content is inserted into the editor
-        console.log("Chat mode: No content will be inserted into editor");
+        // GENERAL & RESEARCH: full agentic editor operations
+        if (editor) {
+          // DELETE
+          const deleteMatches = aiResponse.matchAll(
+            /\[DELETE_IN_EDITOR\]([\s\S]*?)\[\/DELETE_IN_EDITOR\]/g,
+          );
+          for (const match of deleteMatches) {
+            const textToDelete = match[1].trim();
+            if (textToDelete) {
+              try {
+                deleteTextFromEditor(editor, textToDelete);
+              } catch (e) {
+                console.error("DELETE failed:", e);
+              }
+            }
+          }
+
+          // REPLACE
+          const replaceMatches = aiResponse.matchAll(
+            /\[REPLACE_IN_EDITOR\]([\s\S]*?)\[\/REPLACE_IN_EDITOR\]/g,
+          );
+          for (const match of replaceMatches) {
+            const parts = match[1].split("|||");
+            if (parts.length >= 2) {
+              const oldText = parts[0].trim();
+              const newText = parts.slice(1).join("|||").trim();
+              if (oldText) {
+                try {
+                  replaceTextInEditor(editor, oldText, newText);
+                } catch (e) {
+                  console.error("REPLACE failed:", e);
+                }
+              }
+            }
+          }
+
+          // INSERT
+          const insertMatches = aiResponse.matchAll(
+            /\[INSERT_INTO_EDITOR\]([\s\S]*?)\[\/INSERT_INTO_EDITOR\]/g,
+          );
+          for (const match of insertMatches) {
+            const contentToInsert = match[1].trim();
+            if (contentToInsert) {
+              try {
+                const formattedContent =
+                  formatContentForTiptap(contentToInsert);
+                if (formattedContent) {
+                  editor.chain().focus().insertContent(formattedContent).run();
+                }
+              } catch (e) {
+                console.error("INSERT failed:", e);
+              }
+            }
+          }
+        }
       }
 
-      // Update messages with both user and AI responses
-      setMessages((prev) => [...prev, result.userMessage, result.aiMessage]);
-
-      // Clear input
-      setInputValue("");
-      removeImage();
+      // Strip editor markers from chat display
+      const cleanChatMessage = {
+        ...result.aiMessage,
+        content: stripEditorMarkers(result.aiMessage.content),
+      };
+      setMessages((prev) => [...prev, cleanChatMessage]);
     } catch (error: any) {
       console.error("Error sending message:", error);
       setError(error.message || "Failed to send message");
-      if (error.message === "AI_LIMIT_REACHED") {
-        setError(
-          "You've reached your AI usage limit. Please upgrade your plan.",
-        );
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Auto-scroll to bottom when messages change
+  // Smart auto-scroll: only scroll when user is near the bottom
+  const isNearBottomRef = useRef(true);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    scrollToBottom();
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -790,6 +785,13 @@ export function AIChatPanel({
   useEffect(() => {
     if (!isOpen || !projectId) return;
 
+    // CRITICAL: Skip re-initialization if this project was already hydrated.
+    // Prevents chat flicker on browser tab focus changes (Supabase auth fires
+    // onAuthStateChange → new user ref → this effect re-runs → clears messages).
+    if (lastInitializedProjectId.current === projectId) {
+      return;
+    }
+
     // Initialize only once when panel opens
     // eslint-disable-next-line react-hooks/exhaustive-deps
     let hasInitialized = false;
@@ -825,7 +827,7 @@ export function AIChatPanel({
               "there";
             const welcomeMessage: ChatMessage = {
               id: "welcome-" + Date.now(),
-              content: `Hello ${userName}! I'm ScholarForge AI. How can I help you with your research paper today?`,
+              content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
               role: "assistant",
               message_type: "text",
               created_at: new Date().toISOString(),
@@ -849,7 +851,7 @@ export function AIChatPanel({
             "there";
           const welcomeMessage: ChatMessage = {
             id: "welcome-" + Date.now(),
-            content: `Hello ${userName}! I'm ScholarForge AI. How can I help you with your research paper today?`,
+            content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
             role: "assistant",
             message_type: "text",
             created_at: new Date().toISOString(),
@@ -1016,18 +1018,71 @@ export function AIChatPanel({
       .filter((p) => p !== ""); // Remove empty paragraphs
 
     const result = formattedParagraphs.join("");
-    console.log("Formatted result:", result);
     return result;
   };
 
-  // Original functionality preserved
-  const getSelectedText = () => {
-    if (!editor || !editor.state) return "";
-    const { from, to, empty } = editor.state.selection;
-    if (empty) return "";
-    return editor.state.doc.textBetween(from, to);
+  // Delete exact text from the editor by searching the document content
+  const deleteTextFromEditor = (e: Editor, textToDelete: string) => {
+    if (!textToDelete) return;
+    const docContent = e.state.doc.textContent;
+    const index = docContent.indexOf(textToDelete);
+    if (index === -1) {
+      console.warn(
+        "Delete text not found in document:",
+        textToDelete.slice(0, 50),
+      );
+      return;
+    }
+    const from = index + 1; // ProseMirror positions are 1-based
+    const to = from + textToDelete.length;
+    e.chain().focus().setTextSelection({ from, to }).deleteSelection().run();
   };
 
+  // Replace exact old text with new text in the editor
+  const replaceTextInEditor = (e: Editor, oldText: string, newText: string) => {
+    if (!oldText) return;
+    const docContent = e.state.doc.textContent;
+    const index = docContent.indexOf(oldText);
+    if (index === -1) {
+      console.warn("Replace text not found in document:", oldText.slice(0, 50));
+      return;
+    }
+    const from = index + 1;
+    const to = from + oldText.length;
+    e.chain()
+      .focus()
+      .setTextSelection({ from, to })
+      .insertContent(newText)
+      .run();
+  };
+
+  // Strip all editor agent markers from chat display
+  const stripEditorMarkers = (content: string): string => {
+    if (!content) return "";
+    return content
+      .replace(/\[INSERT_INTO_EDITOR\][\s\S]*?\[\/INSERT_INTO_EDITOR\]/g, "")
+      .replace(/\[DELETE_IN_EDITOR\][\s\S]*?\[\/DELETE_IN_EDITOR\]/g, "")
+      .replace(/\[REPLACE_IN_EDITOR\][\s\S]*?\[\/REPLACE_IN_EDITOR\]/g, "")
+      .trim();
+  };
+
+  // Get the FULL live document text from the editor
+  const getFullDocumentText = (): string => {
+    if (!editor || !editor.state || !editor.state.doc) return "";
+    return editor.state.doc.textContent;
+  };
+
+  // Get text before the cursor so the AI knows what to continue/complete
+  const getContextBeforeCursor = (): string => {
+    if (!editor || !editor.state) return "";
+    const { from } = editor.state.selection;
+    // Return last 2000 chars before cursor for completion context
+    const allBefore = editor.state.doc.textBetween(0, from);
+    if (allBefore.length <= 2000) return allBefore;
+    return "..." + allBefore.slice(-2000);
+  };
+
+  // Original functionality preserved
   const getDocumentContext = () => {
     if (!editor || !editor.state || !editor.state.doc) return "";
     return editor.state.doc.textContent.slice(0, 500);
@@ -1037,63 +1092,8 @@ export function AIChatPanel({
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: inputValue,
-      message_type: "text",
-      created_at: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
-    setIsLoading(true);
-
-    try {
-      // Replace direct API call with AIService method
-      const response = await AIService.processAIRequest(
-        "chat",
-        inputValue,
-        getDocumentContext(),
-      );
-
-      let parsedContent = "";
-      if (typeof response === "string") {
-        parsedContent = response;
-      } else if (response && typeof response === "object") {
-        parsedContent =
-          response.text ||
-          response.content ||
-          response.response ||
-          response.suggestion ||
-          response.result ||
-          JSON.stringify(response, null, 2);
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content:
-          parsedContent ||
-          "I apologize, but I couldn't generate a response. Please try again.",
-        message_type: "text",
-        created_at: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error: any) {
-      console.error("Chat error:", error);
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        role: "assistant",
-        content: "I'm sorry, I encountered an error. Please try again.",
-        message_type: "text",
-        created_at: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Delegate to sendMessage which handles editor insertion + chat display
+    await sendMessage();
   };
 
   const appendMessage = async (content: string) => {
@@ -1225,46 +1225,11 @@ export function AIChatPanel({
   };
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (isNearBottomRef.current && messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
     }
   }, [messages]);
-
-  const quickActions = [
-    {
-      icon: <Wand2 className="h-3.5 w-3.5" />,
-      label: "Improve",
-      prompt: "Improve the writing quality of this text",
-    },
-    {
-      icon: <PenLine className="h-3.5 w-3.5" />,
-      label: "Fix grammar",
-      prompt: "Fix all grammar and spelling errors",
-    },
-    {
-      icon: <FileText className="h-3.5 w-3.5" />,
-      label: "Summarize",
-      prompt: "Summarize this content concisely",
-    },
-    {
-      icon: <BookOpen className="h-3.5 w-3.5" />,
-      label: "Citations",
-      prompt: "Suggest citations for this section",
-    },
-    {
-      icon: <Lightbulb className="h-3.5 w-3.5" />,
-      label: "Expand",
-      prompt: "Expand on this topic with more detail",
-    },
-  ];
-
-  const handleQuickAction = (prompt: string) => {
-    const selectedText = getSelectedText();
-    const fullPrompt = selectedText
-      ? `${prompt}:\n\n"${selectedText}"`
-      : prompt;
-    appendMessage(fullPrompt);
-  };
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -1312,13 +1277,6 @@ export function AIChatPanel({
       console.log("Content inserted successfully");
     } catch (error) {
       console.error("Error inserting content into editor:", error);
-    }
-  };
-
-  // Add missing onInsertContent function
-  const onInsertContent = (content: string) => {
-    if (editor) {
-      editor.chain().focus().insertContent(content).run();
     }
   };
 
@@ -1614,95 +1572,101 @@ export function AIChatPanel({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col mt-0">
-        {/* Research Mode Selector */}
-        <div className="p-3 border-b border-border">
-          <div className="flex flex-col gap-2">
-            <ChatModeSelector mode={chatMode} onChange={setChatMode} />
-            {chatMode === "research" && (
-              <div className="flex gap-1 flex-wrap justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs bg-blue-500 hover:bg-blue-500 hover:text-white"
-                  onClick={() => setShowCitationPanel(!showCitationPanel)}
-                >
-                  Cite
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs bg-blue-500 hover:bg-blue-500 hover:text-white"
-                  onClick={() => setShowPaperPanel(!showPaperPanel)}
-                >
-                  Papers
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs bg-blue-500 hover:bg-blue-500 hover:text-white"
-                  onClick={() => setShowGapPanel(!showGapPanel)}
-                >
-                  Gaps
-                </Button>
-              </div>
-            )}
-          </div>
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Mode Selector */}
+        <div className="shrink-0 p-3 border-b border-border">
+          <ChatModeSelector mode={chatMode} onChange={setChatMode} />
         </div>
-        <div className="flex flex-wrap gap-1.5 p-3 border-b border-border">
-          {quickActions.map((action) => (
-            <Button
-              key={action.label}
-              variant="default" // Changed to default (solid)
-              size="sm"
-              className="h-7 text-xs gap-1 bg-blue-600 border border-blue-700 text-white hover:bg-blue-700 hover:border-blue-800 shadow-sm transition-all font-medium"
-              onClick={() => handleQuickAction(action.prompt)}
-              disabled={isLoading}
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scrollbar-none"
+        >
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn(
+                "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                message.role === "user" ? "flex-row-reverse" : "",
+              )}
             >
-              {action.icon}
-              {action.label}
-            </Button>
-          ))}
-        </div>
+              <Avatar className="h-7 w-7 shrink-0">
+                <AvatarFallback
+                  className={
+                    message.role === "assistant"
+                      ? "bg-green-500 text-white font-bold"
+                      : "bg-gray-500 text-white font-bold"
+                  }
+                >
+                  {message.role === "assistant" ? "AI" : "U"}
+                </AvatarFallback>
+              </Avatar>
 
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
               <div
-                key={message.id}
                 className={cn(
-                  "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
-                  message.role === "user" ? "flex-row-reverse" : "",
+                  "min-w-0",
+                  message.role === "assistant" ? "flex-1 mr-4" : "max-w-[85%]",
                 )}
               >
-                <Avatar className="h-7 w-7 shrink-0">
-                  <AvatarFallback
-                    className={
-                      message.role === "assistant"
-                        ? "bg-green-500 text-white font-bold"
-                        : "bg-gray-500 text-white font-bold"
-                    }
-                  >
-                    {message.role === "assistant" ? "AI" : "U"}
-                  </AvatarFallback>
-                </Avatar>
-
                 <div
                   className={cn(
-                    "rounded-lg px-3 py-2 text-sm max-w-[85%] shadow-sm",
+                    "rounded-lg px-3 py-2 text-sm shadow-sm",
                     message.role === "user"
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "bg-white text-black border border-white",
+                      ? "bg-blue-600 text-white shadow-md break-words"
+                      : "bg-white text-black border border-white max-w-full",
                   )}
                 >
                   {message.role === "assistant" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                    <div className="prose prose-sm dark:prose-invert max-w-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                      <style jsx>{`
+                        .prose > * {
+                          max-width: 100%;
+                        }
+                        .prose pre,
+                        .prose pre code {
+                          overflow-x: auto;
+                          max-width: 100%;
+                          white-space: pre-wrap;
+                          word-break: break-word;
+                          overflow-wrap: anywhere;
+                        }
+                        .prose code {
+                          max-width: 100%;
+                          word-break: break-word;
+                          overflow-wrap: anywhere;
+                        }
+                        .prose p,
+                        .prose ul,
+                        .prose ol {
+                          overflow-wrap: break-word;
+                          word-wrap: break-word;
+                        }
+                        .prose table {
+                          display: block;
+                          width: 100%;
+                          max-width: 100%;
+                          overflow-x: auto;
+                          border-collapse: collapse;
+                          -webkit-overflow-scrolling: touch;
+                        }
+                        .prose table th,
+                        .prose table td {
+                          max-width: 16rem;
+                          overflow-wrap: break-word;
+                          word-wrap: break-word;
+                        }
+                        .prose table th {
+                          white-space: normal;
+                        }
+                        .overflow-wrap-anywhere {
+                          overflow-wrap: anywhere;
+                        }
+                      `}</style>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           code: ({ node, ...props }) => (
                             <code
-                              className="bg-gray-100 p-1 rounded"
+                              className="bg-gray-100 p-1 rounded max-w-full break-words"
                               style={{
                                 fontSize: `${responsiveSmallFontSize * 0.85}px`,
                               }}
@@ -1713,7 +1677,27 @@ export function AIChatPanel({
                             <strong className="font-bold" {...props} />
                           ),
                           p: ({ node, ...props }) => (
-                            <p className="mb-2 last:mb-0" {...props} />
+                            <p
+                              className="mb-2 last:mb-0 break-words"
+                              {...props}
+                            />
+                          ),
+                          table: ({ node, ...props }) => (
+                            <div className="overflow-x-auto max-w-full">
+                              <table className="my-2 text-xs" {...props} />
+                            </div>
+                          ),
+                          th: ({ node, ...props }) => (
+                            <th
+                              className="px-2 py-1.5 text-left align-top break-words"
+                              {...props}
+                            />
+                          ),
+                          td: ({ node, ...props }) => (
+                            <td
+                              className="px-2 py-1.5 align-top break-words"
+                              {...props}
+                            />
                           ),
                         }}
                       >
@@ -1721,7 +1705,7 @@ export function AIChatPanel({
                       </ReactMarkdown>
                     </div>
                   ) : (
-                    <p className="whitespace-pre-wrap">
+                    <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
                       {String(message.content || "")}
                     </p>
                   )}
@@ -1779,27 +1763,27 @@ export function AIChatPanel({
                   )}
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
 
-            {isLoading && (
-              <div className="flex gap-3">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    AI
-                  </AvatarFallback>
-                </Avatar>
-                <div className="bg-card text-card-foreground border border-border rounded-lg px-3 py-2">
-                  <div className="flex gap-1">
-                    <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce" />
-                    <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.4s]" />
-                  </div>
+          {isLoading && (
+            <div className="flex gap-3">
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  AI
+                </AvatarFallback>
+              </Avatar>
+              <div className="bg-card text-card-foreground border border-border rounded-lg px-3 py-2">
+                <div className="flex gap-1">
+                  <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce" />
+                  <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
+                  <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.4s]" />
                 </div>
               </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
         {/* Research Panels */}
 
@@ -1824,7 +1808,7 @@ export function AIChatPanel({
 
         <form
           onSubmit={handleSubmit}
-          className="p-3 bg-white text-black bg-gray-50/50"
+          className="shrink-0 p-3 bg-white text-black bg-gray-50/50"
         >
           {/* Context Pills */}
           <div className="flex flex-wrap items-center gap-2 mb-3">

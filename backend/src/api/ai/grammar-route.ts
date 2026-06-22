@@ -113,9 +113,31 @@ export async function handleLanguageCheckExpress(
       options: { preferredModel: model, isAutomatic: true },
     });
 
+    // Try to parse the result as structured JSON
+    let suggestions: any[] = [];
+    try {
+      // Strip markdown code fences if present
+      let cleaned = result.result;
+      if (typeof cleaned === "string") {
+        cleaned = cleaned
+          .replace(/```json\s*/g, "")
+          .replace(/```\s*/g, "")
+          .trim();
+        const parsed = JSON.parse(cleaned);
+        suggestions = Array.isArray(parsed) ? parsed : parsed.suggestions || [];
+      } else if (Array.isArray(result.result)) {
+        suggestions = result.result;
+      } else if (result.result?.suggestions) {
+        suggestions = result.result.suggestions;
+      }
+    } catch (parseErr) {
+      // If parsing fails, return as raw text; frontend has a fallback parser
+      suggestions = result.result;
+    }
+
     return res.status(200).json({
       success: true,
-      suggestions: result.result,
+      suggestions,
       tokensUsed: result.tokensUsed,
       cost: result.cost,
       modelUsed: result.modelUsed,

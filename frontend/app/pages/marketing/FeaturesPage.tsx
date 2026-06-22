@@ -258,7 +258,7 @@ function ClosingCTA() {
 
                 <p className="text-lg text-gray-200 mb-8 max-w-2xl mx-auto">
                   Whether you're a first-year student or a seasoned researcher,
-                  ScholarForge AIadapts to your needs and grows with your
+                  WorkContextadapts to your needs and grows with your
                   academic journey.
                 </p>
 

@@ -26,7 +26,6 @@ import {
   verifyOTP as hybridVerifyOTP,
   signUpWithGoogle,
 } from "../../lib/utils/hybridAuth";
-import BillingService from "../../lib/utils/billingService";
 import axios from "axios";
 import { useToast } from "../../hooks/use-toast";
 
@@ -705,51 +704,8 @@ const SignupPage: React.FC = () => {
         hasSupabase: typeof supabase !== "undefined" && supabase !== null,
       });
 
-      // Check if this is a checkout flow
-      const isCheckoutFlow = searchParams.get("checkout") === "true";
-
-      if (isCheckoutFlow && selectedPlan) {
-        // For checkout flow, first create a checkout session
-        try {
-          const checkoutResponse =
-            await BillingService.createUnauthCheckoutSession({
-              planId: selectedPlan as string,
-              email: data.email,
-              fullName: data.fullName,
-              phoneNumber: fullPhoneNumber,
-            });
-
-          if (checkoutResponse.success && checkoutResponse.checkoutUrl) {
-            // Store user data in localStorage for post-checkout processing
-            localStorage.setItem(
-              "pendingCheckoutUser",
-              JSON.stringify({
-                email: data.email,
-                fullName: data.fullName,
-                phoneNumber: fullPhoneNumber,
-                selectedPlan: selectedPlan,
-                tempUserId: checkoutResponse.tempUserId,
-                userData: checkoutResponse.userData,
-              }),
-            );
-
-            // Redirect to checkout
-            window.location.href = checkoutResponse.checkoutUrl;
-            return;
-          } else {
-            throw new Error(
-              checkoutResponse.message || "Failed to create checkout session",
-            );
-          }
-        } catch (checkoutError: any) {
-          console.error("Checkout creation failed:", checkoutError);
-          throw new Error(
-            `Checkout failed: ${checkoutError.message || "Unknown error"}`,
-          );
-        }
-      }
-
-      // Instead of using Supabase's signup directly, we'll use hybrid approach
+      // All users sign up for the free, open-source version
+      // No checkout flow needed
       // For both email and phone signup, we'll use the same approach
       try {
         // First, create user in Supabase Authentication
@@ -1239,12 +1195,14 @@ const SignupPage: React.FC = () => {
             : selectedPlan
               ? `Start your 14-day free trial of the ${selectedPlan} plan`
               : "Start writing better papers today"
-      }>
+      }
+    >
       {/* Recaptcha container - invisible */}
       <div
         id="recaptcha-container"
         className="hidden"
-        style={{ position: "absolute", top: "-100px" }}></div>
+        style={{ position: "absolute", top: "-100px" }}
+      ></div>
 
       {/* Registration Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -1262,7 +1220,8 @@ const SignupPage: React.FC = () => {
                 variant="outline"
                 onClick={handleGoogleSignup}
                 disabled={socialLoading || isLoading}
-                className="flex items-center justify-center gap-2 h-12 bg-white text-gray-600 border-white hover:bg-gray-100">
+                className="flex items-center justify-center gap-2 h-12 bg-white text-gray-600 border-white hover:bg-gray-100"
+              >
                 {socialLoading ? (
                   <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
@@ -1369,7 +1328,8 @@ const SignupPage: React.FC = () => {
                     value={
                       countryCodes.find((c) => c.code === selectedCountryCode)
                         ?.key || "us"
-                    }>
+                    }
+                  >
                     <SelectTrigger className="h-12 rounded-xl bg-white border-white focus:ring-2 focus:ring-blue-500 text-gray-600">
                       <SelectValue />
                     </SelectTrigger>
@@ -1378,7 +1338,8 @@ const SignupPage: React.FC = () => {
                         <SelectItem
                           key={country.key}
                           value={country.key}
-                          className="text-gray-600">
+                          className="text-gray-600"
+                        >
                           {country.name} ({country.code})
                         </SelectItem>
                       ))}
@@ -1434,7 +1395,8 @@ const SignupPage: React.FC = () => {
                     });
                   }
                 }}
-                value={watchedFields.otpMethod || "email"}>
+                value={watchedFields.otpMethod || "email"}
+              >
                 <SelectTrigger className="h-12 rounded-xl bg-white border-white focus:ring-2 focus:ring-blue-500 text-gray-700">
                   <SelectValue />
                 </SelectTrigger>
@@ -1520,17 +1482,20 @@ const SignupPage: React.FC = () => {
               />
               <label
                 htmlFor="agreeToTerms"
-                className="text-sm text-gray-600 cursor-pointer">
+                className="text-sm text-gray-600 cursor-pointer"
+              >
                 I agree to the{" "}
                 <Link
                   href="/docs/terms"
-                  className="text-blue-400 hover:underline font-medium">
+                  className="text-blue-400 hover:underline font-medium"
+                >
                   Terms of Service
                 </Link>{" "}
                 and{" "}
                 <Link
                   href="/docs/privacy"
-                  className="text-blue-400 hover:underline font-medium">
+                  className="text-blue-400 hover:underline font-medium"
+                >
                   Privacy Policy
                 </Link>
               </label>
@@ -1551,7 +1516,8 @@ const SignupPage: React.FC = () => {
                 !isValid ||
                 isLoading ||
                 Object.keys(validationErrors).length > 0
-              }>
+              }
+            >
               {isLoading ? (
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
@@ -1575,7 +1541,8 @@ const SignupPage: React.FC = () => {
                   type="button"
                   className="text-blue-400 hover:text-blue-300 font-medium"
                   onClick={handleResendOTP}
-                  disabled={isLoading}>
+                  disabled={isLoading}
+                >
                   Resend code
                 </button>
               </p>
@@ -1606,7 +1573,8 @@ const SignupPage: React.FC = () => {
                 type="button"
                 variant="outline"
                 onClick={handleBackToSignup}
-                className="flex-1 bg-white border-white text-gray-600 hover:bg-white">
+                className="flex-1 bg-white border-white text-gray-600 hover:bg-white"
+              >
                 Back
               </Button>
               <Button
@@ -1641,7 +1609,8 @@ const SignupPage: React.FC = () => {
               </label>
               <Select
                 onValueChange={(value) => setValue("heardAboutPlatform", value)}
-                required>
+                required
+              >
                 <SelectTrigger className="h-12 rounded-xl bg-white border-white focus:ring-2 focus:ring-blue-500 text-gray-600">
                   <SelectValue placeholder="Select an option" />
                 </SelectTrigger>
@@ -1650,7 +1619,8 @@ const SignupPage: React.FC = () => {
                     <SelectItem
                       key={option}
                       value={option}
-                      className="text-gray-600">
+                      className="text-gray-600"
+                    >
                       {option}
                     </SelectItem>
                   ))}
@@ -1686,7 +1656,8 @@ const SignupPage: React.FC = () => {
               </label>
               <Select
                 onValueChange={(value) => setValue("userRole", value)}
-                required>
+                required
+              >
                 <SelectTrigger className="h-12 rounded-xl bg-white border-white focus:ring-2 focus:ring-blue-500 text-gray-600">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
@@ -1695,7 +1666,8 @@ const SignupPage: React.FC = () => {
                     <SelectItem
                       key={role}
                       value={role}
-                      className="text-gray-600">
+                      className="text-gray-600"
+                    >
                       {role}
                     </SelectItem>
                   ))}
@@ -1731,13 +1703,15 @@ const SignupPage: React.FC = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setShowOtpStep(true)}
-                className="flex-1 bg-white border-white text-gray-600 hover:bg-white">
+                className="flex-1 bg-white border-white text-gray-600 hover:bg-white"
+              >
                 Back
               </Button>
               <Button
                 type="submit"
                 className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-gray-600 font-medium rounded-xl transition-all duration-200 btn-glow"
-                disabled={isLoading}>
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
@@ -1755,7 +1729,8 @@ const SignupPage: React.FC = () => {
           Already have an account?{" "}
           <Link
             href={selectedPlan ? `/login?plan=${selectedPlan}` : "/login"}
-            className="text-blue-400 hover:text-blue-300 font-medium">
+            className="text-blue-400 hover:text-blue-300 font-medium"
+          >
             Sign in
           </Link>
         </p>

@@ -128,7 +128,7 @@ function HeroSection() {
               className="border-gray-300 text-gray-600 bg-gray-200 hover:bg-gray-400 backdrop-blur-sm px-8 py-6 text-lg"
             >
               <a
-                href="https://github.com/marowa-craig/scholarforge-ai"
+                href="https://github.com/marowa-craig/WorkContext-ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center"
@@ -177,7 +177,7 @@ function PreviewSection() {
       <div className="container-custom">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-600 mb-4">
-            See ScholarForge AI in Action
+            See WorkContext in Action
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
             Experience the power of a workspace that understands your context.
@@ -434,7 +434,7 @@ function TestimonialsSection() {
   const testimonials = [
     {
       quote:
-        "The smart @-mentions saved me hours every week. I used to dig through folders looking for docs. Now ScholarForge just shows me what's relevant, instantly.",
+        "The smart @-mentions saved me hours every week. I used to dig through folders looking for docs. Now WorkContext just shows me what's relevant, instantly.",
       author: "Sarah Chen",
       role: "Product Manager, Stripe",
       avatar:
@@ -450,7 +450,7 @@ function TestimonialsSection() {
     },
     {
       quote:
-        "We replaced other tools with ScholarForge. The action extraction alone saves our team 10+ hours a week. Game changer.",
+        "We replaced other tools with WorkContext. The action extraction alone saves our team 10+ hours a week. Game changer.",
       author: "Alex Rivera",
       role: "CEO, LaunchPad Startups",
       avatar:

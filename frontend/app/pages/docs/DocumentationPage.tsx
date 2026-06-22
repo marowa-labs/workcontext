@@ -33,7 +33,7 @@ const DocumentationPage = () => {
       icon: BookOpen,
       title: "Getting Started",
       description:
-        "Learn the basics and get up and running quickly with ScholarForge AI.",
+        "Learn the basics and get up and running quickly with WorkContext.",
       articles: 12,
       path: "/docs/quickstart",
       color: "from-blue-500 to-cyan-500",
@@ -269,10 +269,10 @@ const DocumentationPage = () => {
           <div className="text-center">
             <h1
               className={`text-4xl md:text-5xl font-bold mb-6 ${planDocHeadingClasses}`}>
-              ScholarForge AIDocumentation
+              WorkContextDocumentation
             </h1>
             <p className="text-xl text-black max-w-3xl mx-auto mb-8 dark:text-black">
-              Everything you need to know about using ScholarForge
+              Everything you need to know about using WorkContext
               AIeffectively. From getting started to advanced features, we've
               got you covered.
             </p>

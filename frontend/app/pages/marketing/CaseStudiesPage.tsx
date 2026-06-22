@@ -28,7 +28,7 @@ function IntroHero() {
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
             Academic Defensibility Success Stories with{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              ScholarForge AI
+              WorkContext
             </span>
           </h1>
 
@@ -124,7 +124,7 @@ function CaseStudiesGrid() {
       title: "Enhanced Originality Detection",
       institution: "Stanford University",
       excerpt:
-        "How a research team improved their originality verification process using ScholarForge AI's Explainable Originality Map.",
+        "How a research team improved their originality verification process using WorkContext's Explainable Originality Map.",
       imageUrl:
         "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&h=600&fit=crop",
       results: [
@@ -138,7 +138,7 @@ function CaseStudiesGrid() {
       title: "Citation Confidence Verification",
       institution: "MIT",
       excerpt:
-        "A graduate student validated 500+ citations with 99% accuracy using ScholarForge AI's Citation Confidence Auditor.",
+        "A graduate student validated 500+ citations with 99% accuracy using WorkContext's Citation Confidence Auditor.",
       imageUrl:
         "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=800&h=600&fit=crop",
       results: [
@@ -204,7 +204,7 @@ function ClosingCTA() {
           </h2>
           <p className="text-lg text-gray-200 mb-8">
             Join thousands of academics who are already enhancing their
-            defensibility outcomes with ScholarForge AI.
+            defensibility outcomes with WorkContext.
           </p>
           <Button
             size="lg"

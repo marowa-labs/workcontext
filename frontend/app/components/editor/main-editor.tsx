@@ -101,7 +101,6 @@ import { MentionExtension } from "../../lib/utils/mentionExtension";
 import { useMentions } from "../mentions/useMentions";
 import { MentionSuggestionList } from "../mentions/MentionSuggestionList";
 import { TaskExtractionToolbar } from "./TaskExtractionToolbar";
-import { RelatedItems } from "../sidebar/RelatedItems";
 
 const lowlight = createLowlight(common);
 
@@ -148,7 +147,6 @@ interface AIResponseData {
   [key: string]: any;
 }
 
-
 interface AutocompleteSuggestion {
   text: string;
   position: number;
@@ -162,6 +160,7 @@ interface SpellCheckPopup {
 
 export interface MainEditorRef {
   insertContent: (content: string) => void;
+  openSettings: () => void;
 }
 
 export const MainEditor = forwardRef<
@@ -187,11 +186,7 @@ export const MainEditor = forwardRef<
       userId,
       userName,
       isCollaborative = false,
-      allowedPanels = [
-        "ai-chat",
-        "language",
-        "team-chat",
-      ],
+      allowedPanels = ["ai-chat", "language", "team-chat"],
       activeRightPanel: propRightPanel,
       onToggleRightPanel: propToggleRightPanel,
       onEditorReady,
@@ -454,9 +449,10 @@ export const MainEditor = forwardRef<
                   .slice(0, 5)
                   .map(
                     (source: any) =>
-                      `[Source: ${source.title} (${source.year || "n.d."})] ${source.abstract
-                        ? source.abstract.substring(0, 200) + "..."
-                        : ""
+                      `[Source: ${source.title} (${source.year || "n.d."})] ${
+                        source.abstract
+                          ? source.abstract.substring(0, 200) + "..."
+                          : ""
                       }`,
                   )
                   .join("\n\n");
@@ -509,18 +505,18 @@ export const MainEditor = forwardRef<
           // Real-time Collaboration - NOW ENABLED & ROBUST
           ...(provider && isProviderReady && provider.document
             ? [
-              Collaboration.configure({
-                document: provider.document,
-              }),
-              CollaborationCursor.configure({
-                provider: provider,
-                user: {
-                  name: userName,
-                  color:
-                    "#" + Math.floor(Math.random() * 16777215).toString(16),
-                },
-              }),
-            ]
+                Collaboration.configure({
+                  document: provider.document,
+                }),
+                CollaborationCursor.configure({
+                  provider: provider,
+                  user: {
+                    name: userName,
+                    color:
+                      "#" + Math.floor(Math.random() * 16777215).toString(16),
+                  },
+                }),
+              ]
             : []),
         ],
         content: provider // When collaborative, leave content undefined to let Y.js load it
@@ -555,36 +551,40 @@ export const MainEditor = forwardRef<
     } = useMentions({ editor, workspaceId });
 
     // Handle task creation from text extraction
-    const handleCreateTaskFromText = useCallback(async (taskData: {
-      title: string;
-      description: string;
-      assignee?: string;
-      dueDate?: string;
-    }) => {
-      if (!workspaceId) {
-        toast({
-          title: "Error",
-          description: "No workspace selected",
-          variant: "destructive",
-        });
-        return;
-      }
+    const handleCreateTaskFromText = useCallback(
+      async (taskData: {
+        title: string;
+        description: string;
+        assignee?: string;
+        dueDate?: string;
+      }) => {
+        if (!workspaceId) {
+          toast({
+            title: "Error",
+            description: "No workspace selected",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      try {
-        const TaskService = (await import("../../lib/utils/taskService")).default;
-        await TaskService.createTask({
-          workspace_id: workspaceId,
-          title: taskData.title,
-          description: taskData.description,
-          status: "todo",
-          priority: "medium",
-          due_date: taskData.dueDate,
-        });
-      } catch (error) {
-        console.error("Failed to create task:", error);
-        throw error;
-      }
-    }, [workspaceId, toast]);
+        try {
+          const TaskService = (await import("../../lib/utils/taskService"))
+            .default;
+          await TaskService.createTask({
+            workspace_id: workspaceId,
+            title: taskData.title,
+            description: taskData.description,
+            status: "todo",
+            priority: "medium",
+            due_date: taskData.dueDate,
+          });
+        } catch (error) {
+          console.error("Failed to create task:", error);
+          throw error;
+        }
+      },
+      [workspaceId, toast],
+    );
 
     // Apply template styling when project loads
     useEffect(() => {
@@ -635,7 +635,7 @@ export const MainEditor = forwardRef<
             content,
             documentTitle,
             wordCount,
-            { keepalive: true }
+            { keepalive: true },
           );
           setSaveStatus("saved");
         } catch (error) {
@@ -961,32 +961,34 @@ export const MainEditor = forwardRef<
           editor.chain().focus().insertContent(content).run();
         }
       },
+      openSettings: () => {
+        setShowSettingsModal(true);
+      },
     }));
 
-    // Handler for inserting footnote
-    const handleInsertFootnote = useCallback(() => {
-      if (editor) {
-        editor.chain().focus().insertContent("<footnote></footnote>").run();
-      }
-    }, [editor]);
-
     // Handler for AI actions
-    const handleAIAction = useCallback((action: string, text: string) => {
-      console.log("AI Action:", action, text);
-      toast({
-        title: "AI Action",
-        description: `${action} applied to selected text`,
-      });
-    }, [toast]);
+    const handleAIAction = useCallback(
+      (action: string, text: string) => {
+        console.log("AI Action:", action, text);
+        toast({
+          title: "AI Action",
+          description: `${action} applied to selected text`,
+        });
+      },
+      [toast],
+    );
 
     // Handler for restoring document version
-    const handleRestoreVersion = useCallback(async (versionId: string) => {
-      console.log("Restoring version:", versionId);
-      toast({
-        title: "Version Restored",
-        description: "Document restored to selected version",
-      });
-    }, [toast]);
+    const handleRestoreVersion = useCallback(
+      async (versionId: string) => {
+        console.log("Restoring version:", versionId);
+        toast({
+          title: "Version Restored",
+          description: "Document restored to selected version",
+        });
+      },
+      [toast],
+    );
 
     // Handler for creating document version
     const handleCreateVersion = useCallback(async () => {
@@ -1011,8 +1013,10 @@ export const MainEditor = forwardRef<
 
     return (
       <div
-        className={`flex h-screen flex-col bg-gray-50 ${isFocusMode ? "focus-mode" : ""
-          }`}>
+        className={`flex h-screen flex-col bg-gray-50 ${
+          isFocusMode ? "focus-mode" : ""
+        }`}
+      >
         <Toaster />
         {/* AI autocomplete suggestion component */}
         {autocompleteSuggestion && (
@@ -1088,21 +1092,26 @@ export const MainEditor = forwardRef<
               <EditorToolbar
                 editor={editor}
                 onOpenImageModal={() => setShowImageModal(true)}
-                onInsertFootnote={handleInsertFootnote}
               />
             </>
           )}
 
           <div className="flex flex-1 overflow-hidden">
             <div
-              className={`flex-1 flex ${isFocusMode ? "" : ""} ${themeSettings?.theme === "dark" ? "dark-editor" : "light-editor"
-                }`}>
+              className={`flex-1 flex ${isFocusMode ? "" : ""} ${
+                themeSettings?.theme === "dark" ? "dark-editor" : "light-editor"
+              }`}
+            >
               <div
-                className={`flex-1 overflow-y-auto ${isFocusMode ? "w-full" : ""
-                  }`}>
+                className={`flex-1 overflow-y-auto ${
+                  isFocusMode ? "w-full" : ""
+                }`}
+              >
                 <div
-                  className={`mx-auto w-full ${isFocusMode ? "max-w-4xl" : "max-w-4xl"
-                    }`}>
+                  className={`mx-auto w-full ${
+                    isFocusMode ? "max-w-4xl" : "max-w-4xl"
+                  }`}
+                >
                   <div className="relative w-full max-w-4xl mx-auto editor-wrapper">
                     <ParagraphActionMenu
                       editor={editor}
@@ -1120,15 +1129,6 @@ export const MainEditor = forwardRef<
                   </div>
                 </div>
               </div>
-
-              {/* Related Items Sidebar - Smart Feature */}
-              {!isFocusMode && (
-                <RelatedItems
-                  projectId={documentId}
-                  workspaceId={workspaceId}
-                  className="hidden xl:block"
-                />
-              )}
             </div>
           </div>
         </div>
@@ -1161,7 +1161,6 @@ export const MainEditor = forwardRef<
           open={showShortcutsModal}
           onOpenChange={setShowShortcutsModal}
         />
-
 
         {/* Document version history modal */}
         <DocumentHistory

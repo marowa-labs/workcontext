@@ -95,7 +95,7 @@ const ApiCitationsPage = () => {
             Citations API
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Manage citations and bibliographies through the ScholarForge AIAPI
+            Manage citations and bibliographies through the WorkContextAPI
           </p>
         </div>
       </div>

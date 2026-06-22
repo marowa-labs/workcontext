@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
-import { Star, Download, User, Lock, Crown, Plus, Store } from "lucide-react";
+import { Star, Download, User, Plus, Store, Crown, Lock } from "lucide-react";
 import blankDocumentIcon from "../../assets/icons/blank-document.png";
 import importDocumentIcon from "../../assets/icons/import-document.png";
 
@@ -35,9 +34,6 @@ interface TemplateCardsProps {
   templates?: Template[];
   viewMode?: "grid" | "list";
   onTemplateClick?: (template: Template) => void;
-  isFreeUser?: boolean;
-  isStudentUser?: boolean;
-  isResearcherUser?: boolean;
 }
 
 const TemplateCards: React.FC<TemplateCardsProps> = ({
@@ -48,12 +44,7 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
   templates = [],
   viewMode = "grid",
   onTemplateClick,
-  isFreeUser = false,
-  isStudentUser = false,
-  isResearcherUser = false,
 }) => {
-  const router = useRouter();
-
   // Ensure templates is always an array
   const safeTemplates = Array.isArray(templates) ? templates : [];
 
@@ -69,7 +60,7 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
       rating: 4.5,
       reviews: 124,
       downloads: 1240,
-      author_name: "ScholarForge AITeam",
+      author_name: "WorkContextTeam",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_premium: false,
@@ -84,7 +75,7 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
       rating: 4.8,
       reviews: 89,
       downloads: 890,
-      author_name: "ScholarForge AITeam",
+      author_name: "WorkContextTeam",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_premium: false,
@@ -99,7 +90,7 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
       rating: 4.9,
       reviews: 56,
       downloads: 560,
-      author_name: "ScholarForge AITeam",
+      author_name: "WorkContextTeam",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_premium: true,
@@ -111,18 +102,11 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
 
   const handleUseTemplate = (
     templateId: string,
-    isPremium: boolean | undefined,
-    isAccessible: boolean | undefined,
+    _isPremium: boolean | undefined,
+    _isAccessible: boolean | undefined,
     e: React.MouseEvent,
   ) => {
     e.stopPropagation();
-
-    // Check if user can access this template based on their plan
-    if (isAccessible === false) {
-      // Redirect to upgrade page for premium templates
-      router.push("billing/subscription");
-      return;
-    }
 
     if (onCreateProject) {
       onCreateProject(templateId);
@@ -142,32 +126,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
     );
   };
 
-  // Function to determine if a template is locked for the current user
-  const isTemplateLocked = (template: any) => {
-    // Check if template is explicitly marked as inaccessible
-    if (template.is_accessible === false) {
-      return true;
-    }
-
-    // Free users can only access basic templates
-    if (
-      isFreeUser &&
-      (template.is_premium || template.is_custom || template.is_institutional)
-    ) {
-      return true;
-    }
-
-    // One Time users can access standard templates but not custom or institutional ones
-    if (isStudentUser && (template.is_custom || template.is_institutional)) {
-      return true;
-    }
-
-    // Student users can access most templates but not institutional ones
-    if (isStudentUser && template.is_institutional) {
-      return true;
-    }
-
-    // Researcher users can access all templates
+  // All templates are accessible to all users
+  const isTemplateLocked = (_template: any) => {
     return false;
   };
 
@@ -179,27 +139,32 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider">
+                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider"
+              >
                 Template
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider">
+                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider"
+              >
                 Type
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider">
+                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider"
+              >
                 Rating
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider">
+                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider"
+              >
                 Downloads
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider">
+                className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-700 uppercase tracking-wider"
+              >
                 Actions
               </th>
             </tr>
@@ -226,7 +191,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                   }
                   aria-disabled={locked}
                   role="button"
-                  tabIndex={locked ? -1 : 0}>
+                  tabIndex={locked ? -1 : 0}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 relative">
@@ -242,7 +208,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                               className="w-6 h-6 text-white"
                               fill="none"
                               stroke="currentColor"
-                              viewBox="0 0 24 24">
+                              viewBox="0 0 24 24"
+                            >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -311,7 +278,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                           )
                         }
                         className="text-purple-600 hover:text-purple-900 dark:text-cw-secondary dark:hover:text-purple-300 flex items-center"
-                        aria-label={`Locked template ${template.name}. Click to upgrade.`}>
+                        aria-label={`Locked template ${template.name}. Click to upgrade.`}
+                      >
                         <Lock className="w-4 h-4 mr-1" />
                         Upgrade
                       </button>
@@ -326,7 +294,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                           )
                         }
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        aria-label={`Use template ${template.name}`}>
+                        aria-label={`Use template ${template.name}`}
+                      >
                         Use Template
                       </button>
                     )}
@@ -349,7 +318,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
         </h2>
         <button
           onClick={onBrowseTemplates}
-          className="inline-flex items-center px-3 py-2 bg-white dark:bg-white border border-white border-white text-gray-700 dark:text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white transition-colors">
+          className="inline-flex items-center px-3 py-2 bg-white dark:bg-white border border-white border-white text-gray-700 dark:text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white transition-colors"
+        >
           <Store className="w-4 h-4 mr-2" />
           Browse All Templates
         </button>
@@ -359,7 +329,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
         {/* Create from scratch card */}
         <div
           onClick={onTemplateSelect}
-          className="bg-white dark:bg-white rounded-2xl border-2 border-dashed border-white border-white p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors group">
+          className="bg-white dark:bg-white rounded-2xl border-2 border-dashed border-white border-white p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors group"
+        >
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-200">
             <Plus className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
@@ -374,7 +345,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
         {/* Import document card */}
         <div
           onClick={onImportDocument}
-          className="bg-white dark:bg-white rounded-2xl border-2 border-dashed border-white border-white p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
+          className="bg-white dark:bg-white rounded-2xl border-2 border-dashed border-white border-white p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors"
+        >
           <img
             src={importDocumentIcon.src}
             alt="Import Document"
@@ -410,7 +382,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
               }
               aria-disabled={locked}
               role="button"
-              tabIndex={locked ? -1 : 0}>
+              tabIndex={locked ? -1 : 0}
+            >
               <div className="flex items-start justify-between">
                 <div className="flex items-center">
                   <div className="relative">
@@ -426,7 +399,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                           className="w-7 h-7 text-white"
                           fill="none"
                           stroke="currentColor"
-                          viewBox="0 0 24 24">
+                          viewBox="0 0 24 24"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -478,7 +452,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                   template.tags.slice(0, 2).map((tag: string) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-white dark:text-gray-700">
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-white dark:text-gray-700"
+                    >
                       {tag}
                     </span>
                   ))}
@@ -513,7 +488,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                       )
                     }
                     className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-cw-secondary bg-cw-secondary/20 hover:bg-cw-secondary/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cw-secondary"
-                    aria-label={`Locked template ${template.name}. Click to upgrade.`}>
+                    aria-label={`Locked template ${template.name}. Click to upgrade.`}
+                  >
                     <Lock className="w-3 h-3 mr-1" />
                     Upgrade
                   </button>
@@ -528,7 +504,8 @@ const TemplateCards: React.FC<TemplateCardsProps> = ({
                       )
                     }
                     className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    aria-label={`Use template ${template.name}`}>
+                    aria-label={`Use template ${template.name}`}
+                  >
                     Use
                   </button>
                 )}

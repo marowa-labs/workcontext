@@ -10,6 +10,7 @@ import {
   Trash2,
   FileText,
   Download,
+  X,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { cn } from "../../../lib/utils";
@@ -27,6 +28,7 @@ export interface OutlineSection {
 interface DocumentOutlinePanelProps {
   projectId?: string;
   onSyncToEditor?: (sections: OutlineSection[]) => void;
+  onClose?: () => void;
 }
 
 // Default academic research paper template
@@ -45,6 +47,7 @@ const DEFAULT_TEMPLATE: OutlineSection[] = [
 export function DocumentOutlinePanel({
   projectId,
   onSyncToEditor,
+  onClose,
 }: DocumentOutlinePanelProps) {
   const [sections, setSections] = useState<OutlineSection[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -242,12 +245,14 @@ export function DocumentOutlinePanel({
           className={cn(
             "group flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-gray-50 transition-colors",
             depth > 0 && "ml-6",
-          )}>
+          )}
+        >
           {/* Collapse/Expand */}
           {hasChildren && (
             <button
               onClick={() => toggleCollapse(section.id)}
-              className="p-0.5 hover:bg-gray-200 rounded">
+              className="p-0.5 hover:bg-gray-200 rounded"
+            >
               {section.isCollapsed ? (
                 <ChevronRight className="h-3 w-3 text-gray-500" />
               ) : (
@@ -266,7 +271,8 @@ export function DocumentOutlinePanel({
               section.level === 1 && "bg-blue-100 text-blue-700",
               section.level === 2 && "bg-green-100 text-green-700",
               section.level === 3 && "bg-purple-100 text-purple-700",
-            )}>
+            )}
+          >
             H{section.level}
           </span>
 
@@ -296,20 +302,23 @@ export function DocumentOutlinePanel({
               <button
                 onClick={() => addSubsection(section.id)}
                 className="p-1 hover:bg-gray-200 rounded"
-                title="Add Subsection">
+                title="Add Subsection"
+              >
                 <Plus className="h-3 w-3 text-gray-600" />
               </button>
             )}
             <button
               onClick={() => startEdit(section.id, section.name)}
               className="p-1 hover:bg-gray-200 rounded"
-              title="Edit">
+              title="Edit"
+            >
               <Pencil className="h-3 w-3 text-gray-600" />
             </button>
             <button
               onClick={() => deleteSection(section.id)}
               className="p-1 hover:bg-red-100 rounded"
-              title="Delete">
+              title="Delete"
+            >
               <Trash2 className="h-3 w-3 text-red-600" />
             </button>
           </div>
@@ -334,13 +343,27 @@ export function DocumentOutlinePanel({
             <FileText className="h-4 w-4" />
             Document Outline
           </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadTemplate}
-            className="h-7 text-xs bg-white border-blue-600 text-blue-600 hover:bg-blue-50">
-            Load Template
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadTemplate}
+              className="h-7 text-xs bg-white border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              Load Template
+            </Button>
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 hover:bg-gray-200"
+                onClick={onClose}
+                title="Close outline"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
         <p className="text-xs text-gray-500">
           Organize your document structure with sections and subsections
@@ -358,7 +381,8 @@ export function DocumentOutlinePanel({
             <Button
               onClick={loadTemplate}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white">
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
               Load Research Paper Template
             </Button>
           </div>
@@ -377,7 +401,8 @@ export function DocumentOutlinePanel({
                   draggedItem.current === index && "opacity-50",
                   dragOverItem.current === index &&
                     "border-t-2 border-blue-500",
-                )}>
+                )}
+              >
                 {renderSection(section)}
               </div>
             ))}
@@ -403,7 +428,8 @@ export function DocumentOutlinePanel({
                 onChange={(e) =>
                   setNewSectionLevel(Number(e.target.value) as 1 | 2 | 3)
                 }
-                className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value={1}>H1 - Title</option>
                 <option value={2}>H2 - Section</option>
                 <option value={3}>H3 - Subsection</option>
@@ -411,7 +437,8 @@ export function DocumentOutlinePanel({
               <Button
                 onClick={addSection}
                 size="sm"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 Add
               </Button>
               <Button
@@ -420,7 +447,8 @@ export function DocumentOutlinePanel({
                   setNewSectionName("");
                 }}
                 size="sm"
-                variant="ghost">
+                variant="ghost"
+              >
                 Cancel
               </Button>
             </div>
@@ -435,7 +463,8 @@ export function DocumentOutlinePanel({
             onClick={() => setIsAddingSection(true)}
             variant="outline"
             size="sm"
-            className="w-full bg-white border-blue-600 text-blue-600 hover:bg-blue-50">
+            className="w-full bg-white border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add New Section
           </Button>
@@ -444,7 +473,8 @@ export function DocumentOutlinePanel({
           <Button
             onClick={handleSyncToEditor}
             size="sm"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
             <Download className="h-4 w-4 mr-2" />
             Sync to Editor
           </Button>

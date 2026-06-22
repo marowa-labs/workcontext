@@ -23,15 +23,8 @@ import { DocumentOutlinePanel } from "../../../../components/editor/SidebarLeft/
 import { TeamChat } from "../../../../components/dashboard/team/TeamChat";
 
 // Define panel types
-export type LeftPanelType =
-  | "documents"
-  | "outline"
-  | "language"
-  | null;
-export type RightPanelType =
-  | "ai-chat"
-  | "team-chat"
-  | null;
+export type LeftPanelType = "documents" | "outline" | "language" | null;
+export type RightPanelType = "ai-chat" | "team-chat" | null;
 
 interface Project {
   id: string;
@@ -72,6 +65,7 @@ export default function EditorPage() {
   const isDraggingLeft = useRef(false);
   const isDraggingRight = useRef(false);
   const [editorInstance, setEditorInstance] = useState<any>(null);
+  const mainEditorRef = useRef<MainEditorRef>(null);
 
   // AI Chat Prompt State
   const [aiPrompt, setAiPrompt] = useState<string | undefined>(undefined);
@@ -93,7 +87,6 @@ export default function EditorPage() {
     setAiPrompt(message);
     setRightPanel("ai-chat");
   };
-
 
   // Resize handlers
   useEffect(() => {
@@ -214,8 +207,6 @@ export default function EditorPage() {
     fetchUserProjects();
   }, [fetchUserProjects]);
 
-  const mainEditorRef = useRef<MainEditorRef>(null);
-
   const handleInsertContent = (content: string) => {
     if (mainEditorRef.current) {
       mainEditorRef.current.insertContent(content);
@@ -302,7 +293,8 @@ export default function EditorPage() {
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
             Retry
           </button>
         </div>
@@ -320,7 +312,8 @@ export default function EditorPage() {
           </p>
           <a
             href="/login"
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 inline-block">
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 inline-block"
+          >
             Login
           </a>
         </div>
@@ -337,7 +330,8 @@ export default function EditorPage() {
               className="w-16 h-16 mx-auto"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -353,12 +347,14 @@ export default function EditorPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            >
               Try Again
             </button>
             <a
               href="/dashboard"
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+            >
               Back to Dashboard
             </a>
           </div>
@@ -405,6 +401,7 @@ export default function EditorPage() {
       {/* Primary Sidebar */}
       <EditorSidebar
         allowedPanels={activeAllowedPanels as string[]}
+        onOpenSettings={() => mainEditorRef.current?.openSettings()}
         onNavigate={(id: string) => {
           if (id === "my-documents") {
             setLeftPanel("documents");
@@ -428,7 +425,8 @@ export default function EditorPage() {
       {leftPanel && (
         <div
           className="h-full bg-white border-r border-gray-200 flex flex-col relative"
-          style={{ width: `${leftPanelWidth}px` }}>
+          style={{ width: `${leftPanelWidth}px` }}
+        >
           {/* Resize Handle */}
           <div
             className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400 active:bg-blue-600 transition-colors z-50"
@@ -438,7 +436,7 @@ export default function EditorPage() {
             }}
           />
           {/* Panel Header - Only show for documents/library */}
-          {(leftPanel === "documents") && (
+          {leftPanel === "documents" && (
             <div className="flex items-center justify-between px-2 pt-2 border-b border-gray-200 bg-white">
               <div className="flex flex-1">
                 <button
@@ -448,7 +446,8 @@ export default function EditorPage() {
                     leftPanel === "documents"
                       ? "text-blue-600 border-blue-600 bg-white"
                       : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50",
-                  )}>
+                  )}
+                >
                   Documents
                 </button>
               </div>
@@ -456,7 +455,8 @@ export default function EditorPage() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 hover:bg-gray-100"
-                onClick={() => setLeftPanel(null)}>
+                onClick={() => setLeftPanel(null)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -475,7 +475,8 @@ export default function EditorPage() {
                     size="icon"
                     className="h-6 w-6 bg-blue-600 hover:bg-blue-700"
                     onClick={() => setIsNewProjectModalOpen(true)}
-                    title="New Document">
+                    title="New Document"
+                  >
                     <Plus className="h-4 w-4 text-white" />
                   </Button>
                 </div>
@@ -487,12 +488,16 @@ export default function EditorPage() {
               </div>
             )}
             {leftPanel === "language" && (
-              <LanguageCheckPanel editor={editorInstance} />
+              <LanguageCheckPanel
+                editor={editorInstance}
+                onClose={() => setLeftPanel(null)}
+              />
             )}
             {leftPanel === "outline" && (
               <div className="h-full overflow-x-hidden">
                 <DocumentOutlinePanel
                   projectId={documentId}
+                  onClose={() => setLeftPanel(null)}
                   onSyncToEditor={(sections) => {
                     // Convert sections to HTML and insert into editor
                     const generateHTML = (sections: any[]) => {
@@ -588,7 +593,8 @@ export default function EditorPage() {
         <button
           onClick={() => toggleLeftPanel("documents")}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-md p-1.5 hover:bg-gray-50 shadow-sm"
-          title="Show Documents">
+          title="Show Documents"
+        >
           <ChevronRight className="h-4 w-4 text-gray-600" />
         </button>
       )}
@@ -632,18 +638,19 @@ export default function EditorPage() {
           <button
             onClick={() => toggleRightPanel("ai-chat")}
             className="bg-white border border-gray-200 rounded-l-md p-1.5 hover:bg-gray-50 shadow-sm"
-            title="AI Assistant">
+            title="AI Assistant"
+          >
             <ChevronLeft className="h-4 w-4 text-gray-600" />
           </button>
         )}
-
       </div>
 
       {/* Right Panel */}
       {rightPanel && (
         <div
           className="h-full bg-white border-l border-gray-200 flex flex-col relative"
-          style={{ width: `${rightPanelWidth}px` }}>
+          style={{ width: `${rightPanelWidth}px` }}
+        >
           {/* Resize Handle */}
           <div
             className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-blue-400 active:bg-blue-600 transition-colors z-50"
@@ -662,13 +669,14 @@ export default function EditorPage() {
               variant="ghost"
               size="icon"
               className="h-7 w-7 hover:bg-gray-100"
-              onClick={() => setRightPanel(null)}>
+              onClick={() => setRightPanel(null)}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Panel Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-none">
             {rightPanel === "ai-chat" && (
               <AIChatPanel
                 isOpen={true}
@@ -743,7 +751,8 @@ const DocumentsPanel = ({
               currentProjectId === project.id
                 ? "bg-blue-50 text-blue-700 font-medium"
                 : "text-gray-700 hover:bg-gray-100",
-            )}>
+            )}
+          >
             <div className="flex items-start gap-2">
               <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">

@@ -78,7 +78,7 @@ const TermsPage = () => {
             1. Acceptance of Terms
           </h2>
           <p className="text-black mb-4 dark:text-black">
-            By accessing or using ScholarForge AI("the Service"), you agree to
+            By accessing or using WorkContext("the Service"), you agree to
             be bound by these Terms of Service ("Terms"). If you disagree with
             any part of the terms, you may not access the Service.
           </p>
@@ -95,7 +95,7 @@ const TermsPage = () => {
             2. Description of Service
           </h2>
           <p className="text-black mb-4 dark:text-black">
-            ScholarForge AIis an academic writing and research platform that
+            WorkContextis an academic writing and research platform that
             provides tools for:
           </p>
           <ul className="space-y-2 mb-4">
@@ -179,14 +179,14 @@ const TermsPage = () => {
           </h2>
           <p className="text-black mb-4 dark:text-black">
             The Service and its original content, features, and functionality
-            are and will remain the exclusive property of ScholarForge AIand its
+            are and will remain the exclusive property of WorkContextand its
             licensors. The Service is protected by copyright, trademark, and
             other laws of both the United States and foreign countries.
           </p>
           <p className="text-black dark:text-black">
             Our trademarks and trade dress may not be used in connection with
             any product or service without the prior written consent of
-            ScholarForge AI.
+            WorkContext.
           </p>
         </div>
 
@@ -239,7 +239,7 @@ const TermsPage = () => {
             8. Limitation of Liability
           </h2>
           <p className="text-black dark:text-black">
-            In no event shall ScholarForge AI, nor its directors, employees,
+            In no event shall WorkContext, nor its directors, employees,
             partners, agents, suppliers, or affiliates, be liable for any
             indirect, incidental, special, consequential, or punitive damages,
             including without limitation, loss of profits, data, use, goodwill,

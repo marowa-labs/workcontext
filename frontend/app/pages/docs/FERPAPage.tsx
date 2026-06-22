@@ -90,7 +90,7 @@ const FERPAPage = () => {
             program of the U.S. Department of Education.
           </p>
           <p className="text-black dark:text-black">
-            ScholarForge AIis committed to full compliance with FERPA and
+            WorkContextis committed to full compliance with FERPA and
             protecting the privacy rights of all students and educational users.
             This page explains how we comply with FERPA requirements.
           </p>
@@ -252,7 +252,7 @@ const FERPAPage = () => {
             For Educational Institutions
           </h2>
           <p className="text-black mb-6 dark:text-black">
-            Educational institutions using ScholarForge AIare responsible for
+            Educational institutions using WorkContextare responsible for
             ensuring their use of our services complies with FERPA. We provide
             tools and documentation to help institutions meet their obligations:
           </p>
@@ -298,7 +298,7 @@ const FERPAPage = () => {
           <p className="text-black mb-4 dark:text-black">
             Directory information is information contained in an education
             record that would not generally be considered harmful or an invasion
-            of privacy if released. At ScholarForge AI, we consider the
+            of privacy if released. At WorkContext, we consider the
             following as directory information:
           </p>
           <ul className="space-y-2 mb-4">
@@ -403,9 +403,9 @@ const FERPAPage = () => {
             </p>
             <div className="flex items-center">
               <a
-                href="mailto:spo@scholarforgeai.com"
+                href="mailto:spo@WorkContextai.com"
                 className="text-blue-600 hover:text-blue-800 font-medium dark:text-blue-400 dark:hover:text-blue-300">
-                spo@scholarforgeai.com
+                spo@WorkContextai.com
               </a>
             </div>
           </div>
@@ -455,7 +455,7 @@ const FERPAPage = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="mailto:spo@scholarforgeai.com"
+                href="mailto:spo@WorkContextai.com"
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-center">
                 Contact Student Privacy Officer
               </a>

@@ -124,7 +124,8 @@ class ApiClient {
     options: RequestInit = {},
     retryCount = 0, // DISABLE retries by default to prevent infinite loops
   ): Promise<any> {
-    const fullUrl = `${this.baseUrl}${url}`;
+    // Always use relative URL to go through Next.js proxy (avoids CORS + auth issues)
+    const fullUrl = url.startsWith("/api") ? url : `${this.baseUrl}${url}`;
 
     console.log("Making API request to:", fullUrl);
 
@@ -142,14 +143,18 @@ class ApiClient {
 
     const isFormData = options.body instanceof FormData;
 
+    // Construct merged headers separately to avoid being overridden by ...options spread
+    const mergedHeaders = {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    };
+
     const defaultOptions: RequestInit = {
       signal: controller.signal,
-      headers: {
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
+      credentials: "include",
       ...options,
+      headers: mergedHeaders, // Set headers AFTER spreading options to preserve them
     };
 
     console.log("Request headers being sent:", defaultOptions.headers);
@@ -206,14 +211,16 @@ class ApiClient {
             ? retryAfterSeconds * 1000
             : 1000 * (4 - retryCount); // Exponential backoff: 3s, 2s, 1s
 
-          console.log(`Retrying request to ${url} after ${delayMs}ms due to rate limit...`);
+          console.log(
+            `Retrying request to ${url} after ${delayMs}ms due to rate limit...`,
+          );
           await new Promise((resolve) => setTimeout(resolve, delayMs));
           return this.request(url, options, retryCount - 1);
         }
 
         throw new Error(
           errorData.message ||
-            "Rate limit exceeded. Please wait a moment and try again."
+            "Rate limit exceeded. Please wait a moment and try again.",
         );
       }
 

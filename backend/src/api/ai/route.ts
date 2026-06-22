@@ -4,14 +4,14 @@ import logger from "../../monitoring/logger";
 import { prisma } from "../../lib/prisma";
 import { AIService } from "../../services/aiService";
 import { UnifiedAIService } from "../../services/unifiedAIService";
-import { plans } from "../../services/subscriptionService";
-import { createNotification } from "../../services/notificationService";
 import { BYOKService } from "../../services/byokService";
 import { EncryptionService } from "../../services/encryptionService";
 import researchRouter from "./research-route";
 import searchRouter from "./search-route";
 import chatRouter from "./chat-route";
 import actionsRouter from "./actions/route";
+import pdfChatRouter from "./pdf-chat-route";
+import pinnedCommentsRouter from "./pinned-comments-route";
 
 const router: ExpressRouter = Router();
 
@@ -28,27 +28,6 @@ async function handlePostAIRequest(req: any, res: any) {
         success: false,
         message:
           "Missing required fields: action, text, and userId are required",
-      });
-    }
-
-    // Check usage limit
-    const { hasLimit } = await AIService.checkUsageLimit(userId);
-
-    if (hasLimit) {
-      // Send notification about limit reached
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Usage Limit Reached",
-        "You've reached your AI usage limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          "You've reached your AI usage limit. Upgrade for unlimited access.",
-        limitReached: true,
       });
     }
 
@@ -83,8 +62,7 @@ async function handlePostAIRequest(req: any, res: any) {
     if (error.message && error.message.includes("quota exceeded")) {
       return res.status(429).json({
         success: false,
-        message:
-          "AI service quota exceeded. Please try again later or upgrade your plan for more usage.",
+        message: "AI service quota exceeded. Please try again later.",
       });
     } else if (
       error.message &&
@@ -123,15 +101,6 @@ async function handleGetAIUsage(req: any, res: any) {
       });
     }
 
-    // Get user's subscription to determine limit
-    const subscription = await prisma.subscription.findUnique({
-      where: { user_id: userId },
-    });
-
-    const planId = subscription?.plan || "free";
-    const planLimits = plans[planId as keyof typeof plans].features;
-    const limit = planLimits.aiRequests;
-
     // Get current usage
     const { remaining } = await AIService.checkUsageLimit(userId);
 
@@ -139,7 +108,7 @@ async function handleGetAIUsage(req: any, res: any) {
       success: true,
       usage: {
         remaining,
-        limit: limit === -1 || (limit as any) === -1 ? 1000000 : limit, // For unlimited, set a high number
+        limit: 1000000, // Unlimited for all users
       },
     });
   } catch (error: any) {
@@ -504,13 +473,6 @@ async function handleGetAvailableModels(req: any, res: any) {
 
     const currentModel = user?.preferred_ai_model || null;
 
-    // Get user's subscription to determine available models
-    const subscription = await prisma.subscription.findUnique({
-      where: { user_id: userId },
-    });
-
-    const planId = subscription?.plan || "free";
-
     // Get BYOK-aware available models (user's keys first, then system keys)
     const availableModelsMap = await AIService.getUserAvailableModels(userId);
     const availableModelIds = Object.keys(availableModelsMap);
@@ -551,47 +513,6 @@ async function handleGetAvailableModels(req: any, res: any) {
   }
 }
 
-// --- DEPRECATED: Old plan-based model filtering kept for reference ---
-/*
-    // Define available models per plan, filtered by actually available models
-    const planModels: Record<string, string[]> = {
-      free: [
-        "gemini-3.1-flash-lite",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      onetime: [
-        "gemini-3.1-flash-lite",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      student: [
-        "gemini-3.1-flash-lite",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      researcher: [
-        "gemini-3.1-flash-lite",
-        "gemini-3.1-flash-lite",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-      institutional: [
-        "gemini-3.1-flash-lite",
-        "gemini-3.1-flash-lite",
-        "openai/gpt-oss-120b:free",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      ],
-    };
-    
-}
-*/
-
 router.get(
   "/available-models",
   authenticateExpressRequest,
@@ -610,27 +531,6 @@ async function handlePostAISummarize(req: any, res: any) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields: content and userId are required",
-      });
-    }
-
-    // Check usage limit
-    const { hasLimit } = await AIService.checkUsageLimit(userId);
-
-    if (hasLimit) {
-      // Send notification about limit reached
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Usage Limit Reached",
-        "You've reached your AI usage limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          "You've reached your AI usage limit. Upgrade for unlimited access.",
-        limitReached: true,
       });
     }
 
@@ -704,27 +604,6 @@ async function handlePostAIDocumentQA(req: any, res: any) {
         success: false,
         message:
           "Missing required fields: documentContent, question, and userId are required",
-      });
-    }
-
-    // Check usage limit
-    const { hasLimit } = await AIService.checkUsageLimit(userId);
-
-    if (hasLimit) {
-      // Send notification about limit reached
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Usage Limit Reached",
-        "You've reached your AI usage limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          "You've reached your AI usage limit. Upgrade for unlimited access.",
-        limitReached: true,
       });
     }
 
@@ -807,27 +686,6 @@ async function handlePostAIWritingProject(req: any, res: any) {
       });
     }
 
-    // Check usage limit
-    const { hasLimit } = await AIService.checkUsageLimit(userId);
-
-    if (hasLimit) {
-      // Send notification about limit reached
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Usage Limit Reached",
-        "You've reached your AI usage limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          "You've reached your AI usage limit. Upgrade for unlimited access.",
-        limitReached: true,
-      });
-    }
-
     // Process the writing project request using UnifiedAIService
     const result = await UnifiedAIService.processAIRequest({
       userId,
@@ -904,27 +762,6 @@ async function handlePostAIAutocomplete(req: any, res: any) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields: text and userId are required",
-      });
-    }
-
-    // Check usage limit
-    const { hasLimit } = await AIService.checkUsageLimit(userId);
-
-    if (hasLimit) {
-      // Send notification about limit reached
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Usage Limit Reached",
-        "You've reached your AI usage limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          "You've reached your AI usage limit. Upgrade for unlimited access.",
-        limitReached: true,
       });
     }
 
@@ -1092,6 +929,12 @@ router.use("/actions", actionsRouter);
 
 // Mount chat routes
 router.use("/chat", chatRouter);
+
+// Mount PDF chat routes
+router.use("/pdf-chat", pdfChatRouter);
+
+// Mount pinned comments routes
+router.use("/pinned-comments", pinnedCommentsRouter);
 
 // ==================== BYOK (Bring Your Own Key) Endpoints ====================
 

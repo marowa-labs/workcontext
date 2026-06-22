@@ -303,7 +303,7 @@ const RoadmapPage = () => {
           </h2>
           <p className="text-black mb-6 dark:text-black">
             Don't see what you're looking for? Tell us about the features you'd
-            like to see in ScholarForge AI.
+            like to see in WorkContext.
           </p>
           <Link
             href="/docs/feature-request"
@@ -328,7 +328,7 @@ const RoadmapPage = () => {
             </h3>
             <p className="text-black mb-4 dark:text-black">
               Get early access to new features and help shape the future of
-              ScholarForge AI. Beta testers get priority access and direct input
+              WorkContext. Beta testers get priority access and direct input
               on feature development.
             </p>
             <Link

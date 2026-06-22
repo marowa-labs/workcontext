@@ -174,7 +174,7 @@ export class SecretsService {
   // Get feedback email
   static async getFeedbackEmail(): Promise<string> {
     return (
-      (await this.getSecret("FEEDBACK_EMAIL")) || "feedback@scholarforge-ai.com"
+      (await this.getSecret("FEEDBACK_EMAIL")) || "feedback@WorkContext-ai.com"
     );
   }
 
@@ -182,7 +182,7 @@ export class SecretsService {
   static async getContactAdminEmail(): Promise<string> {
     return (
       (await this.getSecret("CONTACT_ADMIN_EMAIL")) ||
-      "hello@scholarforge-ai.com"
+      "hello@WorkContext-ai.com"
     );
   }
 
@@ -190,7 +190,7 @@ export class SecretsService {
   static async getComplianceEmail(): Promise<string> {
     return (
       (await this.getSecret("COMPLIANCE_EMAIL")) ||
-      "compliance@scholarforge-ai.com"
+      "compliance@WorkContext-ai.com"
     );
   }
 
@@ -349,3 +349,4 @@ export class SecretsService {
 }
 
 export default SecretsService;
+

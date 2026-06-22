@@ -29,11 +29,11 @@ const CASE_STUDIES_DATA = {
     imageUrl:
       "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&h=600&fit=crop",
     overview:
-      "Stanford University's Department of Computer Science implemented ScholarForge AI's Explainable Originality Map across their research teams to enhance academic defensibility. The department saw significant improvements in originality verification and citation accuracy.",
+      "Stanford University's Department of Computer Science implemented WorkContext's Explainable Originality Map across their research teams to enhance academic defensibility. The department saw significant improvements in originality verification and citation accuracy.",
     challenge:
       "The research team at Stanford University was facing challenges with verifying the originality of their research content and ensuring proper attribution. Their existing workflow lacked visual tools to understand similarity patterns and source attribution.",
     solution:
-      "The department implemented ScholarForge AI's Explainable Originality Map, integrating it with their research workflow. This provided visual representations of content originality with detailed similarity reports and source attribution.",
+      "The department implemented WorkContext's Explainable Originality Map, integrating it with their research workflow. This provided visual representations of content originality with detailed similarity reports and source attribution.",
     results: [
       {
         metric: "Originality Verification",
@@ -56,7 +56,7 @@ const CASE_STUDIES_DATA = {
     ],
     testimonial: {
       quote:
-        "ScholarForge AI's Explainable Originality Map transformed how we verify our research defensibility. The visual tools give us confidence that our work meets the highest academic standards.",
+        "WorkContext's Explainable Originality Map transformed how we verify our research defensibility. The visual tools give us confidence that our work meets the highest academic standards.",
       author: "Dr. Sarah Johnson",
       title: "Head of Research, Stanford University",
     },
@@ -80,11 +80,11 @@ const CASE_STUDIES_DATA = {
     imageUrl:
       "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=1200&h=600&fit=crop",
     overview:
-      "A graduate student at MIT validated 500+ citations with 99% accuracy using ScholarForge AI's Citation Confidence Auditor, ensuring complete academic defensibility.",
+      "A graduate student at MIT validated 500+ citations with 99% accuracy using WorkContext's Citation Confidence Auditor, ensuring complete academic defensibility.",
     challenge:
       "Graduate students at MIT often struggle with citation verification, particularly ensuring that their citations are accurate, properly formatted, and that they accurately represent the original sources throughout the lengthy writing process.",
     solution:
-      "The student utilized ScholarForge AI's Citation Confidence Auditor to validate citations, cross-referencing them against authoritative databases and confirming that citations accurately represent the original content.",
+      "The student utilized WorkContext's Citation Confidence Auditor to validate citations, cross-referencing them against authoritative databases and confirming that citations accurately represent the original content.",
     results: [
       {
         metric: "Citation Accuracy",
@@ -105,7 +105,7 @@ const CASE_STUDIES_DATA = {
     ],
     testimonial: {
       quote:
-        "I couldn't have validated my citations so thoroughly without ScholarForge AI's Citation Confidence Auditor. The verification tools gave me confidence that my work met the highest academic standards.",
+        "I couldn't have validated my citations so thoroughly without WorkContext's Citation Confidence Auditor. The verification tools gave me confidence that my work met the highest academic standards.",
       author: "Emily Rodriguez",
       title: "PhD Candidate, MIT",
     },
@@ -129,11 +129,11 @@ const CASE_STUDIES_DATA = {
     imageUrl:
       "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=1200&h=600&fit=crop",
     overview:
-      "University of Oxford implemented ScholarForge AI's Submission-Safe Writing Mode across departments to ensure academic defensibility, resulting in 100% submission-ready documents with enhanced authenticity.",
+      "University of Oxford implemented WorkContext's Submission-Safe Writing Mode across departments to ensure academic defensibility, resulting in 100% submission-ready documents with enhanced authenticity.",
     challenge:
       "The university was experiencing challenges with ensuring that student submissions were authentic and AI-free, particularly with the rise of AI writing tools that threatened academic integrity.",
     solution:
-      "Oxford deployed ScholarForge AI's Submission-Safe Writing Mode across all academic departments, providing students with real-time AI detection feedback and humanization suggestions to ensure authentic writing.",
+      "Oxford deployed WorkContext's Submission-Safe Writing Mode across all academic departments, providing students with real-time AI detection feedback and humanization suggestions to ensure authentic writing.",
     results: [
       {
         metric: "Submission Readiness",
@@ -155,7 +155,7 @@ const CASE_STUDIES_DATA = {
     ],
     testimonial: {
       quote:
-        "ScholarForge AI's Submission-Safe Writing Mode has been instrumental in helping our students maintain authentic writing. The real-time AI feedback has been particularly valuable.",
+        "WorkContext's Submission-Safe Writing Mode has been instrumental in helping our students maintain authentic writing. The real-time AI feedback has been particularly valuable.",
       author: "Dr. James Wilson",
       title: "Director of Academic Defensibility, University of Oxford",
     },
@@ -227,7 +227,7 @@ function ResultsSection({ results }: { results: any[] }) {
           </h2>
           <p className="text-lg text-gray-200">
             Quantifiable improvements achieved through the implementation of
-            ScholarForge AI
+            WorkContext
           </p>
         </div>
 
@@ -484,7 +484,7 @@ export default function CaseStudyDetailPage() {
             </h2>
             <p className="text-lg text-gray-200 mb-8">
               Join thousands of academic institutions and researchers who are
-              enhancing their defensibility outcomes with ScholarForge AI.
+              enhancing their defensibility outcomes with WorkContext.
             </p>
             <Button
               size="lg"

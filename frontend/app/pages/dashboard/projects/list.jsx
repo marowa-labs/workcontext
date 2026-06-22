@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Plus, Grid3X3, List } from "lucide-react";
 import ProjectCards from "../../../components/dashboard/ProjectCards";
 import CreateProjectModal from "../../../components/dashboard/CreateProjectModal";
+import { ExportModal } from "../../../components/editor/export-modal";
 import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
 import ExportService from "../../../lib/utils/exportService";
 import { useToast } from "../../../hooks/use-toast";
-import BillingService from "../../../lib/utils/billingService";
+
 
 export default function ProjectsListPage() {
   const router = useRouter();
@@ -23,11 +24,13 @@ export default function ProjectsListPage() {
   const [error, setError] = useState(null);
   const [renamingProject, setRenamingProject] = useState(null);
   const [newProjectName, setNewProjectName] = useState("");
-  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [exportingProject, setExportingProject] = useState(null);
+
   const [selectedProjects, setSelectedProjects] = useState([]);
+  const [archivedProjects, setArchivedProjects] = useState([]);
   const { data: user, loading: userLoading } = useUser();
 
-  // Load personal projects (not in any workspace)
+  // Load projects — active or archived based on filter
   useEffect(() => {
     let isMounted = true;
 
@@ -37,12 +40,23 @@ export default function ProjectsListPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const personalProjects = await ProjectService.getUserPersonalProjects(user.id, false);
-        if (isMounted) {
-          setProjects(personalProjects || []);
+
+        if (activeFilter === "archived") {
+          // Load archived projects
+          const archivedRes = await ProjectService.getUserPersonalProjects(user.id, false, true);
+          const archivedList = archivedRes?.projects || archivedRes || [];
+          if (isMounted) {
+            setArchivedProjects(Array.isArray(archivedList) ? archivedList : []);
+          }
+        } else {
+          // Load active (non-archived) projects
+          const personalProjects = await ProjectService.getUserPersonalProjects(user.id, false);
+          if (isMounted) {
+            setProjects(personalProjects || []);
+          }
         }
       } catch (error) {
-        console.error("Failed to load personal projects:", error);
+        console.error("Failed to load projects:", error);
         if (isMounted) {
           setError("Failed to load projects. Please try again.");
         }
@@ -58,42 +72,24 @@ export default function ProjectsListPage() {
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user?.id, activeFilter]);
 
-  // Load subscription data
+  // Filter projects by status (client-side, except "archived" which is loaded separately)
   useEffect(() => {
-    let isMounted = true;
+    if (activeFilter === "archived") {
+      setFilteredProjects(archivedProjects);
+      return;
+    }
 
-    const loadSubscriptionData = async () => {
-      if (!user) return;
-
-      try {
-        const subscription = await BillingService.getCurrentSubscription();
-        if (isMounted) {
-          setSubscriptionData(subscription);
-        }
-      } catch (error) {
-        console.error("Failed to load subscription data:", error);
-      }
-    };
-
-    loadSubscriptionData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    let filtered = projects;
+    let filtered = [...projects];
 
     // Apply status filter
-    if (activeFilter !== "all" && activeFilter !== "archived") {
+    if (activeFilter !== "all") {
       filtered = filtered.filter((project) => project.status === activeFilter);
     }
 
     setFilteredProjects(filtered);
-  }, [projects, activeFilter]);
+  }, [projects, activeFilter, archivedProjects]);
 
   const handleCreateProject = () => {
     setIsCreateModalOpen(true);
@@ -168,14 +164,13 @@ export default function ProjectsListPage() {
         description: `Creating a copy of "${project.title}"...`,
       });
 
-      const duplicateData = {
-        ...project,
+      const duplicatedProject = await ProjectService.createProject({
         title: `${project.title} (Copy)`,
-        id: undefined,
-      };
-
-      const duplicatedProject =
-        await ProjectService.createProject(duplicateData);
+        description: project.description,
+        type: project.type || "document",
+        content: project.content,
+        citation_style: project.citation_style,
+      });
       setProjects((prev) => [duplicatedProject, ...prev]);
 
       toast({
@@ -193,37 +188,8 @@ export default function ProjectsListPage() {
   };
 
   const handleExportProject = async (project) => {
-    try {
-      toast({
-        title: "Export Started",
-        description: `Exporting "${project.title}"... This may take a moment.`,
-      });
-
-      const blob = await ExportService.exportProjectBlob(project.id, {
-        format: "pdf",
-      });
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${project.title.replace(/\s+/g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Export Complete",
-        description: `"${project.title}" has been exported successfully.`,
-      });
-    } catch (error) {
-      console.error("Failed to export project:", error);
-      toast({
-        title: "Export Failed",
-        description: `Failed to export "${project.title}". Please try again.`,
-        variant: "destructive",
-      });
-    }
+    // Open the export modal for format selection
+    setExportingProject(project);
   };
 
   const handleArchiveProject = async (project) => {
@@ -261,13 +227,12 @@ export default function ProjectsListPage() {
           `Are you sure you want to restore "${project.title}"? It will be moved back to your active Projects.`,
         )
       ) {
-        // Update project status to draft to restore from archived
         await ProjectService.updateProject(project.id, {
           status: "draft",
         });
 
-        // Remove from current list since it's now restored
-        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        // Remove from archived list (we're on the Archived tab)
+        setArchivedProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -292,7 +257,9 @@ export default function ProjectsListPage() {
         )
       ) {
         await ProjectService.deleteProject(project.id);
+        // Remove from both arrays
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        setArchivedProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -424,11 +391,6 @@ export default function ProjectsListPage() {
     }
   };
 
-  // Check if user has Researcher plan
-  const isResearcherPlan =
-    subscriptionData?.plan === "Researcher" ||
-    subscriptionData?.plan?.name === "Researcher";
-
   if (userLoading) {
     return (
       <div className="p-8">
@@ -458,8 +420,8 @@ export default function ProjectsListPage() {
         </div>
 
         <div className="flex gap-x-3">
-          {/* Batch Export Button - only for Researcher plan */}
-          {isResearcherPlan && projects.length > 0 && (
+          {/* Batch Export Button */}
+          {projects.length > 0 && (
             <button
               onClick={handleBatchExport}
               disabled={selectedProjects.length === 0}
@@ -523,27 +485,25 @@ export default function ProjectsListPage() {
       {/* Filters */}
       {projects.length >= 0 && (
         <div className="flex items-center gap-x-2 mb-6">
-          {/* Select All Checkbox - only for Researcher plan */}
-          {isResearcherPlan && (
-            <div className="flex items-center mr-4">
-              <input
-                type="checkbox"
-                id="select-all"
-                checked={
-                  selectedProjects.length === filteredProjects.length &&
-                  filteredProjects.length > 0
-                }
-                onChange={selectAllProjects}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-200 rounded"
-              />
-              <label
-                htmlFor="select-all"
-                className="ml-2 text-sm text-foreground"
-              >
-                Select All
-              </label>
-            </div>
-          )}
+          {/* Select All Checkbox */}
+          <div className="flex items-center mr-4">
+            <input
+              type="checkbox"
+              id="select-all"
+              checked={
+                selectedProjects.length === filteredProjects.length &&
+                filteredProjects.length > 0
+              }
+              onChange={selectAllProjects}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-200 rounded"
+            />
+            <label
+              htmlFor="select-all"
+              className="ml-2 text-sm text-foreground"
+            >
+              Select All
+            </label>
+          </div>
 
           <span className="text-sm font-medium text-foreground mr-2">
             Filter:
@@ -682,7 +642,6 @@ export default function ProjectsListPage() {
                 setSelectedProjects([...selectedProjects, projectId]);
               }
             }}
-            isResearcherPlan={isResearcherPlan}
           />
         )}
       </>
@@ -695,6 +654,17 @@ export default function ProjectsListPage() {
         }}
         onProjectCreate={handleProjectCreate}
       />
+
+      {/* Export Modal */}
+      {exportingProject && (
+        <ExportModal
+          isOpen={!!exportingProject}
+          onClose={() => setExportingProject(null)}
+          editor={null}
+          documentTitle={exportingProject.title || "Untitled"}
+          projectId={exportingProject.id}
+        />
+      )}
     </div>
   );
 }

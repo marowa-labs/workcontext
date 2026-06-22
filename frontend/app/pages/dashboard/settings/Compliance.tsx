@@ -111,7 +111,7 @@ const ComplianceSettings: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `scholarforge_data_export_${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `WorkContext_data_export_${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -204,7 +204,7 @@ const ComplianceSettings: React.FC = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Control how your personal data is processed under the
-                    General Data Protection Regulation. ScholarForge AI
+                    General Data Protection Regulation. WorkContext
                     maintains strict adherence to data minimization and user
                     portability.
                   </p>
@@ -265,7 +265,7 @@ const ComplianceSettings: React.FC = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Enable administrative, physical, and technical safeguards
-                    for Protected Health Information (PHI). ScholarForge AI
+                    for Protected Health Information (PHI). WorkContext
                     provides an encrypted environment suitable for
                     health-related research.
                   </p>

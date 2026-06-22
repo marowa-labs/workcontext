@@ -229,7 +229,9 @@ code {
   text-align: left;
   font-weight: 600;
   color: #111827;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   border-right: 1px solid #e5e7eb;
 }
 .prose table th:last-child {
@@ -241,6 +243,8 @@ code {
   color: #374151;
   vertical-align: top;
   border-right: 1px solid #e5e7eb;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .prose table td:last-child {
   border-right: none;
@@ -358,7 +362,7 @@ li.ProseMirror-selectednode:after {
   border-radius: 0 !important;
 }
 
-/* Table styles - Add explicit borders using official ScholarForge AI colors */
+/* Table styles - Add explicit borders using official WorkContext colors */
 .ProseMirror table {
   border-collapse: collapse;
   width: 100%;
@@ -464,7 +468,7 @@ li.ProseMirror-selectednode:after {
  *         UI DESIGN SYSTEM
  * =====================================
  * 
- * Project: ScholarForge AI
+ * Project: WorkContext
  * Type: Academic Writing Platform - Marketing Site
  * 
  * DESIGN PHILOSOPHY
@@ -520,7 +524,7 @@ li.ProseMirror-selectednode:after {
     --ring: 214 100% 59%;
     --radius: 0.75rem;
 
-    /* Custom ScholarForge AI colors */
+    /* Custom WorkContext colors */
     --cw-blue: 214 100% 59%;
     --cw-purple: 243 75% 59%;
     --cw-green: 151 55% 41%;
@@ -642,6 +646,14 @@ li.ProseMirror-selectednode:after {
 }
 
 @layer components {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   .gradient-hero {
     background: linear-gradient(
       135deg,

@@ -28,7 +28,7 @@ const KeyboardShortcutsPage: React.FC = () => {
         <CardContent>
           <p className="mb-6 text-black dark:text-black">
             This document provides a comprehensive list of keyboard shortcuts
-            available in the ScholarForge AIeditor to help you work more
+            available in the WorkContexteditor to help you work more
             efficiently.
           </p>
 

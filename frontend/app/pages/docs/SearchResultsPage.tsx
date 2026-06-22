@@ -24,21 +24,21 @@ const SearchResultsPage = () => {
           label: "Introduction",
           path: "/docs",
           description:
-            "Learn about ScholarForge AIand how it can help with your academic writing.",
+            "Learn about WorkContextand how it can help with your academic writing.",
         },
         {
           id: "quickstart",
           label: "Quick Start Guide",
           path: "/docs/quickstart",
           description:
-            "Get up and running with ScholarForge AIin under 30 minutes.",
+            "Get up and running with WorkContextin under 30 minutes.",
         },
         {
           id: "installation",
           label: "Installation",
           path: "/docs/installation",
           description:
-            "Install ScholarForge AIon any device for seamless academic writing.",
+            "Install WorkContexton any device for seamless academic writing.",
         },
         {
           id: "account-setup",
@@ -139,7 +139,7 @@ const SearchResultsPage = () => {
           label: "Account Management",
           path: "/docs/account",
           description:
-            "Control all aspects of your ScholarForge AIaccount settings.",
+            "Control all aspects of your WorkContextaccount settings.",
         },
         {
           id: "notifications",
@@ -241,7 +241,7 @@ const SearchResultsPage = () => {
           label: "FAQ",
           path: "/docs/faq",
           description:
-            "Find answers to common questions about ScholarForge AI.",
+            "Find answers to common questions about WorkContext.",
         },
         {
           id: "troubleshooting",
@@ -272,7 +272,7 @@ const SearchResultsPage = () => {
           label: "Beta Program",
           path: "/docs/beta-program",
           description:
-            "Get early access to new features and help shape ScholarForge AI.",
+            "Get early access to new features and help shape WorkContext.",
         },
       ],
     },

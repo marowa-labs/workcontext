@@ -115,13 +115,13 @@ export class FeatureRequestService {
               },
             ],
             footer: {
-              text: "ScholarForge AIFeature Request",
+              text: "WorkContextFeature Request",
             },
             timestamp: new Date().toISOString(),
           },
         ],
-        username: "ScholarForge AIBot",
-        avatar_url: "https://scholarforgeai.com/logo.png",
+        username: "WorkContextBot",
+        avatar_url: "https://WorkContextai.com/logo.png",
       };
 
       const response = await fetch(webhookUrl, {
@@ -219,3 +219,4 @@ export class FeatureRequestService {
     }
   }
 }
+

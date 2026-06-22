@@ -50,7 +50,7 @@ export default function Navigation() {
       name: "Features",
       href: "/features",
       icon: <Zap className="h-5 w-5" />,
-      description: "Explore all features of ScholarForge AI",
+      description: "Explore all features of WorkContext",
     },
     {
       name: "Integrations",
@@ -100,13 +100,13 @@ export default function Navigation() {
       name: "Case Studies",
       href: "/resources/case-studies",
       icon: <BarChart3 className="h-5 w-5" />,
-      description: "See how others use ScholarForge AIsuccessfully",
+      description: "See how others use WorkContextsuccessfully",
     },
     {
       name: "Help Center",
       href: "/help",
       icon: <Lightbulb className="h-5 w-5" />,
-      description: "Get help with using ScholarForge AI",
+      description: "Get help with using WorkContext",
     },
     {
       name: "Documentation",
@@ -182,12 +182,12 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
             <img
-              src="/assets/images/ScholarForge-AI-Logo.png"
-              alt="ScholarForge AI Logo"
+              src="/assets/images/WorkContext-AI-Logo.png"
+              alt="WorkContext Logo"
               className="h-20 w-auto group-hover:shadow-lg transition-all duration-300"
             />
             <span className="text-xl font-bold text-gray-700">
-              ScholarForge AI
+              WorkContext
             </span>
           </Link>
 
@@ -457,7 +457,7 @@ export default function Navigation() {
             </Button>
             <div className="w-px h-10 px-3 bg-gray-300 flex items-center">
               <a
-                href="https://github.com/marowa-craig/scholarforge-ai"
+                href="https://github.com/marowa-craig/WorkContext-ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-700 hover:text-gray-900 transition-colors"
@@ -567,7 +567,7 @@ export default function Navigation() {
                 </Button>
                 <div className="justify-start text-gray-700 hover:text-gray-900">
                   <a
-                    href="https://github.com/marowa-craig/scholarforge-ai"
+                    href="https://github.com/marowa-craig/WorkContext-ai"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"

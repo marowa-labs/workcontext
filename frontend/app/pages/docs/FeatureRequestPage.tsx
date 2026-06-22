@@ -380,7 +380,7 @@ const FeatureRequestPage = () => {
             Request a Feature
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Help us shape the future of ScholarForge AIby suggesting new
+            Help us shape the future of WorkContextby suggesting new
             features and improvements
           </p>
         </div>
@@ -396,7 +396,7 @@ const FeatureRequestPage = () => {
               Request a Feature
             </h1>
             <p className="text-xl text-black max-w-3xl mx-auto dark:text-black">
-              Help us shape the future of ScholarForge AIby suggesting new
+              Help us shape the future of WorkContextby suggesting new
               features and improvements
             </p>
           </div>

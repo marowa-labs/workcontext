@@ -40,7 +40,7 @@ function IntroHero() {
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
             Academic Defensibility Partnership with{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              ScholarForge AI
+              WorkContext
             </span>
           </h1>
 
@@ -89,7 +89,7 @@ function PartnershipTypes() {
       icon: Users,
       title: "Academic Institutions",
       description:
-        "Provide ScholarForge AI's defensibility tools to your students and faculty with special institutional pricing and support.",
+        "Provide WorkContext's defensibility tools to your students and faculty with special institutional pricing and support.",
       benefits: [
         "Volume discounts and licensing",
         "Dedicated account management",
@@ -221,14 +221,14 @@ function SuccessStories() {
       name: "University Academic Press",
       logo: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=100&h=100&fit=crop",
       quote:
-        "Partnering with ScholarForge AIhas transformed how we support our authors through the publication process.",
+        "Partnering with WorkContexthas transformed how we support our authors through the publication process.",
       impact: "35% increase in manuscript submissions",
     },
     {
       name: "Research Institute Network",
       logo: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=100&h=100&fit=crop",
       quote:
-        "The integration with ScholarForge AIhas streamlined our collaborative research workflows significantly.",
+        "The integration with WorkContexthas streamlined our collaborative research workflows significantly.",
       impact: "50% reduction in project completion time",
     },
   ];

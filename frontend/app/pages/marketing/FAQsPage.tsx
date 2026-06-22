@@ -175,7 +175,7 @@ function FAQCategories() {
         },
         {
           question:
-            "How does ScholarForge AIensure my work is publication-ready?",
+            "How does WorkContextensure my work is publication-ready?",
           answer:
             "Our comprehensive suite of tools checks for originality, citation accuracy, formatting requirements, and academic standards. The system generates a defensibility report that confirms your work meets all requirements for academic submission.",
         },
@@ -225,7 +225,7 @@ function ContactSupport() {
       title: "Email Support",
       description:
         "Send us a detailed message and we'll respond within 24 hours.",
-      action: "support@scholarforgeai.com",
+      action: "support@WorkContextai.com",
     },
     {
       icon: MessageCircle,

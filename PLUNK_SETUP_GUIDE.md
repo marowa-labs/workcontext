@@ -70,34 +70,34 @@ curl -X POST http://localhost:3001/api/auth/signup \
 
 ## Domain Configuration (Optional)
 
-To send emails from your own domain (`email.scholarforge.ai`):
+To send emails from your own domain (`email.WorkContext.ai`):
 
 ### Step 1: Add Domain in Plunk
 1. Go to Plunk dashboard → **Settings** → **Domains**
 2. Click **Add Domain**
-3. Enter: `email.scholarforge.ai`
+3. Enter: `email.WorkContext.ai`
 
 ### Step 2: Add DNS Records
 Add these DNS records to your domain:
 
 ```
 Type: TXT
-Host: email.scholarforge.ai
+Host: email.WorkContext.ai
 Value: [Provided by Plunk]
 
 Type: CNAME
-Host: plunk._domainkey.email.scholarforge.ai
+Host: plunk._domainkey.email.WorkContext.ai
 Value: [Provided by Plunk]
 
 Type: MX
-Host: email.scholarforge.ai
+Host: email.WorkContext.ai
 Value: [Provided by Plunk]
 ```
 
 ### Step 3: Verify
 - Wait for DNS propagation (5-30 minutes)
 - Click **Verify** in Plunk dashboard
-- Once verified, emails will show as from `noreply@email.scholarforge.ai`
+- Once verified, emails will show as from `noreply@email.WorkContext.ai`
 
 ## Troubleshooting
 
@@ -172,3 +172,4 @@ For higher volumes, upgrade to a paid plan.
 ---
 
 **Last Updated:** 2026-05-30
+

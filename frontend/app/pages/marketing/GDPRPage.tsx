@@ -31,7 +31,7 @@ function IntroHero() {
           </p>
 
           <p className="text-gray-200 max-w-2xl mx-auto">
-            ScholarForge AIis committed to protecting your privacy and complying
+            WorkContextis committed to protecting your privacy and complying
             with the General Data Protection Regulation (GDPR).
           </p>
         </div>
@@ -259,9 +259,9 @@ function GDPRContent() {
             this policy or your rights:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-200">
-            <li>By email: dpo@scholarforgeai.com</li>
+            <li>By email: dpo@WorkContextai.com</li>
             <li>
-              By post: Data Protection Officer, ScholarForge AI, 123 Privacy
+              By post: Data Protection Officer, WorkContext, 123 Privacy
               Street, San Francisco, CA 94107
             </li>
           </ul>

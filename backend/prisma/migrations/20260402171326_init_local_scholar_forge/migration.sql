@@ -903,7 +903,7 @@ CREATE TABLE "BackupSchedule" (
     "next_run" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "destination" TEXT NOT NULL DEFAULT 'ScholarForge AI',
+    "destination" TEXT NOT NULL DEFAULT 'WorkContext',
     CONSTRAINT "BackupSchedule_pkey" PRIMARY KEY ("id")
 );
 
@@ -2253,3 +2253,4 @@ ADD CONSTRAINT "_TaskLabels_A_fkey" FOREIGN KEY ("A") REFERENCES "WorkspaceLabel
 -- AddForeignKey
 ALTER TABLE "_TaskLabels"
 ADD CONSTRAINT "_TaskLabels_B_fkey" FOREIGN KEY ("B") REFERENCES "WorkspaceTask" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

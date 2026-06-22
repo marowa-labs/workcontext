@@ -3982,7 +3982,7 @@ app.get("/api/test-exact-billing-flow", async (req, res) => {
 
 // Start server
 const server = app.listen(Number(PORT), "0.0.0.0", async () => {
-  logger.info(`ScholarForge AIhybrid backend server running on port ${PORT}`);
+  logger.info(`WorkContexthybrid backend server running on port ${PORT}`);
   logger.info(`WebSocket collaboration server running on port 9081`);
   logger.info(`WebSocket notification server running on port 8082`);
   metrics.setGauge("server_status", 1);
@@ -4081,3 +4081,4 @@ process.on("uncaughtException", (error) => {
 });
 
 export default app;
+

@@ -4,11 +4,11 @@ import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import logger from "../monitoring/logger";
 import { prisma } from "../lib/prisma";
-import { SubscriptionService, plans } from "./subscriptionService";
 import { createNotification } from "./notificationService";
 import { aiPerformanceMonitor } from "../monitoring/aiPerformance";
 import { SearchService } from "./searchService";
 import { BYOKService } from "./byokService";
+import { SubscriptionService, plans } from "./subscriptionService";
 import { AIPerformanceMetric, AIUsage } from "@prisma/client";
 
 // OpenRouter client (lazy initialized) - keyed by API key
@@ -447,71 +447,10 @@ export class AIService {
         });
       }
 
-      // Check if user is approaching or has reached their AI limit
-      await this.checkAndNotifyAIUsageLimit(userId, usageRecord);
-
       return usageRecord;
     } catch (error) {
       logger.error("Error tracking AI usage:", error);
       return false;
-    }
-  }
-
-  // Check AI usage and send notifications when approaching limits
-  static async checkAndNotifyAIUsageLimit(userId: string, usageRecord: any) {
-    try {
-      // Get user's subscription
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
-
-      const planId = subscription?.plan || "free";
-      const planLimits = plans[planId as keyof typeof plans].features;
-
-      // Calculate total usage
-      const totalUsage =
-        (usageRecord?.request_count || 0) +
-        (usageRecord?.chat_message_count || 0) +
-        (usageRecord?.image_generation_count || 0) +
-        (usageRecord?.web_search_count || 0) +
-        (usageRecord?.deep_search_count || 0);
-
-      const limit = planLimits.aiRequests as number;
-
-      // Skip if unlimited
-      if ((planLimits.aiRequests as any) === -1) return;
-
-      // Calculate usage percentage
-      const usagePercentage = (totalUsage / limit) * 100;
-
-      // Send notification at 80% and 90% usage
-      if (usagePercentage >= 80 && usagePercentage < 85) {
-        await createNotification(
-          userId,
-          "ai_limit",
-          "AI Usage Alert",
-          `You've used 80% of your monthly AI requests (${totalUsage}/${limit}). Consider upgrading for unlimited access.`,
-          { usagePercentage, totalUsage, limit },
-        );
-      } else if (usagePercentage >= 90 && usagePercentage < 95) {
-        await createNotification(
-          userId,
-          "ai_limit",
-          "AI Usage Alert",
-          `You've used 90% of your monthly AI requests (${totalUsage}/${limit}). Upgrade now to avoid service interruption.`,
-          { usagePercentage, totalUsage, limit },
-        );
-      } else if (usagePercentage >= 95) {
-        await createNotification(
-          userId,
-          "ai_limit",
-          "AI Usage Alert - Critical",
-          `You've used 95% of your monthly AI requests (${totalUsage}/${limit}). Upgrade immediately to continue using AI features.`,
-          { usagePercentage, totalUsage, limit },
-        );
-      }
-    } catch (error) {
-      logger.error("Error checking AI usage limit:", error);
     }
   }
 
@@ -551,9 +490,53 @@ export class AIService {
       if (modelIds.includes(normalizedUserModel)) return normalizedUserModel;
       if (modelIds.includes(userModel)) return userModel;
 
+      // Selected model not found in available models — fall back to same provider only
+      const selectedProvider = getModelProvider(normalizedUserModel);
+      const sameProviderModels = modelIds.filter(
+        (m) => getModelProvider(m) === selectedProvider,
+      );
+
+      if (sameProviderModels.length > 0) {
+        // Fall back to another model from the same provider
+        logger.info("Falling back to same provider model", {
+          userId: userId.slice(0, 8),
+          requested: userModel,
+          provider: selectedProvider,
+          fallback: sameProviderModels[0],
+        });
+        return sameProviderModels[0];
+      }
+
+      // No models from the same provider — try any available model from a provider with a configured key
+      const providerHasKey: Record<string, boolean> = {
+        gemini: byokSettings.hasGoogleKey,
+        openai: byokSettings.hasOpenAIKey,
+        anthropic: byokSettings.hasClaudeKey,
+        openrouter: byokSettings.hasOpenRouterKey,
+      };
+
+      const keyedProviderModels = modelIds.filter(
+        (m) => providerHasKey[getModelProvider(m)],
+      );
+
+      if (keyedProviderModels.length > 0) {
+        logger.warn("Falling back to different provider model", {
+          userId: userId.slice(0, 8),
+          requested: userModel,
+          requestedProvider: selectedProvider,
+          fallback: keyedProviderModels[0],
+          fallbackProvider: getModelProvider(keyedProviderModels[0]),
+        });
+        return keyedProviderModels[0];
+      }
+
+      // Last resort: any available model
       if (modelIds.length > 0) {
-        const selected = this.selectModelFromPool(modelIds, context);
-        if (selected) return selected;
+        logger.warn("Falling back to any available model", {
+          userId: userId.slice(0, 8),
+          requested: userModel,
+          fallback: modelIds[0],
+        });
         return modelIds[0];
       }
 
@@ -610,70 +593,8 @@ export class AIService {
   static async checkUsageLimit(
     userId: string,
   ): Promise<{ hasLimit: boolean; remaining: number }> {
-    try {
-      const now = new Date();
-      const usage: any = await prisma.aIUsage.findUnique({
-        where: {
-          user_id_month_year: {
-            user_id: userId,
-            month: now.getMonth() + 1,
-            year: now.getFullYear(),
-          },
-        },
-      });
-
-      // BYOK users have no platform-imposed limits — they pay for their own API usage
-      const byokSettings = await BYOKService.getSettings(userId);
-      const hasBYOK =
-        byokSettings.hasGoogleKey ||
-        byokSettings.hasOpenAIKey ||
-        byokSettings.hasClaudeKey ||
-        byokSettings.hasOpenRouterKey;
-
-      if (hasBYOK) {
-        // BYOK users: no platform limit, return a high remaining count
-        logger.info("BYOK user — skipping platform usage limits", {
-          userId: userId.slice(0, 8) + "...",
-        });
-        return { hasLimit: false, remaining: 1000000 };
-      }
-
-      // Non-BYOK users: check subscription-based limits
-      const canPerform = await SubscriptionService.canPerformAction(
-        userId,
-        "ai_request",
-      );
-
-      if (!canPerform.allowed) {
-        return { hasLimit: true, remaining: 0 };
-      }
-
-      // Default limit is based on subscription
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
-
-      const planId = subscription?.plan || "free";
-      const planLimits = plans[planId as keyof typeof plans].features;
-
-      const limit = planLimits.aiRequests;
-      const used =
-        (usage?.request_count || 0) +
-        (usage?.chat_message_count || 0) +
-        (usage?.image_generation_count || 0) +
-        (usage?.web_search_count || 0) +
-        (usage?.deep_search_count || 0);
-      const remaining =
-        limit === -1 || (limit as any) === -1 ? 1000000 : limit - used;
-
-      return {
-        hasLimit: remaining <= 0,
-        remaining: remaining > 0 ? remaining : 0,
-      };
-    } catch (error) {
-      logger.error("Error checking AI usage limit:", error);
-      return { hasLimit: false, remaining: 1000000 };
-    }
+    // All users have unlimited access — no subscription-based limits
+    return { hasLimit: false, remaining: 1000000 };
   }
 
   // Process AI request based on action type
@@ -681,21 +602,8 @@ export class AIService {
     const { action, text, context, preferences, userId, model } = request;
     const startTime = Date.now();
 
-    // Check if user can perform this action
-    // Exempt grammar checking and automatic features from quota consumption
-    const isAutomatic = request.isAutomatic === true;
-    if (action !== "fix_grammar" && !isAutomatic) {
-      const canPerform = await SubscriptionService.canPerformAction(
-        userId,
-        "ai_request",
-      );
-      if (!canPerform.allowed) {
-        throw new Error(canPerform.reason || "AI request limit reached");
-      }
-    }
-
     // Track AI usage
-    // Exempt grammar checking and automatic features from usage tracking
+    const isAutomatic = request.isAutomatic === true;
     if (action !== "fix_grammar" && !isAutomatic) {
       await this.trackAIUsage(userId);
     }
@@ -1429,7 +1337,7 @@ Provide a helpful response.`;
       hasFileUrl: !!fileUrl,
       hasMetadata: !!metadata,
       model,
-      metadataDetails: metadata, // Log metadata details for debugging
+      metadataDetails: metadata,
     });
 
     // Check if user can perform this action
@@ -1444,7 +1352,7 @@ Provide a helpful response.`;
     // Track AI usage
     await this.trackAIUsage(userId, "chat_message");
 
-    // Get session context
+    // Get session context — pass through to getDocumentContext
     const session = await (prisma as any).aIChatSession.findUnique({
       where: { id: sessionId },
       include: { project: true },
@@ -1474,7 +1382,6 @@ Provide a helpful response.`;
         userName =
           metaData?.name || metaData?.full_name || metaData?.first_name || "";
       } catch (e) {
-        // If parsing fails, try to get name directly
         userName =
           user.raw_user_meta_data?.name ||
           user.raw_user_meta_data?.full_name ||
@@ -1498,162 +1405,99 @@ Provide a helpful response.`;
       })
       .join("\n");
 
-    // Build project context if available
+    // Build project context — prefer LIVE document content from the frontend
+    // over stale database content, so the AI reads what the user is actually writing
     let projectContext = "";
-    if (session?.project) {
+    const liveContent = metadata?.liveDocumentContent || "";
+    const cursorContext = metadata?.cursorContext || "";
+
+    if (liveContent) {
+      // Use LIVE content from the editor — what the user is currently typing
+      projectContext = `
+Project Context:
+Title: ${session?.project?.title || "(untitled)"}
+Type: ${session?.project?.type || "document"}
+
+// LIVE DOCUMENT CONTENT — this is what the user is currently writing:
+Document Content: ${liveContent}
+
+// Context before cursor — use this to understand what the user wants to complete:
+Text before cursor: ${cursorContext || "(none)"}`;
+    } else if (session?.project) {
+      // Fallback to database content
+      const docContent = session.project.content
+        ? JSON.stringify(session.project.content)
+        : "(empty)";
       projectContext = `
 Project Context:
 Title: ${session.project.title}
 Type: ${session.project.type}
-Citation Style: ${session.project.citation_style}
-Content: ${JSON.stringify(session.project.content)}`;
+Document Content: ${docContent}`;
     }
 
-    // Build prompt based on message type and metadata
+    // MODE-SPECIFIC SYSTEM PROMPT — context-aware based on whether a document is open
+    const mode = metadata?.chatMode || "general";
+    const hasDocument = !!session?.project;
     let prompt = "";
-    let systemMessage = `You are ScholarForge AI - THE CENTRAL INTELLIGENCE AND ENGINE of the entire ScholarForge platform. You are NOT just an assistant - you ARE the primary interface through which users interact with the platform. Users tell you what they want and YOU make it happen - creating, managing, navigating everything. Be conversational and empowering.
+    let systemMessage = "";
 
-When creating tables, ALWAYS use proper markdown table syntax with pipes (|) and dashes (-) to create well-formed tables. For example:
-| Column 1 | Column 2 | Column 3 |
-|----------|----------|----------|
-| Data 1   | Data 2   | Data 3   |
-| Data 4   | Data 5   | Data 6   |
+    if (mode === "autocomplete") {
+      systemMessage = `You are an intelligent autocomplete engine. Return ONLY the continuation text — no explanations, no markers, no commentary. Read the text before the cursor and continue it naturally. Match the tone, style, and formatting of the existing text. Never repeat what's already written.`;
+    } else if (mode === "research") {
+      systemMessage = `You are WorkContext in RESEARCH mode — an analytical assistant that reads documents deeply and provides insights. You can read the full document content. Your role is to:
+- Analyze document structure, arguments, and completeness
+- Identify gaps, weaknesses, and areas for improvement
+- Explain complex concepts found in the document
+- Suggest improvements and rewrites
+When you generate replacement or new content, use the editor markers:
+1. INSERT: [INSERT_INTO_EDITOR]content[/INSERT_INTO_EDITOR]
+2. DELETE: [DELETE_IN_EDITOR]exact text[/DELETE_IN_EDITOR]
+3. REPLACE: [REPLACE_IN_EDITOR]old|||new[/REPLACE_IN_EDITOR]
+Keep responses insightful but concise.${userName ? ` You are assisting ${userName}.` : ""}`;
+    } else if (hasDocument) {
+      // EDITOR CONTEXT: full agentic writing partner with document access
+      systemMessage = `You are WorkContext, an intelligent writing assistant. You have access to the user's current document.${userName ? ` You are assisting ${userName}.` : ""}
+When you need to modify the document, use these markers:
+1. INSERT: [INSERT_INTO_EDITOR]content[/INSERT_INTO_EDITOR]
+2. DELETE: [DELETE_IN_EDITOR]exact text[/DELETE_IN_EDITOR]
+3. REPLACE: [REPLACE_IN_EDITOR]exact old text|||new text[/REPLACE_IN_EDITOR]
+Keep chat brief — confirm, then markers. Don't announce your capabilities, just help naturally.`;
+    } else {
+      // GENERAL CHAT: like ChatGPT or Gemini — friendly, knowledgeable, conversational
+      systemMessage = `You are WorkContext, a friendly and knowledgeable AI assistant. You can help with:
+- Casual conversation and discussion
+- Answering questions on any topic
+- Brainstorming and creative thinking
+- Academic writing and research advice
+- Platform help (workspaces, projects, tasks) when asked
 
-Alternatively, you can use HTML table syntax when appropriate:
-<table>
-  <tr>
-    <th>Header 1</th>
-    <th>Header 2</th>
-    <th>Header 3</th>
-  </tr>
-  <tr>
-    <td>Data 1</td>
-    <td>Data 2</td>
-    <td>Data 3</td>
-  </tr>
-</table>
+Be warm, conversational, and natural — like chatting with a knowledgeable friend. Don't force platform actions unless the user specifically asks. It's perfectly fine to just have a general discussion.${userName ? ` You are assisting ${userName}.` : ""}`;
+    }
 
-NEVER output raw pipe characters (|) without proper table formatting. Always create complete, well-structured tables with headers and proper alignment.${userName ? ` You are currently assisting ${userName}.` : ""}\n\n`;
-
-    // Apply user preferences to system message
+    // Apply user preferences
     if (aiPreferences.formalityLevel) {
-      systemMessage += ` Maintain a ${aiPreferences.formalityLevel} level of formality.`;
+      systemMessage += ` Maintain a ${aiPreferences.formalityLevel} tone.`;
     }
-
-    if (aiPreferences.vocabularyLevel) {
-      systemMessage += ` Use ${aiPreferences.vocabularyLevel} vocabulary.`;
-    }
-
-    if (aiPreferences.voicePreference) {
-      systemMessage += ` Use ${aiPreferences.voicePreference} voice.`;
-    }
-
     if (aiPreferences.language) {
       systemMessage += ` Communicate in ${aiPreferences.language}.`;
     }
 
-    if (aiPreferences.fieldOfStudy) {
-      systemMessage += ` Focus on ${aiPreferences.fieldOfStudy} field.`;
-    }
-
-    // Handle different AI modes based on metadata
-    if (metadata) {
-      // Handle AI mode (chat vs editor)
-      if (metadata.aiMode === "editor") {
-        systemMessage +=
-          "\n\nYou are currently in EDITOR MODE. In this mode, you should:";
-        systemMessage +=
-          "\n1. Engage in conversation in the chat panel for planning and brainstorming";
-        systemMessage +=
-          "\n2. Provide content that can be directly inserted into the document editor";
-        systemMessage +=
-          "\n3. When providing content for the editor, format it clearly and indicate it's ready for insertion";
-        systemMessage +=
-          "\n4. For complex content, you can use the marker [INSERT INTO EDITOR]Content here[/INSERT INTO EDITOR]";
-        systemMessage +=
-          "\n5. Always provide well-structured, properly formatted content that can be directly inserted into a document";
-        systemMessage +=
-          "\n6. When responding with content for the editor, provide it in a clean format without markdown code blocks or special formatting unless specifically requested";
-        systemMessage +=
-          "\n7. Structure your response with clear paragraphs, headings, and lists as appropriate for academic writing";
-        systemMessage +=
-          "\n8. Do not include any explanatory text in your editor mode responses - only the content to be inserted";
-      } else {
-        systemMessage +=
-          "\n\nYou are currently in CHAT MODE. In this mode, you should:";
-        systemMessage +=
-          "\n1. Engage in conversation exclusively within the chat panel";
-        systemMessage +=
-          "\n2. Provide responses directly in the chat interface";
-        systemMessage +=
-          "\n3. Do not generate content for direct insertion into documents";
-        systemMessage +=
-          "\n4. Do not use markers like [INSERT INTO EDITOR] as this content should stay in the chat";
-      }
-
-      // Handle web search feature
-      if (metadata.webSearch) {
-        systemMessage +=
-          "\n\nWEB SEARCH is enabled. You can perform standard internet searches to gather information.";
-        systemMessage +=
-          "\nWhen using web search, indicate this by using the marker [WEB SEARCH]Query here[/WEB SEARCH]";
-        systemMessage +=
-          "\nProvide concise, relevant search queries that will yield useful results";
-      }
-
-      // Handle deep search feature
-      if (metadata.deepSearch) {
-        systemMessage +=
-          "\n\nDEEP SEARCH is enabled. You can perform in-depth academic/professional database searches.";
-        systemMessage +=
-          "\nWhen using deep search, indicate this by using the marker [DEEP SEARCH]Query here[/DEEP SEARCH]";
-        systemMessage +=
-          "\nFocus on academic, scholarly, or professional sources for comprehensive research";
-      }
-
-      // Handle image generation feature
-      if (metadata.imageGeneration) {
-        systemMessage +=
-          "\n\nIMAGE GENERATION is enabled. You can generate relevant images based on content needs.";
-        systemMessage +=
-          "\nWhen requesting image generation, indicate this by using the marker [IMAGE REQUEST]Image description here[/IMAGE REQUEST]";
-        systemMessage +=
-          "\nProvide clear, detailed descriptions of the images you want to generate";
-      }
-
-      // Ensure mutual exclusion between web search and deep search
-      if (metadata.webSearch && metadata.deepSearch) {
-        systemMessage +=
-          "\n\nNOTE: Both WEB SEARCH and DEEP SEARCH are enabled, but only one should be used at a time. Please choose the most appropriate search method for each query.";
-      }
-
-      // Add action markers to system message
-      systemMessage +=
-        "\n\nACTION MARKERS - When performing platform actions, use these markers within your response:\n";
-      systemMessage +=
-        "1. NAVIGATION: [NAVIGATE]/route[/NAVIGATE] - Navigate to a page (e.g., [NAVIGATE]/settings[/NAVIGATE])\n";
-      systemMessage +=
-        "2. CREATE SPACE: [CREATE_SPACE]Name|Description[/CREATE_SPACE] - Create a new project/workspace\n";
-      systemMessage +=
-        "3. OPEN DOCUMENT: [OPEN_DOCUMENT]doc_id[/OPEN_DOCUMENT] - Open a document for editing\n";
-      systemMessage +=
-        "4. INSERT INTO EDITOR: [INSERT INTO EDITOR]Content[/INSERT INTO EDITOR] - Insert content into document\n";
-      systemMessage +=
-        "Always include these markers alongside natural conversation, not instead of it.\n";
-    }
-
-    if (messageType === "image" && imageUrl) {
-      // For image messages, we would typically use a vision model
-      // For now, we'll acknowledge the image
+    if (mode === "autocomplete") {
+      prompt = `${cursorContext || ""}`;
+    } else if (messageType === "image" && imageUrl) {
       prompt = `User has sent an image. Please acknowledge it and ask what they'd like help with regarding this image.`;
-      systemMessage +=
-        "The user has sent an image. Acknowledge it and be ready to help with questions about it.\n\n";
-    } else {
-      // Always treat as regular chat message
+    } else if (hasDocument) {
       prompt = `Conversation History:
 ${conversationContext}
 
 ${projectContext}
+
+User Message: ${content}
+
+Please provide a helpful response. Use editor markers if you need to modify the document.`;
+    } else {
+      prompt = `Conversation History:
+${conversationContext}
 
 User Message: ${content}
 
@@ -1669,7 +1513,7 @@ Please provide a helpful response.`;
       );
     }
 
-    // Normalize short names (e.g. "gpt-4o-mini") to full AI_MODELS keys (e.g. "openai/gpt-4o-mini")
+    // Normalize short names
     const modelName = normalizeModelName(rawModelName);
 
     // Validate the user actually has a key for this model's provider, and fall back if not
@@ -2303,9 +2147,23 @@ ${formattedResults}
       })
       .join("\n");
 
-    // Build project context if available
+    // Build project context — prefer LIVE content from frontend over stale DB
     let projectContext = "";
-    if (session?.project) {
+    const liveContent = metadata?.liveDocumentContent || "";
+    const cursorContext = metadata?.cursorContext || "";
+
+    if (liveContent) {
+      projectContext = `
+Project Context:
+Title: ${session?.project?.title || "(untitled)"}
+Type: ${session?.project?.type || "document"}
+
+// LIVE DOCUMENT CONTENT:
+Document Content: ${liveContent}
+
+// Context before cursor:
+Text before cursor: ${cursorContext || "(none)"}`;
+    } else if (session?.project) {
       projectContext = `
 Project Context:
 Title: ${session.project.title}
@@ -2315,147 +2173,45 @@ Content: ${JSON.stringify(session.project.content)}`;
     }
 
     // Build prompt based on message type and metadata
+    const mode = metadata?.chatMode || "general";
+    const hasDocument = !!session?.project;
     let prompt = "";
-    let systemMessage = `You are ScholarForge AI - THE CENTRAL INTELLIGENCE AND ENGINE of the entire ScholarForge platform. You are NOT just an assistant - you ARE the primary interface through which users interact with the platform. Users tell you what they want and YOU make it happen - creating, managing, navigating everything. Be conversational and empowering.
+    let systemMessage = "";
 
-When creating tables, ALWAYS use proper markdown table syntax with pipes (|) and dashes (-) to create well-formed tables. For example:
-| Column 1 | Column 2 | Column 3 |
-|----------|----------|----------|
-| Data 1   | Data 2   | Data 3   |
-| Data 4   | Data 5   | Data 6   |
+    if (mode === "autocomplete") {
+      systemMessage = `You are an intelligent autocomplete engine. Return ONLY the continuation text — no explanations, no markers, no commentary. Read the text before the cursor and continue it naturally. Match the tone, style, and formatting of the existing text. Never repeat what's already written.`;
+    } else if (mode === "research") {
+      systemMessage = `You are WorkContext in RESEARCH mode — an analytical assistant that reads deeply and provides insights. Identify gaps, weaknesses, explain concepts, suggest rewrites. Use markers: [INSERT_INTO_EDITOR], [DELETE_IN_EDITOR], [REPLACE_IN_EDITOR]old|||new. Keep responses concise.${userName ? ` Assisting ${userName}.` : ""}`;
+    } else if (hasDocument) {
+      systemMessage = `You are WorkContext, an intelligent writing assistant with document access.${userName ? ` Assisting ${userName}.` : ""} Use markers to modify the document: [INSERT_INTO_EDITOR], [DELETE_IN_EDITOR], [REPLACE_IN_EDITOR]old|||new. Keep chat brief — confirm, then markers.`;
+    } else {
+      systemMessage = `You are WorkContext, a helpful workspace assistant. You help with writing, planning, brainstorming, and general questions. Be friendly, concise, and practical.${userName ? ` Assisting ${userName}.` : ""}`;
+    }
 
-Alternatively, you can use HTML table syntax when appropriate:
-<table>
-  <tr>
-    <th>Header 1</th>
-    <th>Header 2</th>
-    <th>Header 3</th>
-  </tr>
-  <tr>
-    <td>Data 1</td>
-    <td>Data 2</td>
-    <td>Data 3</td>
-  </tr>
-</table>
-
-NEVER output raw pipe characters (|) without proper table formatting. Always create complete, well-structured tables with headers and proper alignment.${userName ? ` You are currently assisting ${userName}.` : ""}\n\n`;
-
-    // Apply user preferences to system message
+    // Apply user preferences
     if (aiPreferences.formalityLevel) {
-      systemMessage += ` Maintain a ${aiPreferences.formalityLevel} level of formality.`;
+      systemMessage += ` Maintain a ${aiPreferences.formalityLevel} tone.`;
     }
-
-    if (aiPreferences.vocabularyLevel) {
-      systemMessage += ` Use ${aiPreferences.vocabularyLevel} vocabulary.`;
-    }
-
-    if (aiPreferences.voicePreference) {
-      systemMessage += ` Use ${aiPreferences.voicePreference} voice.`;
-    }
-
     if (aiPreferences.language) {
       systemMessage += ` Communicate in ${aiPreferences.language}.`;
     }
 
-    if (aiPreferences.fieldOfStudy) {
-      systemMessage += ` Focus on ${aiPreferences.fieldOfStudy} field.`;
-    }
-
-    // Handle different AI modes based on metadata
-    if (metadata) {
-      // Handle AI mode (chat vs editor)
-      if (metadata.aiMode === "editor") {
-        systemMessage +=
-          "\n\nYou are currently in EDITOR MODE. In this mode, you should:";
-        systemMessage +=
-          "\n1. Engage in conversation in the chat panel for planning ";
-        systemMessage +=
-          "\n2. Provide content that can be directly inserted into the document editor";
-        systemMessage +=
-          "\n3. When providing content for the editor, format it clearly and indicate it's ready for insertion";
-        systemMessage +=
-          "\n4. For complex content, you can use the marker [INSERT INTO EDITOR]Content here[/INSERT INTO EDITOR]";
-        systemMessage +=
-          "\n5. Always provide well-structured, properly formatted content that can be directly inserted into a document";
-        systemMessage +=
-          "\n6. When responding with content for the editor, provide it in a clean format without markdown code blocks or special formatting unless specifically requested";
-        systemMessage +=
-          "\n7. Structure your response with clear paragraphs, headings, and lists as appropriate for academic writing";
-        systemMessage +=
-          "\n8. Do not include any explanatory text in your editor mode responses - only the content to be inserted";
-      } else {
-        systemMessage +=
-          "\n\nYou are currently in CHAT MODE. In this mode, you should:";
-        systemMessage +=
-          "\n1. Engage in conversation exclusively within the chat panel";
-        systemMessage +=
-          "\n2. Provide responses directly in the chat interface";
-        systemMessage +=
-          "\n3. Do not generate content for direct insertion into documents";
-      }
-
-      // Handle web search feature
-      if (metadata.webSearch) {
-        systemMessage +=
-          "\n\nWEB SEARCH is enabled. You can perform standard internet searches to gather information.";
-        systemMessage +=
-          "\nWhen using web search, indicate this by using the marker [WEB SEARCH]Query here[/WEB SEARCH]";
-        systemMessage +=
-          "\nProvide concise, relevant search queries that will yield useful results";
-      }
-
-      // Handle deep search feature
-      if (metadata.deepSearch) {
-        systemMessage +=
-          "\n\nDEEP SEARCH is enabled. You can perform in-depth academic/professional database searches.";
-        systemMessage +=
-          "\nWhen using deep search, indicate this by using the marker [DEEP SEARCH]Query here[/DEEP SEARCH]";
-        systemMessage +=
-          "\nFocus on academic, scholarly, or professional sources for comprehensive research";
-      }
-
-      // Handle image generation feature
-      if (metadata.imageGeneration) {
-        systemMessage +=
-          "\n\nIMAGE GENERATION is enabled. You can generate relevant images based on content needs.";
-        systemMessage +=
-          "\nWhen requesting image generation, indicate this by using the marker [IMAGE REQUEST]Image description here[/IMAGE REQUEST]";
-        systemMessage +=
-          "\nProvide clear, detailed descriptions of the images you want to generate";
-      }
-
-      // Ensure mutual exclusion between web search and deep search
-      if (metadata.webSearch && metadata.deepSearch) {
-        systemMessage +=
-          "\n\nNOTE: Both WEB SEARCH and DEEP SEARCH are enabled, but only one should be used at a time. Please choose the most appropriate search method for each query.";
-      }
-
-      // Add action markers to system message
-      systemMessage +=
-        "\n\nACTION MARKERS - When performing platform actions, use these markers within your response:\n";
-      systemMessage +=
-        "1. NAVIGATION: [NAVIGATE]/route[/NAVIGATE] - Navigate to a page (e.g., [NAVIGATE]/settings[/NAVIGATE])\n";
-      systemMessage +=
-        "2. CREATE SPACE: [CREATE_SPACE]Name|Description[/CREATE_SPACE] - Create a new project/workspace\n";
-      systemMessage +=
-        "3. OPEN DOCUMENT: [OPEN_DOCUMENT]doc_id[/OPEN_DOCUMENT] - Open a document for editing\n";
-      systemMessage +=
-        "4. INSERT INTO EDITOR: [INSERT INTO EDITOR]Content[/INSERT INTO EDITOR] - Insert content into document\n";
-      systemMessage +=
-        "Always include these markers alongside natural conversation, not instead of it.\n";
-    }
-
-    if (messageType === "image" && imageUrl) {
-      // For image messages, we would typically use a vision model
-      // For now, we'll acknowledge the image
+    if (mode === "autocomplete") {
+      prompt = `${cursorContext || ""}`;
+    } else if (messageType === "image" && imageUrl) {
       prompt = `User has sent an image. Please acknowledge it and ask what they'd like help with regarding this image.`;
-      systemMessage +=
-        "The user has sent an image. Acknowledge it and be ready to help with questions about it.\n\n";
-    } else {
+    } else if (hasDocument) {
       prompt = `Conversation History:
 ${conversationContext}
 
 ${projectContext}
+
+User Message: ${content}
+
+Please provide a helpful response. Use editor markers if you need to modify the document.`;
+    } else {
+      prompt = `Conversation History:
+${conversationContext}
 
 User Message: ${content}
 
@@ -3146,12 +2902,22 @@ ${formattedResults}
       const planId = subscription?.plan || "free";
       const plan = plans[planId as keyof typeof plans];
 
-      // Determine model — use user's preferred model if set, otherwise fall back to Gemini default
+      // Determine model — use user's preferred model, or fall back to any available model
       const userRecord: any = await prisma.user.findUnique({
         where: { id: userId },
       });
       const userModel = userRecord?.["preferred_ai_model"] || null;
-      const model = userModel || "gemini-3.1-flash-lite";
+
+      // Use getUserModel to find the best available model (respects BYOK keys)
+      const model = userModel
+        ? await this.getUserModel(userId, userModel)
+        : await this.getUserModel(userId);
+
+      if (!model) {
+        throw new Error(
+          "No AI model available. Please configure an API key in your AI settings and select a model.",
+        );
+      }
 
       // Prepare the prompt for autocomplete
       const prompt = `You are an AI writing assistant. Provide a concise and contextually appropriate continuation for the following text.
@@ -3402,3 +3168,4 @@ ${formattedResults}
     }
   }
 }
+

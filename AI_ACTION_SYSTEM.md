@@ -1,6 +1,6 @@
 # AI Action System
 
-A comprehensive AI-powered action execution system that allows users to perform any action in ScholarForge AI through natural language commands in the AI chat interface.
+A comprehensive AI-powered action execution system that allows users to perform any action in WorkContext through natural language commands in the AI chat interface.
 
 ## Overview
 
@@ -252,3 +252,4 @@ Test the system by sending these commands in the AI chat:
 - AI-suggested workflows based on user patterns
 - Voice command integration
 - Custom action definitions by users
+

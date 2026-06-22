@@ -153,7 +153,7 @@ const TemplatesMarketplacePage = () => {
             </h1>
             <p className="text-xl text-black mb-6 dark:text-black">
               Browse thousands of templates for research papers, essays, and
-              more from the ScholarForge AIcommunity.
+              more from the WorkContextcommunity.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <button
@@ -317,7 +317,7 @@ const TemplatesMarketplacePage = () => {
                 </h3>
                 <p className="text-black dark:text-black">
                   Contribute your own templates and earn rewards from the
-                  ScholarForge AIcommunity.
+                  WorkContextcommunity.
                 </p>
               </div>
             </div>

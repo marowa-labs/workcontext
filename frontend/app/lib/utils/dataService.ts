@@ -180,14 +180,14 @@ class DataService {
 
       switch (options.format) {
         case "json":
-          filename = "ScholarForge AI-data-export.json";
+          filename = "WorkContext-data-export.json";
           const jsonData = JSON.stringify(response.data, null, 2);
           blob = new Blob([jsonData], {
             type: "application/json",
           });
           break;
         case "csv":
-          filename = "ScholarForge AI-data-export.csv";
+          filename = "WorkContext-data-export.csv";
           // For CSV, we need to convert the data on the frontend
           const csvData = this.convertToCSV(response.data);
           blob = new Blob([csvData], {
@@ -195,7 +195,7 @@ class DataService {
           });
           break;
         case "zip":
-          filename = "ScholarForge AI-data-export.zip";
+          filename = "WorkContext-data-export.zip";
           // Create a ZIP file with the data
           const zip = new JSZip();
 
@@ -205,7 +205,7 @@ class DataService {
           // Add a README file
           zip.file(
             "README.txt",
-            "ScholarForge AIData Export\n\nThis ZIP file contains your exported data in JSON format.",
+            "WorkContextData Export\n\nThis ZIP file contains your exported data in JSON format.",
           );
 
           // Generate the ZIP file
@@ -213,7 +213,7 @@ class DataService {
           blob = zipBlob;
           break;
         default:
-          filename = "ScholarForge AI-data-export.json";
+          filename = "WorkContext-data-export.json";
           const defaultData = JSON.stringify(response.data, null, 2);
           blob = new Blob([defaultData], {
             type: "application/json",
@@ -337,7 +337,7 @@ class DataService {
   static async triggerBackup(options?: { destination?: string }) {
     try {
       const response = await apiClient.post("/api/backup", {
-        destination: options?.destination || "ScholarForge AI",
+        destination: options?.destination || "WorkContext",
       });
       // Fix: Check the correct response structure
       if (response && response.success) {

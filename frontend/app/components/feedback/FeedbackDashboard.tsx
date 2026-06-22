@@ -415,7 +415,7 @@ const FeedbackDashboard: React.FC = () => {
                       Feedback Types
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      Different ways to contribute to ScholarForge AI
+                      Different ways to contribute to WorkContext
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -466,7 +466,7 @@ const FeedbackDashboard: React.FC = () => {
                     Submit Feedback
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Help us improve ScholarForge AIby sharing your experience
+                    Help us improve WorkContextby sharing your experience
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

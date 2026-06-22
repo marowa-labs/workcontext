@@ -98,6 +98,7 @@ model User {
   pdf_documents            PdfDocument[]
   notes                    Note[]
   ai_actions               AIAction[] // AI-executed actions
+  pinned_comments            PinnedComment[]
 
   // Workspace Relations
   owned_workspaces           Workspace[]           @relation("WorkspaceOwner")
@@ -1184,7 +1185,7 @@ model BackupSchedule {
   next_run        DateTime?
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
-  destination     String    @default("ScholarForge AI")
+  destination     String    @default("WorkContext")
   user            User      @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
@@ -1428,4 +1429,22 @@ model AIAction {
   @@index([target_id])
   @@index([created_at])
   @@index([session_id])
+}
+
+model PinnedComment {
+  id         String   @id @default(uuid())
+  user_id    String
+  attachment_id String
+  selected_text  String   @db.Text
+  comment    String   @db.Text
+  position_x Float    @default(0)
+  position_y Float    @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([attachment_id])
+  @@index([user_id, attachment_id])
 }

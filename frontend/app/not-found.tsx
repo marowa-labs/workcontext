@@ -23,7 +23,7 @@ export default function NotFound() {
           404
         </h1>
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Lost in the ScholarForge?
+          Lost in the WorkContext?
         </h2>
         <p className="text-gray-600 text-lg mb-10 leading-relaxed">
           The page you're looking for seems to have vanished into the archives.

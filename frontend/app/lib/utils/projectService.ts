@@ -32,7 +32,7 @@ export class ProjectService {
     try {
       const response = await apiClient.put(
         `/api/projects/${projectId}`,
-        updateData
+        updateData,
       );
       return response.project || response;
     } catch (error) {
@@ -61,7 +61,7 @@ export class ProjectService {
       }
 
       const response = await apiClient.get(
-        `/api/projects?${queryParams.toString()}`
+        `/api/projects?${queryParams.toString()}`,
       );
       return response.projects || response;
     } catch (error) {
@@ -74,17 +74,17 @@ export class ProjectService {
   static async getUserProjectsInWorkspace(
     userId: string,
     workspaceId: string,
-    archived: boolean = false
+    archivedOnly: boolean = false,
   ) {
     try {
       const queryParams = new URLSearchParams({ userId });
       queryParams.append("workspaceId", workspaceId);
-      if (archived) {
-        queryParams.append("archived", "true");
+      if (archivedOnly) {
+        queryParams.append("archivedOnly", "true");
       }
 
       const response = await apiClient.get(
-        `/api/projects?${queryParams.toString()}`
+        `/api/projects?${queryParams.toString()}`,
       );
       return response.projects || response;
     } catch (error) {
@@ -96,17 +96,21 @@ export class ProjectService {
   // Get all projects for a user that are not in any workspace (personal projects)
   static async getUserPersonalProjects(
     userId: string,
-    archived: boolean = false
+    includeArchived: boolean = false,
+    archivedOnly: boolean = false,
   ) {
     try {
       const queryParams = new URLSearchParams({ userId });
-      queryParams.append("workspaceId", "null"); // null indicates personal projects
-      if (archived) {
-        queryParams.append("archived", "true");
+      queryParams.append("workspaceId", "null"); // null = personal projects only (no workspace)
+      if (includeArchived) {
+        queryParams.append("includeArchived", "true");
+      }
+      if (archivedOnly) {
+        queryParams.append("archivedOnly", "true");
       }
 
       const response = await apiClient.get(
-        `/api/projects?${queryParams.toString()}`
+        `/api/projects?${queryParams.toString()}`,
       );
       return response.projects || response;
     } catch (error) {
@@ -119,7 +123,7 @@ export class ProjectService {
   static async getDocumentVersions(projectId: string) {
     try {
       const response = await apiClient.get(
-        `/api/projects/${projectId}/document-versions`
+        `/api/projects/${projectId}/document-versions`,
       );
       return response.versions || response;
     } catch (error) {
@@ -132,7 +136,7 @@ export class ProjectService {
   static async createDocumentVersion(
     projectId: string,
     content: any,
-    wordCount: number
+    wordCount: number,
   ) {
     try {
       const response = await apiClient.post(
@@ -140,7 +144,7 @@ export class ProjectService {
         {
           content,
           wordCount,
-        }
+        },
       );
       return response.version || response;
     } catch (error) {
@@ -171,7 +175,7 @@ export class ProjectService {
   static async getVersionSchedules(projectId: string) {
     try {
       const response = await apiClient.get(
-        `/api/projects/${projectId}/version-schedules`
+        `/api/projects/${projectId}/version-schedules`,
       );
       return response.schedules || response;
     } catch (error) {
@@ -183,12 +187,12 @@ export class ProjectService {
   // Create a version schedule
   static async createVersionSchedule(
     projectId: string,
-    scheduleData: { frequency: string }
+    scheduleData: { frequency: string },
   ) {
     try {
       const response = await apiClient.post(
         `/api/projects/${projectId}/version-schedules`,
-        scheduleData
+        scheduleData,
       );
       return response.schedule || response;
     } catch (error) {
@@ -201,12 +205,12 @@ export class ProjectService {
   static async updateVersionSchedule(
     projectId: string,
     scheduleId: string,
-    updateData: { enabled?: boolean; frequency?: string }
+    updateData: { enabled?: boolean; frequency?: string },
   ) {
     try {
       const response = await apiClient.put(
         `/api/projects/${projectId}/version-schedules/${scheduleId}`,
-        updateData
+        updateData,
       );
       return response.schedule || response;
     } catch (error) {
@@ -220,7 +224,7 @@ export class ProjectService {
     try {
       const response = await apiClient.delete(
         `/api/projects/${projectId}/version-schedules/${scheduleId}`,
-        {}
+        {},
       );
       return response;
     } catch (error) {
@@ -232,7 +236,7 @@ export class ProjectService {
   // Get all projects for a user that are in a workspace (workspace projects)
   static async getUserWorkspaceProjects(
     userId: string,
-    archived: boolean = false
+    archived: boolean = false,
   ) {
     try {
       const queryParams = new URLSearchParams({ userId });
@@ -243,7 +247,7 @@ export class ProjectService {
       }
 
       const response = await apiClient.get(
-        `/api/projects?${queryParams.toString()}`
+        `/api/projects?${queryParams.toString()}`,
       );
       return response.projects || response;
     } catch (error) {

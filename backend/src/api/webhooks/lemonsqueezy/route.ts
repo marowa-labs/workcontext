@@ -490,7 +490,7 @@ async function handlePaymentSuccess(data: any) {
     // Send payment success email
     const amount = data.attributes.first_order_item?.price || 0;
     const planName =
-      data.attributes.first_order_item?.product_name || "ScholarForge AI";
+      data.attributes.first_order_item?.product_name || "WorkContext";
     const transactionId = data.id;
     const date = data.attributes.created_at;
 
@@ -524,7 +524,7 @@ async function handlePaymentFailed(data: any) {
     // Send payment failed email
     const amount = data.attributes.first_order_item?.price || 0;
     const planName =
-      data.attributes.first_order_item?.product_name || "ScholarForge AI";
+      data.attributes.first_order_item?.product_name || "WorkContext";
     const errorMessage = data.attributes.error || "Payment processing failed";
 
     await EmailService.sendPaymentFailedEmail(
@@ -548,7 +548,7 @@ async function handlePaymentRefunded(data: any) {
     // Send refund notification email
     const amount = data.attributes.first_order_item?.price || 0;
     const planName =
-      data.attributes.first_order_item?.product_name || "ScholarForge AI";
+      data.attributes.first_order_item?.product_name || "WorkContext";
     const transactionId = data.id;
     const date = data.attributes.created_at;
 
@@ -556,7 +556,7 @@ async function handlePaymentRefunded(data: any) {
     await EmailService.sendNotificationEmail(
       user.email,
       user.full_name || "",
-      "ScholarForge AIPayment Refunded",
+      "WorkContextPayment Refunded",
       `Your payment of $${(amount / 100).toFixed(2)} for ${planName} has been refunded. The refund should appear in your account within 5-10 business days.`,
       "payment_refund",
     );
@@ -575,7 +575,7 @@ async function handleOrderCreated(data: any) {
     // Send invoice available email
     const amount = data.attributes.first_order_item?.price || 0;
     const planName =
-      data.attributes.first_order_item?.product_name || "ScholarForge AI";
+      data.attributes.first_order_item?.product_name || "WorkContext";
     const invoiceId = data.id;
     const dueDate = data.attributes.created_at; // Using order creation date as due date
     const downloadUrl = data.attributes.urls?.receipt || "#";
@@ -602,12 +602,12 @@ async function handleOrderRefunded(data: any) {
     // Send refund notification email
     const amount = data.attributes.first_order_item?.price || 0;
     const planName =
-      data.attributes.first_order_item?.product_name || "ScholarForge AI";
+      data.attributes.first_order_item?.product_name || "WorkContext";
 
     await EmailService.sendNotificationEmail(
       user.email,
       user.full_name || "",
-      "ScholarForge AIOrder Refunded",
+      "WorkContextOrder Refunded",
       `Your order of $${(amount / 100).toFixed(2)} for ${planName} has been refunded. The refund should appear in your account within 5-10 business days.`,
       "order_refund",
     );
@@ -615,3 +615,4 @@ async function handleOrderRefunded(data: any) {
 }
 
 export default router;
+

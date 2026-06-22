@@ -189,7 +189,7 @@ const ResetPasswordPage: React.FC = () => {
               Security tips:
             </p>
             <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-              <li>Use a unique password for your ScholarForge AIaccount</li>
+              <li>Use a unique password for your WorkContextaccount</li>
               <li>Consider using a password manager</li>
               <li>Never share your password with others</li>
             </ul>

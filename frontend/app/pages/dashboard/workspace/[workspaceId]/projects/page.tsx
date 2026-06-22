@@ -5,12 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Plus, Grid3X3, List } from "lucide-react";
 import ProjectCards from "../../../../../components/dashboard/ProjectCards";
 import CreateProjectModal from "../../../../../components/dashboard/CreateProjectModal";
+import { ExportModal } from "../../../../../components/editor/export-modal";
 import { useUser } from "../../../../../lib/utils/useUser";
 import ProjectService from "../../../../../lib/utils/projectService";
 import WorkspaceService from "../../../../../lib/utils/workspaceService";
 import ExportService from "../../../../../lib/utils/exportService";
 import { useToast } from "../../../../../hooks/use-toast";
-import BillingService from "../../../../../lib/utils/billingService";
 
 type ViewMode = "grid" | "list";
 
@@ -19,6 +19,7 @@ export default function WorkspaceProjectsPage() {
   const params = useParams();
   const { toast } = useToast();
   const [projects, setProjects] = useState<any[]>([]);
+  const [archivedProjects, setArchivedProjects] = useState<any[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -27,7 +28,7 @@ export default function WorkspaceProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [renamingProject, setRenamingProject] = useState<any>(null);
   const [newProjectName, setNewProjectName] = useState("");
-  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [exportingProject, setExportingProject] = useState<any>(null);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { data: user, loading: userLoading } = useUser();
   const workspaceId = params.workspaceId as string;
@@ -50,30 +51,10 @@ export default function WorkspaceProjectsPage() {
     fetchWorkspace();
   }, [workspaceId]);
 
+  // Load active projects from workspace
   useEffect(() => {
     let isMounted = true;
 
-    const loadSubscriptionData = async () => {
-      if (!user) return;
-
-      try {
-        const subscription = await BillingService.getCurrentSubscription();
-        if (isMounted) {
-          setSubscriptionData(subscription);
-        }
-      } catch (error: any) {
-        console.error("Failed to load subscription data:", error);
-      }
-    };
-
-    loadSubscriptionData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  useEffect(() => {
     const loadProjects = async () => {
       if (!user || !workspaceId) return;
 
@@ -81,40 +62,51 @@ export default function WorkspaceProjectsPage() {
       setError(null);
 
       try {
-        const fetchArchived = activeFilter === "archived";
-        const projectsData = await ProjectService.getUserProjectsInWorkspace(
-          user.id,
-          workspaceId,
-          fetchArchived,
-        );
-        setProjects(projectsData);
+        if (activeFilter === "archived") {
+          // Load archived projects separately
+          const archived = await ProjectService.getUserProjectsInWorkspace(
+            user.id,
+            workspaceId,
+            true,
+          );
+          if (isMounted) setArchivedProjects(archived || []);
+        } else {
+          // Load active (non-archived) projects
+          const projectsData = await ProjectService.getUserProjectsInWorkspace(
+            user.id,
+            workspaceId,
+            false,
+          );
+          if (isMounted) setProjects(projectsData || []);
+        }
       } catch (error: any) {
         console.error("Failed to load workspace projects:", error);
-        if (error.message && error.message.includes("fetch")) {
-          setError(
-            "Unable to connect to the server. Please make sure the backend API is running.",
-          );
-        } else {
+        if (isMounted)
           setError("Failed to load spaces. Please try again later.");
-        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     loadProjects();
+    return () => {
+      isMounted = false;
+    };
   }, [user, workspaceId, activeFilter]);
 
+  // Filter by status (client-side); archived handled as separate data source
   useEffect(() => {
-    let filtered = projects;
-
-    // Apply status filter
-    if (activeFilter !== "all" && activeFilter !== "archived") {
-      filtered = filtered.filter((project) => project.status === activeFilter);
+    if (activeFilter === "archived") {
+      setFilteredProjects(archivedProjects);
+      return;
     }
 
+    let filtered = [...projects];
+    if (activeFilter !== "all") {
+      filtered = filtered.filter((p) => p.status === activeFilter);
+    }
     setFilteredProjects(filtered);
-  }, [projects, activeFilter]);
+  }, [projects, archivedProjects, activeFilter]);
 
   const handleCreateProject = () => {
     setIsCreateModalOpen(true);
@@ -189,14 +181,14 @@ export default function WorkspaceProjectsPage() {
         description: `Creating a copy of "${project.title}"...`,
       });
 
-      const duplicateData = {
-        ...project,
+      const duplicatedProject = await ProjectService.createProject({
         title: `${project.title} (Copy)`,
-        id: undefined,
-      };
-
-      const duplicatedProject =
-        await ProjectService.createProject(duplicateData);
+        description: project.description,
+        type: project.type || "document",
+        content: project.content,
+        citation_style: project.citation_style,
+        workspace_id: workspaceId,
+      });
       setProjects((prev) => [duplicatedProject, ...prev]);
 
       toast({
@@ -214,37 +206,7 @@ export default function WorkspaceProjectsPage() {
   };
 
   const handleExportProject = async (project: any) => {
-    try {
-      toast({
-        title: "Export Started",
-        description: `Exporting "${project.title}"... This may take a moment.`,
-      });
-
-      const blob = await ExportService.exportProjectBlob(project.id, {
-        format: "pdf",
-      });
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${project.title.replace(/\s+/g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Export Complete",
-        description: `"${project.title}" has been exported successfully.`,
-      });
-    } catch (error: any) {
-      console.error("Failed to export project:", error);
-      toast({
-        title: "Export Failed",
-        description: `Failed to export "${project.title}". Please try again.`,
-        variant: "destructive",
-      });
-    }
+    setExportingProject(project);
   };
 
   const handleArchiveProject = async (project: any) => {
@@ -258,6 +220,7 @@ export default function WorkspaceProjectsPage() {
           status: "archived",
         });
 
+        const archived: any = { ...project, status: "archived" };
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
@@ -287,8 +250,8 @@ export default function WorkspaceProjectsPage() {
           status: "draft",
         });
 
-        // Remove from current list since it's now restored
-        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        // Remove from archived list
+        setArchivedProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -313,7 +276,9 @@ export default function WorkspaceProjectsPage() {
         )
       ) {
         await ProjectService.deleteProject(project.id);
+        // Remove from both active and archived lists
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        setArchivedProjects((prev) => prev.filter((p) => p.id !== project.id));
 
         toast({
           title: "Success",
@@ -445,11 +410,6 @@ export default function WorkspaceProjectsPage() {
     }
   };
 
-  // Check if user has Researcher plan
-  const isResearcherPlan =
-    subscriptionData?.plan === "Researcher" ||
-    subscriptionData?.plan?.name === "Researcher";
-
   if (userLoading) {
     return (
       <div className="p-8">
@@ -484,15 +444,17 @@ export default function WorkspaceProjectsPage() {
         </div>
 
         <div className="flex space-x-3">
-          {/* Batch Export Button - only for Researcher plan */}
-          {isResearcherPlan && projects.length > 0 && (
+          {/* Batch Export Button */}
+          {projects.length > 0 && (
             <button
               onClick={handleBatchExport}
               disabled={selectedProjects.length === 0}
-              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${selectedProjects.length > 0
-                ? "bg-green-600 hover:bg-green-700 text-white"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-                }`}>
+              className={`inline-flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
+                selectedProjects.length > 0
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
               <Plus className="w-5 h-5 mr-2" />
               Batch Export ({selectedProjects.length})
             </button>
@@ -500,7 +462,8 @@ export default function WorkspaceProjectsPage() {
 
           <button
             onClick={handleCreateProject}
-            className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl">
+            className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+          >
             <Plus className="w-5 h-5 mr-2" />
             New Space
           </button>
@@ -529,12 +492,14 @@ export default function WorkspaceProjectsPage() {
             <div className="mt-4 flex justify-end space-x-3">
               <button
                 onClick={() => setRenamingProject(null)}
-                className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md">
+                className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md"
+              >
                 Cancel
               </button>
               <button
                 onClick={handleRenameConfirm}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
                 Rename
               </button>
             </div>
@@ -545,26 +510,25 @@ export default function WorkspaceProjectsPage() {
       {/* Filters */}
       {projects.length >= 0 && (
         <div className="flex items-center space-x-2 mb-6">
-          {/* Select All Checkbox - only for Researcher plan */}
-          {isResearcherPlan && (
-            <div className="flex items-center mr-4">
-              <input
-                type="checkbox"
-                id="select-all"
-                checked={
-                  selectedProjects.length === filteredProjects.length &&
-                  filteredProjects.length > 0
-                }
-                onChange={selectAllProjects}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-200 rounded"
-              />
-              <label
-                htmlFor="select-all"
-                className="ml-2 text-sm text-foreground">
-                Select All
-              </label>
-            </div>
-          )}
+          {/* Select All Checkbox */}
+          <div className="flex items-center mr-4">
+            <input
+              type="checkbox"
+              id="select-all"
+              checked={
+                selectedProjects.length === filteredProjects.length &&
+                filteredProjects.length > 0
+              }
+              onChange={selectAllProjects}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-200 rounded"
+            />
+            <label
+              htmlFor="select-all"
+              className="ml-2 text-sm text-foreground"
+            >
+              Select All
+            </label>
+          </div>
 
           <span className="text-sm font-medium text-foreground mr-2">
             Filter:
@@ -573,10 +537,12 @@ export default function WorkspaceProjectsPage() {
             <button
               key={filter.id}
               onClick={() => setActiveFilter(filter.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${activeFilter === filter.id
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                activeFilter === filter.id
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
               {filter.label}
             </button>
           ))}
@@ -585,18 +551,22 @@ export default function WorkspaceProjectsPage() {
           <div className="flex items-center bg-muted rounded-lg p-1 ml-auto">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-colors duration-200 ${viewMode === "grid"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-                }`}>
+              className={`p-2 rounded-md transition-colors duration-200 ${
+                viewMode === "grid"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
               <Grid3X3 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-colors duration-200 ${viewMode === "list"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-                }`}>
+              className={`p-2 rounded-md transition-colors duration-200 ${
+                viewMode === "list"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
               <List className="w-4 h-4" />
             </button>
           </div>
@@ -612,7 +582,8 @@ export default function WorkspaceProjectsPage() {
                 className="h-5 w-5 text-destructive"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
-                fill="currentColor">
+                fill="currentColor"
+              >
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -637,12 +608,14 @@ export default function WorkspaceProjectsPage() {
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-destructive bg-destructive/10 hover:bg-destructive/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive">
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-destructive bg-destructive/10 hover:bg-destructive/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive"
+                >
                   <svg
                     className="-ml-0.5 mr-2 h-4 w-4"
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
-                    fill="currentColor">
+                    fill="currentColor"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
@@ -664,7 +637,8 @@ export default function WorkspaceProjectsPage() {
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="bg-card rounded-xl border border-border p-6 animate-pulse">
+                className="bg-card rounded-xl border border-border p-6 animate-pulse"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-muted rounded-lg"></div>
                   <div className="w-6 h-6 bg-muted rounded"></div>
@@ -696,7 +670,6 @@ export default function WorkspaceProjectsPage() {
                 setSelectedProjects([...selectedProjects, projectId]);
               }
             }}
-            isResearcherPlan={isResearcherPlan}
           />
         )}
       </>
@@ -710,6 +683,17 @@ export default function WorkspaceProjectsPage() {
         onProjectCreate={handleProjectCreate}
         initialWorkspaceId={workspaceId}
       />
+
+      {/* Export Modal */}
+      {exportingProject && (
+        <ExportModal
+          isOpen={!!exportingProject}
+          onClose={() => setExportingProject(null)}
+          editor={null}
+          documentTitle={exportingProject.title || "Untitled"}
+          projectId={exportingProject.id}
+        />
+      )}
     </div>
   );
 }

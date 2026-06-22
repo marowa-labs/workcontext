@@ -4,11 +4,9 @@ import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import AIService from "../../lib/utils/aiService";
-import BillingService from "../../lib/utils/billingService";
 import { safeResolvePosition } from "../../lib/utils/editorUtils"; // Import safe editor utilities
 
-// Cache for subscription data and usage
-let subscriptionCache = null;
+// Cache for usage
 let usageCache = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -25,30 +23,6 @@ let isActiveTyping = false;
 let lastRequestedParagraph = ""; // Track the last paragraph we requested for
 const TRIGGER_COOLDOWN = 10000; // Increase cooldown to 10 seconds between triggers
 const ACTIVE_TYPING_TIMEOUT = 10000; // Consider typing active for 10 seconds after last keystroke
-
-// Track editor session time to block AI after 6 minutes
-let sessionStartTime = Date.now();
-const SESSION_TIMEOUT = 6 * 60 * 1000; // 6 minutes in milliseconds
-
-// Get user's subscription info with caching
-async function getUserSubscription() {
-  const now = Date.now();
-
-  // Return cached data if still valid
-  if (subscriptionCache && now - cacheTimestamp < CACHE_DURATION) {
-    return subscriptionCache;
-  }
-
-  try {
-    const subscription = await BillingService.getCurrentSubscription();
-    subscriptionCache = subscription;
-    cacheTimestamp = now;
-    return subscription;
-  } catch (error) {
-    console.error("Error fetching subscription info:", error);
-    return null;
-  }
-}
 
 // Get AI usage info with caching
 async function getAIUsage() {
@@ -70,55 +44,9 @@ async function getAIUsage() {
   }
 }
 
-// Check if user can make an autocomplete request based on their subscription
+// Check if user can make an autocomplete request - all users have unlimited access
 async function canMakeAutocompleteRequest() {
-  try {
-    const subscription = await getUserSubscription();
-    if (!subscription)
-      return { allowed: false, reason: "Unable to verify subscription" };
-
-    const planId = subscription.plan?.id || "free";
-
-    // Institutional and Researcher plans have unlimited autocomplete
-    if (planId === "researcher" || planId === "institutional") {
-      return { allowed: true };
-    }
-
-    // Get current usage
-    const usage = await getAIUsage();
-    if (!usage)
-      return { allowed: false, reason: "Unable to verify usage limits" };
-
-    // Check limits based on plan
-    let limit;
-    switch (planId) {
-      case "free":
-        limit = 10; // 10/day according to PricingPage.tsx
-        break;
-      case "onetime":
-        limit = 100; // 100 per session according to PricingPage.tsx
-        break;
-      case "student":
-        limit = 500; // 500 per session according to PricingPage.tsx
-        break;
-      default:
-        limit = 10; // Default to free plan limit
-    }
-
-    // Check if user has reached their limit
-    const used = limit - usage.remaining;
-    if (used >= limit) {
-      return {
-        allowed: false,
-        reason: `You've reached your autocomplete limit (${limit} requests). Upgrade for more.`,
-      };
-    }
-
-    return { allowed: true };
-  } catch (error) {
-    console.error("Error checking autocomplete limit:", error);
-    return { allowed: true }; // Allow request if we can't verify limits
-  }
+  return { allowed: true };
 }
 
 // Process the request queue with exponential backoff
@@ -153,22 +81,12 @@ async function processRequestQueue() {
 
     while (retryCount <= maxRetries) {
       try {
-        // Check if user can make an autocomplete request
-        const limitCheck = await canMakeAutocompleteRequest();
-        if (!limitCheck.allowed) {
-          // Call the limit reached callback if provided
-          if (request.onLimitReached) {
-            request.onLimitReached(limitCheck.reason);
-          }
-          break; // Exit retry loop if limit reached
-        }
-
         // Get AI suggestion
         // This is an automatic autocomplete suggestion
         const suggestion = await AIService.getAutocompleteSuggestion(
           request.textBefore,
           request.context, // Pass context to service
-          true // isAutomatic
+          true, // isAutomatic
         );
 
         // Call the success callback
@@ -181,15 +99,7 @@ async function processRequestQueue() {
 
         break; // Success, exit retry loop
       } catch (error) {
-        if (error.message && error.message.includes("AI_LIMIT_REACHED")) {
-          // Handle rate limit error specifically
-          if (request.onLimitReached) {
-            request.onLimitReached(
-              "You've reached your AI usage limit. Please try again later or upgrade your plan."
-            );
-          }
-          break; // Exit retry loop for rate limit errors
-        } else if (retryCount < maxRetries) {
+        if (retryCount < maxRetries) {
           // Exponential backoff
           await new Promise((resolve) => setTimeout(resolve, delay));
           delay *= 2; // Double the delay for next retry
@@ -236,7 +146,7 @@ function shouldTriggerAutocomplete(
   textContext,
   cursorPosition,
   editorView,
-  state
+  state,
 ) {
   const now = Date.now();
 
@@ -349,7 +259,7 @@ export const AIAutocompleteExtension = Extension.create({
       minLength: 20, // Increased minimum characters to trigger
       maxLength: 500, // Increased maximum characters to send to AI for better context
       suggestionClass: "ai-autocomplete-suggestion",
-      onLimitReached: () => { }, // Callback when limit is reached
+      onLimitReached: () => {}, // Callback when limit is reached
       isEnabled: true, // Add isEnabled option to control the extension
     };
   },
@@ -399,7 +309,7 @@ export const AIAutocompleteExtension = Extension.create({
                 },
                 {
                   side: 1, // Render after the cursor
-                }
+                },
               );
 
               return DecorationSet.create(state.doc, [decoration]);
@@ -507,18 +417,13 @@ export const AIAutocompleteExtension = Extension.create({
                 const textBefore = state.doc.textBetween(
                   Math.max(0, from - this.options?.maxLength || 500),
                   from,
-                  ""
+                  "",
                 );
 
                 // Check if we should trigger autocomplete
                 // Pass the state to access paragraph information
                 if (
-                  !shouldTriggerAutocomplete(
-                    textBefore,
-                    $from.pos,
-                    view,
-                    state
-                  )
+                  !shouldTriggerAutocomplete(textBefore, $from.pos, view, state)
                 ) {
                   return;
                 }
@@ -547,7 +452,7 @@ export const AIAutocompleteExtension = Extension.create({
 
                     // Trigger a re-render to show the decoration
                     editor.view.dispatch(
-                      editor.state.tr.setMeta("aiAutocomplete", true)
+                      editor.state.tr.setMeta("aiAutocomplete", true),
                     );
                   },
                   onLimitReached: this.options?.onLimitReached,

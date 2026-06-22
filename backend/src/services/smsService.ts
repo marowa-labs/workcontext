@@ -55,7 +55,7 @@ export class SMSService {
 
       // Construct the message
       const greeting = fullName ? `Hi ${fullName}, ` : "";
-      const message = `${greeting}Your ScholarForge AI verification code is: ${otp}. This code expires in 10 minutes.`;
+      const message = `${greeting}Your WorkContext verification code is: ${otp}. This code expires in 10 minutes.`;
 
       // Send SMS using either messaging service or direct phone number
       const sendOptions: any = {
@@ -134,3 +134,4 @@ export class SMSService {
     }
   }
 }
+

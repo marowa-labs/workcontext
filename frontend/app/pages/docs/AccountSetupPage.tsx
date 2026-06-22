@@ -130,7 +130,7 @@ const AccountSetupPage = () => {
               Account Setup
             </h1>
             <p className="text-lg text-black dark:text-black">
-              Configure your ScholarForge AIaccount for optimal academic writing
+              Configure your WorkContextaccount for optimal academic writing
               experience
             </p>
           </div>

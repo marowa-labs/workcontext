@@ -196,7 +196,7 @@ const BetaProgramPage = () => {
           </h1>
           <p className="text-lg text-black dark:text-black">
             Get early access to new features and help shape the future of
-            ScholarForge AI
+            WorkContext
           </p>
         </div>
       </div>
@@ -212,7 +212,7 @@ const BetaProgramPage = () => {
             </h1>
             <p className="text-xl text-black max-w-3xl mx-auto dark:text-black">
               Get early access to new features and help shape the future of
-              ScholarForge AI
+              WorkContext
             </p>
           </div>
         </div>
@@ -223,13 +223,13 @@ const BetaProgramPage = () => {
             What is the Beta Program?
           </h2>
           <p className="text-black mb-4 dark:text-black">
-            The ScholarForge AIBeta Program gives selected users early access to
+            The WorkContextBeta Program gives selected users early access to
             upcoming features before they're released to the general public. As
             a beta tester, you'll be among the first to try new functionality
             and provide valuable feedback that helps us improve the product.
           </p>
           <p className="text-black dark:text-black">
-            Beta testers play a crucial role in shaping ScholarForge AIby
+            Beta testers play a crucial role in shaping WorkContextby
             identifying issues, suggesting improvements, and helping us ensure
             new features meet the needs of our academic community.
           </p>
@@ -284,7 +284,7 @@ const BetaProgramPage = () => {
                 </h3>
               </div>
               <p className="text-black dark:text-black">
-                Connect with other beta testers and ScholarForge AIdevelopers in
+                Connect with other beta testers and WorkContextdevelopers in
                 our exclusive community.
               </p>
             </div>
@@ -325,7 +325,7 @@ const BetaProgramPage = () => {
               </div>
               <p className="text-black mb-3 dark:text-black">
                 Browse thousands of templates for research papers, essays, and
-                more from the ScholarForge AIcommunity.
+                more from the WorkContextcommunity.
               </p>
               <div className="flex items-center text-sm text-black dark:text-black">
                 <Calendar className="h-4 w-4 mr-1" />
@@ -370,13 +370,13 @@ const BetaProgramPage = () => {
                 <li className="flex items-start">
                   <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0 dark:text-green-400" />
                   <span className="text-black dark:text-black">
-                    Active ScholarForge AIaccount
+                    Active WorkContextaccount
                   </span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0 dark:text-green-400" />
                   <span className="text-black dark:text-black">
-                    Regular user of ScholarForge AIfeatures
+                    Regular user of WorkContextfeatures
                   </span>
                 </li>
                 <li className="flex items-start">
@@ -517,7 +517,7 @@ const BetaProgramPage = () => {
               <label
                 htmlFor="experience"
                 className={`block text-sm font-medium mb-1 ${planDocHeadingClasses}`}>
-                How long have you been using ScholarForge AI?
+                How long have you been using WorkContext?
               </label>
               <select
                 id="experience"
@@ -574,7 +574,7 @@ const BetaProgramPage = () => {
               </h3>
               <p className="text-black dark:text-black">
                 We select beta testers based on their engagement with
-                ScholarForge AI, their research field, and how well their needs
+                WorkContext, their research field, and how well their needs
                 align with upcoming features. We aim for a diverse group of
                 users who can provide valuable feedback.
               </p>

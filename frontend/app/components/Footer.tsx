@@ -41,7 +41,7 @@ const socialLinks = [
   { name: "Twitter", href: "#", icon: Twitter },
   { name: "Github", href: "#", icon: Github },
   { name: "LinkedIn", href: "#", icon: Linkedin },
-  { name: "Email", href: "mailto:hello@scholarforgeai.com", icon: Mail },
+  { name: "Email", href: "mailto:hello@WorkContextai.com", icon: Mail },
 ];
 
 export default function Footer() {
@@ -55,12 +55,12 @@ export default function Footer() {
             <div className="lg:col-span-1">
               <Link href="/" className="flex items-center space-x-2 mb-4">
                 <img
-                  src="/assets/images/ScholarForge-AI-Logo.png"
-                  alt="ScholarForge AI Logo"
+                  src="/assets/images/WorkContext-AI-Logo.png"
+                  alt="WorkContext Logo"
                   className="h-15 w-auto"
                 />
                 <span className="text-xl font-bold text-gray-700">
-                  ScholarForge AI
+                  WorkContext
                 </span>
               </Link>
               <p className="text-gray-600 text-sm mb-6 max-w-xs">
@@ -179,7 +179,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex items-center space-x-4">
               <p className="text-gray-600 text-sm">
-                © {new Date().getFullYear()} ScholarForge AI. All rights
+                © {new Date().getFullYear()} WorkContext. All rights
                 reserved.
               </p>
               <p className="text-gray-600 text-sm">

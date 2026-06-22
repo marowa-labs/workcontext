@@ -318,7 +318,7 @@ const ContactSupportPage = () => {
                 immediately:
               </p>
               <p className="text-blue-800 font-medium dark:text-blue-200 mb-3">
-                Emergency: support@scholarforgeai.com
+                Emergency: support@WorkContextai.com
               </p>
               <button
                 className="text-blue-800 font-medium dark:text-blue-200 underline cursor-pointer"

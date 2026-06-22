@@ -280,7 +280,7 @@ class WorkspaceTaskService {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await apiClient.post(
+    const response = await apiClient.postMultipart(
       `/api/workspaces/tasks/${taskId}/attachments`,
       formData,
     );

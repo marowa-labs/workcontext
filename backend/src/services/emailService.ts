@@ -65,12 +65,12 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: "Verify your ScholarForge AI sign-up",
+        subject: "Verify your WorkContext sign-up",
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Verify Your Account</h1>
               </div>
 
@@ -79,7 +79,7 @@ export class EmailService {
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Thank you for signing up with ScholarForge AI. You're one step closer to protecting your academic work. Please use the following code to verify your account:
+                Thank you for signing up with WorkContext. You're one step closer to protecting your your work. Please use the following code to verify your account:
               </p>
 
               <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: center;">
@@ -92,15 +92,15 @@ export class EmailService {
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                If you did not request this code, please disregard this email. Your academic integrity is important to us.
+                If you did not request this code, please disregard this email. Your productivity is important to us.
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AI- Your Academic Integrity Partner
+                WorkContext- Your Productivity Partner
               </p>
 
               <p style="color: #999999; font-size: 12px; margin: 0;">
-                &copy; 2024 ScholarForge AI. All rights reserved.
+                &copy; 2024 WorkContext. All rights reserved.
               </p>
             </div>
           </div>
@@ -146,13 +146,13 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: "Welcome to ScholarForge AI!",
+        subject: "Welcome to WorkContext!",
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Welcome to Your Submission Shield!</h1>
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Welcome to Your Workspace!</h1>
               </div>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
@@ -160,32 +160,32 @@ export class EmailService {
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Welcome to ScholarForge AI! Your journey to anxiety-free academic writing starts here.
+                Welcome to WorkContext! Your journey to anxiety-free writing starts here.
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                With ScholarForge AI, you can:
+                With WorkContext, you can:
               </p>
 
               <ul style="color: #666666; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                <li>Check your document's originality with our Explainable Originality Map</li>
-                <li>Verify citations with our Citation Confidence Auditor</li>
-                <li>Write safely with our Submission-Safe Writing Mode</li>
-                <li>Generate Authorship Certificates to prove your work</li>
+                <li>Check your document's originality with our Smart Context Map</li>
+                <li>Verify citations with our Link Verification</li>
+                <li>Write safely with our Focus Mode</li>
+                <li>Generate Work Certificates to prove your work</li>
               </ul>
 
               <div style="margin: 30px 0; text-align: center;">
-                <a href="http://app.scholarforge.ai/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Start Writing Safely
+                <a href="http://app.WorkContext.ai/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                  Get Started
                 </a>
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                Your academic success is our mission. If you have any questions, feel free to reach out to our support team.
+                Your success is our mission. If you have any questions, feel free to reach out to our support team.
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -223,12 +223,12 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: "Reset your ScholarForge AIpassword",
+        subject: "Reset your WorkContextpassword",
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Password Reset</h1>
               </div>
 
@@ -237,7 +237,7 @@ export class EmailService {
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                We received a request to reset your password for your ScholarForge AIaccount. Click the button below to create a new password and continue protecting your academic work:
+                We received a request to reset your password for your WorkContextaccount. Click the button below to create a new password and continue protecting your your work:
               </p>
 
               <div style="margin: 30px 0;">
@@ -247,7 +247,7 @@ export class EmailService {
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6;">
-                If you didn't request a password reset, you can safely ignore this email. Your academic integrity is important to us.
+                If you didn't request a password reset, you can safely ignore this email. Your productivity is important to us.
               </p>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
@@ -255,7 +255,7 @@ export class EmailService {
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -296,7 +296,7 @@ export class EmailService {
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">${title}</h1>
               </div>
 
@@ -309,17 +309,17 @@ export class EmailService {
               </p>
 
               <div style="margin: 30px 0;">
-                <a href="http://app.scholarforge.ai/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="http://app.WorkContext.ai/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   View in Dashboard
                 </a>
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                You're receiving this email because you have notifications enabled in your ScholarForge AIsettings. Your academic integrity is important to us.
+                You're receiving this email because you have notifications enabled in your WorkContextsettings. Your productivity is important to us.
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -366,7 +366,7 @@ export class EmailService {
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">${subject}</h1>
               </div>
 
@@ -388,11 +388,11 @@ export class EmailService {
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AI, an effortless identity solution with all the features you need.
+                WorkContext, the all-in-one workspace for modern teams.
               </p>
 
               <p style="color: #999999; font-size: 12px; margin: 0;">
-                &copy; 2024 ScholarForge AI. All rights reserved.
+                &copy; 2024 WorkContext. All rights reserved.
               </p>
             </div>
           </div>
@@ -429,12 +429,12 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: `ScholarForge AI${planName} Plan Subscription Confirmed`,
+        subject: `WorkContext${planName} Plan Subscription Confirmed`,
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Subscription Confirmed</h1>
               </div>
 
@@ -443,7 +443,7 @@ export class EmailService {
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Thank you for subscribing to ScholarForge AI${planName} plan! You're now one step closer to protecting your academic work and ensuring your submissions are defensible.
+                Thank you for subscribing to WorkContext${planName} plan! You're now one step closer to protecting your your work and keeping your work on track.
               </p>
 
               <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: left;">
@@ -455,11 +455,11 @@ export class EmailService {
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                You can manage your subscription in your account settings. Your academic integrity is our priority.
+                You can manage your subscription in your account settings. Your productivity is our priority.
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -500,12 +500,12 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: `ScholarForge AIPayment Successful - $${amount.toFixed(2)}`,
+        subject: `WorkContextPayment Successful - $${amount.toFixed(2)}`,
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Payment Successful</h1>
               </div>
 
@@ -514,7 +514,7 @@ export class EmailService {
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Your payment of $${amount.toFixed(2)} for the ${planName} plan has been processed successfully. You're now one step closer to protecting your academic work and ensuring your submissions are defensible.
+                Your payment of $${amount.toFixed(2)} for the ${planName} plan has been processed successfully. You're now one step closer to protecting your your work and keeping your work on track.
               </p>
 
               <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: left;">
@@ -525,11 +525,11 @@ export class EmailService {
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                Thank you for choosing ScholarForge AI! Your academic integrity is our priority.
+                Thank you for choosing WorkContext! Your productivity is our priority.
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -565,7 +565,7 @@ export class EmailService {
 
       await plunk.emails.send({
         to,
-        subject: `ScholarForge AI — Invoice Available for ${planName}`,
+        subject: `WorkContext — Invoice Available for ${planName}`,
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5;">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
@@ -605,12 +605,12 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: `ScholarForge AIPayment Failed - $${amount.toFixed(2)}`,
+        subject: `WorkContextPayment Failed - $${amount.toFixed(2)}`,
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Payment Failed</h1>
               </div>
 
@@ -619,21 +619,21 @@ export class EmailService {
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                We're sorry, but your payment of $${amount.toFixed(2)} for the ${planName} plan has failed. We want to ensure you can continue protecting your academic work.
+                We're sorry, but your payment of $${amount.toFixed(2)} for the ${planName} plan has failed. We want to ensure you can continue protecting your your work.
               </p>
 
               <div style="margin: 30px 0;">
-                <a href="http://app.scholarforge.ai/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="http://app.WorkContext.ai/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   Update Payment Method
                 </a>
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                If you have any questions, please contact our support team. Your academic integrity is our priority.
+                If you have any questions, please contact our support team. Your productivity is our priority.
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -668,12 +668,12 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: `ScholarForge AI Subscription Cancelled`,
+        subject: `WorkContext Subscription Cancelled`,
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Subscription Cancelled</h1>
               </div>
 
@@ -690,7 +690,7 @@ export class EmailService {
               </p>
 
               <div style="margin: 30px 0;">
-                <a href="http://app.scholarforge.ai/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="http://app.WorkContext.ai/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   Reactivate Subscription
                 </a>
               </div>
@@ -700,7 +700,7 @@ export class EmailService {
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -738,12 +738,12 @@ export class EmailService {
 
       const success = await plunk.emails.send({
         to,
-        subject: `You've been invited to join ${workspaceName} on ScholarForge AI`,
+        subject: `You've been invited to join ${workspaceName} on WorkContext`,
         body: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
             <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
               <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="ScholarForge AILogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
+                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
                 <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Team Invitation</h1>
               </div>
 
@@ -752,7 +752,7 @@ export class EmailService {
               </p>
 
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                ${inviterName} has invited you to join <strong>${workspaceName}</strong> on ScholarForge AI!
+                ${inviterName} has invited you to join <strong>${workspaceName}</strong> on WorkContext!
               </p>
 
               <div style="margin: 30px 0;">
@@ -762,11 +762,11 @@ export class EmailService {
               </div>
 
               <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                Join your team and start collaborating on academic projects with confidence.
+                Join your team and start collaborating on projects with confidence.
               </p>
 
               <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                ScholarForge AITeam - Your Academic Integrity Partner
+                WorkContextTeam - Your Productivity Partner
               </p>
             </div>
           </div>
@@ -788,3 +788,4 @@ export class EmailService {
 }
 
 export default EmailService;
+

@@ -59,7 +59,7 @@ PLUNK_API_KEY=sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ### Step 3: Configure Sending Domain (Optional but Recommended)
 1. In Plunk dashboard, go to **Settings** → **Domains**
-2. Add your domain: `email.scholarforge.ai`
+2. Add your domain: `email.WorkContext.ai`
 3. Add the required DNS records to verify ownership
 4. Wait for verification
 
@@ -98,7 +98,7 @@ All previous email methods are preserved:
 ### Resend (Old)
 ```typescript
 const { data, error } = await resend.emails.send({
-  from: "ScholarForge AI<noreply@email.scholarforge.ai>",
+  from: "WorkContext<noreply@email.WorkContext.ai>",
   to: email,
   subject: "Subject",
   html: htmlContent,
@@ -176,3 +176,4 @@ If you need to rollback to Resend:
 - [ ] **TODO:** Verify domain in Plunk dashboard
 - [ ] **TODO:** Test all email methods
 - [ ] **TODO:** Monitor email delivery rates
+

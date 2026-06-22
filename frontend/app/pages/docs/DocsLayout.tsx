@@ -333,7 +333,7 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
       const item = section.items.find((item) => item.path === path);
       if (item) return section.title;
     }
-    return "ScholarForge AIDocs";
+    return "WorkContextDocs";
   };
 
   const currentSection = getCurrentSection();
@@ -347,13 +347,13 @@ const DocsLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="flex items-center">
               <Link href="/docs" className="flex items-center space-x-2">
                 <img
-                  src="/assets/images/ScholarForge-AI-Logo.png"
-                  alt="ScholarForge AILogo"
+                  src="/assets/images/WorkContext-AI-Logo.png"
+                  alt="WorkContextLogo"
                   className="h-10 w-auto"
                   style={{ color: `hsl(var(--accent))` }}
                 />
                 <span className="text-xl font-bold text-black text-black">
-                  ScholarForge AIDocs : {currentSection}
+                  WorkContextDocs : {currentSection}
                 </span>
               </Link>
             </div>

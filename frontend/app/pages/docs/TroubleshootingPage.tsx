@@ -50,7 +50,7 @@ const TroubleshootingPage = () => {
           description: "Solutions for missing account verification emails",
           solutions: [
             "Check your spam/junk folder",
-            "Add noreply@scholarforgeai.com to your contacts",
+            "Add noreply@WorkContextai.com to your contacts",
             "Request a new verification email from the login page",
             "Verify that you entered the correct email address",
           ],
@@ -63,7 +63,7 @@ const TroubleshootingPage = () => {
       issues: [
         {
           title: "App is running slowly",
-          description: "Improve the performance of ScholarForge AI",
+          description: "Improve the performance of WorkContext",
           solutions: [
             "Check your internet connection speed",
             "Close other applications to free up system resources",
@@ -96,7 +96,7 @@ const TroubleshootingPage = () => {
             "Ensure you're using the latest version of your browser",
             "Disable browser extensions that might interfere",
             "Clear your browser cache and cookies",
-            "Try using ScholarForge AIin incognito/private mode",
+            "Try using WorkContextin incognito/private mode",
             "Check if the feature is available in your subscription plan",
           ],
         },
@@ -124,7 +124,7 @@ const TroubleshootingPage = () => {
           title: "App crashing on mobile",
           solutions: [
             "Restart your device",
-            "Update the ScholarForge AIapp to the latest version",
+            "Update the WorkContextapp to the latest version",
             "Update your device's operating system",
             "Clear the app's cache in your device settings",
             "Reinstall the app if problems persist",

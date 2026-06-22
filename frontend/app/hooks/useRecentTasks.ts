@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { WorkspaceTask } from "../lib/utils/workspaceTaskService";
 
-const STORAGE_KEY = "scholarforge_recent_tasks";
+const STORAGE_KEY = "WorkContext_recent_tasks";
 const MAX_RECENT_TASKS = 5;
 
 export interface RecentTask {

@@ -83,7 +83,7 @@ const GDPRPage = () => {
             data outside the EU and EEA areas.
           </p>
           <p className="text-black dark:text-black">
-            ScholarForge AIis committed to full compliance with the GDPR and
+            WorkContextis committed to full compliance with the GDPR and
             protecting the privacy rights of all users, regardless of their
             location. This page explains how we comply with GDPR requirements.
           </p>
@@ -392,9 +392,9 @@ const GDPRPage = () => {
             </p>
             <div className="flex items-center">
               <a
-                href="mailto:dpo@scholarforgeai.com"
+                href="mailto:dpo@WorkContextai.com"
                 className="text-blue-600 hover:text-blue-800 font-medium dark:text-blue-400 dark:hover:text-blue-300">
-                dpo@scholarforgeai.com
+                dpo@WorkContextai.com
               </a>
             </div>
           </div>
@@ -430,7 +430,7 @@ const GDPRPage = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="mailto:dpo@scholarforgeai.com"
+                href="mailto:dpo@WorkContextai.com"
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-center">
                 Contact DPO
               </a>

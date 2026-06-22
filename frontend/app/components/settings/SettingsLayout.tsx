@@ -99,12 +99,6 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       path: "ai-api-key",
     },
     {
-      id: "billing",
-      label: "Billing",
-      icon: CreditCard,
-      path: "billing",
-    },
-    {
       id: "privacy",
       label: "Privacy & Security",
       icon: Lock,
@@ -161,7 +155,7 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-background">
+    <div className="flex flex-col lg:flex-row h-screen bg-background overflow-hidden">
       {/* Mobile menu button */}
       <div className="lg:hidden p-4 border-b border-border">
         <button
@@ -189,34 +183,32 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
 
       {/* Sidebar Navigation */}
       <div
-        className={`${positionClasses.sidebar} ${positionClasses.sidebarTransform}`}
+        className={`${positionClasses.sidebar} ${positionClasses.sidebarTransform} lg:h-screen lg:overflow-y-auto flex-shrink-0`}
       >
-        <div className="lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] overflow-y-auto border-r border-border">
-          <nav className="p-4 space-y-1">
-            {navigationItems.map((item) => {
-              const isActive = getCurrentSection() === item.id;
-              return (
-                <Link
-                  key={item.id}
-                  href={`/settings/${item.path}`}
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg ${
-                    isActive
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-500 accent-border tab-active"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  } ${transitionClasses}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+        <nav className="p-4 space-y-1">
+          {navigationItems.map((item) => {
+            const isActive = getCurrentSection() === item.id;
+            return (
+              <Link
+                key={item.id}
+                href={`/settings/${item.path}`}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg ${
+                  isActive
+                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-500 accent-border tab-active"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                } ${transitionClasses}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 bg-background">
+      <div className="flex-1 min-w-0 bg-background overflow-y-auto">
         <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </div>
     </div>

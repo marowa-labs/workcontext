@@ -27,7 +27,7 @@ export function FloatingAIButton({
       >
         {/* Tooltip */}
         <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-gray-700 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          ScholarForge AI
+          WorkContext
           <span className="ml-1.5 text-xs text-gray-400">Ctrl+J</span>
         </div>
 

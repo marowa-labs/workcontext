@@ -58,7 +58,7 @@ export class FeedbackService {
       if (
         user &&
         (user.user_role === "feedback" ||
-          user.email.endsWith("@scholarforgeai.com"))
+          user.email.endsWith("@WorkContextai.com"))
       ) {
         return true;
       }
@@ -461,7 +461,7 @@ export class FeedbackService {
         ],
         timestamp: new Date().toISOString(),
         footer: {
-          text: "ScholarForge AIFeedback System",
+          text: "WorkContextFeedback System",
         },
       };
 
@@ -562,3 +562,4 @@ export class FeedbackService {
     }
   }
 }
+

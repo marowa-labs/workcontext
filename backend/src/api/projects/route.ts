@@ -49,8 +49,8 @@ async function handleGET(request: Request & { user?: any }) {
       workspaceIdParam === "null"
         ? null
         : workspaceIdParam === "not-null"
-        ? "not-null"
-        : workspaceIdParam || undefined
+          ? "not-null"
+          : workspaceIdParam || undefined,
     );
 
     console.log("Database query result:", {
@@ -77,28 +77,31 @@ async function handleGET(request: Request & { user?: any }) {
     console.error("Error message:", (error as Error).message);
     console.error("Error stack:", (error as Error).stack);
     console.error("Full error:", error);
-    return new Response(JSON.stringify({ 
-      error: "Internal server error",
-      details: (error as Error).message,
-      stack: (error as Error).stack?.split('\n').slice(0, 5)
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Internal server error",
+        details: (error as Error).message,
+        stack: (error as Error).stack?.split("\n").slice(0, 5),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 }
 
 // Get a specific project by ID
 export async function GET_BY_ID(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handleGET_BY_ID(request, projectId);
 }
 
 async function handleGET_BY_ID(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("=== PROJECT GET BY ID ROUTE DEBUG ===");
@@ -117,7 +120,7 @@ async function handleGET_BY_ID(
       console.error(
         "Invalid URL provided to GET_BY_ID:",
         request.url,
-        urlError
+        urlError,
       );
       searchParams = new URLSearchParams();
     }
@@ -132,13 +135,13 @@ async function handleGET_BY_ID(
       request.user?.id
         ? "AuthMiddleware"
         : searchParams.get("userId")
-        ? "QueryParam"
-        : "None"
+          ? "QueryParam"
+          : "None",
     );
 
     if (!userId) {
       console.error(
-        "GET_BY_ID failed: User ID is required but missing specified"
+        "GET_BY_ID failed: User ID is required but missing specified",
       );
       return new Response(
         JSON.stringify({
@@ -152,7 +155,7 @@ async function handleGET_BY_ID(
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -166,7 +169,7 @@ async function handleGET_BY_ID(
     // Get project using the enhanced service
     const project = await ProjectServiceEnhanced.getProjectById(
       projectId,
-      userId
+      userId,
     );
 
     console.log("Project fetched successfully", {
@@ -197,7 +200,7 @@ async function handlePOST(request: Request & { user?: any }) {
     console.log("=== PROJECT CREATION DEBUG ===");
     console.log(
       "Project creation request received at:",
-      new Date().toISOString()
+      new Date().toISOString(),
     );
     console.log("Request count check:", Date.now());
 
@@ -231,7 +234,7 @@ async function handlePOST(request: Request & { user?: any }) {
     // Create project using the enhanced service
     const project = await ProjectServiceEnhanced.createProject(
       projectData,
-      userId
+      userId,
     );
 
     console.log("Project created successfully:", project.id);
@@ -306,7 +309,7 @@ async function handlePUT(request: Request & { user?: any }) {
     const project = await ProjectServiceEnhanced.updateProject(
       id,
       updateData,
-      userId
+      userId,
     );
 
     return new Response(JSON.stringify({ project }), {
@@ -359,7 +362,7 @@ async function handleDELETE(request: Request & { user?: any }) {
     // Delete project using the enhanced service
     const result = await ProjectServiceEnhanced.deleteProject(
       projectId,
-      userId
+      userId,
     );
 
     return new Response(JSON.stringify(result), {
@@ -418,7 +421,7 @@ async function handleGET_EXPORT(request: Request & { user?: any }) {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -427,6 +430,7 @@ async function handleGET_EXPORT(request: Request & { user?: any }) {
       "pdf",
       "docx",
       "txt",
+      "tex",
       "latex",
       "rtf",
       "journal-pdf",
@@ -438,13 +442,13 @@ async function handleGET_EXPORT(request: Request & { user?: any }) {
         JSON.stringify({
           success: false,
           message: `Invalid format. Supported formats: ${validFormats.join(
-            ", "
+            ", ",
           )}`,
         }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -457,7 +461,7 @@ async function handleGET_EXPORT(request: Request & { user?: any }) {
         includeCitations,
         includeComments,
         citationStyle: citationStyle as "apa" | "mla" | "chicago",
-      }
+      },
     );
 
     // Set appropriate headers for file download
@@ -465,7 +469,7 @@ async function handleGET_EXPORT(request: Request & { user?: any }) {
     headers.set("Content-Type", result.mimeType);
     headers.set(
       "Content-Disposition",
-      `attachment; filename="${result.filename}"`
+      `attachment; filename="${result.filename}"`,
     );
     headers.set("Content-Length", result.fileSize.toString());
 
@@ -494,7 +498,7 @@ async function handleGET_EXPORT(request: Request & { user?: any }) {
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   }
 }
@@ -542,14 +546,14 @@ async function handleGET_STATS(request: Request & { user?: any }) {
 // Apply AI edit to project content
 export async function POST_AI_EDIT(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handlePOST_AI_EDIT(request, projectId);
 }
 
 async function handlePOST_AI_EDIT(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("Apply AI edit to project request received", {
@@ -577,7 +581,7 @@ async function handlePOST_AI_EDIT(
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -615,14 +619,14 @@ async function handlePOST_AI_EDIT(
 // Get AI edit history for project
 export async function GET_AI_EDIT_HISTORY(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handleGET_AI_EDIT_HISTORY(request, projectId);
 }
 
 async function handleGET_AI_EDIT_HISTORY(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("Get AI edit history request received", {
@@ -652,7 +656,7 @@ async function handleGET_AI_EDIT_HISTORY(
     // Get AI edit history using the enhanced service
     const history = await ProjectServiceEnhanced.getAIEditHistory(
       projectId,
-      userId
+      userId,
     );
 
     return new Response(JSON.stringify({ success: true, history }), {
@@ -691,9 +695,8 @@ async function handleGET_COLLABORATION(request: Request & { user?: any }) {
     }
 
     // Get collaboration projects using the enhanced service
-    const projects = await ProjectServiceEnhanced.getCollaborationProjects(
-      userId
-    );
+    const projects =
+      await ProjectServiceEnhanced.getCollaborationProjects(userId);
 
     console.log("Database query result:", {
       hasData: !!projects,
@@ -716,14 +719,14 @@ async function handleGET_COLLABORATION(request: Request & { user?: any }) {
 // Get project citations
 export async function GET_CITATIONS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handleGET_CITATIONS(request, projectId);
 }
 
 async function handleGET_CITATIONS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("=== PROJECT CITATIONS ROUTE DEBUG ===");
@@ -752,7 +755,7 @@ async function handleGET_CITATIONS(
     // Get citations using the enhanced service
     const citations = await ProjectServiceEnhanced.getProjectCitations(
       projectId,
-      userId
+      userId,
     );
 
     console.log("Project citations fetched successfully", {
@@ -776,14 +779,14 @@ async function handleGET_CITATIONS(
 // Get project plagiarism reports
 export async function GET_PLAGIARISM_REPORTS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handleGET_PLAGIARISM_REPORTS(request, projectId);
 }
 
 async function handleGET_PLAGIARISM_REPORTS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("=== PROJECT PLAGIARISM REPORTS ROUTE DEBUG ===");
@@ -825,14 +828,14 @@ async function handleGET_PLAGIARISM_REPORTS(
 // Get project document versions
 export async function GET_DOCUMENT_VERSIONS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handleGET_DOCUMENT_VERSIONS(request, projectId);
 }
 
 async function handleGET_DOCUMENT_VERSIONS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("=== PROJECT DOCUMENT VERSIONS ROUTE DEBUG ===");
@@ -861,7 +864,7 @@ async function handleGET_DOCUMENT_VERSIONS(
     // Get document versions using the enhanced service
     const versions = await ProjectServiceEnhanced.getProjectDocumentVersions(
       projectId,
-      userId
+      userId,
     );
 
     console.log("Project document versions fetched successfully", {
@@ -885,14 +888,14 @@ async function handleGET_DOCUMENT_VERSIONS(
 // Restore document version
 export async function POST_RESTORE_VERSION(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handlePOST_RESTORE_VERSION(request, projectId);
 }
 
 async function handlePOST_RESTORE_VERSION(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     // Parse the request body
@@ -937,7 +940,7 @@ async function handlePOST_RESTORE_VERSION(
     const result = await ProjectServiceEnhanced.restoreDocumentVersion(
       projectId,
       body.versionId,
-      userId
+      userId,
     );
 
     return new Response(JSON.stringify({ success: true, result }), {
@@ -976,9 +979,8 @@ async function handleGET_SETTINGS(request: Request & { user?: any }) {
     }
 
     // Get project settings using the settings service
-    const settings = await ProjectSettingsService.getUserProjectSettings(
-      userId
-    );
+    const settings =
+      await ProjectSettingsService.getUserProjectSettings(userId);
 
     console.log("Project settings fetched successfully", { userId });
 
@@ -1023,7 +1025,7 @@ async function handlePUT_SETTINGS(request: Request & { user?: any }) {
     // Update project settings using the settings service
     const settings = await ProjectSettingsService.updateUserProjectSettings(
       userId,
-      settingsData
+      settingsData,
     );
 
     return new Response(JSON.stringify({ settings }), {
@@ -1062,9 +1064,8 @@ async function handlePOST_RESET_SETTINGS(request: Request & { user?: any }) {
     }
 
     // Reset project settings using the settings service
-    const settings = await ProjectSettingsService.resetUserProjectSettings(
-      userId
-    );
+    const settings =
+      await ProjectSettingsService.resetUserProjectSettings(userId);
 
     return new Response(JSON.stringify({ settings }), {
       status: 200,
@@ -1129,14 +1130,14 @@ async function handlePOST_IMPORT(request: Request & { user?: any }) {
 // Get share settings for a project
 export async function GET_SHARE_SETTINGS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handleGET_SHARE_SETTINGS(request, projectId);
 }
 
 async function handleGET_SHARE_SETTINGS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("=== PROJECT SHARE SETTINGS GET ROUTE DEBUG ===");
@@ -1176,7 +1177,7 @@ async function handleGET_SHARE_SETTINGS(
     if (!project) {
       return new Response(
         JSON.stringify({ error: "Project not found or access denied" }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
+        { status: 403, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -1220,14 +1221,14 @@ async function handleGET_SHARE_SETTINGS(
 // Update share settings for a project
 export async function POST_SHARE_SETTINGS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   return handlePOST_SHARE_SETTINGS(request, projectId);
 }
 
 async function handlePOST_SHARE_SETTINGS(
   request: Request & { user?: any },
-  projectId: string
+  projectId: string,
 ) {
   try {
     console.log("=== PROJECT SHARE SETTINGS UPDATE ROUTE DEBUG ===");
@@ -1273,7 +1274,7 @@ async function handlePOST_SHARE_SETTINGS(
     if (!project) {
       return new Response(
         JSON.stringify({ error: "Project not found or access denied" }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
+        { status: 403, headers: { "Content-Type": "application/json" } },
       );
     }
 

@@ -82,7 +82,7 @@ function QuickContactOptions() {
       description:
         "Questions about our five core functionalities for academic defensibility",
       action: "Send us an email",
-      contact: "hello@scholarforgeai.com",
+      contact: "hello@WorkContextai.com",
       color: "from-blue-600 to-blue-800",
     },
     {
@@ -91,7 +91,7 @@ function QuickContactOptions() {
       description:
         "Academic defensibility solutions for universities and institutions",
       action: "Contact our team",
-      contact: "partnerships@scholarforgeai.com",
+      contact: "partnerships@WorkContextai.com",
       color: "from-purple-600 to-purple-800",
     },
     {
@@ -100,7 +100,7 @@ function QuickContactOptions() {
       description:
         "Research inquiries, academic partnerships, and scholarly collaboration",
       action: "Research contact",
-      contact: "research@scholarforgeai.com",
+      contact: "research@WorkContextai.com",
       color: "from-green-600 to-green-800",
     },
   ];
@@ -390,7 +390,7 @@ function AlternativeContactInfo() {
         <CardContent className="p-6">
           <Mail className="h-8 w-8 text-blue-400 mx-auto mb-4" />
           <h3 className="font-semibold text-white mb-2">Email</h3>
-          <p className="text-sm text-gray-200">hello@scholarforgeai.com</p>
+          <p className="text-sm text-gray-200">hello@WorkContextai.com</p>
         </CardContent>
       </Card>
 
@@ -456,7 +456,7 @@ function FAQTeaser() {
     {
       question: "Can you help with institutional partnerships?",
       answer:
-        "Absolutely! We work with universities and institutions worldwide. Contact our partnerships team at partnerships@scholarforgeai.com for custom solutions.",
+        "Absolutely! We work with universities and institutions worldwide. Contact our partnerships team at partnerships@WorkContextai.com for custom solutions.",
     },
   ];
 
@@ -517,7 +517,7 @@ function GlobalPresence() {
           </h3>
           <p className="text-gray-200">
             Join thousands of students across 15+ countries who trust
-            ScholarForge AI
+            WorkContext
           </p>
         </div>
 

@@ -24,8 +24,8 @@ router.use("/:workspaceId/views", viewsRouter);
 router.get("/:workspaceId/search", async (req: any, res) => {
   try {
     const { workspaceId } = req.params;
-    const query = req.query.q as string || "";
-    const limit = parseInt(req.query.limit as string || "20", 10);
+    const query = (req.query.q as string) || "";
+    const limit = parseInt((req.query.limit as string) || "20", 10);
     const userId = req.user?.id;
 
     if (!userId) {
@@ -139,6 +139,64 @@ router.get("/:id/analytics", async (req: any, res) => {
   } catch (error) {
     logger.error("Error fetching workspace analytics", error);
     res.status(500).json({ error: "Failed to fetch analytics" });
+  }
+});
+
+// GET /api/workspaces/:id/attachments - Get all task attachments in workspace
+router.get("/:id/attachments", async (req: any, res) => {
+  try {
+    const workspaceId = req.params.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    // Verify user has access to workspace
+    const membership = await prisma.workspaceMember.findFirst({
+      where: { workspace_id: workspaceId, user_id: userId },
+    });
+    if (!membership && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const { search, type, taskId, page = "1", limit = "20" } = req.query;
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const take = parseInt(limit as string);
+    const where: any = { task: { workspace_id: workspaceId } };
+
+    if (search)
+      where.name = { contains: search as string, mode: "insensitive" };
+    if (type) where.file_type = type as string;
+    if (taskId) where.task_id = taskId as string;
+
+    const [attachments, total] = await Promise.all([
+      prisma.taskAttachment.findMany({
+        where,
+        include: {
+          task: { select: { id: true, title: true, status: true } },
+        },
+        orderBy: { created_at: "desc" },
+        skip,
+        take,
+      }),
+      prisma.taskAttachment.count({ where }),
+    ]);
+
+    // Get unique file types for filter chips
+    const fileTypes = await prisma.taskAttachment.findMany({
+      where: { task: { workspace_id: workspaceId } },
+      select: { file_type: true },
+      distinct: ["file_type"],
+    });
+
+    res.json({
+      attachments,
+      total,
+      page: parseInt(page as string),
+      limit: take,
+      fileTypes: fileTypes.map((f: { file_type: string }) => f.file_type),
+    });
+  } catch (error) {
+    logger.error("Error fetching workspace attachments", error);
+    res.status(500).json({ error: "Failed to fetch attachments" });
   }
 });
 

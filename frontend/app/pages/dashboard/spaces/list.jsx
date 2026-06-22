@@ -21,6 +21,7 @@ import {
   Copy,
   Edit3,
   ExternalLink,
+  Plus,
 } from "lucide-react";
 import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
@@ -274,12 +275,14 @@ export default function SpacesLibraryPage() {
 
   const handleDuplicateSpace = async (space) => {
     try {
-      const duplicateData = {
-        ...space,
+      const duplicated = await ProjectService.createProject({
         title: `${space.title} (Copy)`,
-        id: undefined,
-      };
-      const duplicated = await ProjectService.createProject(duplicateData);
+        description: space.description,
+        type: space.type || "document",
+        content: space.content,
+        citation_style: space.citation_style,
+        workspace_id: space.workspace_id,
+      });
       setSpaces((prev) => [duplicated, ...prev]);
       toast({
         title: "Success",

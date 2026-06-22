@@ -38,7 +38,7 @@ const FAQPage = () => {
         {
           question: "How do I create an account?",
           answer:
-            "You can create an account by clicking the 'Sign Up' button on our homepage. You'll need to provide your email address, create a password, and verify your email. After verification, you can complete your profile and start using ScholarForge AI.",
+            "You can create an account by clicking the 'Sign Up' button on our homepage. You'll need to provide your email address, create a password, and verify your email. After verification, you can complete your profile and start using WorkContext.",
         },
         {
           question: "Is there a free trial available?",
@@ -48,7 +48,7 @@ const FAQPage = () => {
         {
           question: "What are the system requirements?",
           answer:
-            "ScholarForge AIworks on any modern web browser including Chrome, Firefox, Safari, and Edge. For the best experience, we recommend using the latest version of your preferred browser. Our mobile apps are available for iOS and Android devices.",
+            "WorkContextworks on any modern web browser including Chrome, Firefox, Safari, and Edge. For the best experience, we recommend using the latest version of your preferred browser. Our mobile apps are available for iOS and Android devices.",
         },
       ],
     },
@@ -131,7 +131,7 @@ const FAQPage = () => {
         {
           question: "Can I collaborate with people who don't have an account?",
           answer:
-            "Yes, you can invite collaborators via email even if they don't have a ScholarForge AIaccount. They'll receive an invitation to join and can participate in the collaboration without creating an account, though they'll have limited features.",
+            "Yes, you can invite collaborators via email even if they don't have a WorkContextaccount. They'll receive an invitation to join and can participate in the collaboration without creating an account, though they'll have limited features.",
         },
         {
           question: "How does real-time editing work?",
@@ -167,7 +167,7 @@ const FAQPage = () => {
             Frequently Asked Questions
           </h1>
           <p className="text-lg text-black dark:text-black">
-            Find answers to common questions about ScholarForge AI
+            Find answers to common questions about WorkContext
           </p>
         </div>
       </div>

@@ -79,7 +79,7 @@ const SecurityPage = () => {
           Our Commitment to Security
         </h2>
         <p className="text-black mb-6 dark:text-black">
-          At ScholarForge AI, we understand that your academic work is valuable
+          At WorkContext, we understand that your academic work is valuable
           and sensitive. We implement comprehensive security measures to protect
           your data, documents, and personal information.
         </p>
@@ -428,7 +428,7 @@ const SecurityPage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="mailto:security@scholarforgeai.com"
+              href="mailto:security@WorkContextai.com"
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-center">
               Report Security Issue
             </a>

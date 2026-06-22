@@ -29,7 +29,7 @@ function IntroHero() {
           </p>
 
           <p className="text-gray-200 max-w-2xl mx-auto">
-            This Cookie Policy explains how ScholarForge AI("we", "us", or
+            This Cookie Policy explains how WorkContext("we", "us", or
             "our") uses cookies and similar technologies to recognize you when
             you visit our website and application.
           </p>
@@ -181,7 +181,7 @@ function CookiePolicyContent() {
             us:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-200">
-            <li>By email: privacy@scholarforgeai.com</li>
+            <li>By email: privacy@WorkContextai.com</li>
             <li>
               By visiting our{" "}
               <Link href="/contact" className="text-blue-400 hover:underline">

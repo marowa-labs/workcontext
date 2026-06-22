@@ -32,10 +32,6 @@ import {
   Layout,
   ChevronDown,
   Undo,
-  Footprints,
-  BookOpen,
-  Edit3,
-  FileText,
   Redo,
   Type,
   Table as TableIcon,
@@ -44,11 +40,6 @@ import {
   Superscript as SuperscriptIcon,
   Eraser,
   Sigma,
-  MessageSquare,
-  Search,
-  Omega,
-  Merge,
-  Split,
   Plus,
   ArrowUp,
   ArrowDown,
@@ -57,6 +48,9 @@ import {
   Sparkles,
   Zap,
   Loader2,
+  Merge,
+  Split,
+  MessageSquare,
 } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "../ui/scroll-area";
@@ -157,28 +151,17 @@ const EQUATIONS = [
 interface EditorToolbarProps {
   editor: Editor | null;
   onOpenImageModal?: () => void;
-  onOpenCitationsModal?: () => void;
-  onOpenPlagiarismModal?: () => void;
-  onInsertCitation?: () => void;
-  onEditCitation?: () => void;
-  onInsertReferenceList?: () => void;
-  onInsertFootnote?: () => void;
-  onFindAndReplace?: () => void;
   userCanEdit?: boolean;
 }
 
 export function EditorToolbar({
   editor,
   onOpenImageModal,
-  onInsertCitation,
-  onEditCitation,
-  onInsertReferenceList,
-  onInsertFootnote,
-  onFindAndReplace,
   userCanEdit = true,
 }: EditorToolbarProps) {
   const [linkUrl, setLinkUrl] = useState("");
   const [isGeneratingEquation, setIsGeneratingEquation] = useState(false);
+  const [cortexLoading, setCortexLoading] = useState<string | null>(null);
 
   if (!editor) return null;
 
@@ -264,6 +247,46 @@ export function EditorToolbar({
     editor.isActive("heading", { level: h.level }),
   );
 
+  // Cortex Functions — AI-powered editor operations
+  const getSelectedText = (): string => {
+    const { from, to, empty } = editor.state.selection;
+    if (empty) return editor.state.doc.textContent.slice(0, 3000);
+    return editor.state.doc.textBetween(from, to);
+  };
+
+  const runCortexAction = async (action: string, prompt: string) => {
+    setCortexLoading(action);
+    try {
+      const selectedText = getSelectedText();
+      const result = await AIService.processAIRequest(
+        action,
+        `${prompt}:\n\n"${selectedText}"`,
+        null,
+        { tone: "academic" },
+      );
+      if (result?.suggestion) {
+        const { from, to, empty } = editor.state.selection;
+        if (empty) {
+          // No selection → insert at cursor
+          editor.chain().focus().insertContent(result.suggestion).run();
+        } else {
+          // Has selection → replace it
+          editor
+            .chain()
+            .focus()
+            .deleteSelection()
+            .insertContent(result.suggestion)
+            .run();
+        }
+      }
+    } catch (error) {
+      console.error(`Cortex ${action} error:`, error);
+      alert(`Failed to ${action}. Please check your AI API keys in Settings.`);
+    } finally {
+      setCortexLoading(null);
+    }
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-1 border border-gray-200 bg-white px-2 py-1.5 sticky top-0 z-10 shadow-sm">
       <Toggle
@@ -271,7 +294,8 @@ export function EditorToolbar({
         className="h-8 w-8"
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo() || !userCanEdit}
-        title="Undo">
+        title="Undo"
+      >
         <Undo className="h-4 w-4" />
       </Toggle>
       <Toggle
@@ -279,7 +303,8 @@ export function EditorToolbar({
         className="h-8 w-8"
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo() || !userCanEdit}
-        title="Redo">
+        title="Redo"
+      >
         <Redo className="h-4 w-4" />
       </Toggle>
 
@@ -298,7 +323,8 @@ export function EditorToolbar({
         <DropdownMenuContent className="bg-white border border-gray-200">
           <DropdownMenuItem
             onClick={() => editor.chain().focus().setParagraph().run()}
-            disabled={!userCanEdit}>
+            disabled={!userCanEdit}
+          >
             <span className="text-sm">Paragraph</span>
           </DropdownMenuItem>
           {headingLevels.map((heading) => (
@@ -311,7 +337,8 @@ export function EditorToolbar({
                   .toggleHeading({ level: heading.level })
                   .run()
               }
-              disabled={!userCanEdit}>
+              disabled={!userCanEdit}
+            >
               <span className={heading.size}>{heading.label}</span>
             </DropdownMenuItem>
           ))}
@@ -327,7 +354,8 @@ export function EditorToolbar({
           pressed={editor.isActive("bold")}
           onPressedChange={() => editor.chain().focus().toggleBold().run()}
           disabled={!userCanEdit}
-          title="Bold (Cmd+B)">
+          title="Bold (Cmd+B)"
+        >
           <Bold className="h-4 w-4" />
         </Toggle>
         <Toggle
@@ -335,7 +363,8 @@ export function EditorToolbar({
           pressed={editor.isActive("italic")}
           onPressedChange={() => editor.chain().focus().toggleItalic().run()}
           disabled={!userCanEdit}
-          title="Italic (Cmd+I)">
+          title="Italic (Cmd+I)"
+        >
           <Italic className="h-4 w-4" />
         </Toggle>
         <Toggle
@@ -343,7 +372,8 @@ export function EditorToolbar({
           pressed={editor.isActive("underline")}
           onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
           disabled={!userCanEdit}
-          title="Underline (Cmd+U)">
+          title="Underline (Cmd+U)"
+        >
           <Underline className="h-4 w-4" />
         </Toggle>
         <Toggle
@@ -351,7 +381,8 @@ export function EditorToolbar({
           pressed={editor.isActive("strike")}
           onPressedChange={() => editor.chain().focus().toggleStrike().run()}
           disabled={!userCanEdit}
-          title="Strikethrough">
+          title="Strikethrough"
+        >
           <Strikethrough className="h-4 w-4" />
         </Toggle>
         <Toggle
@@ -359,7 +390,8 @@ export function EditorToolbar({
           pressed={editor.isActive("subscript")}
           onPressedChange={() => editor.chain().focus().toggleSubscript().run()}
           disabled={!userCanEdit}
-          title="Subscript">
+          title="Subscript"
+        >
           <SubscriptIcon className="h-4 w-4" />
         </Toggle>
         <Toggle
@@ -369,7 +401,8 @@ export function EditorToolbar({
             editor.chain().focus().toggleSuperscript().run()
           }
           disabled={!userCanEdit}
-          title="Superscript">
+          title="Superscript"
+        >
           <SuperscriptIcon className="h-4 w-4" />
         </Toggle>
         <Toggle
@@ -378,7 +411,8 @@ export function EditorToolbar({
             editor.chain().focus().unsetAllMarks().clearNodes().run()
           }
           disabled={!userCanEdit}
-          title="Clear Formatting">
+          title="Clear Formatting"
+        >
           <Eraser className="h-4 w-4" />
         </Toggle>
       </div>
@@ -395,25 +429,27 @@ export function EditorToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem
-              onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+              onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            >
               <AlignLeft className="h-4 w-4 mr-2" /> Left
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
                 editor.chain().focus().setTextAlign("center").run()
-              }>
+              }
+            >
               <AlignCenter className="h-4 w-4 mr-2" /> Center
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() =>
-                editor.chain().focus().setTextAlign("right").run()
-              }>
+              onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            >
               <AlignRight className="h-4 w-4 mr-2" /> Right
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
                 editor.chain().focus().setTextAlign("justify").run()
-              }>
+              }
+            >
               <AlignJustify className="h-4 w-4 mr-2" /> Justify
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -426,7 +462,8 @@ export function EditorToolbar({
             editor.chain().focus().toggleBulletList().run()
           }
           disabled={!userCanEdit}
-          title="Bullet List">
+          title="Bullet List"
+        >
           <List className="h-4 w-4" />
         </Toggle>
         <Toggle
@@ -436,7 +473,8 @@ export function EditorToolbar({
             editor.chain().focus().toggleOrderedList().run()
           }
           disabled={!userCanEdit}
-          title="Ordered List">
+          title="Ordered List"
+        >
           <ListOrdered className="h-4 w-4" />
         </Toggle>
       </div>
@@ -452,7 +490,8 @@ export function EditorToolbar({
               size="sm"
               className="h-8 w-8"
               title="Table Controls"
-              pressed={editor.isActive("table")}>
+              pressed={editor.isActive("table")}
+            >
               <TableIcon className="h-4 w-4" />
             </Toggle>
           </DropdownMenuTrigger>
@@ -464,7 +503,8 @@ export function EditorToolbar({
                   .focus()
                   .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
                   .run()
-              }>
+              }
+            >
               <TableIcon className="h-4 w-4 mr-2" /> Insert Table (3x3)
             </DropdownMenuItem>
 
@@ -472,18 +512,21 @@ export function EditorToolbar({
 
             <DropdownMenuItem
               onClick={() => editor.chain().focus().addColumnBefore().run()}
-              disabled={!editor.can().addColumnBefore()}>
+              disabled={!editor.can().addColumnBefore()}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" /> Add Column Before
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().addColumnAfter().run()}
-              disabled={!editor.can().addColumnAfter()}>
+              disabled={!editor.can().addColumnAfter()}
+            >
               <ArrowRight className="h-4 w-4 mr-2" /> Add Column After
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().deleteColumn().run()}
               disabled={!editor.can().deleteColumn()}
-              className="text-red-600 focus:text-red-600">
+              className="text-red-600 focus:text-red-600"
+            >
               <Trash2 className="h-4 w-4 mr-2" /> Delete Column
             </DropdownMenuItem>
 
@@ -491,18 +534,21 @@ export function EditorToolbar({
 
             <DropdownMenuItem
               onClick={() => editor.chain().focus().addRowBefore().run()}
-              disabled={!editor.can().addRowBefore()}>
+              disabled={!editor.can().addRowBefore()}
+            >
               <ArrowUp className="h-4 w-4 mr-2" /> Add Row Before
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().addRowAfter().run()}
-              disabled={!editor.can().addRowAfter()}>
+              disabled={!editor.can().addRowAfter()}
+            >
               <ArrowDown className="h-4 w-4 mr-2" /> Add Row After
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().deleteRow().run()}
               disabled={!editor.can().deleteRow()}
-              className="text-red-600 focus:text-red-600">
+              className="text-red-600 focus:text-red-600"
+            >
               <Trash2 className="h-4 w-4 mr-2" /> Delete Row
             </DropdownMenuItem>
 
@@ -510,12 +556,14 @@ export function EditorToolbar({
 
             <DropdownMenuItem
               onClick={() => editor.chain().focus().mergeCells().run()}
-              disabled={!editor.can().mergeCells()}>
+              disabled={!editor.can().mergeCells()}
+            >
               <Merge className="h-4 w-4 mr-2" /> Merge Cells
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().splitCell().run()}
-              disabled={!editor.can().splitCell()}>
+              disabled={!editor.can().splitCell()}
+            >
               <Split className="h-4 w-4 mr-2" /> Split Cell
             </DropdownMenuItem>
 
@@ -524,7 +572,8 @@ export function EditorToolbar({
             <DropdownMenuItem
               onClick={() => editor.chain().focus().deleteTable().run()}
               disabled={!editor.can().deleteTable()}
-              className="text-red-600 focus:text-red-600">
+              className="text-red-600 focus:text-red-600"
+            >
               <Trash2 className="h-4 w-4 mr-2" /> Delete Table
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -535,7 +584,8 @@ export function EditorToolbar({
           pressed={editor.isActive("codeBlock")}
           onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
           disabled={!userCanEdit}
-          title="Code Block">
+          title="Code Block"
+        >
           <Code className="h-4 w-4" />
         </Toggle>
 
@@ -545,7 +595,8 @@ export function EditorToolbar({
               size="sm"
               className="h-8 w-8"
               disabled={!userCanEdit}
-              title="Column Layout">
+              title="Column Layout"
+            >
               <Columns className="h-4 w-4" />
             </Toggle>
           </DropdownMenuTrigger>
@@ -555,13 +606,15 @@ export function EditorToolbar({
             </div>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().unsetColumns().run()}
-              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md">
+              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md"
+            >
               <Layout className="h-4 w-4" />
               <span>Normal Layout</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().setColumns(2).run()}
-              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md">
+              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md"
+            >
               <div className="flex gap-0.5">
                 <div className="w-2 h-4 border border-slate-400 rounded-sm"></div>
                 <div className="w-2 h-4 border border-slate-400 rounded-sm"></div>
@@ -570,7 +623,8 @@ export function EditorToolbar({
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => editor.chain().focus().setColumns(3).run()}
-              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md">
+              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md"
+            >
               <div className="flex gap-0.5">
                 <div className="w-1.5 h-4 border border-slate-400 rounded-sm"></div>
                 <div className="w-1.5 h-4 border border-slate-400 rounded-sm"></div>
@@ -588,7 +642,8 @@ export function EditorToolbar({
             editor.chain().focus().toggleBlockquote().run()
           }
           disabled={!userCanEdit}
-          title="Quote">
+          title="Quote"
+        >
           <Quote className="h-4 w-4" />
         </Toggle>
 
@@ -611,7 +666,8 @@ export function EditorToolbar({
                 size="sm"
                 className="bg-blue-600 text-white hover:bg-blue-700"
                 onClick={setLink}
-                disabled={!userCanEdit}>
+                disabled={!userCanEdit}
+              >
                 Add
               </Button>
             </div>
@@ -623,7 +679,8 @@ export function EditorToolbar({
           className="h-8 w-8"
           onClick={addImage}
           disabled={!userCanEdit}
-          title="Insert Image">
+          title="Insert Image"
+        >
           <ImageIcon className="h-4 w-4" />
         </Toggle>
 
@@ -633,7 +690,8 @@ export function EditorToolbar({
               size="sm"
               className="h-8 w-8"
               disabled={!userCanEdit || isGeneratingEquation}
-              title="Insert Math Equation">
+              title="Insert Math Equation"
+            >
               {isGeneratingEquation ? (
                 <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
               ) : (
@@ -663,7 +721,8 @@ export function EditorToolbar({
                               })
                               .run()
                           }
-                          className="flex flex-col items-start p-3 gap-1 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 rounded-none focus:bg-blue-50 outline-none">
+                          className="flex flex-col items-start p-3 gap-1 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 rounded-none focus:bg-blue-50 outline-none"
+                        >
                           <span className="text-[11px] font-semibold text-slate-600">
                             {eq.name}
                           </span>
@@ -680,15 +739,10 @@ export function EditorToolbar({
             <div className="p-1 border-t border-gray-100 bg-slate-50">
               <DropdownMenuItem
                 onClick={addMath}
-                className="flex items-center gap-2 p-2 text-sm text-slate-700 font-medium hover:bg-blue-100 cursor-pointer rounded-md">
+                className="flex items-center gap-2 p-2 text-sm text-slate-700 font-medium hover:bg-blue-100 cursor-pointer rounded-md"
+              >
                 <Plus className="h-4 w-4" />
                 <span>Insert New Equation...</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => alert("Ink Equation coming soon!")}
-                className="flex items-center gap-2 p-2 text-sm text-slate-700 font-medium hover:bg-blue-100 cursor-pointer rounded-md">
-                <Edit3 className="h-4 w-4" />
-                <span>Ink Equation</span>
               </DropdownMenuItem>
             </div>
           </DropdownMenuContent>
@@ -699,38 +753,13 @@ export function EditorToolbar({
 
       {/* Tools Group */}
       <div className="flex items-center gap-0.5 ml-1">
-        <Toggle size="sm" onClick={onFindAndReplace} title="Find & Replace">
-          <Search className="h-4 w-4" />
-        </Toggle>
-
-        <Toggle
-          size="sm"
-          onClick={() => {
-            const symbol = window.prompt(
-              "Enter symbol to insert (e.g. α, β, →):",
-            );
-            if (symbol && editor)
-              editor.chain().focus().insertContent(symbol).run();
-          }}
-          title="Insert Symbol"
-          disabled={!userCanEdit}>
-          <Omega className="h-4 w-4" />
-        </Toggle>
-
         <Toggle
           size="sm"
           onClick={() => editor.chain().focus().setHardBreak().run()}
-          title="Page Break (Hard Break)"
-          disabled={!userCanEdit}>
+          title="Hard Break"
+          disabled={!userCanEdit}
+        >
           <Minus className="h-4 w-4 rotate-90" />
-        </Toggle>
-
-        <Toggle
-          size="sm"
-          onClick={() => alert("Comment feature coming soon!")}
-          title="Add Comment"
-          disabled={!userCanEdit}>
-          <MessageSquare className="h-4 w-4" />
         </Toggle>
 
         <DropdownMenu>
@@ -740,7 +769,8 @@ export function EditorToolbar({
               size="sm"
               className="h-8 gap-1.5 px-2 bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 font-bold"
               title="Cortex AI Functions"
-              disabled={!userCanEdit}>
+              disabled={!userCanEdit}
+            >
               <Zap className="h-3.5 w-3.5 fill-violet-500" />
               <span className="text-xs">Tx</span>
             </Button>
@@ -750,70 +780,75 @@ export function EditorToolbar({
               Cortex Functions
             </div>
             <DropdownMenuItem
-              onClick={() => editor.chain().focus().run()}
-              className="gap-2">
-              <Sparkles className="h-4 w-4 text-violet-500" />
+              onClick={() =>
+                runCortexAction(
+                  "summarize",
+                  "Summarize the following text concisely. Keep only the essential points",
+                )
+              }
+              disabled={cortexLoading !== null}
+              className="gap-2"
+            >
+              {cortexLoading === "summarize" ? (
+                <Loader2 className="h-4 w-4 text-violet-500 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 text-violet-500" />
+              )}
               <span>Smart Summarize</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => editor.chain().focus().run()}
-              className="gap-2">
-              <Type className="h-4 w-4 text-violet-500" />
+              onClick={() =>
+                runCortexAction(
+                  "improve_writing",
+                  "Rewrite the following text in a formal academic style. Improve clarity, tone, and structure while preserving the original meaning",
+                )
+              }
+              disabled={cortexLoading !== null}
+              className="gap-2"
+            >
+              {cortexLoading === "rewrite" ? (
+                <Loader2 className="h-4 w-4 text-violet-500 animate-spin" />
+              ) : (
+                <Type className="h-4 w-4 text-violet-500" />
+              )}
               <span>Academic Rewrite</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => editor.chain().focus().run()}
-              className="gap-2">
-              <List className="h-4 w-4 text-violet-500" />
+              onClick={() =>
+                runCortexAction(
+                  "summarize",
+                  "Extract the key points from the following text as a bulleted list. Be concise — only the most important information",
+                )
+              }
+              disabled={cortexLoading !== null}
+              className="gap-2"
+            >
+              {cortexLoading === "extract" ? (
+                <Loader2 className="h-4 w-4 text-violet-500 animate-spin" />
+              ) : (
+                <List className="h-4 w-4 text-violet-500" />
+              )}
               <span>Extract Key Points</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => editor.chain().focus().run()}
-              className="gap-2">
-              <MessageSquare className="h-4 w-4 text-violet-500" />
+              onClick={() =>
+                runCortexAction(
+                  "explain",
+                  "Explain the following text in simple, clear terms. Break down complex concepts",
+                )
+              }
+              disabled={cortexLoading !== null}
+              className="gap-2"
+            >
+              {cortexLoading === "explain" ? (
+                <Loader2 className="h-4 w-4 text-violet-500 animate-spin" />
+              ) : (
+                <MessageSquare className="h-4 w-4 text-violet-500" />
+              )}
               <span>Explain Selection</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-
-      {/* Academic Group */}
-      <div className="flex items-center gap-0.5 bg-blue-50/50 rounded-md p-0.5 border border-blue-100">
-        <Toggle
-          className="hover:bg-blue-100 data-[state=on]:bg-blue-200"
-          size="sm"
-          title="Add Citation (Cmd+Shift+A)"
-          onClick={onInsertCitation}
-          disabled={!userCanEdit}>
-          <BookOpen className="h-3.5 w-3.5 text-blue-700" />
-        </Toggle>
-
-        <Toggle
-          className="hover:bg-blue-100 data-[state=on]:bg-blue-200"
-          size="sm"
-          title="Edit Citation (Cmd+Shift+E)"
-          onClick={onEditCitation}
-          disabled={!userCanEdit}>
-          <Edit3 className="h-3.5 w-3.5 text-blue-700" />
-        </Toggle>
-
-        <Toggle
-          className="hover:bg-blue-100 data-[state=on]:bg-blue-200"
-          size="sm"
-          title="Insert Reference List (Cmd+Shift+R)"
-          onClick={onInsertReferenceList}
-          disabled={!userCanEdit}>
-          <FileText className="h-3.5 w-3.5 text-blue-700" />
-        </Toggle>
-
-        <Toggle
-          className="hover:bg-blue-100 data-[state=on]:bg-blue-200"
-          size="sm"
-          title="Add Footnote (Cmd+Shift+F)"
-          onClick={onInsertFootnote}
-          disabled={!userCanEdit}>
-          <Footprints className="h-3.5 w-3.5 text-blue-700" />
-        </Toggle>
       </div>
     </div>
   );

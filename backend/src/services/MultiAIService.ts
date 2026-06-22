@@ -89,8 +89,8 @@ export class MultiAIService {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,
-            "HTTP-Referer": "https://scholarforge-ai.com",
-            "X-Title": "ScholarForge AI",
+            "HTTP-Referer": "https://WorkContext-ai.com",
+            "X-Title": "WorkContext",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -154,3 +154,4 @@ export class MultiAIService {
 }
 
 export const multiAIService = MultiAIService.getInstance();
+
