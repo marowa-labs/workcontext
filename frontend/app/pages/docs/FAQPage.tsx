@@ -41,7 +41,7 @@ const FAQPage = () => {
             "You can create an account by clicking the 'Sign Up' button on our homepage. You'll need to provide your email address, create a password, and verify your email. After verification, you can complete your profile and start using WorkContext.",
         },
         {
-          question: "Is there a free trial available?",
+          question: "Is there a Free available?",
           answer:
             "Yes! All new users get access to our Free plan which includes basic features like up to 3 projects, 100 AI writing suggestions per month, and basic plagiarism checking. You can upgrade to a paid plan at any time.",
         },
@@ -159,7 +159,8 @@ const FAQPage = () => {
         <div className="container-custom py-6">
           <Link
             href="/docs"
-            className={`inline-flex items-center ${planDocLinkClasses} mb-4`}>
+            className={`inline-flex items-center ${planDocLinkClasses} mb-4`}
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Documentation
           </Link>
@@ -187,7 +188,8 @@ const FAQPage = () => {
             <div className="flex space-x-2">
               <Link
                 href="/docs/contact-support"
-                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-medium">
+                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-medium"
+              >
                 Contact Support
               </Link>
             </div>
@@ -212,11 +214,13 @@ const FAQPage = () => {
             <div key={category.id} className={`${planCardClasses} rounded-lg`}>
               <button
                 onClick={() => toggleCategory(category.id)}
-                className="w-full flex items-center justify-between p-5 text-left">
+                className="w-full flex items-center justify-between p-5 text-left"
+              >
                 <div className="flex items-center">
                   <div className="flex-shrink-0 mr-3">{category.icon}</div>
                   <h2
-                    className={`text-lg font-semibold ${planDocHeadingClasses}`}>
+                    className={`text-lg font-semibold ${planDocHeadingClasses}`}
+                  >
                     {category.title}
                   </h2>
                 </div>
@@ -233,7 +237,8 @@ const FAQPage = () => {
                     {category.faqs.map((faq, index) => (
                       <div key={index}>
                         <h3
-                          className={`font-semibold mb-2 ${planDocHeadingClasses}`}>
+                          className={`font-semibold mb-2 ${planDocHeadingClasses}`}
+                        >
                           {faq.question}
                         </h3>
                         <p className="text-black dark:text-black">
@@ -257,7 +262,8 @@ const FAQPage = () => {
               <div className="flex items-center mb-3">
                 <MessageCircle className="h-6 w-6 text-blue-600 mr-3 dark:text-blue-400" />
                 <h3
-                  className={`text-lg font-semibold ${planDocHeadingClasses}`}>
+                  className={`text-lg font-semibold ${planDocHeadingClasses}`}
+                >
                   Schedule a Meeting
                 </h3>
               </div>
@@ -268,7 +274,8 @@ const FAQPage = () => {
                 href="https://calendly.com/audacityimpact/30min"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium inline-block">
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium inline-block"
+              >
                 Schedule Now
               </a>
             </div>
@@ -277,7 +284,8 @@ const FAQPage = () => {
               <div className="flex items-center mb-3">
                 <Mail className="h-6 w-6 text-green-600 mr-3 dark:text-green-400" />
                 <h3
-                  className={`text-lg font-semibold ${planDocHeadingClasses}`}>
+                  className={`text-lg font-semibold ${planDocHeadingClasses}`}
+                >
                   Email Support
                 </h3>
               </div>
@@ -286,7 +294,8 @@ const FAQPage = () => {
               </p>
               <Link
                 href="/docs/contact-support"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium inline-block">
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium inline-block"
+              >
                 Send Email
               </Link>
             </div>

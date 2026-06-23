@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
           Analytics & Insights
         </h1>
-        <p className="text-xl text-black max-w-2xl mb-10">
+        <p className="text-xl text-white max-w-2xl mb-10">
           We are currently putting the finishing touches on our advanced
           analytics dashboard. Check back soon to see how we help you track your
           academic defensibility.
@@ -22,7 +22,8 @@ export default function AnalyticsPage() {
         <Button
           asChild
           size="lg"
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+        >
           <Link href="/signup">Get Started with Available Features</Link>
         </Button>
       </div>

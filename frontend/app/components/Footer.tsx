@@ -4,31 +4,15 @@ import Link from "next/link";
 import { Twitter, Github, Linkedin, Mail } from "lucide-react";
 
 const footerLinks = {
-  product: [
+  solutions: [
     { name: "Features", href: "/features" },
-    { name: "Pricing", href: "/pricing" },
-    { name: "Integrations", href: "/integrations" },
+    { name: "AI Workspace", href: "/solutions/ai-workspace" },
+    { name: "Export Options", href: "/solutions/export-options" },
+  ],
+  product: [
+    { name: "Blogs", href: "/blogs" },
     { name: "What's New", href: "/changelog" },
     { name: "Roadmap", href: "/roadmap" },
-  ],
-  resources: [
-    { name: "Blogs", href: "/blogs" },
-    { name: "Case Studies", href: "/resources/case-studies" },
-    { name: "Help Center", href: "/help" },
-    { name: "Documentation", href: "/docs" },
-    { name: "Schedule Demo", href: "/schedule-demo" },
-  ],
-  solutions: [
-    { name: "Analytics", href: "/solutions/analytics" },
-    { name: "Smart Connections", href: "/solutions/collaboration" },
-    { name: "Collaboration", href: "/solutions/collaboration" },
-    { name: "AI Workspace", href: "/solutions/ai-writing-assistant" },
-  ],
-  company: [
-    { name: "About Us", href: "/company/about" },
-    { name: "Careers", href: "/company/careers" },
-    { name: "Partners", href: "/company/partners" },
-    { name: "FAQs", href: "/company/faq" },
   ],
   legal: [
     { name: "Cookie Policy", href: "/legal/cookies" },
@@ -38,10 +22,17 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { name: "Twitter", href: "#", icon: Twitter },
-  { name: "Github", href: "#", icon: Github },
-  { name: "LinkedIn", href: "#", icon: Linkedin },
-  { name: "Email", href: "mailto:hello@WorkContextai.com", icon: Mail },
+  { name: "Twitter", href: "https://x.com/craigmarowa", icon: Twitter },
+  {
+    name: "Github",
+    href: "https://github.com/marowa-labs/workcontext",
+    icon: Github,
+  },
+  {
+    name: "LinkedIn",
+    href: "https://www.linkedin.com/in/craig-marowa-1b2132332",
+    icon: Linkedin,
+  },
 ];
 
 export default function Footer() {
@@ -102,25 +93,6 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Resources Links */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
-                Resources
-              </h3>
-              <ul className="space-y-3">
-                {footerLinks.resources.map((link) => (
-                  <li key={link.name}>
-                    <Link
-                      href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             {/* Solutions Links */}
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
@@ -128,25 +100,6 @@ export default function Footer() {
               </h3>
               <ul className="space-y-3">
                 {footerLinks.solutions.map((link) => (
-                  <li key={link.name}>
-                    <Link
-                      href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company Links */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
-                Company
-              </h3>
-              <ul className="space-y-3">
-                {footerLinks.company.map((link) => (
                   <li key={link.name}>
                     <Link
                       href={link.href}
@@ -188,23 +141,18 @@ export default function Footer() {
                 © {new Date().getFullYear()} WorkContext. All rights reserved.
               </p>
               <p className="text-gray-600 text-sm">
-                Made with ❤️ for students and researchers worldwide
+                Made with ❤️ for individual and teams worldwide
               </p>
             </div>
             <div className="flex space-x-4">
-              <Link href="/docs/privacy">
+              <Link href="/legal/privacy">
                 <p className="text-gray-600 text-sm hover:text-gray-600 transition-colors">
                   Privacy Policy
                 </p>
               </Link>
-              <Link href="/docs/terms">
+              <Link href="/legal/terms">
                 <p className="text-gray-600 text-sm hover:text-gray-600 transition-colors">
                   Terms of Service
-                </p>
-              </Link>
-              <Link href="/contact">
-                <p className="text-gray-600 text-sm hover:text-gray-600 transition-colors">
-                  Contact Us
                 </p>
               </Link>
             </div>

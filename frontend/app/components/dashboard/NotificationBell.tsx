@@ -19,6 +19,8 @@ import {
   Clock as Snooze,
   Archive,
   Clock,
+  CheckCheck,
+  BellOff,
 } from "lucide-react";
 import NotificationService from "../../lib/utils/notificationService";
 import { Button } from "../ui/button";
@@ -426,6 +428,81 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
   };
 
+  // Get icon background color for notification type
+  const getIconBg = (type: string) => {
+    if (
+      ["comment", "mention", "comment_added", "comment_resolved"].includes(type)
+    )
+      return "bg-blue-100 text-blue-600";
+    if (
+      [
+        "document_change",
+        "document_shared",
+        "document_version",
+        "document_deadline",
+        "document_exported",
+        "backup_available",
+      ].includes(type)
+    )
+      return "bg-amber-100 text-amber-600";
+    if (
+      [
+        "new_collaborator",
+        "permission_change",
+        "collaborator_request",
+        "collaboration_invite",
+        "collaboration_invite_accepted",
+        "collaboration_invite_declined",
+        "collaboration_removed",
+      ].includes(type)
+    )
+      return "bg-violet-100 text-violet-600";
+    if (
+      [
+        "plagiarism_complete",
+        "ai_suggestion",
+        "ai_limit",
+        "new_feature",
+        "new_feature_announcement",
+        "product_tip",
+        "real_time_edit",
+        "editor_activity",
+      ].includes(type)
+    )
+      return "bg-cyan-100 text-cyan-600";
+    if (
+      [
+        "payment_success",
+        "payment_failed",
+        "subscription_renewed",
+        "subscription_expiring",
+        "subscription_created",
+        "subscription_updated",
+        "subscription_cancelled",
+        "subscription_resumed",
+        "subscription_expired",
+        "payment_refunded",
+        "invoice_available",
+      ].includes(type)
+    )
+      return "bg-green-100 text-green-600";
+    if (["security_alert"].includes(type)) return "bg-red-100 text-red-600";
+    return "bg-slate-100 text-slate-500";
+  };
+
+  // Format time ago string
+  function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "Just now";
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d}d ago`;
+    return new Date(dateStr).toLocaleDateString();
+  }
+
   // Get priority color
   const getPriorityColor = (priority: "high" | "medium" | "low") => {
     switch (priority) {
@@ -496,6 +573,197 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       default:
         return "Notifications";
     }
+  };
+
+  // Notification group component for inline inbox
+  const NotificationGroup = ({
+    label,
+    notifications: groupNotifications,
+    onMarkRead,
+    onDismiss,
+    onSnooze,
+  }: {
+    label: string;
+    notifications: typeof notifications;
+    onMarkRead: (id: string) => void;
+    onDismiss: (id: string) => void;
+    onSnooze: (id: string) => void;
+  }) => {
+    if (groupNotifications.length === 0) return null;
+    return (
+      <div className="border-b border-border">
+        <div className="px-4 py-2 bg-muted/30">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {label} ({groupNotifications.length})
+          </span>
+        </div>
+        {groupNotifications.map((n) => (
+          <div
+            key={n.id}
+            className={`flex items-start gap-3 px-4 py-3 border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer ${
+              !n.read ? "bg-primary/5" : ""
+            }`}
+            onClick={() => !n.read && onMarkRead(n.id)}
+          >
+            <div
+              className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${getIconBg(n.type)}`}
+            >
+              {getIcon(n.type)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <p
+                  className={`text-sm font-medium truncate ${
+                    !n.read ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {n.title}
+                </p>
+                {!n.read && (
+                  <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1.5" />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                {n.message}
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                {timeAgo(n.created_at)}
+              </p>
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {!n.read && (
+                <button
+                  title="Mark as read"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkRead(n.id);
+                  }}
+                  className="p-1 rounded hover:bg-emerald-100 text-muted-foreground hover:text-emerald-600"
+                >
+                  <CheckCheck className="w-3 h-3" />
+                </button>
+              )}
+              <button
+                title="Snooze 1h"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSnooze(n.id);
+                }}
+                className="p-1 rounded hover:bg-amber-100 text-muted-foreground hover:text-amber-600"
+              >
+                <Clock className="w-3 h-3" />
+              </button>
+              <button
+                title="Dismiss"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDismiss(n.id);
+                }}
+                className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-500"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Render notification inbox content for inline (pinned) mode
+  const renderInboxContent = () => {
+    const { highPriority, mediumPriority, lowPriority } =
+      groupNotificationsByPriority();
+
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span className="text-sm font-semibold">Notifications</span>
+            {unreadCount > 0 && (
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                {unreadCount} new
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllAsRead}
+                className="text-xs text-primary hover:underline px-2 py-1"
+              >
+                Mark all read
+              </button>
+            )}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1 hover:bg-muted rounded"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex items-center gap-1 px-4 py-2 border-b border-border">
+          {(["all", "high", "medium", "low"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`text-xs px-2 py-1 rounded capitalize ${
+                filter === f
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* Notification list */}
+        <div className="flex-1 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <BellOff className="h-8 w-8 mb-2 opacity-40" />
+              <p className="text-sm">No notifications</p>
+            </div>
+          ) : (
+            <>
+              {highPriority.length > 0 && (
+                <NotificationGroup
+                  label={getPriorityLabel("high")}
+                  notifications={highPriority}
+                  onMarkRead={markAsRead}
+                  onDismiss={dismissNotification}
+                  onSnooze={snoozeNotification}
+                />
+              )}
+              {mediumPriority.length > 0 && (
+                <NotificationGroup
+                  label={getPriorityLabel("medium")}
+                  notifications={mediumPriority}
+                  onMarkRead={markAsRead}
+                  onDismiss={dismissNotification}
+                  onSnooze={snoozeNotification}
+                />
+              )}
+              {lowPriority.length > 0 && (
+                <NotificationGroup
+                  label={getPriorityLabel("low")}
+                  notifications={lowPriority}
+                  onMarkRead={markAsRead}
+                  onDismiss={dismissNotification}
+                  onSnooze={snoozeNotification}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (

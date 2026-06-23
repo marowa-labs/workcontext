@@ -1,19 +1,7 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import {
-  CheckCircle2,
-  Circle,
-  Clock,
-  Rocket,
-  Star,
-  Zap,
-  Shield,
-  Search,
-} from "lucide-react";
+import { CheckCircle2, Circle, Star, Zap } from "lucide-react";
 import Layout from "../../components/Layout";
-import { Button } from "../../components/ui/button";
 
 interface RoadmapItem {
   version?: string;
@@ -30,9 +18,9 @@ const roadmapData: RoadmapItem[] = [
     date: "Q2 2026",
     status: "planned",
     type: "new",
-    title: "Real-time AI Extraction ('The Brain')",
+    title: "Real-time AI Intelligence",
     description:
-      "Deep integration of RAG systems for real-time context extraction and chat with papers.",
+      "Deep integration of RAG systems for real-time context extraction and smart document analysis.",
     items: [
       "Backend Extraction Service (OpenAI/Gemini)",
       "Context-aware RAG Chat",
@@ -45,10 +33,10 @@ const roadmapData: RoadmapItem[] = [
     type: "improvement",
     title: "Advanced Collaboration Suite",
     description:
-      "Bringing multiplayer capabilities to the research editor for team-based defensibility.",
+      "Bringing real-time multiplayer capabilities to the workspace for seamless team collaboration.",
     items: [
       "Real-time cursor tracking",
-      "Comment threads on citations",
+      "Comment threads on any document",
       "Team workspaces & Permissions",
     ],
   },
@@ -57,12 +45,12 @@ const roadmapData: RoadmapItem[] = [
     date: "Jan 25, 2026",
     status: "completed",
     type: "new",
-    title: "Discovery & Parity Update",
+    title: "Discovery & Productivity Update",
     description:
-      "Major release focusing on discovery workflows and competitive parity frames.",
+      "Major release focusing on discovery workflows and competitive productivity features.",
     items: [
-      "Search Alerts Panel (Google Scholar style)",
-      "Literature Review Panel with Trending Topics",
+      "Search Alerts Panel with daily/weekly monitoring",
+      "Research Panel with trending topics and search",
       "Concept Map Visualization Frame",
     ],
   },
@@ -71,12 +59,12 @@ const roadmapData: RoadmapItem[] = [
     date: "Jan 24, 2026",
     status: "completed",
     type: "improvement",
-    title: "Citation Workflow Overhaul",
+    title: "Asset Linking Overhaul",
     description:
-      "Refactoring citation management from modals to persistent sidebars for better flow.",
+      "Refactoring how you link and manage external assets — from modals to persistent sidebars for better productivity flow.",
     items: [
-      "Persistent Citations Panel",
-      "Search & Manual Citation Forms",
+      "Persistent Asset Links Panel",
+      "Search & Manual Link Forms",
       "Unified Add/Manage Workflow",
     ],
   },
@@ -85,13 +73,13 @@ const roadmapData: RoadmapItem[] = [
     date: "Jan 22, 2026",
     status: "completed",
     type: "new",
-    title: "Verification & Global Analysis",
+    title: "Verification & Analysis",
     description:
-      "Introducing powerful cross-checking and analysis tools for academic rigor.",
+      "Introducing powerful cross-checking and analysis tools for accuracy and reliability.",
     items: [
       "Multi-Model Verification Panel (Gemini vs OpenRouter)",
       "Gap Analysis for Missing Perspectives",
-      "Multi-language Abstract Translation",
+      "Multi-language Translation",
     ],
   },
 ];
@@ -151,7 +139,8 @@ function RoadmapTimelineItem({
 
       {/* Icon Marker */}
       <div
-        className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${getStatusColor()}`}>
+        className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${getStatusColor()}`}
+      >
         {getIcon()}
       </div>
 
@@ -165,7 +154,8 @@ function RoadmapTimelineItem({
           )}
           <span className="text-sm text-gray-500">{item.date}</span>
           <span
-            className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full ${getBadgeColor()}`}>
+            className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full ${getBadgeColor()}`}
+          >
             {item.type.replace("-", " ")}
           </span>
           {item.status === "in-progress" && (
@@ -184,7 +174,8 @@ function RoadmapTimelineItem({
           {item.items.map((feature, idx) => (
             <li
               key={idx}
-              className="flex items-center gap-2 text-sm text-gray-700">
+              className="flex items-center gap-2 text-sm text-gray-700"
+            >
               <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
               <span>{feature}</span>
             </li>
@@ -207,7 +198,8 @@ export default function RoadmapPage() {
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
               A detailed timeline of our continuous improvements and new
-              features. We are building the future of academic defensibility.
+              features. We are building the future of context-aware
+              productivity.
             </p>
           </div>
         </header>
@@ -224,32 +216,6 @@ export default function RoadmapPage() {
             ))}
           </div>
         </main>
-
-        {/* Feedback CTA */}
-        <section className="bg-gray-50 py-20 border-t border-gray-100">
-          <div className="container mx-auto max-w-4xl px-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-              <Rocket className="h-6 w-6 text-blue-600" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Help Shape Our Future
-            </h2>
-            <p className="text-gray-600 mb-8 max-w-xl mx-auto">
-              Your feedback drives our roadmap. Have a suggestion for a feature
-              or improvement?
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6">
-                Submit Feature Request
-              </Button>
-              <Button
-                variant="outline"
-                className="bg-white hover:bg-gray-50 text-gray-700">
-                Join Community
-              </Button>
-            </div>
-          </div>
-        </section>
       </div>
     </Layout>
   );

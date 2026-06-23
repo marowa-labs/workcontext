@@ -16,13 +16,14 @@ export default function BlogsPage() {
           Latest Insights & Blogs
         </h1>
         <p className="text-xl text-black max-w-2xl mb-10">
-          Our team is busy writing the latest insights on academic integrity and
-          AI. The blog section will be live very soon.
+          Our team is busy writing the latest insights and AI. The blog section
+          will be live very soon.
         </p>
         <Button
           asChild
           size="lg"
-          className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+          className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+        >
           <Link href="/">Back to Home</Link>
         </Button>
       </div>

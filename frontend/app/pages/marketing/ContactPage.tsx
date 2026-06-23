@@ -41,7 +41,8 @@ function ContactHero() {
           backgroundImage:
             "url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=800&fit=crop')",
           zIndex: 0,
-        }}></div>
+        }}
+      ></div>
 
       {/* Background elements */}
       <div className="absolute inset-0 opacity-5">
@@ -122,10 +123,12 @@ function QuickContactOptions() {
           {contactTypes.map((type, index) => (
             <Card
               key={index}
-              className="border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-white">
+              className="border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-white"
+            >
               <CardContent className="p-8 text-center">
                 <div
-                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${type.color} mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${type.color} mb-6 group-hover:scale-110 transition-transform duration-300`}
+                >
                   <type.icon className="h-8 w-8 text-white" />
                 </div>
 
@@ -142,7 +145,8 @@ function QuickContactOptions() {
                   className="w-full bg-white border-white text-white hover:bg-white"
                   onClick={() =>
                     (window.location.href = `mailto:${type.contact}`)
-                  }>
+                  }
+                >
                   {type.action}
                   <Mail className="ml-2 h-4 w-4" />
                 </Button>
@@ -237,7 +241,8 @@ function ContactForm() {
               });
             }}
             variant="outline"
-            className="bg-white border-white text-white hover:bg-white">
+            className="bg-white border-white text-white hover:bg-white"
+          >
             Send Another Message
           </Button>
         </CardContent>
@@ -268,7 +273,8 @@ function ContactForm() {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-200 mb-2">
+                className="block text-sm font-medium text-gray-200 mb-2"
+              >
                 Full Name *
               </label>
               <Input
@@ -286,7 +292,8 @@ function ContactForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-200 mb-2">
+                className="block text-sm font-medium text-gray-200 mb-2"
+              >
                 Email Address *
               </label>
               <Input
@@ -305,7 +312,8 @@ function ContactForm() {
           <div>
             <label
               htmlFor="subject"
-              className="block text-sm font-medium text-gray-200 mb-2">
+              className="block text-sm font-medium text-gray-200 mb-2"
+            >
               Subject *
             </label>
             <Select
@@ -314,7 +322,8 @@ function ContactForm() {
               onValueChange={(value) =>
                 setFormData({ ...formData, subject: value })
               }
-              value={formData.subject}>
+              value={formData.subject}
+            >
               <SelectTrigger className="w-full bg-white border-white text-white">
                 <SelectValue placeholder="Select a topic" />
               </SelectTrigger>
@@ -347,7 +356,8 @@ function ContactForm() {
           <div>
             <label
               htmlFor="message"
-              className="block text-sm font-medium text-gray-200 mb-2">
+              className="block text-sm font-medium text-gray-200 mb-2"
+            >
               Message *
             </label>
             <Textarea
@@ -366,7 +376,8 @@ function ContactForm() {
             type="submit"
             size="lg"
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-glow"
-            disabled={isSubmitting}>
+            disabled={isSubmitting}
+          >
             {isSubmitting ? (
               <>Sending Message...</>
             ) : (
@@ -472,7 +483,8 @@ function FAQTeaser() {
             <CardContent className="p-0">
               <button
                 className="w-full p-6 text-left flex items-center justify-between hover:bg-white transition-colors"
-                onClick={() => setOpenFAQ(openFAQ === index ? null : index)}>
+                onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
+              >
                 <h4 className="font-semibold text-white pr-4">
                   {faq.question}
                 </h4>
@@ -496,7 +508,8 @@ function FAQTeaser() {
         <Button
           variant="outline"
           className="gap-2 bg-white border-white text-white hover:bg-white"
-          onClick={handleGetStarted}>
+          onClick={handleGetStarted}
+        >
           Visit Help Center
           <ArrowRight className="h-4 w-4" />
         </Button>
@@ -575,7 +588,8 @@ function ClosingCTA() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             size="lg"
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow">
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow"
+          >
             <Headphones className="mr-2 h-5 w-5" />
             Get Support
           </Button>
@@ -583,8 +597,9 @@ function ClosingCTA() {
             variant="outline"
             size="lg"
             onClick={handleGetStarted}
-            className="border-gray-500 text-white hover:bg-gray-900 px-8 py-6">
-            Start Free Trial
+            className="border-gray-500 text-white hover:bg-gray-900 px-8 py-6"
+          >
+            Start Free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>

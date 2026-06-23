@@ -38,41 +38,42 @@ function IntroHero() {
         }}
       />
 
-      {/* Academic illustrations background */}
+      {/* Productivity illustrations background */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 text-gray-200xl">📚</div>
-        <div className="absolute top-40 right-20 text-4xl">✏️</div>
-        <div className="absolute bottom-40 left-1/4 text-5xl">🎓</div>
-        <div className="absolute bottom-20 right-10 text-3xl">📖</div>
+        <div className="absolute top-20 left-10 text-gray-200xl">📋</div>
+        <div className="absolute top-40 right-20 text-4xl">💡</div>
+        <div className="absolute bottom-40 left-1/4 text-5xl">🚀</div>
+        <div className="absolute bottom-20 right-10 text-3xl">⚡</div>
       </div>
 
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
-            Five Core Features for Academic{" "}
+            Everything You Need for{" "}
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Success
+              Productive Work
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-            Transform writing from a source of anxiety to confidence with our
-            five integrated core features that ensure originality, credibility,
-            humanity, defensibility, and professional publication.
+            Transform how you work with our integrated features that boost
+            productivity, enhance collaboration, and streamline your workflow.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-6 btn-glow"
-              onClick={handleGetStarted}>
+              onClick={handleGetStarted}
+            >
               Try It Free
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button
               variant="outline"
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-8 py-6 btn-glow border border-white">
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-8 py-6 btn-glow border border-white"
+            >
               Explore All Features
             </Button>
           </div>
@@ -104,11 +105,13 @@ function FeatureDetail({
 }: FeatureDetailProps) {
   return (
     <div
-      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}>
+      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
+    >
       {/* Content */}
       <div className={reverse ? "lg:col-start-2" : ""}>
         <div
-          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}>
+          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}
+        >
           <Icon className="h-8 w-8 text-white" />
         </div>
 
@@ -149,30 +152,30 @@ function FeatureDetail({
 function FeaturesPresentationFlow() {
   const features = [
     {
-      icon: Search,
-      title: "Explainable Originality Map",
+      icon: Bot,
+      title: "AI Chat Assistant",
       description:
-        "Color-coded heatmap shows exactly which parts of your document need attention, with clear safety classifications (Green/Yellow/Red) for complete transparency.",
+        "Get intelligent, context-aware help from our AI assistant. Ask questions, get suggestions, and let AI handle routine tasks while you focus on what matters.",
       benefits: [
-        "Interactive heatmap visualization of document originality",
-        "Safety classification for each sentence (Green/Yellow/Red)",
-        "One-click rephrase suggestions for flagged content",
-        "Detailed source matching for transparency",
+        "Context-aware responses based on your workspace",
+        "Multi-model support (Gemini, OpenAI, OpenRouter)",
+        "BYOK encryption for API keys at rest",
+        "Task creation and management via chat",
       ],
       imageUrl:
         "https://image2url.com/images/1766035339540-bbbba493-1dcb-4604-8f70-23c6a9a878a2.png?w=800&h=600&fit=crop",
       color: "from-purple-600 to-purple-800",
     },
     {
-      icon: FileText,
-      title: "Citation Confidence Auditor",
+      icon: Search,
+      title: "Smart Task Management",
       description:
-        "Get confidence scores for each section and warnings about outdated or unsupported claims with suggestions for missing links.",
+        "Create, organize, and track tasks with priorities, assignees, due dates, and dependencies. Never miss a deadline again.",
       benefits: [
-        "Section-by-section confidence scoring",
-        "Warnings about outdated citations (3+ years old)",
-        "Logic validation between claims and citations",
-        "Intelligent suggestions for missing references",
+        "Task creation with priorities and due dates",
+        "Assignees and team collaboration",
+        "Subtasks with progress tracking",
+        "Dependencies and blocking relationships",
       ],
       imageUrl:
         "https://image2url.com/images/1766041624051-57126843-7e86-487c-875c-682a621bbc6e.png?w=800&h=600&fit=crop",
@@ -180,15 +183,15 @@ function FeaturesPresentationFlow() {
       reverse: true,
     },
     {
-      icon: Bot,
-      title: "Submission-Safe Writing Mode",
+      icon: FileText,
+      title: "Document Editing & Collaboration",
       description:
-        "Real-time AI-detection meter helps you avoid robotic writing patterns with humanizing suggestions as you type.",
+        "Edit documents in real-time with your team. See who's working where, leave comments, and track every change.",
       benefits: [
-        "Live AI-probability meter as you write",
-        "Highlighting of robotic sentences",
-        "Humanizing prompts instead of auto-fixing",
-        "Maintain your unique writing voice",
+        "Real-time collaborative editing with presence indicators",
+        "Threaded comments on any section",
+        "Full version history with one-click restore",
+        "Workspace & team management with role-based access",
       ],
       imageUrl:
         "https://image2url.com/images/1766035335298-270bb4d5-1753-46ef-b984-91b47e54df1f.png?w=800&h=600&fit=crop",
@@ -196,14 +199,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: Shield,
-      title: "Defensibility Log",
+      title: "Time Tracking & Progress",
       description:
-        "Generate authorship certificates proving your work is original with time tracking and manual effort verification.",
+        "Track time spent on tasks, monitor progress, and see activity feeds. Stay on top of your team's productivity.",
       benefits: [
-        "Silent activity logging (time/keystrokes)",
-        "Authorship certificate generation",
-        "Provenance data for verification",
-        "Seal of authenticity for professors",
+        "Time tracking with start/stop controls",
+        "Progress monitoring with visual charts",
+        "Activity feed for team updates",
+        "Notifications for important events",
       ],
       imageUrl:
         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop",
@@ -212,14 +215,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: Download,
-      title: "One-Click Publication Suite",
+      title: "Multi-Format Export",
       description:
-        "Automated formatting, cover pages, and structured exports in APA, MLA, and other academic formats.",
+        "Export your work to any format you need. From PDF to DOCX to LaTeX — your work, your way.",
       benefits: [
-        "Auto-TOC extraction from document structure",
-        "APA/MLA compliant cover page generation",
-        "Structural fidelity audit before export",
-        "High-fidelity exports (PDF, DOCX, LaTeX)",
+        "Export to PDF, DOCX, LaTeX, RTF, and TXT",
+        "Custom formatting with templates",
+        "Batch export for entire projects",
+        "Version history and backup support",
       ],
       imageUrl:
         "https://image2url.com/images/1766041414714-d21fc2eb-7026-4d37-9bb7-2c564aed93ab.png?w=800&h=600&fit=crop",
@@ -240,77 +243,11 @@ function FeaturesPresentationFlow() {
   );
 }
 
-// Closing Mini-CTA
-function ClosingCTA() {
-  return (
-    <>
-      <section className="section-padding bg-[#121212]">
-        <div className="container-custom">
-          <Card className="border-0 shadow-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 border border-white">
-            <CardContent className="p-12 text-center">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20"></div>
-              <div className="relative z-10">
-                <Lightbulb className="h-16 w-16 text-yellow-300 mx-auto mb-6" />
-
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                  Built to Help You Succeed at Every Stage
-                </h2>
-
-                <p className="text-lg text-gray-200 mb-8 max-w-2xl mx-auto">
-                  Whether you're a first-year student or a seasoned researcher,
-                  WorkContextadapts to your needs and grows with your
-                  academic journey.
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-6 btn-glow">
-                    <Link href="/signup" className="flex items-center">
-                      Start Your Free Trial
-                      <Zap className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-white text-white hover:bg-white/10 backdrop-blur-sm px-8 py-6"
-                    onClick={() =>
-                      window.open(
-                        "https://calendly.com/audacityimpact/30min",
-                        "_blank",
-                      )
-                    }>
-                    Schedule a Demo
-                  </Button>
-                </div>
-
-                <div className="flex justify-center items-center gap-6 mt-8 text-gray-200 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Setup in 2 minutes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    <span>Enterprise-grade security</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-    </>
-  );
-}
-
 export default function FeaturesPage() {
   return (
     <Layout>
       <IntroHero />
       <FeaturesPresentationFlow />
-      <ClosingCTA />
     </Layout>
   );
 }

@@ -237,14 +237,16 @@ const LoginPage: React.FC = () => {
       {/* Error Message */}
       {error && (
         <div
-          className={`rounded-lg p-3 ${isEmailNotConfirmed ? "bg-blue-900/50 border border-blue-800" : "bg-red-900/50 border border-red-800"}`}>
+          className={`rounded-lg p-3 ${isEmailNotConfirmed ? "bg-blue-900/50 border border-blue-800" : "bg-red-900/50 border border-red-800"}`}
+        >
           <div className="flex items-start">
             <AlertCircle
               className={`h-5 w-5 mr-2 ${isEmailNotConfirmed ? "text-blue-300" : "text-red-300"}`}
             />
             <div className="flex-1">
               <p
-                className={`text-sm ${isEmailNotConfirmed ? "text-blue-300" : "text-red-300"}`}>
+                className={`text-sm ${isEmailNotConfirmed ? "text-blue-300" : "text-red-300"}`}
+              >
                 {error}
               </p>
 
@@ -256,7 +258,8 @@ const LoginPage: React.FC = () => {
                     disabled={isLoading}
                     variant="outline"
                     size="sm"
-                    className="bg-blue-800/50 border-blue-700 text-blue-100 hover:bg-blue-700/50">
+                    className="bg-blue-800/50 border-blue-700 text-blue-100 hover:bg-blue-700/50"
+                  >
                     {isLoading ? (
                       <div className="h-4 w-4 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
                     ) : (
@@ -267,9 +270,11 @@ const LoginPage: React.FC = () => {
                     asChild
                     variant="outline"
                     size="sm"
-                    className="bg-blue-800/50 border-blue-700 text-blue-100 hover:bg-blue-700/50">
+                    className="bg-blue-800/50 border-blue-700 text-blue-100 hover:bg-blue-700/50"
+                  >
                     <Link
-                      href={`/verify-email?email=${encodeURIComponent(watchedFields.email || "")}&source=manual`}>
+                      href={`/verify-email?email=${encodeURIComponent(watchedFields.email || "")}&source=manual`}
+                    >
                       Verify Email Manually
                     </Link>
                   </Button>
@@ -280,7 +285,7 @@ const LoginPage: React.FC = () => {
         </div>
       )}
 
-      {/* Social Signup Buttons - Re-enabled */}
+      {/* Social Signup Buttons - Re-enabled *
       <div className="grid grid-cols-1 gap-3">
         <Button
           type="button"
@@ -325,7 +330,7 @@ const LoginPage: React.FC = () => {
             Or continue with
           </span>
         </div>
-      </div>
+      </div> */}
 
       {/* Email/Password Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -366,14 +371,16 @@ const LoginPage: React.FC = () => {
             />
             <label
               htmlFor="rememberMe"
-              className="text-sm text-gray-300 cursor-pointer">
+              className="text-sm text-gray-300 cursor-pointer"
+            >
               Remember me
             </label>
           </div>
 
           <Link
             href="/forgot-password"
-            className="text-sm text-blue-400 hover:text-blue-300 font-medium">
+            className="text-sm text-blue-400 hover:text-blue-300 font-medium"
+          >
             Forgot password?
           </Link>
         </div>
@@ -382,7 +389,8 @@ const LoginPage: React.FC = () => {
         <Button
           type="submit"
           className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
-          disabled={!isValid || isLoading}>
+          disabled={!isValid || isLoading}
+        >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
@@ -403,7 +411,8 @@ const LoginPage: React.FC = () => {
                 redirect: redirectPath,
               },
             }}
-            className="text-blue-400 hover:text-blue-300 font-medium">
+            className="text-blue-400 hover:text-blue-300 font-medium"
+          >
             Sign up
           </Link>
         </p>

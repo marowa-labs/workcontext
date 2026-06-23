@@ -23,7 +23,8 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
@@ -48,14 +49,16 @@ function IntroHero() {
                 if (element) {
                   element.scrollIntoView({ behavior: "smooth" });
                 }
-              }}>
+              }}
+            >
               Contact Support
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="px-8 py-6 bg-white border-white text-white hover:bg-white"
-              asChild>
+              asChild
+            >
               <Link href="/help">Visit Help Center</Link>
             </Button>
           </div>
@@ -78,7 +81,8 @@ function FAQItem({ question, answer }: FAQItemProps) {
     <div className="border border-white rounded-2xl overflow-hidden mb-4">
       <button
         className="flex justify-between items-center w-full p-6 text-left bg-white hover:bg-white transition-colors"
-        onClick={() => setIsOpen(!isOpen)}>
+        onClick={() => setIsOpen(!isOpen)}
+      >
         <h3 className="text-lg font-semibold text-white">{question}</h3>
         {isOpen ? (
           <ChevronUp className="h-5 w-5 text-gray-200" />
@@ -174,8 +178,7 @@ function FAQCategories() {
             "The One-Click Publication Suite formats your work to academic standards with a single click. It applies the correct formatting, citation style, and structure required by specific journals or institutions.",
         },
         {
-          question:
-            "How does WorkContextensure my work is publication-ready?",
+          question: "How does WorkContextensure my work is publication-ready?",
           answer:
             "Our comprehensive suite of tools checks for originality, citation accuracy, formatting requirements, and academic standards. The system generates a defensibility report that confirms your work meets all requirements for academic submission.",
         },
@@ -261,7 +264,8 @@ function ContactSupport() {
             {supportOptions.map((option, index) => (
               <div
                 key={index}
-                className="bg-white rounded-2xl p-8 shadow-lg text-center border border-white">
+                className="bg-white rounded-2xl p-8 shadow-lg text-center border border-white"
+              >
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                   <option.icon className="h-8 w-8 text-white" />
                 </div>
@@ -274,7 +278,8 @@ function ContactSupport() {
                     href="https://calendly.com/audacityimpact/30min"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-white bg-white hover:bg-white text-white h-10 px-4 py-2">
+                    className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-white bg-white hover:bg-white text-white h-10 px-4 py-2"
+                  >
                     {option.action}
                   </a>
                 ) : option.isPhone ? (
@@ -288,13 +293,15 @@ function ContactSupport() {
                       setTimeout(() => {
                         window.location.href = `tel:${option.phoneNumbers[1]}`;
                       }, 3000);
-                    }}>
+                    }}
+                  >
                     {option.action}
                   </button>
                 ) : (
                   <Button
                     variant="outline"
-                    className="w-full bg-white border-white text-white hover:bg-white">
+                    className="w-full bg-white border-white text-white hover:bg-white"
+                  >
                     {option.action}
                   </Button>
                 )}
@@ -325,8 +332,9 @@ function ClosingCTA() {
           <Button
             size="lg"
             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow"
-            onClick={() => router.push("/signup")}>
-            Start Your Free Trial
+            onClick={() => router.push("/signup")}
+          >
+            Start Your Free
           </Button>
         </div>
       </div>

@@ -188,7 +188,8 @@ function FeatureDetail({
 }: FeatureDetailProps) {
   return (
     <div
-      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}>
+      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
+    >
       {/* Content */}
       <div className={reverse ? "lg:col-start-2" : ""}>
         <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
@@ -209,7 +210,8 @@ function FeatureDetail({
             className="rounded-2xl shadow-2xl w-full"
           />
           <div
-            className={`absolute inset-0 rounded-2xl bg-gradient-to-tr ${color}`}></div>
+            className={`absolute inset-0 rounded-2xl bg-gradient-to-tr ${color}`}
+          ></div>
         </div>
       </div>
     </div>
@@ -235,7 +237,8 @@ function ResultsSection({ results }: { results: any[] }) {
           {results.map((result, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg text-center border border-white">
+              className="bg-white rounded-2xl p-8 shadow-lg text-center border border-white"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <TrendingUp className="h-8 w-8 text-white" />
               </div>
@@ -321,7 +324,8 @@ function HeaderSection({ caseStudy }: { caseStudy: any }) {
       <div className="container-custom">
         <Button
           className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 btn-glow mb-6 pl-2"
-          asChild>
+          asChild
+        >
           <Link href="/resources/case-studies">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Case Studies
@@ -489,8 +493,9 @@ export default function CaseStudyDetailPage() {
             <Button
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow"
-              onClick={() => router.push("/signup")}>
-              Start Your Free Trial
+              onClick={() => router.push("/signup")}
+            >
+              Start Your Free
             </Button>
           </div>
         </div>

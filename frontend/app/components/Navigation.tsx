@@ -89,7 +89,7 @@ export default function Navigation() {
   ]; */
   }
 
-  const resourcesItems: DropdownItem[] = [
+  /* const resourcesItems: DropdownItem[] = [
     {
       name: "Blogs",
       href: "/blogs",
@@ -114,39 +114,32 @@ export default function Navigation() {
       icon: <FileText className="h-5 w-5" />,
       description: "Comprehensive guides and API references",
     },
-  ];
+  ];*/
 
   const solutionsItems: DropdownItem[] = [
     {
-      name: "Analytics",
-      href: "/solutions/analytics",
-      icon: <BarChart3 className="h-5 w-5" />,
-      description: "Track team productivity and project progress",
-    },
-
-    {
-      name: "Smart Connections",
-      href: "/solutions/collaboration",
-      icon: <FileText className="h-5 w-5" />,
-      description: "Automatically connect related docs, tasks, and ideas",
+      name: "Features",
+      href: "/features",
+      icon: <Zap className="h-5 w-5" />,
+      description: "Explore all features of WorkContext",
     },
     {
-      name: "Collaboration",
-      href: "/solutions/collaboration",
-      icon: <Users className="h-5 w-5" />,
-      description: "Work together seamlessly in real-time",
-    },
-    {
-      name: "AI Writing Assistant",
-      href: "/solutions/ai-writing-assistant",
+      name: "AI Workspace",
+      href: "/solutions/ai-workspace",
       icon: <Bot className="h-5 w-5" />,
-      description: "Enhance your writing with AI-powered suggestions",
+      description: "Enhance your workspace with AI-powered suggestions",
     },
     {
       name: "Export Options",
-      href: "/resources/export-options",
+      href: "/solutions/export-options",
       icon: <Download className="h-5 w-5" />,
       description: "Export your work in multiple formats",
+    },
+    {
+      name: "Blogs",
+      href: "/blogs",
+      icon: <BookOpen className="h-5 w-5" />,
+      description: "Read our latest articles and insights",
     },
   ];
 
@@ -222,7 +215,7 @@ export default function Navigation() {
                   <div className="container-custom py-8">
                     <div className="flex gap-12">
                       {/* Left: Links Grid */}
-                      <div className="w-2/3 grid grid-cols-3 gap-6">
+                      <div className="w-2/3 grid grid-cols-2 gap-6">
                         {solutionsItems.map((item, index) => (
                           <Link
                             key={index}
@@ -275,7 +268,7 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* Product Dropdown - 2 columns */}
+            {/* Product Dropdown - 2 columns
             <div
               className="relative"
               onMouseEnter={() =>
@@ -305,7 +298,6 @@ export default function Navigation() {
                 >
                   <div className="container-custom py-8">
                     <div className="flex gap-12">
-                      {/* Left: Links Grid */}
                       <div className="w-2/3 grid grid-cols-2 gap-6">
                         {productItems.map((item, index) => (
                           <Link
@@ -329,7 +321,6 @@ export default function Navigation() {
                         ))}
                       </div>
 
-                      {/* Right: Promo Section */}
                       <div className="w-1/3 bg-gradient-to-br from-gray-900 to-[#0a0a0a] rounded-xl p-6 border border-gray-300 relative overflow-hidden group">
                         <div className="relative z-10">
                           <div className="bg-purple-500/20 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
@@ -350,16 +341,25 @@ export default function Navigation() {
                             <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
                           </Link>
                         </div>
-                        {/* Decorative blob */}
                         <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-colors"></div>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
+            </div>*/}
+
+            <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
+              <Link
+                href="/roadmap"
+                className="inline-flex items-center text-sm font-semibold text-gray-700 hover:text-gray-600 transition-colors"
+              >
+                Roadmap
+              </Link>
             </div>
 
-            {/* Resources Dropdown - 3 columns */}
+            {/*
+          
             <div
               className="relative"
               onMouseEnter={() =>
@@ -389,7 +389,6 @@ export default function Navigation() {
                 >
                   <div className="container-custom py-8">
                     <div className="flex gap-12">
-                      {/* Left: Links Grid */}
                       <div className="w-2/3 grid grid-cols-2 gap-6">
                         {resourcesItems.map((item, index) => (
                           <Link
@@ -413,7 +412,6 @@ export default function Navigation() {
                         ))}
                       </div>
 
-                      {/* Right: Promo Section */}
                       <div className="w-1/3 bg-gradient-to-br from-gray-900 to-[#0a0a0a] rounded-xl p-6 border border-gray-300 relative overflow-hidden group">
                         <div className="relative z-10">
                           <div className="bg-green-500/20 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
@@ -434,13 +432,21 @@ export default function Navigation() {
                             <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
                           </Link>
                         </div>
-                        {/* Decorative blob */}
                         <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-green-500/10 rounded-full blur-3xl group-hover:bg-green-500/20 transition-colors"></div>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
+          </div> */}
+
+            <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
+              <Link
+                href="/changelog"
+                className="inline-flex items-center text-sm font-semibold text-gray-700 hover:text-gray-600 transition-colors"
+              >
+                Changelog
+              </Link>
             </div>
           </div>
 
@@ -453,7 +459,7 @@ export default function Navigation() {
             >
               <Link href="/login">Sign In</Link>
             </Button>
-            <div className="w-px h-10 px-3 bg-gray-300 flex items-center">
+            <div className="w-px h-10 px-3 flex items-center">
               <a
                 href="https://github.com/marowa-labs/workcontext"
                 target="_blank"

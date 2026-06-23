@@ -16,7 +16,8 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://www.nokia.com/sites/default/files/2022-01/cybersecurity4.jpg?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
@@ -178,8 +179,8 @@ function GDPRContent() {
               service
             </li>
             <li>
-              <strong>Content Data:</strong> Documents, citations, and other
-              content you create
+              <strong>Content Data:</strong> Documents, notes, and other content
+              you create
             </li>
             <li>
               <strong>Marketing Data:</strong> Your preferences in receiving
@@ -261,8 +262,8 @@ function GDPRContent() {
           <ul className="list-disc pl-6 space-y-2 text-gray-200">
             <li>By email: dpo@WorkContextai.com</li>
             <li>
-              By post: Data Protection Officer, WorkContext, 123 Privacy
-              Street, San Francisco, CA 94107
+              By post: Data Protection Officer, WorkContext, 123 Privacy Street,
+              San Francisco, CA 94107
             </li>
           </ul>
           <p className="mt-4 text-gray-200">
@@ -331,7 +332,8 @@ function RelatedPolicies() {
           {policies.map((policy, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg border border-white">
+              className="bg-white rounded-2xl p-6 shadow-lg border border-white"
+            >
               <h3 className="text-xl font-bold text-white mb-3">
                 {policy.title}
               </h3>
@@ -339,7 +341,8 @@ function RelatedPolicies() {
               <Button
                 variant="outline"
                 className="bg-white border-white text-white hover:bg-white"
-                asChild>
+                asChild
+              >
                 <Link href={policy.href}>Read More</Link>
               </Button>
             </div>

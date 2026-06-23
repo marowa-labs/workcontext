@@ -40,11 +40,13 @@ function FeatureDetail({
 }: FeatureDetailProps) {
   return (
     <div
-      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}>
+      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
+    >
       {/* Content */}
       <div className={reverse ? "lg:col-start-2" : ""}>
         <div
-          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}>
+          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}
+        >
           <Icon className="h-8 w-8 text-white" />
         </div>
 
@@ -60,9 +62,7 @@ function FeatureDetail({
           {benefits.map((benefit, index) => (
             <li key={index} className="flex items-start gap-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-black dark:text-black">
-                {benefit}
-              </span>
+              <span className="text-black dark:text-black">{benefit}</span>
             </li>
           ))}
         </ul>
@@ -218,9 +218,10 @@ function ClosingCTA() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-gradient-to-br from-blue-600 to-purple-600 text-white hover:bg-gray-50 font-semibold px-8 py-6 btn-glow">
+                  className="bg-gradient-to-br from-blue-600 to-purple-600 text-white hover:bg-gray-50 font-semibold px-8 py-6 btn-glow"
+                >
                   <Link href="/signup" className="flex items-center">
-                    Start Your Free Trial
+                    Start Your Free
                     <Zap className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
@@ -233,7 +234,8 @@ function ClosingCTA() {
                       "https://calendly.com/audacityimpact/30min",
                       "_blank",
                     )
-                  }>
+                  }
+                >
                   Schedule a Demo
                 </Button>
               </div>

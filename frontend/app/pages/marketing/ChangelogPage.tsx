@@ -25,41 +25,57 @@ const releases: ReleaseEntry[] = [
   {
     version: "1.4.0",
     date: "Jan 25, 2026",
-    title: "Competitive Parity & Discovery Frames",
+    title: "Enhanced Collaboration & Dashboard",
     description:
-      "Major update introducing key competitive features and new discovery workflows. Added Search Alerts for monitoring new papers, a dedicated Literature Review panel for quick discovery, and a Concept Map visualization.",
+      "Major update introducing real-time collaboration improvements, an enhanced dashboard with analytics, and smarter task management features for teams.",
     improvements: [
-      "Added Search Alerts Panel with daily/weekly frequency options",
-      "Added Literature Review Panel with trending topics and search",
-      "Added Concept Map Panel for visualizing citation connections",
+      "Added real-time collaboration with presence indicators",
+      "Added dashboard with task analytics and progress charts",
+      "Added subtask management with progress tracking",
+      "Added time tracking for tasks",
     ],
     fixes: [
-      "Fixed Search Alerts panel layout on narrow screens",
-      "Resolved sidebar navigation state updates",
+      "Fixed task drag-and-drop on mobile devices",
+      "Resolved WebSocket reconnection issues",
     ],
   },
   {
     version: "1.3.0",
     date: "Jan 24, 2026",
-    title: "Citation Management Overhaul",
+    title: "Task Management Overhaul",
     description:
-      "Completely refactored the citation management workflow. Moved from a modal-based approach to a persistent sidebar panel for better writing flow.",
+      "Completely refactored the task management system with a new Gantt chart timeline view, kanban board, and improved task detail panels.",
     improvements: [
-      "Refactored Citations Modal to Citations Panel (Sidebar)",
-      "Added 'Search Citation' form with instant previews",
-      "Added 'Manual Citation' form with dynamic author fields",
+      "Added Gantt chart timeline view with smooth scrolling",
+      "Added Kanban board with drag-and-drop columns",
+      "Added task dependencies and blocking relationships",
+      "Added recurring task support with cron scheduling",
     ],
   },
   {
     version: "1.2.0",
     date: "Jan 22, 2026",
-    title: "Verification & Global Analysis",
+    title: "AI Assistant & Smart Features",
     description:
-      "Introduced powerful verification tools to cross-check claims against multiple AI models, ensuring academic defensibility.",
+      "Introduced AI-powered writing assistance, smart task extraction from text, and multi-model AI support with BYOK (Bring Your Own Key).",
     improvements: [
-      "Added Verification Panel with Multi-LLM consensus (Gemini vs OpenRouter)",
-      "Added Gap Analysis Panel to identify missing research perspectives",
-      "Added 'Translate Abstract' feature for multi-language support",
+      "Added AI chat assistant with context-aware responses",
+      "Added task extraction from highlighted text",
+      "Added support for multiple AI models (Gemini, OpenAI, OpenRouter)",
+      "Added BYOK encryption for API keys at rest",
+    ],
+  },
+  {
+    version: "1.1.0",
+    date: "Jan 18, 2026",
+    title: "Workspaces & Team Management",
+    description:
+      "Added multi-workspace support with role-based access control, team invitations, and real-time notifications.",
+    improvements: [
+      "Added workspace creation and management",
+      "Added role-based access (Admin, Editor, Viewer)",
+      "Added team invitation via email",
+      "Added real-time notification system via WebSocket",
     ],
   },
   {
@@ -67,7 +83,7 @@ const releases: ReleaseEntry[] = [
     date: "Jan 15, 2026",
     title: "Initial Release",
     description:
-      "Launch of WorkContext Editor MVP. Features include Smart Source Guide, NotebookLM integration, and core writing assistant tools.",
+      "Launch of WorkContext — a context-aware productivity workspace for individuals and teams. Features include document editing, task management, and AI-powered writing assistance.",
     patches: ["Initial public beta release"],
   },
 ];
@@ -92,14 +108,16 @@ export default function ChangelogPage() {
             </div>
             <div className="flex gap-3">
               <Link
-                href="/docs"
-                className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-full transition-colors">
-                View docs
+                href="/roadmap"
+                className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-full transition-colors"
+              >
+                View Roadmap
               </Link>
               <Link
-                href="https://twitter.com/WorkContext"
-                className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-full transition-colors">
-                Follow us on X
+                href="https://github.com/marowa-labs/workcontext"
+                className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-full transition-colors"
+              >
+                Contribute on GitHub
               </Link>
             </div>
           </div>
@@ -126,7 +144,8 @@ export default function ChangelogPage() {
             {releases.map((release) => (
               <div
                 key={release.version}
-                className="flex flex-col md:flex-row gap-8 md:gap-0">
+                className="flex flex-col md:flex-row gap-8 md:gap-0"
+              >
                 {/* Left Column: Version & Date */}
                 <div className="w-48 shrink-0">
                   <div className="text-gray-500 font-medium mb-1">
@@ -151,7 +170,8 @@ export default function ChangelogPage() {
                       {/* Improvements */}
                       <AccordionItem
                         value="improvements"
-                        className="border-b border-gray-200/50 last:border-0">
+                        className="border-b border-gray-200/50 last:border-0"
+                      >
                         <AccordionTrigger className="hover:no-underline py-3 text-sm text-gray-500 hover:text-gray-900 data-[state=open]:text-gray-900">
                           <div className="flex items-center gap-2">
                             <span>
@@ -168,7 +188,8 @@ export default function ChangelogPage() {
                             {release.improvements?.map((item, idx) => (
                               <li
                                 key={idx}
-                                className="text-gray-600 pl-4 relative before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:bg-green-400 before:rounded-full">
+                                className="text-gray-600 pl-4 relative before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:bg-green-400 before:rounded-full"
+                              >
                                 {item}
                               </li>
                             ))}
@@ -179,7 +200,8 @@ export default function ChangelogPage() {
                       {/* Fixes */}
                       <AccordionItem
                         value="fixes"
-                        className="border-b border-gray-200/50 last:border-0">
+                        className="border-b border-gray-200/50 last:border-0"
+                      >
                         <AccordionTrigger className="hover:no-underline py-3 text-sm text-gray-500 hover:text-gray-900 data-[state=open]:text-gray-900">
                           <div className="flex items-center gap-2">
                             <span>
@@ -192,7 +214,8 @@ export default function ChangelogPage() {
                             {release.fixes?.map((item, idx) => (
                               <li
                                 key={idx}
-                                className="text-gray-600 pl-4 relative before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:bg-orange-400 before:rounded-full">
+                                className="text-gray-600 pl-4 relative before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:bg-orange-400 before:rounded-full"
+                              >
                                 {item}
                               </li>
                             ))}
@@ -203,7 +226,8 @@ export default function ChangelogPage() {
                       {/* Patches */}
                       <AccordionItem
                         value="patches"
-                        className="border-b border-gray-200/50 last:border-0">
+                        className="border-b border-gray-200/50 last:border-0"
+                      >
                         <AccordionTrigger className="hover:no-underline py-3 text-sm text-gray-500 hover:text-gray-900 data-[state=open]:text-gray-900">
                           <div className="flex items-center gap-2">
                             <span>
@@ -217,7 +241,8 @@ export default function ChangelogPage() {
                             {release.patches?.map((item, idx) => (
                               <li
                                 key={idx}
-                                className="text-gray-600 pl-4 relative before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:bg-blue-400 before:rounded-full">
+                                className="text-gray-600 pl-4 relative before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:bg-blue-400 before:rounded-full"
+                              >
                                 {item}
                               </li>
                             ))}

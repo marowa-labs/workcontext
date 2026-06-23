@@ -22,7 +22,8 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
@@ -42,13 +43,15 @@ function IntroHero() {
             <Button
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 btn-glow px-8 py-6"
-              onClick={handleGetStarted}>
+              onClick={handleGetStarted}
+            >
               Start Your Success Story
             </Button>
             <Button
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 font-semibold px-8 py-6 border border-white"
-              asChild>
+              asChild
+            >
               <Link href="/features">Explore Features</Link>
             </Button>
           </div>
@@ -107,7 +110,8 @@ function CaseStudyCard({
 
         <Button
           className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 btn-glow font-semibold px-4 py-2"
-          asChild>
+          asChild
+        >
           <Link href={`/resources/case-studies/${id}`}>Read Full Story</Link>
         </Button>
       </div>
@@ -209,8 +213,9 @@ function ClosingCTA() {
           <Button
             size="lg"
             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow"
-            onClick={handleGetStarted}>
-            Start Your Free Trial
+            onClick={handleGetStarted}
+          >
+            Start Your Free
           </Button>
         </div>
       </div>

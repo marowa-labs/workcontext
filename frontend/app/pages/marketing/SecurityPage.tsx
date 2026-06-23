@@ -16,11 +16,12 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
-            Academic Defensibility{" "}
+            WorkContext{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Security
             </span>
@@ -31,9 +32,8 @@ function IntroHero() {
           </p>
 
           <p className="text-gray-200 max-w-2xl mx-auto">
-            We take the security of your academic work seriously. Learn about
-            the measures we implement to protect your research and ensure
-            defensibility.
+            We take the security of your data seriously. Learn about the
+            measures we implement to protect your work and ensure privacy.
           </p>
         </div>
       </div>
@@ -46,20 +46,20 @@ function SecurityPractices() {
   const practices = [
     {
       icon: Lock,
-      title: "Research Data Protection",
+      title: "Data Protection",
       description:
-        "All your research data is encrypted in transit using TLS 1.3 and at rest using AES-256 encryption.",
+        "All your data is encrypted in transit using TLS 1.3 and at rest using AES-256 encryption.",
       details: [
-        "End-to-end encryption for sensitive research communications",
+        "End-to-end encryption for sensitive communications",
         "Regular key rotation and management",
         "Industry-standard cryptographic protocols",
       ],
     },
     {
       icon: Key,
-      title: "Defensible Access Control",
+      title: "Access Control",
       description:
-        "Multi-factor authentication and role-based access controls protect your research and ensure authorship integrity.",
+        "Multi-factor authentication and role-based access controls protect your data and ensure only authorized access.",
       details: [
         "Two-factor authentication (2FA) available for all accounts",
         "Single sign-on (SSO) integration for enterprise users",
@@ -69,9 +69,9 @@ function SecurityPractices() {
     },
     {
       icon: Eye,
-      title: "Defensibility Monitoring",
+      title: "Security Monitoring",
       description:
-        "Continuous monitoring to identify and respond to threats that could compromise your research integrity.",
+        "Continuous monitoring to identify and respond to threats that could compromise your data integrity.",
       details: [
         "24/7 security monitoring and alerting",
         "Intrusion detection and prevention systems",
@@ -81,14 +81,14 @@ function SecurityPractices() {
     },
     {
       icon: Server,
-      title: "Research Infrastructure Security",
+      title: "Infrastructure Security",
       description:
-        "Our infrastructure follows security best practices and is regularly audited to ensure research integrity.",
+        "Our infrastructure follows security best practices and is regularly audited to ensure data integrity.",
       details: [
         "Cloud infrastructure with built-in security features",
         "Regular security patches and updates",
         "Network segmentation and firewall protection",
-        "Disaster recovery and backup systems for research data",
+        "Disaster recovery and backup systems for your data",
       ],
     },
   ];
@@ -98,11 +98,11 @@ function SecurityPractices() {
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Our Defensibility Security Measures
+            Our Security Measures
           </h2>
           <p className="text-lg text-gray-200">
-            We implement comprehensive security practices to protect your
-            research data and ensure academic defensibility.
+            We implement comprehensive security practices to protect your data
+            and ensure privacy.
           </p>
         </div>
 
@@ -110,7 +110,8 @@ function SecurityPractices() {
           {practices.map((practice, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg border border-white">
+              className="bg-white rounded-2xl p-8 shadow-lg border border-white"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <practice.icon className="h-8 w-8 text-white" />
               </div>
@@ -164,11 +165,11 @@ function ComplianceCertifications() {
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Academic Defensibility Compliance
+            Compliance
           </h2>
           <p className="text-lg text-gray-200">
             We maintain the highest standards of security and compliance for
-            academic research.
+            your data.
           </p>
         </div>
 
@@ -176,7 +177,8 @@ function ComplianceCertifications() {
           {certifications.map((cert, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white">
+              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <Shield className="h-8 w-8 text-white" />
               </div>
@@ -200,11 +202,11 @@ function IncidentResponse() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Academic Research Security Response
+              Security Incident Response
             </h2>
             <p className="text-lg text-gray-200">
-              Our approach to handling security incidents that could affect
-              research integrity.
+              Our approach to handling security incidents that could affect your
+              data.
             </p>
           </div>
 
@@ -260,8 +262,8 @@ function ReportingSecurityIssues() {
             Report a Security Issue
           </h2>
           <p className="text-lg text-gray-200 mb-8">
-            Help us improve our academic research security by responsibly
-            disclosing vulnerabilities.
+            Help us improve our security by responsibly disclosing
+            vulnerabilities.
           </p>
 
           <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 border border-white">
@@ -272,13 +274,15 @@ function ReportingSecurityIssues() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 variant="outline"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-none">
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-none"
+              >
                 security@WorkContextai.com
               </Button>
               <Button
                 variant="outline"
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-none"
-                asChild>
+                asChild
+              >
                 <Link href="/contact">Contact Form</Link>
               </Button>
             </div>

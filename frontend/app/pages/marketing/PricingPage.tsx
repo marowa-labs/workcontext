@@ -820,7 +820,7 @@ function BottomCTA() {
           academic writing workflow with our five core functionalities: The
           Explainable Originality Map, Citation Confidence Auditor,
           Submission-Safe Writing Mode, Defensibility Log, and One-Click
-          Publication Suite. Start your free trial today.
+          Publication Suite. Start your Free today.
         </p>
 
         <Button
@@ -829,13 +829,13 @@ function BottomCTA() {
           className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 font-semibold px-8 py-6 btn-glow mb-4"
         >
           <Link href="/signup" className="flex items-center">
-            Start Your Free Trial
+            Start Your Free
             <Zap className="ml-2 h-5 w-5" />
           </Link>
         </Button>
 
         <p className="text-gray-200 text-sm">
-          No credit card required • Cancel anytime • 14-day free trial
+          No credit card required • Cancel anytime • 14-day Free
         </p>
       </CardContent>
     </Card>

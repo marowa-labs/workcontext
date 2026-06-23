@@ -9,7 +9,6 @@ import {
   FileText,
   Zap,
   CheckCircle,
-  BookOpen,
   ArrowRight,
   Sparkles,
   Github,
@@ -22,45 +21,74 @@ import { useState, useEffect } from "react";
 
 // Hero Section Component
 function HeroSection() {
-  const [typedText, setTypedText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(50);
 
   const phrases = [
     {
-      text: "Your Workspace, Truly Understood.",
+      line1: "Your Workspace,",
+      line2: "Truly Understood.",
       gradientWord: "Truly Understood.",
     },
     {
-      text: "Connect Ideas, Get Things Done.",
+      line1: "Connect Ideas,",
+      line2: "Get Things Done.",
       gradientWord: "Get Things Done.",
     },
   ];
 
+  // Track typing progress for each line independently
+  const [line1Text, setLine1Text] = useState("");
+  const [line2Text, setLine2Text] = useState("");
+  // Phase: 0=typing line1, 1=typing line2, 2=deleting line2, 3=deleting line1
+  const [phase, setPhase] = useState(0);
+
   useEffect(() => {
     const currentPhrase = phrases[loopNum % phrases.length];
-    const fullText = currentPhrase.text;
+    const line1 = currentPhrase.line1;
+    const line2 = currentPhrase.line2;
 
     const handleType = () => {
-      if (isDeleting) {
-        // Erasing
-        setTypedText(fullText.substring(0, typedText.length - 1));
-        setTypingSpeed(100); // Faster erasing
-
-        if (typedText === "") {
-          setIsDeleting(false);
-          setLoopNum(loopNum + 1);
-          setTypingSpeed(2500); // Pause before typing next phrase
+      if (phase === 0) {
+        // Typing line 1
+        if (line1Text.length < line1.length) {
+          setLine1Text(line1.substring(0, line1Text.length + 1));
+          setTypingSpeed(50);
+        } else {
+          // Line 1 complete, move to typing line 2
+          setPhase(1);
+          setTypingSpeed(400); // Pause before typing line2
         }
-      } else {
-        // Typing
-        setTypedText(fullText.substring(0, typedText.length + 1));
-        setTypingSpeed(50); // Normal typing speed
-
-        if (typedText === fullText) {
-          // Pause at end of phrase before deleting
-          setTimeout(() => setIsDeleting(true), 2500);
+      } else if (phase === 1) {
+        // Typing line 2
+        if (line2Text.length < line2.length) {
+          setLine2Text(line2.substring(0, line2Text.length + 1));
+          setTypingSpeed(50);
+        } else {
+          // Both lines complete, pause then start deleting
+          setPhase(2);
+          setTypingSpeed(2500); // Pause before deleting
+        }
+      } else if (phase === 2) {
+        // Deleting line 2
+        if (line2Text.length > 0) {
+          setLine2Text(line2Text.substring(0, line2Text.length - 1));
+          setTypingSpeed(40);
+        } else {
+          // Line 2 erased, move to deleting line 1
+          setPhase(3);
+          setTypingSpeed(200);
+        }
+      } else if (phase === 3) {
+        // Deleting line 1
+        if (line1Text.length > 0) {
+          setLine1Text(line1Text.substring(0, line1Text.length - 1));
+          setTypingSpeed(40);
+        } else {
+          // All erased, move to next phrase
+          setPhase(0);
+          setLoopNum(loopNum + 1);
+          setTypingSpeed(1500); // Pause before next phrase
         }
       }
     };
@@ -68,10 +96,7 @@ function HeroSection() {
     const timer = setTimeout(handleType, typingSpeed);
 
     return () => clearTimeout(timer);
-  }, [typedText, isDeleting, loopNum, typingSpeed]);
-
-  // Get current phrase for gradient handling
-  const currentPhrase = phrases[loopNum % phrases.length];
+  }, [line1Text, line2Text, phase, loopNum, typingSpeed]);
 
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-[#121212]">
@@ -90,23 +115,28 @@ function HeroSection() {
 
       <div className="relative z-10 container-custom text-center">
         <div className="w-full mx-auto">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight whitespace-pre-line">
-            {typedText.includes(currentPhrase.gradientWord)
-              ? typedText.replace(currentPhrase.gradientWord, "")
-              : typedText}
-            {typedText.includes(currentPhrase.gradientWord) && (
-              <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                {currentPhrase.gradientWord}
-              </span>
-            )}
-            {typedText && (
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight min-h-[1.2em]">
+            {line1Text}
+            {phase === 0 &&
+              line1Text.length <
+                (phrases[loopNum % phrases.length]?.line1?.length ?? 0) && (
+                <span className="animate-pulse ml-1 text-blue-400">|</span>
+              )}
+          </h1>
+          <p className="text-3xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent leading-tight min-h-[1.2em]">
+            {line2Text}
+            {((phase === 1 &&
+              line2Text.length <
+                (phrases[loopNum % phrases.length]?.line2?.length ?? 0)) ||
+              (phase === 2 && line2Text.length > 0)) && (
               <span className="animate-pulse ml-1 text-blue-400">|</span>
             )}
-          </h1>
+          </p>
 
           <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-            The context-aware workspace that connects your docs, tasks, and
-            team. No more searching. No more organizing. Just productive flow.
+            The context-aware productivity open-source workspace that connects
+            your docs, tasks, and team. No more searching. No more organizing.
+            Just productive flow.
           </p>
 
           {/* CTAs */}
@@ -184,90 +214,13 @@ function PreviewSection() {
           </p>
         </div>
 
-        <div className="relative mt-16">
-          {/* Hero Image/Preview */}
-          <div className="mt-16 relative">
-            <div className="relative rounded-2xl border border-gray-300 bg-white shadow-2xl overflow-hidden">
-              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
-              <div className="p-8 bg-white relative">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                  <div className="w-3 h-3 rounded-full bg-warning/60" />
-                  <div className="w-3 h-3 rounded-full bg-success/60" />
-                  <span className="ml-4 text-xl font-semibold text-muted-foreground">
-                    Product_Launch_Strategy.docx
-                  </span>
-                </div>
-                <div className="space-y-3 font-sans text-sm leading-relaxed text-gray-500">
-                  <h3 className="font-serif text-xl font-semibold text-gray-600 mb-4">
-                    Q4 Product Launch Strategy
-                  </h3>
-                  <p className="text-gray-600">
-                    Our Q4 launch represents a significant opportunity to
-                    capture the enterprise market.
-                    <span
-                      className="bg-blue-100 text-blue-800 px-1 rounded border-b-2 border-blue-500 cursor-pointer"
-                      title="Related: Q3 Market Analysis doc"
-                    >
-                      Customer feedback shows 73% demand for advanced team
-                      collaboration features, particularly in the 50-500
-                      employee segment.
-                    </span>
-                  </p>
-                  <p className="text-gray-600">
-                    Competitive analysis reveals that
-                    <span
-                      className="bg-purple-100 text-purple-800 px-1 rounded border-b-2 border-purple-500 cursor-pointer"
-                      title="Action Item: Schedule competitor review meeting"
-                    >
-                      none of our top 3 competitors offer real-time workspace
-                      intelligence
-                    </span>
-                    , giving us a 6-month first-mover advantage in this space.
-                  </p>
-                  <p className="text-gray-600">
-                    Furthermore, our team bandwidth analysis shows we have been
-                    <span
-                      className="bg-green-100 px-1 rounded border-b-2 border-green-500 cursor-pointer"
-                      title="Task auto-created: Resource planning needed"
-                    >
-                      significantly under-allocated on UX research
-                    </span>
-                    , which could impact our launch timeline if not addressed by
-                    next sprint...
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating Cards */}
-            <div className="absolute -left-4 top-1/4 bg-white rounded-lg shadow-xl border border-gray-200 p-4 hidden lg:block">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100">
-                  <Search className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Smart Connections</p>
-                  <p className="text-xs text-muted-foreground">
-                    8 Related Items Found
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute -right-4 top-1/3 bg-white rounded-lg shadow-xl border border-gray-200 p-4 hidden lg:block">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Action Extracted</p>
-                  <p className="text-xs text-muted-foreground">
-                    Task Created for Design Team
-                  </p>
-                </div>
-              </div>
-            </div>
+        <div className="relative mt-16 flex justify-center">
+          <div className="rounded-2xl border border-gray-300 shadow-2xl overflow-hidden max-w-6xl w-full">
+            <img
+              src="https://www.image2url.com/r2/default/gifs/1782221447847-0402c750-20fe-41ef-b142-c5a08a2d0d4b.gif"
+              alt="WorkContext in Action"
+              className="w-full h-auto object-cover"
+            />
           </div>
         </div>
       </div>
@@ -280,9 +233,9 @@ function ComparisonSection() {
   const highlights = [
     {
       icon: PenTool,
-      title: "Focus on Writing",
+      title: "Focus on What Matters",
       description:
-        "Stop juggling multiple tools. Everything you need is in one place, so you can focus on what matters most - your ideas.",
+        "Stop juggling multiple tools. Everything you need is in one place, so you can focus on what matters most — your ideas, your work, your team.",
     },
     {
       icon: Shield,
@@ -306,8 +259,8 @@ function ComparisonSection() {
             Built to Save You Time and Stress
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Say goodbye to tool overload. Everything you need is finally in one
-            place.
+            Say goodbye to tool overload. WorkContext brings your docs, tasks,
+            and team together in one intelligent workspace.
           </p>
         </div>
 
@@ -397,7 +350,8 @@ function FeaturesGrid() {
             Everything You Need, Connected
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            From ideas to execution, all your work in one intelligent workspace.
+            From ideas to execution — docs, tasks, and team collaboration in one
+            intelligent workspace.
           </p>
         </div>
 
@@ -466,8 +420,8 @@ function TestimonialsSection() {
             Loved by Productive Teams
           </h2>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Join thousands of teams who've replaced tool overload with
-            intelligent flow.
+            Join thousands of individuals and teams who've replaced tool
+            overload with intelligent, context-aware productivity.
           </p>
         </div>
 
@@ -519,11 +473,11 @@ function CTASection() {
       <div className="container-custom relative z-10">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-            Ready to Upgrade Your Academic Life?
+            Ready to Upgrade Your Productivity?
           </h2>
           <p className="text-lg md:text-xl text-gray-500 mb-8 leading-relaxed">
-            Join thousands of students and researchers who've already
-            transformed their writing workflow. Start your free trial today.
+            Join thousands of individuals and teams who've already transformed
+            their workflow. Start your Free today.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -533,18 +487,8 @@ function CTASection() {
               className="bg-gradient-to-r from-blue-600 to-cyan-700 text-gray-300 hover:from-blue-700 hover:to-cyan-800 font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
             >
               <Link href="/signup" className="flex items-center">
-                Get Started Free Today
+                Get Started Free
                 <Zap className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-gray-500 text-gray-300 hover:bg-gray-500 backdrop-blur-sm px-8 py-6 text-lg"
-            >
-              <Link href="/docs/quickstart" className="flex items-center">
-                See How It Works
-                <BookOpen className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button
@@ -554,7 +498,7 @@ function CTASection() {
               className="border-gray-500 text-gray-300 hover:bg-gray-500 backdrop-blur-sm px-8 py-6 text-lg"
             >
               <a
-                href="https://discord.gg/2MMSdX3Uee"
+                href="https://github.com/marowa-labs/workcontext"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center"

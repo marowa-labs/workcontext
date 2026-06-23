@@ -259,7 +259,7 @@ function PageContextPill() {
         <span>{context.icon}</span>
         <span className="max-w-[120px] truncate">{context.name}</span>
       </div>
-      <span className="text-xs text-gray-400">is active</span>
+      <span className="text-xs text-muted-foreground">is active</span>
     </div>
   );
 }
@@ -471,7 +471,7 @@ function ChatContent({
                       "text-sm leading-relaxed min-w-0",
                       message.role === "user"
                         ? "ml-auto w-fit max-w-[75%] bg-blue-500 text-white rounded-xl rounded-br-sm px-3 py-1.5 break-words"
-                        : "max-w-[90%] text-gray-700 prose prose-sm max-w-full overflow-hidden",
+                        : "max-w-[90%] text-foreground prose prose-sm max-w-full overflow-hidden",
                     )}
                   >
                     {message.role === "user" ? (
@@ -484,30 +484,30 @@ function ChatContent({
                             table: ({ node, ...props }) => (
                               <div className="overflow-x-auto max-w-full">
                                 <table
-                                  className="border-collapse border border-gray-300 my-2 text-xs"
+                                  className="border-collapse border border-border my-2 text-xs"
                                   {...props}
                                 />
                               </div>
                             ),
                             thead: ({ node, ...props }) => (
-                              <thead className="bg-gray-100" {...props} />
+                              <thead className="bg-muted" {...props} />
                             ),
                             tbody: ({ node, ...props }) => <tbody {...props} />,
                             tr: ({ node, ...props }) => (
                               <tr
-                                className="border-b border-gray-300"
+                                className="border-b border-border"
                                 {...props}
                               />
                             ),
                             th: ({ node, ...props }) => (
                               <th
-                                className="border border-gray-300 px-3 py-2 font-semibold text-left bg-gray-50 max-w-[12rem] overflow-wrap-anywhere"
+                                className="border border-border px-3 py-2 font-semibold text-left bg-muted max-w-[12rem] overflow-wrap-anywhere"
                                 {...props}
                               />
                             ),
                             td: ({ node, ...props }) => (
                               <td
-                                className="border border-gray-300 px-3 py-1.5 max-w-[12rem] overflow-wrap-anywhere"
+                                className="border border-border px-3 py-1.5 max-w-[12rem] overflow-wrap-anywhere"
                                 {...props}
                               />
                             ),
@@ -529,7 +529,7 @@ function ChatContent({
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-500" />
                 </div>
-                <div className="text-sm text-gray-500">Thinking...</div>
+                <div className="text-sm text-muted-foreground">Thinking...</div>
               </div>
             )}
           </>
@@ -538,17 +538,17 @@ function ChatContent({
       </div>
 
       {/* Input - WorkContext Style */}
-      <div className="p-4 bg-white border-t border-gray-100">
-        <div className="relative bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-gray-100 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow">
+      <div className="p-4 bg-background border-t border-border">
+        <div className="relative bg-card rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-border hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow">
           {/* AI Action Confirmation Dialog */}
           {internalPendingAction && (
-            <div className="mx-4 mt-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="mx-4 mt-4 bg-card rounded-xl shadow-lg border border-border overflow-hidden">
               <div
-                className={`p-3 ${isDestructiveAction(internalPendingAction.actionType || "") ? "bg-red-50 border-b border-red-100" : "bg-blue-50 border-b border-blue-100"}`}
+                className={`p-3 ${isDestructiveAction(internalPendingAction.actionType || "") ? "bg-red-500/10 border-b border-red-500/20" : "bg-blue-500/10 border-b border-blue-500/20"}`}
               >
                 <div className="flex items-center gap-2">
                   <div
-                    className={`p-1.5 rounded-full ${isDestructiveAction(internalPendingAction.actionType || "") ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"}`}
+                    className={`p-1.5 rounded-full ${isDestructiveAction(internalPendingAction.actionType || "") ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400"}`}
                   >
                     {isDestructiveAction(
                       internalPendingAction.actionType || "",
@@ -564,7 +564,7 @@ function ChatContent({
                     <h4 className="font-semibold text-sm text-gray-900">
                       Confirm Action
                     </h4>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-muted-foreground">
                       {formatActionType(internalPendingAction.actionType || "")}
                     </p>
                   </div>
@@ -572,7 +572,7 @@ function ChatContent({
               </div>
 
               <div className="p-3">
-                <p className="text-sm text-gray-700 mb-3 break-words">
+                <p className="text-sm text-foreground mb-3 break-words">
                   {internalPendingAction.message}
                 </p>
 
@@ -580,7 +580,7 @@ function ChatContent({
                   <button
                     onClick={onCancelAction}
                     disabled={isConfirming}
-                    className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    className="flex-1 px-3 py-1.5 bg-muted text-foreground text-sm rounded-lg hover:bg-muted/80 transition-colors disabled:opacity-50"
                   >
                     {
                       getConfirmationButtonText(
@@ -629,7 +629,7 @@ function ChatContent({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Do anything with AI..."
-            className="w-full min-h-[60px] px-4 py-3 text-sm text-gray-700 bg-transparent border-0 resize-none focus:outline-none focus:ring-0"
+            className="w-full min-h-[60px] px-4 py-3 text-sm text-foreground bg-transparent border-0 resize-none focus:outline-none focus:ring-0"
             disabled={loading}
           />
 
@@ -665,7 +665,7 @@ function ChatContent({
               </button>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400 px-2">Auto</span>
+              <span className="text-xs text-muted-foreground px-2">Auto</span>
               <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <svg
                   viewBox="0 0 24 24"
@@ -1305,7 +1305,7 @@ export function AIChatDrawer({
   //    It is now rendered inline using the shared ChatContent component.
   if (isPanel) {
     return (
-      <div className="w-full h-full bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+      <div className="w-full h-full bg-background border-l border-border flex flex-col overflow-hidden">
         {/* Panel Header */}
         <div className="h-14 flex-none flex items-center justify-between px-4 border-b border-gray-100 bg-white shrink-0">
           <div className="flex items-center gap-2" ref={sessionsDropdownRef}>
@@ -1481,7 +1481,7 @@ export function AIChatDrawer({
 
       {/* Drawer container */}
       <div
-        className="fixed inset-y-0 right-0 z-50 bg-white border-l border-gray-200 shadow-[0_0_40px_rgba(0,0,0,0.08)] flex flex-col animate-in slide-in-from-right duration-200 overflow-hidden"
+        className="fixed inset-y-0 right-0 z-50 bg-background border-l border-border shadow-[0_0_40px_rgba(0,0,0,0.3)] flex flex-col animate-in slide-in-from-right duration-200 overflow-hidden"
         style={{
           width: viewMode === "fullscreen" ? "100vw" : `${drawerWidth}px`,
           minWidth: "320px",
@@ -1631,7 +1631,7 @@ export function AIChatDrawer({
               </button>
 
               {showViewDropdown && (
-                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <div className="absolute right-0 top-full mt-1 w-40 bg-card rounded-lg shadow-lg border border-border py-1 z-50">
                   <button
                     onClick={() => {
                       setViewMode("sidebar");

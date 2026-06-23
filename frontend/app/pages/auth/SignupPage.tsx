@@ -1193,7 +1193,7 @@ const SignupPage: React.FC = () => {
           : showOtpStep
             ? `We've sent a code to your ${otpMethod === "sms" ? "phone number" : "email"}`
             : selectedPlan
-              ? `Start your 14-day free trial of the ${selectedPlan} plan`
+              ? `Start your 14-day Free of the ${selectedPlan} plan`
               : "Start writing better papers today"
       }
     >
@@ -1213,7 +1213,7 @@ const SignupPage: React.FC = () => {
 
         {!showOtpStep && !surveyStep && (
           <>
-            {/* Social Signup Buttons - Re-enabled */}
+            {/* Social Signup Buttons - Re-enabled
             <div className="grid grid-cols-1 gap-3">
               <Button
                 type="button"
@@ -1259,7 +1259,7 @@ const SignupPage: React.FC = () => {
                   Or continue with
                 </span>
               </div>
-            </div>
+            </div> */}
 
             {/* Full Name Input */}
             <FormInput

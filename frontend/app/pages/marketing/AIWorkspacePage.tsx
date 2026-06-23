@@ -22,35 +22,37 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
-            Write with Academic Defensibility using{" "}
+            Work Smarter with{" "}
             <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              AI-Powered Assistance
+              AI-Powered Productivity
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-            Get intelligent, contextual suggestions that ensure your work is
-            original, properly cited, and defensible with our five core
-            functionalities: The Explainable Originality Map, Citation
-            Confidence Auditor, Submission-Safe Writing Mode, Defensibility Log,
-            and One-Click Publication Suite.
+            Boost your productivity with an AI chat assistant, smart task
+            management, real-time document collaboration, and seamless export to
+            multiple formats — all in one workspace built for individuals and
+            teams.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
               className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold px-8 py-6 shadow-lg hover:shadow-indigo-500/20 transition-all duration-300"
-              onClick={handleGetStarted}>
+              onClick={handleGetStarted}
+            >
               Start Writing Smarter
             </Button>
             <Button
               size="lg"
               className="bg-white text-gray-600 border border-white hover:bg-white font-semibold px-8 py-6"
-              asChild>
+              asChild
+            >
               <Link href="/features">Explore Features</Link>
             </Button>
           </div>
@@ -82,11 +84,13 @@ function FeatureDetail({
 }: FeatureDetailProps) {
   return (
     <div
-      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}>
+      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
+    >
       {/* Content */}
       <div className={reverse ? "lg:col-start-2" : ""}>
         <div
-          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}>
+          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}
+        >
           <Icon className="h-8 w-8 text-white" />
         </div>
 
@@ -102,7 +106,8 @@ function FeatureDetail({
           {benefits.map((benefit, index) => (
             <li key={index} className="flex items-start gap-3">
               <div
-                className={`w-2 h-2 rounded-full bg-gradient-to-br ${color} mt-2.5 flex-shrink-0`}></div>
+                className={`w-2 h-2 rounded-full bg-gradient-to-br ${color} mt-2.5 flex-shrink-0`}
+              ></div>
               <span className="text-gray-600">{benefit}</span>
             </li>
           ))}
@@ -129,14 +134,14 @@ function FeaturesPresentationFlow() {
   const features = [
     {
       icon: PenTool,
-      title: "Submission-Safe Writing Mode",
+      title: "AI-Powered Writing Assistant",
       description:
-        "Receive intelligent suggestions that help ensure your writing is original and defensible with our AI detection and humanizing capabilities.",
+        "Get context-aware help from an AI chat assistant that understands your project and provides intelligent suggestions as you write.",
       benefits: [
-        "Real-time AI detection and humanizing suggestions",
-        "Context-aware vocabulary suggestions",
-        "Academic tone and clarity improvements",
-        "Sentence structure optimization",
+        "Context-aware chat with multi-model AI support (BYOK)",
+        "Intelligent writing suggestions and tone adjustments",
+        "Subtasks and inline comments for iterative work",
+        "Time tracking to monitor progress and productivity",
       ],
       imageUrl:
         "https://image2url.com/images/1766041152077-b4c17420-fe8e-4b9c-9c7c-dd9b7c022d9c.png?w=800&h=600&fit=crop",
@@ -144,14 +149,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: SpellCheck,
-      title: "The Explainable Originality Map",
+      title: "Smart Task Management",
       description:
-        "Identify and address potential plagiarism issues with our comprehensive originality mapping system.",
+        "Organize your work with task creation, priorities, assignees, and due dates — keeping your projects on track.",
       benefits: [
-        "Real-time plagiarism detection with detailed reports",
-        "Visual mapping of content similarities",
-        "Detailed source attribution",
-        "Comprehensive originality scoring",
+        "Task creation with priorities, assignees, and due dates",
+        "Subtasks for breaking down complex projects",
+        "Progress tracking and status updates",
+        "Notifications to keep everyone aligned",
       ],
       imageUrl:
         "https://image2url.com/images/1766041153329-020b1a54-2b68-4606-b68b-7db5fda21e14.png?w=800&h=600&fit=crop",
@@ -160,14 +165,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: Lightbulb,
-      title: "The Citation Confidence Auditor",
+      title: "Document Editing & Collaboration",
       description:
-        "Validate your citations and ensure proper attribution with our comprehensive citation auditing system.",
+        "Edit documents in real time with your team, featuring comments, version history, and seamless co-authoring.",
       benefits: [
-        "Real-time citation validation",
-        "Reference accuracy checking",
-        "Bibliography verification",
-        "Citation format compliance",
+        "Real-time collaborative document editing",
+        "Inline comments and discussion threads",
+        "Version history and change tracking",
+        "Workspace and team management",
       ],
       imageUrl:
         "https://image2url.com/images/1766041154551-efe0d071-68f1-4ded-be3a-fe39a16514fc.png?w=800&h=600&fit=crop",
@@ -175,14 +180,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: Bot,
-      title: "The Defensibility Log & One-Click Publication Suite",
+      title: "Export & Publishing",
       description:
-        "Track your authorship and prepare your work for publication with our comprehensive defensibility tools.",
+        "Export your work to multiple formats including PDF, DOCX, LaTeX, and more — ready for any use case.",
       benefits: [
-        "Authorship certificate generation",
-        "Defensibility log tracking",
-        "Automated publication formatting",
-        "One-click export to multiple formats",
+        "Multi-format export: PDF, DOCX, LaTeX, and more",
+        "One-click document generation",
+        "Consistent formatting across formats",
+        "Time tracking reports for billing and insights",
       ],
       imageUrl:
         "https://www.frontiersin.org/files/Articles/1596462/feduc-10-1596462-HTML/image_m/feduc-10-1596462-g001.jpg?w=800&h=600&fit=crop",
@@ -226,26 +231,27 @@ function ClosingCTA() {
       <div className="container-custom relative z-10">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Ensure Academic Defensibility?
+            Ready to Boost Your Productivity?
           </h2>
           <p className="text-lg text-gray-200 mb-8 leading-relaxed">
-            Join thousands of students and researchers who are already writing
-            with confidence using our five core functionalities: The Explainable
-            Originality Map, Citation Confidence Auditor, Submission-Safe
-            Writing Mode, Defensibility Log, and One-Click Publication Suite.
+            Join thousands of individuals and teams who are already working
+            smarter with AI chat, task management, real-time collaboration, and
+            seamless export — all in one powerful workspace.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Button
               size="lg"
               className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold px-8 py-6 shadow-lg hover:shadow-indigo-500/20 transition-all duration-300"
-              onClick={handleGetStarted}>
-              Start Your Free Trial
+              onClick={handleGetStarted}
+            >
+              Start Your Free
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="border-white text-gray-200 hover:bg-white backdrop-blur-sm px-8 py-6 text-lg">
+              className="border-white text-gray-200 hover:bg-white backdrop-blur-sm px-8 py-6 text-lg"
+            >
               <Link href="/docs/quickstart" className="flex items-center">
                 See How It Works
               </Link>
@@ -273,7 +279,7 @@ function ClosingCTA() {
   );
 }
 
-export default function AIWritingAssistantPage() {
+export default function AIWorkspacePage() {
   return (
     <Layout>
       <IntroHero />

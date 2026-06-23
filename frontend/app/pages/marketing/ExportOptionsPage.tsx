@@ -28,33 +28,33 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
-            Publish Your Work Defensibly with{" "}
-            <span className="bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-              The One-Click Publication Suite
-            </span>
+            Export Your Work, Your Way
           </h1>
 
           <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-            Your defensible work, ready for publication. Export to any format
-            needed for submission with our One-Click Publication Suite that
-            ensures proper formatting and compliance.
+            Export your documents to any format you need — PDF, DOCX, LaTeX,
+            RTF, and TXT. Professional formatting, unlimited templates, and
+            seamless backup & sync for individuals and teams.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
               className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold px-8 py-6 shadow-lg hover:shadow-teal-500/20 transition-all duration-300"
-              onClick={handleGetStarted}>
+              onClick={handleGetStarted}
+            >
               Start Exporting
             </Button>
             <Button
               size="lg"
               className="bg-white text-gray-600 border border-white hover:bg-white font-semibold px-8 py-6"
-              asChild>
+              asChild
+            >
               <Link href="/features">See All Features</Link>
             </Button>
           </div>
@@ -86,11 +86,13 @@ function FeatureDetail({
 }: FeatureDetailProps) {
   return (
     <div
-      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}>
+      className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
+    >
       {/* Content */}
       <div className={reverse ? "lg:col-start-2" : ""}>
         <div
-          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}>
+          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}
+        >
           <Icon className="h-8 w-8 text-white" />
         </div>
 
@@ -106,7 +108,8 @@ function FeatureDetail({
           {benefits.map((benefit, index) => (
             <li key={index} className="flex items-start gap-3">
               <div
-                className={`w-2 h-2 rounded-full bg-gradient-to-br ${color} mt-2.5 flex-shrink-0`}></div>
+                className={`w-2 h-2 rounded-full bg-gradient-to-br ${color} mt-2.5 flex-shrink-0`}
+              ></div>
               <span className="text-gray-600">{benefit}</span>
             </li>
           ))}
@@ -135,12 +138,12 @@ function FeaturesPresentationFlow() {
       icon: FileText,
       title: "One-Click Format Conversion",
       description:
-        "Export your documents to any format required for submission with one click using our Publication Suite.",
+        "Export your documents to any format you need with one click — Word, PDF, LaTeX, RTF, and plain text.",
       benefits: [
-        "Export to Word, PDF, LaTeX, and plain text",
+        "Export to Word, PDF, LaTeX, RTF, and plain text",
         "Maintain formatting across all formats",
-        "Custom export templates for institutions",
-        "One-click publication formatting",
+        "Custom export templates for your workflow",
+        "One-click format conversion",
       ],
       imageUrl:
         "https://image2url.com/images/1766035336823-26557e0e-2275-4c00-a32b-3ceaf5ded69e.png?w=800&h=600&fit=crop",
@@ -148,14 +151,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: Cloud,
-      title: "Publication Integration",
+      title: "Cloud & Integrations",
       description:
-        "Seamlessly export directly to academic platforms and repositories with proper citation formatting.",
+        "Back up, sync, and store your work seamlessly across cloud platforms and integrated tools.",
       benefits: [
-        "Direct integration with academic repositories",
-        "One-click export to journal platforms",
-        "Sync with citation managers for proper attribution",
-        "Automatic defensibility certificate generation",
+        "Automatic cloud backup and version history",
+        "Sync across devices and team workspaces",
+        "Connect with popular storage platforms",
+        "Restore previous versions with one click",
       ],
       imageUrl:
         "https://image2url.com/images/1766035320251-310899dc-370b-436c-a767-cc4dea99c875.png?w=800&h=600&fit=crop",
@@ -164,14 +167,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: HardDrive,
-      title: "Defensible Formatting",
+      title: "Professional Formatting",
       description:
-        "Apply custom formatting rules that ensure compliance with institutional requirements and defensibility standards.",
+        "Apply beautiful templates and custom styles to make any document presentation-ready.",
       benefits: [
-        "Template library for major universities",
-        "Compliance formatting for defensibility",
-        "Header/footer customization",
-        "Citation and reference formatting",
+        "Rich template library for every use case",
+        "Custom styles, headers, and footers",
+        "Typography and spacing controls",
+        "Consistent branding across documents",
       ],
       imageUrl:
         "https://image2url.com/images/1766036205468-a4df49e1-70f7-4c46-b0ea-7bedc8405f9f.png?w=800&h=600&fit=crop",
@@ -179,14 +182,14 @@ function FeaturesPresentationFlow() {
     },
     {
       icon: Download,
-      title: "One-Click Publication",
+      title: "Project Export",
       description:
-        "Save time with one-click publication capabilities that ensure your work is properly formatted and defensible.",
+        "Export entire projects or batch-select documents for efficient bulk delivery.",
       benefits: [
         "Export entire projects with one click",
-        "Consistent defensible formatting across all documents",
-        "Automated compliance checking",
-        "Publication certificate generation",
+        "Consistent formatting across all documents",
+        "Batch export multiple files at once",
+        "Structured folder and file organization",
       ],
       imageUrl:
         "https://image2url.com/images/1766035312459-98d7648e-94de-43de-8e51-c1d98680ce12.png?w=800&h=600&fit=crop",
@@ -230,24 +233,26 @@ function ClosingCTA() {
       <div className="container-custom relative z-10">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Publish with Academic Defensibility?
+            Ready to Export Your Work?
           </h2>
           <p className="text-lg text-gray-200 mb-8 leading-relaxed">
-            Join thousands of academics who trust our One-Click Publication
-            Suite for flawless, defensible document formatting.
+            Join thousands of professionals and teams who rely on our export
+            tools for flawless, professional document formatting.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Button
               size="lg"
               className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold px-8 py-6 shadow-lg hover:shadow-teal-500/20 transition-all duration-300"
-              onClick={handleGetStarted}>
-              Start Your Free Trial
+              onClick={handleGetStarted}
+            >
+              Start Your Free
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="text-gray-200 hover:bg-gray-600 backdrop-blur-sm px-8 py-6 text-lg">
+              className="text-gray-200 hover:bg-gray-600 backdrop-blur-sm px-8 py-6 text-lg"
+            >
               <Link href="/docs/quickstart" className="flex items-center">
                 See How It Works
               </Link>
