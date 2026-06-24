@@ -1486,7 +1486,7 @@ const SignupPage: React.FC = () => {
               >
                 I agree to the{" "}
                 <Link
-                  href="/docs/terms"
+                  href="/legal/terms"
                   className="text-blue-400 hover:underline font-medium"
                 >
                   Terms of Service

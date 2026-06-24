@@ -137,9 +137,9 @@ export default function EditorPage() {
         return;
       }
 
-      if (!userId) {
-        setError("User not authenticated");
-        setLoading(false);
+      // Wait for user loading to complete before fetching
+      // This ensures we have the correct userId (or confirmed null) before making the request
+      if (userLoading) {
         return;
       }
 
@@ -149,10 +149,10 @@ export default function EditorPage() {
 
         // Use direct fetch by ID to ensure we get the full project metadata (including workspace_id)
         // irrespective of whether it's a personal project or a shared team project.
-        console.log("Fetching project by ID:", documentId);
+        console.log("Fetching project by ID:", documentId, "userId:", userId);
         const fetchedProject = await ProjectService.getProjectById(
           documentId,
-          userId,
+          userId || undefined,
         );
 
         if (fetchedProject) {
@@ -166,8 +166,14 @@ export default function EditorPage() {
           const linkSharingEnabled =
             fetchedProject.share_settings?.link_sharing_enabled;
 
-          if (!isOwner && !isCollaborator && linkSharingEnabled) {
-            // Show handshake dialog for new link access
+          if (!userId && !linkSharingEnabled) {
+            // No user and no link sharing - show authentication required
+            setError("User not authenticated");
+            setLoading(false);
+            return;
+          } else if (!isOwner && !isCollaborator && linkSharingEnabled) {
+            // User is logged in but not owner/collaborator - show join dialog
+            // OR no user logged in but link sharing enabled - show join dialog to login and join
             setShowJoinDialog(true);
           }
 
@@ -175,25 +181,30 @@ export default function EditorPage() {
           setCurrentProjectId(documentId);
         } else {
           console.error("Project not found or access denied");
-          setError(
-            `Document not found or you don't have permission to view it.`,
-          );
+          if (!userId) {
+            setError("User not authenticated");
+          } else {
+            setError(
+              `Document not found or you don't have permission to view it.`,
+            );
+          }
         }
       } catch (err: any) {
         console.error("Error fetching project:", err);
-        setError(err.message || "Failed to load project");
+        if (!userId) {
+          setError("User not authenticated");
+        } else {
+          setError(err.message || "Failed to load project");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (userId && documentId) {
+    if (documentId && !userLoading) {
       fetchProject();
-    } else if (!userId) {
-      setError("User not authenticated");
-      setLoading(false);
     }
-  }, [documentId, userId]);
+  }, [documentId, userId, userLoading]);
 
   // Fetch user's projects
   const fetchUserProjects = useCallback(async () => {

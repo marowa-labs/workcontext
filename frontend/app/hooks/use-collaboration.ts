@@ -66,8 +66,26 @@ export const useCollaboration = ({
           },
           onSynced: () => {
             // CRITICAL: Only consider ready when fully synced
-            console.log("Collab Synced - Doc Ready");
+            console.log(
+              "Collab Synced - Doc Ready, doc size:",
+              newProvider?.document?.encodeStateAsUpdate?.()?.length ?? 0,
+              "bytes",
+            );
             if (mounted && newProvider?.document) {
+              // Log the actual document content for debugging
+              try {
+                const ydoc = newProvider.document;
+                const prosemirrorJSON = ydoc.get("prosemirror", "json");
+                console.log(
+                  "[Collab Synced] Document content:",
+                  JSON.stringify(prosemirrorJSON).substring(0, 200),
+                );
+              } catch (e) {
+                console.log(
+                  "[Collab Synced] Could not read document content:",
+                  e,
+                );
+              }
               setIsReady(true);
             }
           },

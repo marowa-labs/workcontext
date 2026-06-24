@@ -333,7 +333,8 @@ export function ImageUploadModal({
           resetState();
         }
         onOpenChange(isOpen);
-      }}>
+      }}
+    >
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -369,14 +370,16 @@ export function ImageUploadModal({
           <div className="flex-1 overflow-hidden">
             <TabsContent
               value="upload"
-              className="space-y-4 py-4 h-full flex flex-col">
+              className="space-y-4 py-4 h-full flex flex-col"
+            >
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors flex-1 flex flex-col items-center justify-center ${
                   isDragging ? "border-primary bg-primary/5" : "border-border"
-                }`}>
+                }`}
+              >
                 {previewUrl ? (
                   <div className="space-y-4">
                     <img
@@ -394,7 +397,8 @@ export function ImageUploadModal({
                       onClick={() => {
                         setUploadedFile(null);
                         setPreviewUrl(null);
-                      }}>
+                      }}
+                    >
                       Remove
                     </Button>
                   </div>
@@ -416,7 +420,8 @@ export function ImageUploadModal({
                         variant="outline"
                         className="rounded-lg bg-gray-500 hover:bg-white transition-colors cursor-pointer"
                         size="sm"
-                        asChild>
+                        asChild
+                      >
                         <span>Browse Files</span>
                       </Button>
                     </label>
@@ -482,7 +487,8 @@ export function ImageUploadModal({
                     <Button
                       className="bg-blue-500 hover:bg-blue-600 transition-colors cursor-pointer"
                       onClick={() => handleOnlineImageSearch(onlineImageQuery)}
-                      disabled={onlineImageLoading || !onlineImageQuery.trim()}>
+                      disabled={onlineImageLoading || !onlineImageQuery.trim()}
+                    >
                       {onlineImageLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
@@ -520,7 +526,8 @@ export function ImageUploadModal({
                               }`}
                               onClick={() => {
                                 setSelectedOnlineImage(image.id);
-                              }}>
+                              }}
+                            >
                               <div className="aspect-square overflow-hidden">
                                 <img
                                   src={image.thumb || image.url}
@@ -586,13 +593,13 @@ export function ImageUploadModal({
             </TabsContent>
 
             <TabsContent value="gallery" className="py-4 h-full flex flex-col">
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 min-h-0">
                 {loadingUserImages ? (
-                  <div className="flex justify-center items-center h-64">
+                  <div className="flex justify-center items-center h-full min-h-[16rem]">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : userImages.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-3 p-1">
                     {userImages.map((image) => (
                       <button
                         key={image.id}
@@ -601,7 +608,8 @@ export function ImageUploadModal({
                           setSelectedGalleryImage(image.url);
                           insertImage(image.url, "Gallery image");
                         }}
-                        className="relative rounded-lg overflow-hidden border-2 transition-all border-transparent hover:border-border">
+                        className="relative rounded-lg overflow-hidden border-2 transition-all border-transparent hover:border-border"
+                      >
                         <img
                           src={image.url}
                           alt={image.name}
@@ -618,7 +626,7 @@ export function ImageUploadModal({
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center h-full min-h-[16rem] text-muted-foreground">
                     <Grid className="h-12 w-12 mb-4" />
                     <p>No images in your gallery yet</p>
                     <p className="text-sm mt-2">
@@ -642,7 +650,8 @@ export function ImageUploadModal({
             onClick={() => {
               onOpenChange(false);
               resetState();
-            }}>
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -655,7 +664,8 @@ export function ImageUploadModal({
                 !imageUrl) ||
               uploadLoading ||
               onlineImageLoading
-            }>
+            }
+          >
             {uploadLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

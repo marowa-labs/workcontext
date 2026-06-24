@@ -76,6 +76,12 @@ export class HocuspocusCollaborationServer {
           });
 
           if (project && project.content) {
+            logger.info(
+              `[onLoadDocument] Project ${projectId} has content, type: ${typeof project.content}, keys: ${typeof project.content === "object" ? Object.keys(project.content).join(",") : "N/A"}`,
+            );
+            // Use StarterKit with all extensions enabled to maximize compatibility
+            // with custom extensions used in the frontend editor.
+            // This prevents silent dropping of unknown node types.
             const extensions = [
               Document,
               Paragraph,
@@ -110,8 +116,16 @@ export class HocuspocusCollaborationServer {
               Underline,
             ];
 
+            // Sanitize content to ensure compatibility with TiptapTransformer.
+            // If there are unknown node types (from custom extensions),
+            // we convert them to paragraphs to prevent silent data loss.
+            const sanitizedContent =
+              HocuspocusCollaborationServer.sanitizeContentForConversion(
+                project.content,
+              );
+
             return TiptapTransformer.toYdoc(
-              project.content,
+              sanitizedContent,
               "prosemirror",
               extensions,
             );
@@ -128,6 +142,9 @@ export class HocuspocusCollaborationServer {
           const projectId = documentName.replace("project-", "");
 
           let content = TiptapTransformer.fromYdoc(document, "prosemirror");
+          logger.info(
+            `[onStoreDocument] Project ${projectId}, content type: ${typeof content}, keys: ${typeof content === "object" ? Object.keys(content).join(",") : "N/A"}, content preview: ${JSON.stringify(content).substring(0, 200)}`,
+          );
 
           // Validate and prepare content to ensure compatibility with our editor
           const validateAndPrepareContent = (content: any): any => {
@@ -870,6 +887,161 @@ export class HocuspocusCollaborationServer {
         });
       },
     });
+  }
+
+  /**
+   * Sanitize content to ensure compatibility with TiptapTransformer.
+   * Converts unknown node types to paragraphs to prevent silent data loss.
+   */
+  static sanitizeContentForConversion(content: any): any {
+    if (!content || typeof content !== "object") {
+      return { type: "doc", content: [{ type: "paragraph" }] };
+    }
+
+    // If it's a string, wrap it in a paragraph
+    if (typeof content === "string") {
+      return {
+        type: "doc",
+        content: content.trim()
+          ? [{ type: "paragraph", content: [{ type: "text", text: content }] }]
+          : [{ type: "paragraph" }],
+      };
+    }
+
+    // If it's an array, wrap in doc
+    if (Array.isArray(content)) {
+      return {
+        type: "doc",
+        content: content
+          .map((node: any) =>
+            HocuspocusCollaborationServer.sanitizeContentForConversion(node),
+          )
+          .filter(Boolean),
+      };
+    }
+
+    // If it's a valid Tiptap doc, process its children
+    if (content.type === "doc" && Array.isArray(content.content)) {
+      return {
+        ...content,
+        content: content.content
+          .map((node: any) =>
+            HocuspocusCollaborationServer.sanitizeNodeForConversion(node),
+          )
+          .filter(Boolean),
+      };
+    }
+
+    // If it's a node with a type, sanitize it
+    if (content.type) {
+      return HocuspocusCollaborationServer.sanitizeNodeForConversion(content);
+    }
+
+    // Fallback: wrap in paragraph
+    return {
+      type: "paragraph",
+      content: [{ type: "text", text: JSON.stringify(content) }],
+    };
+  }
+
+  /**
+   * Sanitize a single node for conversion.
+   * Preserves known node types and converts unknown ones to paragraphs.
+   */
+  static sanitizeNodeForConversion(node: any): any {
+    if (!node || typeof node !== "object") return null;
+
+    // Known safe node types that TiptapTransformer can handle
+    const knownTypes = new Set([
+      "paragraph",
+      "text",
+      "heading",
+      "blockquote",
+      "bulletList",
+      "orderedList",
+      "listItem",
+      "codeBlock",
+      "hardBreak",
+      "horizontalRule",
+      "table",
+      "tableRow",
+      "tableCell",
+      "tableHeader",
+      "taskList",
+      "taskItem",
+      "image",
+      "link",
+      "doc",
+    ]);
+
+    // If it's a text node, keep it as-is
+    if (node.type === "text") {
+      return node;
+    }
+
+    // If it's a known type, process its children
+    if (knownTypes.has(node.type)) {
+      const sanitized: any = { type: node.type };
+
+      // Preserve attributes
+      if (node.attrs) {
+        sanitized.attrs = { ...node.attrs };
+      }
+
+      // Recursively process content
+      if (Array.isArray(node.content)) {
+        sanitized.content = node.content
+          .map((child: any) =>
+            HocuspocusCollaborationServer.sanitizeNodeForConversion(child),
+          )
+          .filter(Boolean);
+      } else if (node.content !== undefined) {
+        sanitized.content = node.content;
+      }
+
+      // Preserve marks
+      if (node.marks) {
+        sanitized.marks = node.marks;
+      }
+
+      return sanitized;
+    }
+
+    // Unknown node type: convert to paragraph with text content if possible
+    // This preserves the text content from custom extensions
+    const extractedText =
+      HocuspocusCollaborationServer.extractTextFromNode(node);
+    if (extractedText) {
+      return {
+        type: "paragraph",
+        content: [{ type: "text", text: extractedText }],
+      };
+    }
+
+    // Empty unknown node: return empty paragraph
+    return { type: "paragraph" };
+  }
+
+  /**
+   * Recursively extract text from a node.
+   */
+  static extractTextFromNode(node: any): string {
+    if (!node) return "";
+
+    if (node.type === "text") {
+      return node.text || "";
+    }
+
+    if (Array.isArray(node.content)) {
+      return node.content
+        .map((child: any) =>
+          HocuspocusCollaborationServer.extractTextFromNode(child),
+        )
+        .filter(Boolean)
+        .join(" ");
+    }
+
+    return "";
   }
 
   async start(): Promise<void> {

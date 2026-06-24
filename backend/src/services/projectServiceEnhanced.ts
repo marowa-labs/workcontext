@@ -72,16 +72,25 @@ export class ProjectServiceEnhanced {
   }
 
   // Get project by ID
-  static async getProjectById(projectId: string, userId: string) {
+  static async getProjectById(projectId: string, userId?: string) {
     try {
+      // Build where clause based on whether userId is provided
+      const whereClause: any = { id: projectId };
+
+      if (userId) {
+        whereClause.OR = [
+          { user_id: userId },
+          { collaborators: { some: { user_id: userId } } },
+        ];
+      } else {
+        // No user - only fetch if link sharing is enabled
+        whereClause.share_settings = {
+          link_sharing_enabled: true,
+        };
+      }
+
       const project = await prisma.project.findFirst({
-        where: {
-          id: projectId,
-          OR: [
-            { user_id: userId },
-            { collaborators: { some: { user_id: userId } } },
-          ],
-        },
+        where: whereClause,
         include: {
           user: {
             select: { id: true, full_name: true, email: true },
@@ -94,6 +103,7 @@ export class ProjectServiceEnhanced {
             },
           },
           workspace: true,
+          share_settings: true,
         },
       });
 
@@ -145,9 +155,33 @@ export class ProjectServiceEnhanced {
         throw new Error("Project not found or access denied");
       }
 
+      // Transform share_settings to use Prisma nested update syntax
+      const { share_settings, ...restData } = updateData;
+      const prismaData: any = { ...restData };
+
+      if (share_settings) {
+        // Check if share_settings already exists for this project
+        const currentProject = await prisma.project.findUnique({
+          where: { id: projectId },
+          select: { share_settings: true },
+        });
+
+        if (currentProject?.share_settings) {
+          // Update existing share_settings
+          prismaData.share_settings = {
+            update: share_settings,
+          };
+        } else {
+          // Create new share_settings
+          prismaData.share_settings = {
+            create: share_settings,
+          };
+        }
+      }
+
       const project = await prisma.project.update({
         where: { id: projectId },
-        data: updateData,
+        data: prismaData,
         include: {
           user: {
             select: { id: true, full_name: true, email: true },

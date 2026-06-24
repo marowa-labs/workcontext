@@ -9,6 +9,10 @@ An open-source, AI-powered context-aware productivity workspace for teams. Organ
 ![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
+<p align="center">
+  <img alt="WorkContext in action" src="https://www.image2url.com/r2/default/gifs/1782221447847-0402c750-20fe-41ef-b142-c5a08a2d0d4b.gif">
+</p>
+
 ---
 
 ## ✨ Features

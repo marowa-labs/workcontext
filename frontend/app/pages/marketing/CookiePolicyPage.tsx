@@ -14,7 +14,8 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://calibremarketing.co.uk/wp-content/uploads/2024/04/cookie-policy.jpg?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
@@ -29,9 +30,9 @@ function IntroHero() {
           </p>
 
           <p className="text-gray-200 max-w-2xl mx-auto">
-            This Cookie Policy explains how WorkContext("we", "us", or
-            "our") uses cookies and similar technologies to recognize you when
-            you visit our website and application.
+            This Cookie Policy explains how WorkContext("we", "us", or "our")
+            uses cookies and similar technologies to recognize you when you
+            visit our website and application.
           </p>
         </div>
       </div>
@@ -226,7 +227,7 @@ function RelatedPolicies() {
     {
       title: "Terms of Service",
       description: "Understand the terms that govern your use of our service.",
-      href: "/docs/terms",
+      href: "/legal/terms",
     },
     {
       title: "GDPR Compliance",
@@ -252,7 +253,8 @@ function RelatedPolicies() {
           {policies.map((policy, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg border border-white">
+              className="bg-white rounded-2xl p-6 shadow-lg border border-white"
+            >
               <h3 className="text-xl font-bold text-white mb-3">
                 {policy.title}
               </h3>
@@ -260,7 +262,8 @@ function RelatedPolicies() {
               <Button
                 variant="outline"
                 className="bg-white border-white text-white hover:bg-white"
-                asChild>
+                asChild
+              >
                 <Link href={policy.href}>Read More</Link>
               </Button>
             </div>

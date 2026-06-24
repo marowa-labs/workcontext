@@ -1866,19 +1866,26 @@ export function AIChatPanel({
                 className={includeDocument ? "text-blue-500" : "text-gray-400"}
               />
               <span className="truncate max-w-[120px]">Current document</span>
-              <button
-                type="button"
-                className="ml-1 hover:text-red-500 transition-colors"
+              <span
+                role="button"
+                tabIndex={0}
+                className="ml-1 hover:text-red-500 transition-colors cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIncludeDocument(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                    setIncludeDocument(false);
+                  }
                 }}
               >
                 <X
                   size={12}
                   className="text-gray-400 group-hover:text-inherit"
                 />
-              </button>
+              </span>
             </button>
             {contextItems.length > 0 && (
               <button

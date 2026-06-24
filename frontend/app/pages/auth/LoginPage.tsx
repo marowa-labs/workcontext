@@ -419,7 +419,7 @@ const LoginPage: React.FC = () => {
 
         <p className="text-xs text-gray-300">
           By signing in, you agree to our{" "}
-          <Link href="/docs/terms" className="text-blue-400 hover:underline">
+          <Link href="/legal/terms" className="text-blue-400 hover:underline">
             Terms of Service
           </Link>{" "}
           and{" "}

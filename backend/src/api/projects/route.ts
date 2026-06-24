@@ -139,26 +139,6 @@ async function handleGET_BY_ID(
           : "None",
     );
 
-    if (!userId) {
-      console.error(
-        "GET_BY_ID failed: User ID is required but missing specified",
-      );
-      return new Response(
-        JSON.stringify({
-          error: "User ID is required",
-          debug: {
-            hasAuthUser: !!request.user,
-            url: request.url,
-            queryParams: searchParams.toString(),
-          },
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-
     if (!projectId) {
       return new Response(JSON.stringify({ error: "Project ID is required" }), {
         status: 400,
@@ -167,10 +147,58 @@ async function handleGET_BY_ID(
     }
 
     // Get project using the enhanced service
+    // If userId is provided, filter by ownership/collaboration
+    // If userId is not provided, fetch the project if link sharing is enabled
     const project = await ProjectServiceEnhanced.getProjectById(
       projectId,
-      userId,
+      userId || undefined,
     );
+
+    // If no project found and no userId, check if project exists with link sharing
+    if (!project && !userId) {
+      const shareSettings = await prisma.documentShareSettings.findUnique({
+        where: { project_id: projectId },
+      });
+      if (shareSettings?.link_sharing_enabled) {
+        // Project exists and link sharing is enabled - fetch without user filter
+        const publicProject = await prisma.project.findUnique({
+          where: { id: projectId },
+          include: {
+            user: {
+              select: { id: true, full_name: true, email: true },
+            },
+            collaborators: {
+              include: {
+                user: {
+                  select: { id: true, full_name: true, email: true },
+                },
+              },
+            },
+            workspace: true,
+            share_settings: true,
+          },
+        });
+        if (publicProject) {
+          return new Response(JSON.stringify({ project: publicProject }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
+    if (!project && !userId) {
+      return new Response(
+        JSON.stringify({
+          error: "User not authenticated",
+          message: "Please log in to access this project",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
 
     console.log("Project fetched successfully", {
       projectId,

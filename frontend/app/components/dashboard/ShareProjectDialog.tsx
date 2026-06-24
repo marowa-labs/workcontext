@@ -35,10 +35,10 @@ export function ShareProjectDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
 
-  // Generate the share link based on current window location or project ID
+  // Generate the share link - use standalone route for public access
   const shareLink =
     typeof window !== "undefined"
-      ? `${window.location.origin}/editor/${project?.id}`
+      ? `${window.location.origin}/standalone/editor/${project?.id}`
       : "";
 
   const handleToggleSharing = async (enabled: boolean) => {
@@ -110,7 +110,8 @@ export function ShareProjectDialog({
             size="sm"
             className="px-3"
             onClick={copyToClipboard}
-            disabled={!isSharingEnabled}>
+            disabled={!isSharingEnabled}
+          >
             <span className="sr-only">Copy</span>
             {hasCopied ? (
               <Check className="h-4 w-4" />
