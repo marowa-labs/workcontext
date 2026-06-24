@@ -1569,10 +1569,9 @@ router.post("/track-ai-words", async (req, res) => {
     }
 
     // Track the AI-inserted words
-    const result = await SubscriptionService.trackAIWords(
-      userId,
+    const result = await (SubscriptionService as any).trackAIUsage(userId, {
       wordsInserted,
-    );
+    });
 
     return res.status(200).json({
       success: true,

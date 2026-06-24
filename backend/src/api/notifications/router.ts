@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
     });
 
     // Create a mock request object that matches the Edge function signature
-    const fullUrl = `http://localhost:3001${req.url}`;
+    const fullUrl = `${process.env.BACKEND_URL || "http://localhost:3001"}${req.url}`;
 
     // Convert express headers to Headers-like object with get method
     const headers = {
@@ -78,7 +78,7 @@ router.post("/", async (req, res) => {
     };
 
     // Create a mock request object that matches the Edge function signature
-    const fullUrl = `http://localhost:3001${req.url}`;
+    const fullUrl = `${process.env.BACKEND_URL || "http://localhost:3001"}${req.url}`;
 
     // Convert express headers to Headers-like object with get method
     const headers = {
@@ -113,7 +113,7 @@ router.get("/settings", async (req, res) => {
     });
 
     // Create a mock request object that matches the Edge function signature
-    const fullUrl = `http://localhost:3001${req.url}`;
+    const fullUrl = `${process.env.BACKEND_URL || "http://localhost:3001"}${req.url}`;
 
     // Convert express headers to Headers-like object with get method
     const headers = {

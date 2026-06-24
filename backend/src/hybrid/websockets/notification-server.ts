@@ -75,7 +75,7 @@ export class NotificationServer {
           // Check origin for security
           const origin = info.req.headers.origin;
           const allowedOrigins = [
-            "http://localhost:3000",
+            process.env.FRONTEND_URL || "http://localhost:3000",
             "http://localhost:5173",
             "https://localhost:3000",
             "https://localhost:5173",

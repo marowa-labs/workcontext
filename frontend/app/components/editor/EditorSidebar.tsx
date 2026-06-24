@@ -10,6 +10,7 @@ import {
   FileText,
   Wand2,
   MessageSquare,
+  Network,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
@@ -31,6 +32,7 @@ export function EditorSidebar({
     "my-documents",
     "outline",
     "language",
+    "concept-map",
     "team-chat",
   ],
 }: EditorSidebarProps) {
@@ -62,6 +64,12 @@ export function EditorSidebar({
       label: "Language Check",
       icon: Wand2,
       description: "Grammar and style checking",
+    },
+    {
+      id: "concept-map",
+      label: "Concept Map",
+      icon: Network,
+      description: "Visualize your ideas",
     },
     {
       id: "team-chat",

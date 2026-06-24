@@ -4,6 +4,9 @@ import logger from "../monitoring/logger";
 import { SecretsService } from "./secrets-service";
 import { BYOKService } from "./byokService";
 
+// Default model — can be overridden by caller
+const DEFAULT_MODEL = "gemini-2.5-flash";
+
 // Initialize Google Generative AI client
 let genAI: GoogleGenerativeAI | null = null;
 

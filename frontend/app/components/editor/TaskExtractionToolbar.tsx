@@ -39,23 +39,28 @@ export function TaskExtractionToolbar({
 
     const handleSelectionUpdate = () => {
       const { from, to } = editor.state.selection;
-      
+
       if (from !== to) {
         const text = editor.state.doc.textBetween(from, to, " ");
         if (text.trim().length > 10) {
           setSelectedText(text);
           setTaskTitle(text.slice(0, 100)); // Auto-fill title with selected text
-          
-          // Calculate position
+
+          // Calculate position - show to the RIGHT of the selection
           const { view } = editor;
           const startPos = view.coordsAtPos(from);
           const endPos = view.coordsAtPos(to);
-          
+
+          // Position popup to the right of the selected text, vertically aligned with selection
+          const popupWidth = 340; // min-w-[320px] + padding
+          const rightEdge = Math.max(startPos.right, endPos.right);
+          const topEdge = Math.min(startPos.top, endPos.top);
+
           setPosition({
-            top: Math.min(startPos.top, endPos.top) - 60,
-            left: (startPos.left + endPos.left) / 2,
+            top: Math.max(10, topEdge),
+            left: Math.min(rightEdge + 16, window.innerWidth - popupWidth - 10),
           });
-          
+
           setIsVisible(true);
         } else {
           setIsVisible(false);
@@ -66,14 +71,14 @@ export function TaskExtractionToolbar({
     };
 
     editor.on("selectionUpdate", handleSelectionUpdate);
-    
+
     // Also listen for mouseup to catch drag selections
     const handleMouseUp = () => {
       setTimeout(handleSelectionUpdate, 0);
     };
-    
+
     document.addEventListener("mouseup", handleMouseUp);
-    
+
     return () => {
       editor.off("selectionUpdate", handleSelectionUpdate);
       document.removeEventListener("mouseup", handleMouseUp);
@@ -83,7 +88,10 @@ export function TaskExtractionToolbar({
   // Close on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) {
+      if (
+        toolbarRef.current &&
+        !toolbarRef.current.contains(event.target as Node)
+      ) {
         // Don't close if clicking in the editor (might be starting a new selection)
         const target = event.target as HTMLElement;
         if (!target.closest(".ProseMirror")) {
@@ -157,8 +165,8 @@ export function TaskExtractionToolbar({
       ref={toolbarRef}
       className="fixed z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-4 min-w-[320px] animate-in fade-in zoom-in duration-200"
       style={{
-        top: Math.max(10, position.top),
-        left: Math.max(10, Math.min(position.left - 160, window.innerWidth - 330)),
+        top: position.top,
+        left: position.left,
       }}
     >
       {/* Header */}
@@ -170,8 +178,13 @@ export function TaskExtractionToolbar({
           </span>
         </div>
         <button
-          onClick={() => setIsVisible(false)}
-          className="text-gray-400 hover:text-gray-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setIsVisible(false);
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded p-1 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

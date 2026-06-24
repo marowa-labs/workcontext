@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   Plus,
   Trash2,
-  Image as ImageIcon,
   AlertTriangle,
   ArrowRight,
   Loader2,
@@ -228,6 +227,10 @@ export function AIChatPanel({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [deepSearchEnabled, setDeepSearchEnabled] = useState(false);
+  const [agentModeEnabled, setAgentModeEnabled] = useState(false);
+  const [contextItems, setContextItems] = useState<string[]>([]);
+  const [showContextDropdown, setShowContextDropdown] = useState(false);
+  const [includeDocument, setIncludeDocument] = useState(true);
   const [usageLimits, setUsageLimits] = useState({
     webSearches: { used: 0, limit: 0 },
     deepSearches: { used: 0, limit: 0 },
@@ -551,6 +554,50 @@ export function AIChatPanel({
     user?.id,
   ]);
 
+  // Context management functions
+  const addContextFromSelection = () => {
+    if (!editor || !editor.state) return;
+    const { from, to, empty } = editor.state.selection;
+    if (empty) return;
+    const selectedText = editor.state.doc.textBetween(from, to);
+    if (selectedText && !contextItems.includes(selectedText)) {
+      setContextItems((prev) => [...prev, selectedText]);
+    }
+  };
+
+  const addFullDocumentAsContext = () => {
+    if (!editor || !editor.state || !editor.state.doc) return;
+    const fullText = editor.state.doc.textContent;
+    if (fullText && !contextItems.includes(fullText)) {
+      setContextItems((prev) => [...prev, fullText.substring(0, 5000)]); // Limit to 5000 chars
+    }
+  };
+
+  const removeContextItem = (index: number) => {
+    setContextItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAllContext = () => {
+    setContextItems([]);
+  };
+
+  // Build context string for AI message
+  const buildContextString = (): string => {
+    const parts: string[] = [];
+    if (includeDocument && editor && editor.state && editor.state.doc) {
+      const docText = editor.state.doc.textContent;
+      if (docText) {
+        parts.push(`Current Document:\n${docText.substring(0, 10000)}`);
+      }
+    }
+    if (contextItems.length > 0) {
+      parts.push(
+        `Additional Context:\n${contextItems.map((item, i) => `${i + 1}. ${item}`).join("\n")}`,
+      );
+    }
+    return parts.length > 0 ? `\n\n--- CONTEXT ---\n${parts.join("\n\n")}` : "";
+  };
+
   // Send a message
   const sendMessage = async () => {
     if ((!inputValue.trim() && !selectedImage) || isLoading) return;
@@ -588,10 +635,13 @@ export function AIChatPanel({
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, userMessage]);
-      const userContent = inputValue;
       const hadImage = !!selectedImage;
       setInputValue("");
       removeImage();
+
+      // Build the full message content with context
+      const contextString = buildContextString();
+      const userContent = inputValue + contextString;
 
       // Prepare message data — include LIVE editor content so the AI
       // can read what the user is writing and complete/continue it
@@ -610,6 +660,8 @@ export function AIChatPanel({
           liveDocumentContent: liveDocContent,
           cursorContext: cursorContext,
           chatMode: chatMode,
+          contextItems: contextItems,
+          includeDocument: includeDocument,
         },
         model: currentModel,
       };
@@ -618,6 +670,7 @@ export function AIChatPanel({
       const result = await apiClient.post(
         `/api/ai/chat/session/${currentSessionId}/messages`,
         {
+          sessionId: currentSessionId,
           content: userContent,
           messageType: hadImage ? "image" : "text",
           imageUrl: imageUrl,
@@ -634,78 +687,55 @@ export function AIChatPanel({
 
       const aiResponse = result.aiMessage?.content || result.content || "";
 
-      // MODE-SPECIFIC BEHAVIOR
-      if (chatMode === "autocomplete") {
-        // AUTOCOMPLETE: insert response directly at cursor, minimal chat display
-        if (editor) {
-          try {
-            const formattedContent = formatContentForTiptap(aiResponse.trim());
-            if (formattedContent) {
-              editor.chain().focus().insertContent(formattedContent).run();
+      // Editor manipulation only happens when Agent Mode is enabled.
+      // When Agent Mode is OFF, the AI only responds in chat without touching the document.
+      // When Agent Mode is ON, the AI can write, edit, delete, and replace content in the editor.
+      if (agentModeEnabled && editor) {
+        const aiResponse = result.aiMessage?.content || result.content || "";
+
+        // Handle [INSERT_INTO_EDITOR] - Insert new content at cursor
+        const insertMatches = aiResponse.matchAll(
+          /\[INSERT_INTO_EDITOR\]([\s\S]*?)\[\/INSERT_INTO_EDITOR\]/g,
+        );
+        for (const match of insertMatches) {
+          if (match[1]) {
+            const contentToInsert = formatContentForTiptap(match[1].trim());
+            if (contentToInsert) {
+              editor.chain().focus().insertContent(contentToInsert).run();
             }
-          } catch (e) {
-            console.error("Autocomplete insert failed:", e);
           }
         }
-      } else {
-        // GENERAL & RESEARCH: full agentic editor operations
-        if (editor) {
-          // DELETE
-          const deleteMatches = aiResponse.matchAll(
-            /\[DELETE_IN_EDITOR\]([\s\S]*?)\[\/DELETE_IN_EDITOR\]/g,
-          );
-          for (const match of deleteMatches) {
-            const textToDelete = match[1].trim();
-            if (textToDelete) {
-              try {
-                deleteTextFromEditor(editor, textToDelete);
-              } catch (e) {
-                console.error("DELETE failed:", e);
-              }
-            }
-          }
 
-          // REPLACE
-          const replaceMatches = aiResponse.matchAll(
-            /\[REPLACE_IN_EDITOR\]([\s\S]*?)\[\/REPLACE_IN_EDITOR\]/g,
-          );
-          for (const match of replaceMatches) {
-            const parts = match[1].split("|||");
-            if (parts.length >= 2) {
+        // Handle [DELETE_IN_EDITOR] - Delete content from editor
+        const deleteMatches = aiResponse.matchAll(
+          /\[DELETE_IN_EDITOR\]([\s\S]*?)\[\/DELETE_IN_EDITOR\]/g,
+        );
+        for (const match of deleteMatches) {
+          if (match[1]) {
+            deleteTextFromEditor(editor, match[1].trim());
+          }
+        }
+
+        // Handle [REPLACE_IN_EDITOR] - Replace content in editor
+        // Format: [REPLACE_IN_EDITOR]old text||new text[/REPLACE_IN_EDITOR]
+        const replaceMatches = aiResponse.matchAll(
+          /\[REPLACE_IN_EDITOR\]([\s\S]*?)\[\/REPLACE_IN_EDITOR\]/g,
+        );
+        for (const match of replaceMatches) {
+          if (match[1]) {
+            const parts = match[1].split("||");
+            if (parts.length === 2) {
               const oldText = parts[0].trim();
-              const newText = parts.slice(1).join("|||").trim();
-              if (oldText) {
-                try {
-                  replaceTextInEditor(editor, oldText, newText);
-                } catch (e) {
-                  console.error("REPLACE failed:", e);
-                }
-              }
-            }
-          }
-
-          // INSERT
-          const insertMatches = aiResponse.matchAll(
-            /\[INSERT_INTO_EDITOR\]([\s\S]*?)\[\/INSERT_INTO_EDITOR\]/g,
-          );
-          for (const match of insertMatches) {
-            const contentToInsert = match[1].trim();
-            if (contentToInsert) {
-              try {
-                const formattedContent =
-                  formatContentForTiptap(contentToInsert);
-                if (formattedContent) {
-                  editor.chain().focus().insertContent(formattedContent).run();
-                }
-              } catch (e) {
-                console.error("INSERT failed:", e);
+              const newText = parts[1].trim();
+              if (oldText && newText) {
+                replaceTextInEditor(editor, oldText, newText);
               }
             }
           }
         }
       }
 
-      // Strip editor markers from chat display
+      // Always strip editor markers from chat display
       const cleanChatMessage = {
         ...result.aiMessage,
         content: stripEditorMarkers(result.aiMessage.content),
@@ -1128,11 +1158,11 @@ export function AIChatPanel({
             (window as any).__aiActionCancel = cancel;
           },
           onResult: (result) => {
-            // Add AI response to messages
+            // Add AI response to messages (strip editor markers for chat display)
             const assistantMessage: ChatMessage = {
               id: `assistant-${Date.now()}`,
               role: "assistant",
-              content: result.message,
+              content: stripEditorMarkers(result.message),
               message_type: "text",
               created_at: new Date().toISOString(),
             };
@@ -1814,6 +1844,7 @@ export function AIChatPanel({
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <button
               type="button"
+              onClick={addContextFromSelection}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm whitespace-nowrap"
             >
               <div className="flex items-center justify-center w-4 h-4 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold">
@@ -1821,15 +1852,26 @@ export function AIChatPanel({
               </div>
               Add context
             </button>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 shadow-sm group cursor-pointer hover:border-gray-300 transition-colors whitespace-nowrap">
-              <FileText size={14} className="text-gray-400" />
+            <button
+              type="button"
+              onClick={() => setIncludeDocument(!includeDocument)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-sm shadow-sm whitespace-nowrap transition-colors ${
+                includeDocument
+                  ? "bg-blue-50 border-blue-200 text-blue-700"
+                  : "bg-white border-gray-200 text-gray-600"
+              }`}
+            >
+              <FileText
+                size={14}
+                className={includeDocument ? "text-blue-500" : "text-gray-400"}
+              />
               <span className="truncate max-w-[120px]">Current document</span>
               <button
                 type="button"
                 className="ml-1 hover:text-red-500 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // potential handle remove context logic here
+                  setIncludeDocument(false);
                 }}
               >
                 <X
@@ -1837,7 +1879,16 @@ export function AIChatPanel({
                   className="text-gray-400 group-hover:text-inherit"
                 />
               </button>
-            </div>
+            </button>
+            {contextItems.length > 0 && (
+              <button
+                type="button"
+                onClick={clearAllContext}
+                className="flex items-center gap-1 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                Clear all context
+              </button>
+            )}
           </div>
 
           {/* Main Input Box */}
@@ -1878,50 +1929,6 @@ export function AIChatPanel({
             <div className="flex flex-wrap items-center justify-between px-3 pb-3 pt-1 gap-y-2">
               {/* Left Actions */}
               <div className="flex items-center gap-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageSelect}
-                  accept="image/*"
-                  className="hidden"
-                  disabled={!hasAccess}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()} // Reuse same ref for attachment generic icon
-                  className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  <div className="rotate-45">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                    </svg>
-                  </div>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading || !hasAccess}
-                  className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  <ImageIcon size={16} />
-                </Button>
-              </div>
-
-              {/* Right Actions & Toggles */}
-              <div className="flex items-center gap-2">
                 {/* Web Search Toggle */}
                 <button
                   type="button"
@@ -1962,6 +1969,34 @@ export function AIChatPanel({
                     className={`text-xs font-medium ${deepSearchEnabled ? "text-purple-700" : "text-gray-500"}`}
                   >
                     Library
+                  </span>
+                </button>
+              </div>
+
+              {/* Right Actions & Toggles */}
+              <div className="flex items-center gap-2">
+                {/* Agent Mode Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setAgentModeEnabled(!agentModeEnabled)}
+                  className={`flex items-center gap-1.5 px-1 py-1 rounded-full transition-colors ${agentModeEnabled ? "bg-emerald-100" : "bg-transparent"}`}
+                  title={
+                    agentModeEnabled
+                      ? "Agent Mode: ON — AI can edit your document"
+                      : "Agent Mode: OFF — AI only responds in chat"
+                  }
+                >
+                  <div
+                    className={`w-9 h-5 rounded-full relative transition-colors ${agentModeEnabled ? "bg-emerald-500" : "bg-gray-200"}`}
+                  >
+                    <div
+                      className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${agentModeEnabled ? "translate-x-4" : "translate-x-0"}`}
+                    />
+                  </div>
+                  <span
+                    className={`text-xs font-medium ${agentModeEnabled ? "text-emerald-700" : "text-gray-500"}`}
+                  >
+                    Agent
                   </span>
                 </button>
 

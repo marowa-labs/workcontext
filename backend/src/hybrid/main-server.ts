@@ -35,16 +35,16 @@ async function initializeNodeEnv() {
 initializeNodeEnv();
 
 // Initialize app URL from secrets
-let appUrl: string = "http://localhost:3000"; // Default value
+let appUrl: string = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Async function to initialize app URL from secrets
 async function initializeAppUrl() {
   try {
     const url = await SecretsService.getAppUrl();
-    appUrl = url || "http://localhost:3000"; // Ensure we always have a string value
+    appUrl = url || process.env.FRONTEND_URL || "http://localhost:3000";
   } catch (error) {
     console.error("Error initializing APP_URL from secrets:", error);
-    appUrl = "http://localhost:3000"; // fallback to default
+    appUrl = process.env.FRONTEND_URL || "http://localhost:3000";
   }
 }
 
@@ -148,16 +148,16 @@ scheduleVersionSchedulingTask();
 scheduleTaskReminderTask();
 
 // Middleware
-let frontendUrl: string = "http://localhost:3000"; // Default value
+let frontendUrl: string = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Async function to initialize frontend URL from secrets
 async function initializeFrontendUrl() {
   try {
     const url = await SecretsService.getFrontendUrl();
-    frontendUrl = url || "http://localhost:3000"; // Ensure we always have a string value
+    frontendUrl = url || process.env.FRONTEND_URL || "http://localhost:3000";
   } catch (error) {
     console.error("Error initializing FRONTEND_URL from secrets:", error);
-    frontendUrl = "http://localhost:3000"; // fallback to default
+    frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
   }
 }
 
@@ -2954,7 +2954,9 @@ app.get("/api/editor/content", async (req, res) => {
     const { GET } = await import("../api/editor/route");
 
     // Create a mock request object with query parameters
-    const url = new URL(`http://localhost:3001/api/editor/content`);
+    const url = new URL(
+      `${process.env.BACKEND_URL || "http://localhost:3001"}/api/editor/content`,
+    );
     const queryParams = req.query as Record<string, string>;
     for (const key in queryParams) {
       url.searchParams.append(key, queryParams[key]);
@@ -3105,7 +3107,9 @@ app.get("/api/editor/versions", async (req, res) => {
     const { GET_VERSIONS } = await import("../api/editor/route");
 
     // Create a mock request object with query parameters
-    const url = new URL(`http://localhost:3001/api/editor/versions`);
+    const url = new URL(
+      `${process.env.BACKEND_URL || "http://localhost:3001"}/api/editor/versions`,
+    );
     const queryParams = req.query as Record<string, string>;
     for (const key in queryParams) {
       url.searchParams.append(key, queryParams[key]);
@@ -3215,7 +3219,9 @@ app.get("/api/editor/comments", async (req, res) => {
     const { GET_COMMENTS } = await import("../api/editor/route");
 
     // Create a mock request object with query parameters
-    const url = new URL(`http://localhost:3001/api/editor/comments`);
+    const url = new URL(
+      `${process.env.BACKEND_URL || "http://localhost:3001"}/api/editor/comments`,
+    );
     const queryParams = req.query as Record<string, string>;
     for (const key in queryParams) {
       url.searchParams.append(key, queryParams[key]);

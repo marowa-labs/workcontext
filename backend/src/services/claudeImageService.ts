@@ -34,7 +34,9 @@ export class GeminiImageService {
   ): Promise<GeminiImageResponse> {
     try {
       const client = await getGeminiClient();
-      const genModel = client.getGenerativeModel({ model });
+      const genModel = client.getGenerativeModel({
+        model: model || "gemini-2.5-flash",
+      });
 
       const result = await genModel.generateContent([
         `Describe this image in detail for academic/research purposes. Focus on any text, diagrams, charts, or visual elements that would be relevant for scholarly work.`,

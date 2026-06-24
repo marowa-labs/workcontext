@@ -204,7 +204,7 @@ export class ResearchService {
     projectId?: string | null,
   ): Promise<any> {
     try {
-      const response = await apiClient.post("/api/research/map", {
+      const response = await apiClient.post("/api/ai/research/map", {
         query,
         projectId,
       });
@@ -379,11 +379,15 @@ export class ResearchService {
   }
 
   // Get all user projects
-  static async getProjects(userId: string): Promise<{ id: string; title: string; sourceCount?: number }[]> {
+  static async getProjects(
+    userId: string,
+  ): Promise<{ id: string; title: string; sourceCount?: number }[]> {
     try {
       const queryParams = new URLSearchParams({ userId });
-      const response = await apiClient.get(`/api/projects?${queryParams.toString()}`);
-      
+      const response = await apiClient.get(
+        `/api/projects?${queryParams.toString()}`,
+      );
+
       return response.projects || response.data || [];
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -392,17 +396,20 @@ export class ResearchService {
   }
 
   // Add sources to a project
-  static async addSourcesToProject(projectId: string, sourceIds: string[]): Promise<boolean> {
+  static async addSourcesToProject(
+    projectId: string,
+    sourceIds: string[],
+  ): Promise<boolean> {
     try {
       const response = await apiClient.post("/api/projects/sources/add", {
         projectId,
         sourceIds,
       });
-      
+
       if (!response.success) {
         throw new Error(response.message || "Failed to add sources to project");
       }
-      
+
       return true;
     } catch (error) {
       console.error("Error adding sources to project:", error);
@@ -411,17 +418,20 @@ export class ResearchService {
   }
 
   // Import sources from other projects
-  static async importSourcesFromProjects(projectId: string, fromProjectIds: string[]): Promise<boolean> {
+  static async importSourcesFromProjects(
+    projectId: string,
+    fromProjectIds: string[],
+  ): Promise<boolean> {
     try {
       const response = await apiClient.post("/api/projects/sources/import", {
         projectId,
         fromProjectIds,
       });
-      
+
       if (!response.success) {
         throw new Error(response.message || "Failed to import sources");
       }
-      
+
       return true;
     } catch (error) {
       console.error("Error importing sources from projects:", error);
@@ -450,7 +460,11 @@ export class ResearchService {
   }
 
   // Add website URL as source
-  static async addWebsiteSource(projectId: string, url: string, title?: string): Promise<any> {
+  static async addWebsiteSource(
+    projectId: string,
+    url: string,
+    title?: string,
+  ): Promise<any> {
     try {
       const response = await apiClient.post("/api/sources/web", {
         projectId,
@@ -466,7 +480,11 @@ export class ResearchService {
   }
 
   // Add text content as source
-  static async addTextSource(projectId: string, content: string, title?: string): Promise<any> {
+  static async addTextSource(
+    projectId: string,
+    content: string,
+    title?: string,
+  ): Promise<any> {
     try {
       const response = await apiClient.post("/api/sources/text", {
         projectId,
@@ -482,7 +500,10 @@ export class ResearchService {
   }
 
   // Search web for sources with selectable results
-  static async searchWebSources(query: string, maxResults: number = 10): Promise<any[]> {
+  static async searchWebSources(
+    query: string,
+    maxResults: number = 10,
+  ): Promise<any[]> {
     try {
       const response = await apiClient.post("/api/sources/search", {
         query,
@@ -497,7 +518,10 @@ export class ResearchService {
   }
 
   // Save selected web search results as sources
-  static async saveWebSources(projectId: string, sources: any[]): Promise<any[]> {
+  static async saveWebSources(
+    projectId: string,
+    sources: any[],
+  ): Promise<any[]> {
     try {
       const response = await apiClient.post("/api/sources/web/save", {
         projectId,
@@ -514,7 +538,9 @@ export class ResearchService {
   // Get sources for a project
   static async getProjectSources(projectId: string): Promise<any[]> {
     try {
-      const response = await apiClient.get(`/api/sources?projectId=${projectId}`);
+      const response = await apiClient.get(
+        `/api/sources?projectId=${projectId}`,
+      );
       return response.sources || response.data || [];
     } catch (error) {
       console.error("Error fetching project sources:", error);
@@ -533,7 +559,10 @@ export class ResearchService {
   }
 
   // Update a source
-  static async updateSource(sourceId: string, updates: { title?: string }): Promise<void> {
+  static async updateSource(
+    sourceId: string,
+    updates: { title?: string },
+  ): Promise<void> {
     try {
       await apiClient.patch(`/api/sources/${sourceId}`, updates);
     } catch (error) {

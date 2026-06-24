@@ -130,7 +130,7 @@ export async function sendPdfChatMessage(params: {
 
   if (!providerHasKey[provider]) {
     // Try to find a fallback model from available providers
-    const availableModels = await BYOKService.getUserAvailableModels(userId);
+    const availableModels = await BYOKService.getSettings(userId);
     const availableIds = Object.keys(availableModels);
     if (availableIds.length > 0) {
       const fallback = availableIds[0];
@@ -202,11 +202,11 @@ export async function sendPdfChatMessage(params: {
         { role: "user", content: fullPrompt },
       ];
 
-      const completion = await client.chat.completions.create({
+      const result = await (client as any).chat.completions.create({
         model: openaiModel,
         messages,
       });
-      const text = completion.choices[0]?.message?.content;
+      const text = result.choices[0]?.message?.content;
       if (!text) throw new Error("OpenAI returned an empty response.");
       return text;
     }
@@ -253,7 +253,7 @@ export async function sendPdfChatMessage(params: {
         { role: "user" as const, content: fullPrompt },
       ];
 
-      const result = await client.chat.completions.create({
+      const result = await (client as any).chat.completions.create({
         model: modelName,
         messages,
       });

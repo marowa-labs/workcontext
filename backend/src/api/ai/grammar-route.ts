@@ -124,19 +124,22 @@ export async function handleLanguageCheckExpress(
           .replace(/```\s*/g, "")
           .trim();
         const parsed = JSON.parse(cleaned);
-        suggestions = Array.isArray(parsed) ? parsed : parsed.suggestions || [];
+        suggestions = Array.isArray(parsed)
+          ? parsed
+          : (parsed as any)?.suggestions || [];
       } else if (Array.isArray(result.result)) {
         suggestions = result.result;
-      } else if (result.result?.suggestions) {
-        suggestions = result.result.suggestions;
+      } else if ((result.result as any)?.suggestions) {
+        suggestions = (result.result as any).suggestions;
       }
     } catch (parseErr) {
       // If parsing fails, return as raw text; frontend has a fallback parser
-      suggestions = result.result;
+      suggestions = result.result as any;
     }
 
     return res.status(200).json({
       success: true,
+      result: result.result,
       suggestions,
       tokensUsed: result.tokensUsed,
       cost: result.cost,

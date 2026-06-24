@@ -145,11 +145,12 @@
   font-size: 0.875em;
 }
 
-/* Dark editor horizontal rules */
+/* Dark editor horizontal rules - clean styling for intentional use */
 .dark-editor .ProseMirror hr {
-  margin: 2rem 0;
+  margin: 1.5rem 0;
   border: none;
   border-top: 1px solid #404040;
+  opacity: 0.5;
 }
 
 /* Dark editor tables */

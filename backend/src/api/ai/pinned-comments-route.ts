@@ -34,7 +34,7 @@ router.get(
 
       return res.status(200).json({
         success: true,
-        comments: comments.map((c) => ({
+        comments: comments.map((c: any) => ({
           id: c.id,
           text: c.selected_text,
           comment: c.comment,

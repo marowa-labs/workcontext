@@ -8,7 +8,7 @@ router.get("/", async (req, res) => {
   try {
     // Create a mock request object that matches the Next.js API route signature
     const searchParams = new URLSearchParams(
-      req.query as Record<string, string>
+      req.query as Record<string, string>,
     );
     const url = new URL(`http://localhost${req.url}?${searchParams}`);
 
@@ -32,10 +32,10 @@ router.get("/type/:type", async (req, res) => {
     // Create a mock request object that matches the Next.js API route signature
     const { type } = req.params;
     const searchParams = new URLSearchParams(
-      req.query as Record<string, string>
+      req.query as Record<string, string>,
     );
     const url = new URL(
-      `http://localhost/api/templates/type/${type}?${searchParams}`
+      `${process.env.BACKEND_URL || "http://localhost:3001"}/api/templates/type/${type}?${searchParams}`,
     );
 
     // Create a mock NextRequest object
@@ -75,7 +75,7 @@ router.put("/", async (req, res) => {
     // Create a mock request object that matches the Next.js API route signature
     const mockRequest = {
       json: async () => req.body,
-      url: `http://localhost${req.url}`,
+      url: `${process.env.BACKEND_URL || "http://localhost:3001"}${req.url}`,
     } as any;
 
     const response = await PUT(mockRequest);
@@ -91,9 +91,11 @@ router.delete("/", async (req, res) => {
   try {
     // Create a mock request object that matches the Next.js API route signature
     const searchParams = new URLSearchParams(
-      req.query as Record<string, string>
+      req.query as Record<string, string>,
     );
-    const url = new URL(`http://localhost${req.url}?${searchParams}`);
+    const url = new URL(
+      `${process.env.BACKEND_URL || "http://localhost:3001"}${req.url}?${searchParams}`,
+    );
 
     const mockRequest = {
       url: url.toString(),

@@ -20,10 +20,16 @@ import { ShareProjectDialog } from "../../../../components/dashboard/ShareProjec
 import { ProjectJoinDialog } from "../../../../components/dashboard/ProjectJoinDialog";
 import { LanguageCheckPanel } from "../../../../components/editor/SidebarRight/LanguageCheckPanel";
 import { DocumentOutlinePanel } from "../../../../components/editor/SidebarLeft/DocumentOutlinePanel";
+import { ConceptMapPanel } from "../../../../components/editor/SidebarLeft/ConceptMapPanel";
 import { TeamChat } from "../../../../components/dashboard/team/TeamChat";
 
 // Define panel types
-export type LeftPanelType = "documents" | "outline" | "language" | null;
+export type LeftPanelType =
+  | "documents"
+  | "outline"
+  | "language"
+  | "concept-map"
+  | null;
 export type RightPanelType = "ai-chat" | "team-chat" | null;
 
 interface Project {
@@ -84,8 +90,11 @@ export default function EditorPage() {
   }, [project]);
 
   const handleChatNode = (message: string) => {
-    setAiPrompt(message);
     setRightPanel("ai-chat");
+    // Use a small delay to ensure the panel is open before sending the prompt
+    setTimeout(() => {
+      setAiPrompt(message);
+    }, 100);
   };
 
   // Resize handlers
@@ -380,6 +389,7 @@ export default function EditorPage() {
     "writing",
     "my-documents",
     "outline",
+    "concept-map",
     // 'team-chat' explicitly excluded
   ];
 
@@ -389,6 +399,7 @@ export default function EditorPage() {
     "writing",
     "my-documents",
     "outline",
+    "concept-map",
     "team-chat", // Added for Team Projects
   ];
 
@@ -409,6 +420,8 @@ export default function EditorPage() {
             setLeftPanel("outline");
           } else if (id === "language") {
             setLeftPanel("language");
+          } else if (id === "concept-map") {
+            setLeftPanel("concept-map");
           }
 
           if (id === "writing") {
@@ -491,6 +504,43 @@ export default function EditorPage() {
               <LanguageCheckPanel
                 editor={editorInstance}
                 onClose={() => setLeftPanel(null)}
+              />
+            )}
+            {leftPanel === "outline" && (
+              <div className="h-full overflow-x-hidden">
+                <DocumentOutlinePanel
+                  projectId={documentId}
+                  onClose={() => setLeftPanel(null)}
+                  onSyncToEditor={(sections) => {
+                    // Convert sections to HTML and insert into editor
+                    const generateHTML = (sections: any[]) => {
+                      let html = "";
+                      sections.forEach((section) => {
+                        html += `<h${section.level}>${section.name}</h${section.level}>\n<p></p>\n`;
+                        if (section.children && section.children.length > 0) {
+                          section.children.forEach((child: any) => {
+                            html += `<h${child.level}>${child.name}</h${child.level}>\n<p></p>\n`;
+                          });
+                        }
+                      });
+                      return html;
+                    };
+                    if (sections && sections.length > 0) {
+                      const html = generateHTML(sections);
+                      if (mainEditorRef.current) {
+                        mainEditorRef.current.insertContent(html);
+                      }
+                    }
+                  }}
+                />
+              </div>
+            )}
+            {leftPanel === "concept-map" && (
+              <ConceptMapPanel
+                currentTitle={project?.title}
+                projectId={documentId}
+                onClose={() => setLeftPanel(null)}
+                onChatNode={handleChatNode}
               />
             )}
             {leftPanel === "outline" && (

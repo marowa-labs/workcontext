@@ -63,7 +63,6 @@ import spellCheckService from "../../lib/utils/spellCheckService";
 import AIAutocompleteExtension from "./AIAutocompleteExtension"; // Add this import
 import AIAutocompleteSuggestion from "./AIAutocompleteSuggestion"; // Add this import
 import { FloatingAIMenu } from "../ai/floating-ai-menu"; // Import Floating AI Menu
-import { ParagraphActionMenu } from "./ParagraphActionMenu"; // Import Paragraph Action Menu
 import GrammarCheckingExtension from "./GrammarCheckingExtension";
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
@@ -112,6 +111,7 @@ export type SidebarPanel =
   | "writing"
   | "my-documents"
   | "outline"
+  | "concept-map"
   | "related"
   | null;
 
@@ -385,6 +385,7 @@ export const MainEditor = forwardRef<
           StarterKit.configure({
             codeBlock: false,
             link: false,
+            horizontalRule: false,
             // Disable history if collaboration provider exists (Y.js handles undo/redo)
             // Enable history if no provider (Tiptap handles undo/redo)
             history: provider ? false : undefined,
@@ -476,7 +477,7 @@ export const MainEditor = forwardRef<
                 // Handle silently
               }
             },
-          }),
+          } as any),
           GrammarCheckingExtension.configure({
             debounceTime: 5000,
           }),
@@ -1113,12 +1114,6 @@ export const MainEditor = forwardRef<
                   }`}
                 >
                   <div className="relative w-full max-w-4xl mx-auto editor-wrapper">
-                    <ParagraphActionMenu
-                      editor={editor}
-                      onAIAction={(action, text) => {
-                        handleAIAction(action, text);
-                      }}
-                    />
                     {editor && (
                       <EditorContent
                         editor={editor}

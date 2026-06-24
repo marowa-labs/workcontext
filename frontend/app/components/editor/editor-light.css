@@ -143,11 +143,12 @@
   font-size: 0.875em;
 }
 
-/* Light editor horizontal rules */
+/* Light editor horizontal rules - clean styling for intentional use */
 .light-editor .ProseMirror hr {
-  margin: 2rem 0;
+  margin: 1.5rem 0;
   border: none;
   border-top: 1px solid #e2e8f0;
+  opacity: 0.5;
 }
 
 /* Light editor tables */

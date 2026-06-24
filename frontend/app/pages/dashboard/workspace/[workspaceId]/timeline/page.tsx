@@ -897,7 +897,7 @@ export default function WorkspaceTimelinePage() {
 
                     const donutSegments = segments.filter((s) => s.value > 0);
 
-                    return donutSegments.map((seg) => {
+                    return donutSegments.map((seg, idx) => {
                       const pct = seg.value / total;
                       const angle = pct * Math.PI * 2;
                       const startAngle = currentAngle;
@@ -920,7 +920,7 @@ export default function WorkspaceTimelinePage() {
 
                       return (
                         <path
-                          key={seg.label}
+                          key={seg.key}
                           d={path}
                           fill={seg.color}
                           className="hover:opacity-80 transition-opacity cursor-pointer"

@@ -3,14 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "../ui/button";
-import {
-  Wand2,
-  PenLine,
-  FileText,
-  Lightbulb,
-  MessageSquare,
-  ShieldCheck,
-} from "lucide-react";
+import { Wand2, FileText, Lightbulb, MessageSquare } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface FloatingAIMenuProps {
@@ -98,16 +91,6 @@ export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
       action: "expand",
     },
     {
-      icon: <PenLine className="h-3.5 w-3.5" />,
-      label: "Academic Tone",
-      action: "academic",
-    },
-    {
-      icon: <ShieldCheck className="h-3.5 w-3.5 text-green-600" />,
-      label: "Defensibility Check",
-      action: "defensibility",
-    },
-    {
       icon: <MessageSquare className="h-3.5 w-3.5" />,
       label: "Ask AI",
       action: "ask",
@@ -126,12 +109,14 @@ export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
         left: position.left,
         // Fix: Use transform to properly center the menu
         transform: "translateX(-50%)",
-      }}>
+      }}
+    >
       {actions.map((item) => (
         <Button
           key={item.action}
           className="h-7 gap-1 px-2 text-xs hover:bg-gray-100 dark:hover:bg-white"
-          onClick={() => handleAction(item.action)}>
+          onClick={() => handleAction(item.action)}
+        >
           {item.icon}
           <span className="hidden sm:inline">{item.label}</span>
         </Button>

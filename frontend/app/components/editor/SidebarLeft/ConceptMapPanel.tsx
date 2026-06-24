@@ -8,10 +8,10 @@ import {
   Maximize,
   Loader2,
   RefreshCw,
-  Search,
   Bot,
   ChevronRight,
   ChevronLeft,
+  X,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 
@@ -31,14 +31,16 @@ interface ConceptNode {
 
 interface ConceptMapPanelProps {
   currentTitle?: string;
-  onSearchNode?: (term: string) => void;
+  projectId?: string | null;
   onChatNode?: (message: string) => void;
+  onClose?: () => void;
 }
 
 export function ConceptMapPanel({
   currentTitle,
-  onSearchNode,
+  projectId,
   onChatNode,
+  onClose,
 }: ConceptMapPanelProps) {
   const [zoom, setZoom] = useState(100);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -49,7 +51,9 @@ export function ConceptMapPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
+  const [isMaximized, setIsMaximized] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (currentTitle) {
@@ -61,7 +65,10 @@ export function ConceptMapPanel({
     try {
       setLoading(true);
       setError(null);
-      const response = await ResearchService.getConceptMap(query);
+      const response = await ResearchService.getConceptMap(
+        query,
+        projectId ?? undefined,
+      );
       if (response && response.data) {
         setRootNode(response.data);
         // Reset view on new graph
@@ -225,8 +232,32 @@ export function ConceptMapPanel({
     return { nodes: nodesWithPos, edges, maxX, maxY };
   }, [rootNode, collapsedNodes]);
 
+  const handleMaximize = () => {
+    if (!isMaximized) {
+      // Enter fullscreen
+      setIsMaximized(true);
+      setZoom(150);
+      setTranslate({ x: 0, y: 0 });
+    } else {
+      // Exit fullscreen
+      setIsMaximized(false);
+      setZoom(100);
+      setTranslate({ x: 50, y: 50 });
+    }
+  };
+
+  const handleClose = () => {
+    // Notify parent to close the panel
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div
+      ref={panelRef}
+      className={`h-full flex flex-col bg-white ${isMaximized ? "fixed inset-0 z-[100]" : ""}`}
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex justify-between items-start z-20 bg-white relative">
         <div>
@@ -243,7 +274,8 @@ export function ConceptMapPanel({
             size="icon"
             className="h-8 w-8"
             onClick={() => loadGraph(currentTitle || "")}
-            disabled={loading}>
+            disabled={loading}
+          >
             <RefreshCw
               className={`h-4 w-4 text-gray-500 ${loading ? "animate-spin" : ""}`}
             />
@@ -252,12 +284,19 @@ export function ConceptMapPanel({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => {
-              setZoom(100);
-              setTranslate({ x: 50, y: 50 });
-            }}
-            title="Reset View">
+            onClick={handleMaximize}
+            title={isMaximized ? "Exit Fullscreen" : "Maximize"}
+          >
             <Maximize className="h-4 w-4 text-gray-500" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            onClick={handleClose}
+            title="Close"
+          >
+            <X className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -269,7 +308,8 @@ export function ConceptMapPanel({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => setZoom(Math.max(50, zoom - 10))}>
+            onClick={() => setZoom(Math.max(50, zoom - 10))}
+          >
             <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
           </Button>
           <span className="text-xs text-gray-600 flex items-center px-2 min-w-[3rem] justify-center">
@@ -279,7 +319,8 @@ export function ConceptMapPanel({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => setZoom(Math.min(300, zoom + 10))}>
+            onClick={() => setZoom(Math.min(300, zoom + 10))}
+          >
             <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
           </Button>
         </div>
@@ -295,7 +336,8 @@ export function ConceptMapPanel({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}>
+        onMouseLeave={handleMouseUp}
+      >
         {loading && !rootNode ? (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="flex flex-col items-center p-4 bg-white/80 backdrop-blur rounded-lg">
@@ -309,7 +351,8 @@ export function ConceptMapPanel({
             <Button
               variant="link"
               onClick={() => loadGraph(currentTitle || "")}
-              className="pointer-events-auto">
+              className="pointer-events-auto"
+            >
               Try Again
             </Button>
           </div>
@@ -319,10 +362,12 @@ export function ConceptMapPanel({
             style={{
               transform: `translate(${translate.x}px, ${translate.y}px) scale(${zoom / 100})`,
               // We do NOT set explicit width/height here anymore to avoid scrollbars
-            }}>
+            }}
+          >
             <svg
               className="absolute overflow-visible pointer-events-none"
-              style={{ left: 0, top: 0 }}>
+              style={{ left: 0, top: 0 }}
+            >
               {treeLayout.edges.map((edge) => {
                 const midX = (edge.x1 + edge.x2) / 2;
                 return (
@@ -341,7 +386,8 @@ export function ConceptMapPanel({
               <div
                 key={node.id}
                 className="absolute transform -translate-y-1/2 z-10 flex items-center group"
-                style={{ top: node.y, left: node.x, width: node.width }}>
+                style={{ top: node.y, left: node.x, width: node.width }}
+              >
                 {/* Node Card */}
                 <div
                   className={`
@@ -352,33 +398,31 @@ export function ConceptMapPanel({
                   onMouseDown={(e) => e.stopPropagation()} // Allow clicking node without dragging map
                 >
                   <span
-                    className={`text-sm font-medium line-clamp-2 ${node.type === "root" ? "text-white" : "text-slate-700"}`}>
+                    className={`text-sm font-medium line-clamp-2 ${node.type === "root" ? "text-white" : "text-slate-700"}`}
+                  >
                     {node.label}
                   </span>
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 ml-2 pl-2 border-l border-white/20">
                     <button
-                      title="Search this topic"
-                      className={`p-1 rounded-full hover:bg-white/20 transition-colors ${node.type === "root" ? "text-white" : "text-slate-400 hover:text-blue-600"}`}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onSearchNode) onSearchNode(node.label);
-                      }}>
-                      <Search className="w-3 h-3" />
-                    </button>
-                    <button
                       title="Ask AI about this"
                       className={`p-1 rounded-full hover:bg-white/20 transition-colors ${node.type === "root" ? "text-white" : "text-slate-400 hover:text-purple-600"}`}
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
+                        // If maximized, exit maximize first so the AI Chat panel is visible
+                        if (isMaximized) {
+                          setIsMaximized(false);
+                          setZoom(100);
+                          setTranslate({ x: 50, y: 50 });
+                        }
                         if (onChatNode) {
                           const msg = `Discuss what these sources say about "${node.label}", in the larger context of "${currentTitle || "the research"}".`;
                           onChatNode(msg);
                         }
-                      }}>
+                      }}
+                    >
                       <Bot className="w-3 h-3" />
                     </button>
                   </div>
@@ -396,7 +440,8 @@ export function ConceptMapPanel({
                             ml-[-10px] z-20 w-5 h-5 rounded-full flex items-center justify-center border transition-colors bg-white hover:bg-slate-50
                             ${node.collapsed ? "border-slate-300 text-slate-500" : "border-blue-200 text-blue-500"}
                         `}
-                    style={{ marginLeft: -8 }}>
+                    style={{ marginLeft: -8 }}
+                  >
                     {node.collapsed ? (
                       <ChevronRight className="w-3 h-3" />
                     ) : (

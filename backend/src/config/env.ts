@@ -38,8 +38,8 @@ export const config: Config = {
 
   // Application settings
   app: {
-    url: "http://localhost:3000",
-    environment: "development",
+    url: process.env.FRONTEND_URL || "http://localhost:3000",
+    environment: process.env.NODE_ENV || "development",
   },
 
   // Cron job authentication
@@ -70,6 +70,7 @@ async function initializeConfig() {
   config.app.url =
     (await SecretsService.getAppUrl()) ||
     (await SecretsService.getPublicAppUrl()) ||
+    process.env.FRONTEND_URL ||
     "http://localhost:3000";
   config.app.environment = await SecretsService.getNodeEnv();
 }

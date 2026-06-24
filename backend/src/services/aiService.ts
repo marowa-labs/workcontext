@@ -1448,19 +1448,29 @@ Document Content: ${docContent}`;
 - Analyze document structure, arguments, and completeness
 - Identify gaps, weaknesses, and areas for improvement
 - Explain complex concepts found in the document
-- Suggest improvements and rewrites
-When you generate replacement or new content, use the editor markers:
+- Suggest improvements and rewrites when asked
+
+CRITICAL RULE: Only use editor markers when the user explicitly asks you to write, edit, or modify content. For analysis, questions, or suggestions, respond naturally WITHOUT markers.
+
+When the user DOES ask to modify the document, use these markers:
 1. INSERT: [INSERT_INTO_EDITOR]content[/INSERT_INTO_EDITOR]
 2. DELETE: [DELETE_IN_EDITOR]exact text[/DELETE_IN_EDITOR]
 3. REPLACE: [REPLACE_IN_EDITOR]old|||new[/REPLACE_IN_EDITOR]
+
 Keep responses insightful but concise.${userName ? ` You are assisting ${userName}.` : ""}`;
     } else if (hasDocument) {
-      // EDITOR CONTEXT: full agentic writing partner with document access
-      systemMessage = `You are WorkContext, an intelligent writing assistant. You have access to the user's current document.${userName ? ` You are assisting ${userName}.` : ""}
-When you need to modify the document, use these markers:
+      // EDITOR CONTEXT: intelligent assistant with document access
+      // Only use editor markers when the user explicitly asks to write, edit, delete, or modify the document.
+      // For general questions, conversation, or analysis, respond naturally WITHOUT any editor markers.
+      systemMessage = `You are WorkContext, an intelligent assistant with access to the user's current document.${userName ? ` You are assisting ${userName}.` : ""}
+
+CRITICAL RULE: Only use editor markers when the user explicitly asks you to write, edit, delete, or modify content in the document. For general questions, conversation, analysis, or help, respond naturally WITHOUT any editor markers.
+
+When the user DOES ask to modify the document, use these markers:
 1. INSERT: [INSERT_INTO_EDITOR]content[/INSERT_INTO_EDITOR]
 2. DELETE: [DELETE_IN_EDITOR]exact text[/DELETE_IN_EDITOR]
 3. REPLACE: [REPLACE_IN_EDITOR]exact old text|||new text[/REPLACE_IN_EDITOR]
+
 Keep chat brief — confirm, then markers. Don't announce your capabilities, just help naturally.`;
     } else {
       // GENERAL CHAT: like ChatGPT or Gemini — friendly, knowledgeable, conversational
@@ -3168,4 +3178,3 @@ ${formattedResults}
     }
   }
 }
-

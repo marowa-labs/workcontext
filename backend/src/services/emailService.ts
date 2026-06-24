@@ -175,7 +175,7 @@ export class EmailService {
               </ul>
 
               <div style="margin: 30px 0; text-align: center;">
-                <a href="http://workcontext.vercel.app/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   Get Started
                 </a>
               </div>
@@ -309,7 +309,7 @@ export class EmailService {
               </p>
 
               <div style="margin: 30px 0;">
-                <a href="http://workcontext.vercel.app/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   View in Dashboard
                 </a>
               </div>
@@ -623,7 +623,7 @@ export class EmailService {
               </p>
 
               <div style="margin: 30px 0;">
-                <a href="http://workcontext.vercel.app/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   Update Payment Method
                 </a>
               </div>
@@ -690,7 +690,7 @@ export class EmailService {
               </p>
 
               <div style="margin: 30px 0;">
-                <a href="http://workcontext.vercel.app/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   Reactivate Subscription
                 </a>
               </div>
