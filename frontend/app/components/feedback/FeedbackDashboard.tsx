@@ -73,6 +73,7 @@ const FeedbackDashboard: React.FC = () => {
     description: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -104,13 +105,14 @@ const FeedbackDashboard: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setSubmitSuccess(false);
     try {
       // Collect browser and OS information
       const browserInfo = navigator.userAgent;
       const osInfo = navigator.platform;
       const screenSize = `${window.screen.width}x${window.screen.height}`;
 
-      await FeedbackService.createFeedback({
+      const submittedFeedback = await FeedbackService.createFeedback({
         type: newFeedback.type,
         category: newFeedback.category || undefined,
         priority: newFeedback.priority,
@@ -121,10 +123,13 @@ const FeedbackDashboard: React.FC = () => {
         screen_size: screenSize,
       });
 
-      toast({
-        title: "Success",
-        description: "Your feedback has been submitted successfully",
-      });
+      // Show success state
+      setSubmitSuccess(true);
+
+      // Add the submitted feedback to the local list so it appears immediately
+      if (submittedFeedback) {
+        setFeedbackItems((prev) => [submittedFeedback, ...prev]);
+      }
 
       setNewFeedback({
         type: "feedback",
@@ -134,7 +139,7 @@ const FeedbackDashboard: React.FC = () => {
         description: "",
       });
 
-      // Refresh data
+      // Refresh data from server
       fetchData();
     } catch (error) {
       toast({
@@ -142,6 +147,7 @@ const FeedbackDashboard: React.FC = () => {
         description: "Failed to submit your feedback",
         variant: "destructive",
       });
+      setSubmitSuccess(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -265,12 +271,31 @@ const FeedbackDashboard: React.FC = () => {
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="space-y-6">
+            className="space-y-6"
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="submit">Submit Feedback</TabsTrigger>
               <TabsTrigger value="my-feedback">My Feedback</TabsTrigger>
             </TabsList>
+
+            {/* Success Banner */}
+            {submitSuccess && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <p className="text-green-700 dark:text-green-300 font-medium">
+                    Your feedback has been submitted successfully!
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSubmitSuccess(false)}
+                  className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            )}
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -370,7 +395,8 @@ const FeedbackDashboard: React.FC = () => {
                           description: "",
                         });
                         setActiveTab("submit");
-                      }}>
+                      }}
+                    >
                       <Bug className="w-4 h-4 mr-2" />
                       Report a Bug
                     </Button>
@@ -386,7 +412,8 @@ const FeedbackDashboard: React.FC = () => {
                           description: "",
                         });
                         setActiveTab("submit");
-                      }}>
+                      }}
+                    >
                       <Lightbulb className="w-4 h-4 mr-2" />
                       Request a Feature
                     </Button>
@@ -402,7 +429,8 @@ const FeedbackDashboard: React.FC = () => {
                           description: "",
                         });
                         setActiveTab("submit");
-                      }}>
+                      }}
+                    >
                       <MessageSquare className="w-4 h-4 mr-2" />
                       Share General Feedback
                     </Button>
@@ -479,7 +507,8 @@ const FeedbackDashboard: React.FC = () => {
                         value={newFeedback.type}
                         onValueChange={(value) =>
                           setNewFeedback({ ...newFeedback, type: value })
-                        }>
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select feedback type" />
                         </SelectTrigger>
@@ -509,14 +538,16 @@ const FeedbackDashboard: React.FC = () => {
                     <div className="space-y-2">
                       <Label
                         htmlFor="feedbackCategory"
-                        className="text-foreground">
+                        className="text-foreground"
+                      >
                         Category
                       </Label>
                       <Select
                         value={newFeedback.category}
                         onValueChange={(value) =>
                           setNewFeedback({ ...newFeedback, category: value })
-                        }>
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select category (optional)" />
                         </SelectTrigger>
@@ -537,14 +568,16 @@ const FeedbackDashboard: React.FC = () => {
                     <div className="space-y-2">
                       <Label
                         htmlFor="feedbackPriority"
-                        className="text-foreground">
+                        className="text-foreground"
+                      >
                         Priority
                       </Label>
                       <Select
                         value={newFeedback.priority}
                         onValueChange={(value) =>
                           setNewFeedback({ ...newFeedback, priority: value })
-                        }>
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
@@ -560,7 +593,8 @@ const FeedbackDashboard: React.FC = () => {
                     <div className="space-y-2">
                       <Label
                         htmlFor="feedbackTitle"
-                        className="text-foreground">
+                        className="text-foreground"
+                      >
                         Title *
                       </Label>
                       <Input
@@ -579,7 +613,8 @@ const FeedbackDashboard: React.FC = () => {
                     <div className="space-y-2">
                       <Label
                         htmlFor="feedbackDescription"
-                        className="text-foreground">
+                        className="text-foreground"
+                      >
                         Description *
                       </Label>
                       <Textarea
@@ -602,7 +637,8 @@ const FeedbackDashboard: React.FC = () => {
                         isSubmitting ||
                         !newFeedback.title.trim() ||
                         !newFeedback.description.trim()
-                      }>
+                      }
+                    >
                       {isSubmitting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -634,12 +670,17 @@ const FeedbackDashboard: React.FC = () => {
                       <h3 className="text-lg font-medium mb-2">
                         No feedback yet
                       </h3>
-                      <p className="text-muted-foreground">
-                        You haven't submitted any feedback.
+                      <p className="text-muted-foreground mb-2">
+                        You haven't submitted any feedback in this session.
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Note: Feature requests submitted without logging in
+                        won't appear here.
                       </p>
                       <Button
                         className="mt-4"
-                        onClick={() => setActiveTab("submit")}>
+                        onClick={() => setActiveTab("submit")}
+                      >
                         Submit Your First Feedback
                       </Button>
                     </div>
@@ -648,7 +689,8 @@ const FeedbackDashboard: React.FC = () => {
                       {feedbackItems.map((feedback) => (
                         <div
                           key={feedback.id}
-                          className="flex items-center justify-between p-4 border rounded-lg">
+                          className="flex items-center justify-between p-4 border rounded-lg"
+                        >
                           <div className="flex items-center space-x-4">
                             <div className="flex flex-col space-y-1">
                               {getTypeBadge(feedback.type)}

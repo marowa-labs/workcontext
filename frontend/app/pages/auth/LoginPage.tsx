@@ -423,7 +423,7 @@ const LoginPage: React.FC = () => {
             Terms of Service
           </Link>{" "}
           and{" "}
-          <Link href="/docs/privacy" className="text-blue-400 hover:underline">
+          <Link href="/legal/privacy" className="text-blue-400 hover:underline">
             Privacy Policy
           </Link>
         </p>

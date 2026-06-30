@@ -154,22 +154,11 @@ router.get("/export", async (req, res) => {
         .json({ error: "Project ID and User ID are required" });
     }
 
-    const validFormats = [
-      "pdf",
-      "docx",
-      "txt",
-      "tex",
-      "latex",
-      "rtf",
-      "journal-pdf",
-      "journal-latex",
-    ];
+    const validFormats = ["pdf", "docx", "txt"];
     if (!validFormats.includes(format)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid format. Supported: ${validFormats.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid format. Supported: ${validFormats.join(", ")}`,
+      });
     }
 
     const result = await ProjectServiceEnhanced.exportProject(

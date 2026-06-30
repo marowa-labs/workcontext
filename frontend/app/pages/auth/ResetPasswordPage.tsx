@@ -64,11 +64,22 @@ const ResetPasswordPage: React.FC = () => {
 
   const validateToken = async (resetCode: string) => {
     try {
-      // For Supabase, we don't have a direct equivalent to verifyPasswordResetCode
-      // We'll assume the token is valid and let the password reset operation fail if it's not
-      setIsValidToken(true);
+      // Verify the oobCode with Supabase to ensure it's valid
+      // Email is required by Supabase for recovery type OTP verification
+      const { error } = await supabase.auth.verifyOtp({
+        token: resetCode,
+        type: "recovery",
+        email: email || "",
+      });
+
+      if (error) {
+        console.error("Token validation failed:", error);
+        setIsValidToken(false);
+      } else {
+        setIsValidToken(true);
+      }
     } catch (error) {
-      console.error("Token validation failed:", error);
+      console.error("Token validation error:", error);
       setIsValidToken(false);
     }
   };
@@ -77,19 +88,30 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Use Supabase to reset password
       if (!oobCode) {
         throw new Error("Invalid reset code");
       }
 
-      // Supabase uses a different approach for password reset
-      // We need to set the new password using the reset token
-      const { error } = await supabase.auth.updateUser({
+      // First verify the oobCode to establish a recovery session
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token: oobCode,
+        type: "recovery",
+        email: email || "",
+      });
+
+      if (verifyError) {
+        throw new Error(
+          "This password reset link has expired or is invalid. Please request a new one.",
+        );
+      }
+
+      // Now update the password — recovery session is established
+      const { error: updateError } = await supabase.auth.updateUser({
         password: data.password,
       });
 
-      if (error) {
-        throw error;
+      if (updateError) {
+        throw updateError;
       }
 
       setIsSuccess(true);
@@ -107,7 +129,8 @@ const ResetPasswordPage: React.FC = () => {
       <AuthLayout
         title="Invalid or expired link"
         subtitle="This password reset link is no longer valid"
-        showSidebar={false}>
+        showSidebar={false}
+      >
         <div className="text-center space-y-6">
           {/* Warning Icon */}
           <div className="flex justify-center">
@@ -138,7 +161,8 @@ const ResetPasswordPage: React.FC = () => {
           {/* Request New Reset */}
           <Button
             asChild
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 btn-glow">
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 btn-glow"
+          >
             <Link href="/forgot-password">Request New Reset Link</Link>
           </Button>
 
@@ -146,7 +170,8 @@ const ResetPasswordPage: React.FC = () => {
           <div className="text-center">
             <Link
               href="/login"
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            >
               Back to login
             </Link>
           </div>
@@ -161,7 +186,8 @@ const ResetPasswordPage: React.FC = () => {
       <AuthLayout
         title="Password reset successful"
         subtitle="You can now sign in with your new password"
-        showSidebar={false}>
+        showSidebar={false}
+      >
         <div className="text-center space-y-6">
           {/* Success Icon */}
           <div className="flex justify-center">
@@ -198,7 +224,8 @@ const ResetPasswordPage: React.FC = () => {
           {/* Sign In Button */}
           <Button
             onClick={() => router.push("/login")}
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 btn-glow">
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 btn-glow"
+          >
             Sign In
           </Button>
         </div>
@@ -211,7 +238,8 @@ const ResetPasswordPage: React.FC = () => {
     <AuthLayout
       title="Set new password"
       subtitle="Create a strong password for your account"
-      showSidebar={false}>
+      showSidebar={false}
+    >
       <div className="space-y-6">
         {/* Icon */}
         <div className="flex justify-center">
@@ -275,7 +303,8 @@ const ResetPasswordPage: React.FC = () => {
           <Button
             type="submit"
             className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 btn-glow"
-            disabled={!isValid || isLoading}>
+            disabled={!isValid || isLoading}
+          >
             {isLoading ? (
               <div className="flex items-center space-x-2">
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -291,7 +320,8 @@ const ResetPasswordPage: React.FC = () => {
         <div className="text-center">
           <Link
             href="/login"
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+          >
             Back to login
           </Link>
         </div>

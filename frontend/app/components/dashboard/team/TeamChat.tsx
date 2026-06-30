@@ -32,7 +32,6 @@ interface TeamChatProps {
 export function TeamChat({
   workspaceId,
   projectId,
-  title = "Team Chat",
   className = "",
   onClose,
 }: TeamChatProps) {
@@ -72,38 +71,34 @@ export function TeamChat({
     loadMessages();
   }, [workspaceId, projectId, user, userLoading]);
 
-  // Real-time subscription
+  // Real-time subscription via Supabase Realtime broadcast
   useEffect(() => {
+    const channelName = `team-chat-${workspaceId || projectId}`;
     const channel = supabase
-      .channel(`team-chat-${workspaceId || projectId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "TeamChatMessage",
-          filter: workspaceId
-            ? `workspace_id=eq.${workspaceId}`
-            : `project_id=eq.${projectId}`,
-        },
-        async (payload) => {
-          // Fetch full message with user info instead of just the payload
-          // because the payload doesn't include the 'user' join data
-          const newMessageId = (payload.new as any).id;
-          try {
-            // We can't easily fetch just one with join via apiClient without a new route
-            // For now, let's refresh or push a partial (optimization later)
-            // Simpler for now: refresh the whole list to maintain order and threading
-            const data = await TeamChatService.getMessages({
-              workspaceId,
-              projectId,
-            });
-            setMessages(data);
-          } catch (err) {
-            console.error("Failed to refresh messages:", err);
-          }
-        },
-      )
+      .channel(channelName)
+      .on("broadcast", { event: "new_message" }, (payload) => {
+        const newMessage = payload.payload as any;
+        // Skip if this is our own optimistic message that was already added
+        if (newMessage && newMessage.id && !newMessage.id.startsWith("temp-")) {
+          setMessages((prev) => {
+            // Avoid duplicates
+            if (prev.some((m) => m.id === newMessage.id)) return prev;
+            return [
+              ...prev,
+              {
+                id: newMessage.id,
+                content: newMessage.content,
+                created_at: newMessage.created_at,
+                user_id: newMessage.user_id,
+                workspace_id: newMessage.workspace_id,
+                project_id: newMessage.project_id,
+                parent_id: newMessage.parent_id,
+                user: newMessage.user || null,
+              } as TeamChatMessage,
+            ];
+          });
+        }
+      })
       .on(
         "postgres_changes",
         {
@@ -137,16 +132,61 @@ export function TeamChat({
       const content = inputValue;
       setInputValue("");
 
-      await TeamChatService.sendMessage({
+      // Optimistically add message to UI immediately
+      const optimisticMessage: TeamChatMessage = {
+        id: `temp-${Date.now()}`,
+        content,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        user_id: user.id,
+        user: {
+          id: user.id,
+          full_name:
+            user.user_metadata?.full_name || user.user_metadata?.name || null,
+          email: user.email || "",
+        },
+        workspace_id: workspaceId,
+        project_id: projectId,
+        parent_id: replyTo?.id || undefined,
+      };
+      setMessages((prev) => [...prev, optimisticMessage]);
+      setReplyTo(null);
+
+      // Broadcast immediately via Supabase Realtime for instant delivery
+      const channelName = `team-chat-${workspaceId || projectId}`;
+      supabase.channel(channelName).send({
+        type: "broadcast",
+        event: "new_message",
+        payload: {
+          ...optimisticMessage,
+          workspace_id: workspaceId || null,
+          project_id: projectId || null,
+        },
+      });
+
+      const sentMessage = await TeamChatService.sendMessage({
         content,
         workspaceId,
         projectId,
         parentId: replyTo?.id,
       });
 
-      setReplyTo(null);
+      // Replace optimistic message with real one
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === optimisticMessage.id
+            ? {
+                ...sentMessage,
+                role: "user" as any,
+                user: sentMessage.user || optimisticMessage.user,
+              }
+            : m,
+        ),
+      );
     } catch (err) {
       console.error("Failed to send message:", err);
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
     }
   };
 
@@ -160,24 +200,8 @@ export function TeamChat({
 
   return (
     <div
-      className={`flex flex-col h-full bg-card border-l border-border ${className}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        </div>
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8">
-            <X className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-
+      className={`flex flex-col h-full bg-card border-l border-border ${className}`}
+    >
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
@@ -223,13 +247,15 @@ export function TeamChat({
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setReplyTo(msg)}
-                      className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1">
+                      className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1"
+                    >
                       <Reply className="w-3 h-3" /> Reply
                     </button>
                     {msg.user_id === user?.id && (
                       <button
                         onClick={() => handleDelete(msg.id)}
-                        className="text-[10px] text-muted-foreground hover:text-destructive flex items-center gap-1">
+                        className="text-[10px] text-muted-foreground hover:text-destructive flex items-center gap-1"
+                      >
                         <Trash2 className="w-3 h-3" /> Delete
                       </button>
                     )}
@@ -268,7 +294,8 @@ export function TeamChat({
           <Button
             type="submit"
             size="icon"
-            className="h-9 w-9 bg-primary hover:bg-primary/90 shrink-0">
+            className="h-9 w-9 bg-primary hover:bg-primary/90 shrink-0"
+          >
             <Send className="w-4 h-4" />
           </Button>
         </form>

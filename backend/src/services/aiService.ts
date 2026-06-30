@@ -971,13 +971,15 @@ Provide a helpful response.`;
             );
           }
           const result: any = await (openRouter as any).chat.send({
-            model: modelName,
-            messages: [
-              { role: "system", content: systemMessage },
-              { role: "user", content: prompt },
-            ],
-            maxTokens: 4096,
-            stream: false,
+            chatRequest: {
+              model: modelName,
+              messages: [
+                { role: "system", content: systemMessage },
+                { role: "user", content: prompt },
+              ],
+              maxTokens: 4096,
+              stream: false,
+            },
           });
           responseText = result?.choices?.[0]?.message?.content || "";
           tokensUsed = result?.usage?.totalTokens || 0;
@@ -1761,13 +1763,15 @@ Please provide a helpful response.`;
           }
 
           const result: any = await (openRouter as any).chat.send({
-            model: finalModelName,
-            messages: [
-              { role: "system", content: systemMessage },
-              { role: "user", content: prompt },
-            ],
-            maxTokens: 4096,
-            stream: false,
+            chatRequest: {
+              model: finalModelName,
+              messages: [
+                { role: "system", content: systemMessage },
+                { role: "user", content: prompt },
+              ],
+              maxTokens: 4096,
+              stream: false,
+            },
           });
 
           responseText = result?.choices?.[0]?.message?.content || "";
@@ -2338,7 +2342,7 @@ Please provide a helpful response.`;
             );
           }
 
-          const stream: any = await openRouter.chat.send({
+          const stream: any = await (openRouter as any).chat.send({
             chatRequest: {
               model: modelName,
               messages: [
@@ -3000,7 +3004,7 @@ ${formattedResults}
             throw new Error(
               "OpenRouter API key not configured. Please add your OpenRouter API key in AI Settings.",
             );
-          const stream = await orClient.chat.send({
+          const stream = await (orClient as any).chat.send({
             chatRequest: {
               model: normalizedModel,
               messages: [{ role: "user", content: prompt }],

@@ -50,7 +50,7 @@ export const getUserAccount = async (): Promise<ActualUserAccount> => {
     return response.user;
   } else {
     throw new Error(
-      response?.message || "Failed to fetch user account details"
+      response?.message || "Failed to fetch user account details",
     );
   }
 };
@@ -63,7 +63,7 @@ export const getUserAccount = async (): Promise<ActualUserAccount> => {
  */
 export const updateAccount = async (
   userId: string,
-  data: UpdateAccountData
+  data: UpdateAccountData,
 ): Promise<ActualUserAccount> => {
   try {
     // Send a request to update the account via API
@@ -83,13 +83,13 @@ export const updateAccount = async (
 
 /**
  * Change user password
- * @param userId The user ID
+ * @param userId The user ID (unused — kept for backwards compatibility)
  * @param data The password change data
  * @returns Promise resolving when password change is complete
  */
 export const changePassword = async (
   userId: string,
-  data: ChangePasswordData
+  data: ChangePasswordData,
 ): Promise<boolean> => {
   try {
     // Validate that new passwords match
@@ -98,13 +98,10 @@ export const changePassword = async (
     }
 
     // Send a request to change the password via API
-    const response = await apiClient.post(
-      `/api/users/${userId}/change-password`,
-      {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      }
-    );
+    const response = await apiClient.post("/api/users/change-password", {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    });
 
     return response.success || false;
   } catch (error) {
@@ -138,7 +135,7 @@ export const deleteAccount = async (password: string): Promise<boolean> => {
  * @returns Promise resolving to usage statistics
  */
 export const getAccountUsage = async (
-  userId: string
+  userId: string,
 ): Promise<{
   projects: number;
   storage: number;
@@ -184,7 +181,7 @@ export const updateAccountPreferences = async (
       push: boolean;
       inApp: boolean;
     };
-  }>
+  }>,
 ): Promise<any> => {
   try {
     // Send a request to update preferences via API
@@ -216,19 +213,19 @@ export const getUserPlan = async (): Promise<string> => {
  */
 export const hasFeatureAccess = async (
   userId: string,
-  feature: string
+  feature: string,
 ): Promise<boolean> => {
   try {
     // Check against plan-specific features via API
     const response = await apiClient.get(
-      `/api/users/${userId}/features/${feature}`
+      `/api/users/${userId}/features/${feature}`,
     );
 
     return response.hasAccess || false;
   } catch (error) {
     console.error(
       `Error checking feature access for user ${userId}, feature ${feature}:`,
-      error
+      error,
     );
     // Default to denying access in case of error
     return false;
@@ -242,9 +239,10 @@ export const hasFeatureAccess = async (
  */
 export const sendProfileOTP = async (data: any): Promise<boolean> => {
   try {
-    // Send an OTP to the user via API
+    // Send an OTP to the user via email
     const response = await apiClient.post("/api/auth/send-otp", {
       ...data,
+      method: "email",
       purpose: "profile_update",
     });
 
@@ -261,11 +259,11 @@ export const sendProfileOTP = async (data: any): Promise<boolean> => {
  * @returns Promise resolving when profile is updated
  */
 export const updateProfile = async (
-  data: UpdateAccountData
+  data: UpdateAccountData,
 ): Promise<ActualUserAccount> => {
   try {
-    // Get current user ID from auth context or session
-    const response = await apiClient.put("/api/users/profile", data);
+    // Use the main users endpoint for profile updates (including email change)
+    const response = await apiClient.put("/api/users", data);
 
     // Return the updated user account
     if (response && response.user) {
@@ -287,7 +285,7 @@ export const updateProfile = async (
  */
 export const updatePassword = async (
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<boolean> => {
   try {
     if (newPassword.length < 8) {

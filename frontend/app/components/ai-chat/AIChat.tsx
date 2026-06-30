@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "../ui/button";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+
 import {
   X,
   Copy,
@@ -22,6 +22,9 @@ import {
   AlertTriangle,
   ArrowRight,
   Loader2,
+  History,
+  MessageSquarePlus,
+  Clock,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -229,7 +232,6 @@ export function AIChatPanel({
   const [deepSearchEnabled, setDeepSearchEnabled] = useState(false);
   const [agentModeEnabled, setAgentModeEnabled] = useState(false);
   const [contextItems, setContextItems] = useState<string[]>([]);
-  const [showContextDropdown, setShowContextDropdown] = useState(false);
   const [includeDocument, setIncludeDocument] = useState(true);
   const [usageLimits, setUsageLimits] = useState({
     webSearches: { used: 0, limit: 0 },
@@ -400,16 +402,23 @@ export function AIChatPanel({
 
         // Add welcome message for new session
         console.log("User data in createSession:", user);
+        const cleanName = (name: string | undefined): string | null => {
+          if (!name) return null;
+          // If it looks like an email, extract the part before @
+          if (name.includes("@")) {
+            return name.split("@")[0];
+          }
+          return name;
+        };
         const userName =
-          user?.user_metadata?.name ||
-          user?.user_metadata?.full_name ||
-          user?.user_metadata?.first_name ||
-          user?.email ||
+          cleanName(user?.user_metadata?.full_name) ||
+          cleanName(user?.user_metadata?.name) ||
+          cleanName(user?.user_metadata?.first_name) ||
           "there";
         console.log("Determined userName:", userName);
         const welcomeMessage: ChatMessage = {
           id: "welcome-" + Date.now(),
-          content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
+          content: `Hello ${userName}! I'm WorkContext AI. How can I help you today?`,
           role: "assistant",
           message_type: "text",
           created_at: new Date().toISOString(),
@@ -451,16 +460,22 @@ export function AIChatPanel({
         console.log("User data in loadMessages:", user);
         if (chatMessages.length === 0) {
           console.log("No messages found, showing welcome message");
+          const cleanName = (name: string | undefined): string | null => {
+            if (!name) return null;
+            if (name.includes("@")) {
+              return name.split("@")[0];
+            }
+            return name;
+          };
           const userName =
-            user?.user_metadata?.name ||
-            user?.user_metadata?.full_name ||
-            user?.user_metadata?.first_name ||
-            user?.email ||
+            cleanName(user?.user_metadata?.full_name) ||
+            cleanName(user?.user_metadata?.name) ||
+            cleanName(user?.user_metadata?.first_name) ||
             "there";
           console.log("Determined userName:", userName);
           const welcomeMessage: ChatMessage = {
             id: "welcome-" + Date.now(),
-            content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
+            content: `Hello ${userName}! I'm WorkContext AI. How can I help you today?`,
             role: "assistant",
             message_type: "text",
             created_at: new Date().toISOString(),
@@ -517,16 +532,22 @@ export function AIChatPanel({
           await loadMessages(latestSession.id);
         } else {
           // No history, show welcome message
+          const cleanName = (name: string | undefined): string | null => {
+            if (!name) return null;
+            if (name.includes("@")) {
+              return name.split("@")[0];
+            }
+            return name;
+          };
           const userName =
-            user?.user_metadata?.name ||
-            user?.user_metadata?.full_name ||
-            user?.user_metadata?.first_name ||
-            user?.email ||
+            cleanName(user?.user_metadata?.full_name) ||
+            cleanName(user?.user_metadata?.name) ||
+            cleanName(user?.user_metadata?.first_name) ||
             "there";
 
           const welcomeMessage: ChatMessage = {
             id: "welcome-" + Date.now(),
-            content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
+            content: `Hello ${userName}! I'm WorkContext AI. How can I help you today?`,
             role: "assistant",
             message_type: "text",
             created_at: new Date().toISOString(),
@@ -625,11 +646,14 @@ export function AIChatPanel({
         }
       }
 
+      // Store the original user input for display (without context)
+      const userDisplayMessage = inputValue;
+
       // Add user message to chat IMMEDIATELY (before API call) for instant feedback
       const userMessage: ChatMessage = {
         id: `user-${Date.now()}`,
         role: "user",
-        content: inputValue,
+        content: userDisplayMessage,
         message_type: selectedImage ? "image" : "text",
         image_url: imageUrl || undefined,
         created_at: new Date().toISOString(),
@@ -639,7 +663,9 @@ export function AIChatPanel({
       setInputValue("");
       removeImage();
 
-      // Build the full message content with context
+      // Build the full message content with context for the AI backend
+      // The context is sent in metadata so the AI can see the document
+      // but it's NOT saved as the user's display message
       const contextString = buildContextString();
       const userContent = inputValue + contextString;
 
@@ -648,25 +674,9 @@ export function AIChatPanel({
       const liveDocContent = getFullDocumentText();
       const cursorContext = getContextBeforeCursor();
 
-      const messageData: any = {
-        sessionId: currentSessionId,
-        content: userContent,
-        messageType: hadImage ? "image" : "text",
-        imageUrl: imageUrl,
-        fileUrl: null,
-        metadata: {
-          webSearchEnabled,
-          deepSearchEnabled,
-          liveDocumentContent: liveDocContent,
-          cursorContext: cursorContext,
-          chatMode: chatMode,
-          contextItems: contextItems,
-          includeDocument: includeDocument,
-        },
-        model: currentModel,
-      };
-
       // Send message to backend using the chat endpoint that saves messages
+      // The backend receives the full context in userContent for AI processing
+      // but the user's display message (shown in chat) is just the original input
       const result = await apiClient.post(
         `/api/ai/chat/session/${currentSessionId}/messages`,
         {
@@ -681,6 +691,9 @@ export function AIChatPanel({
             liveDocumentContent: liveDocContent,
             cursorContext: cursorContext,
             chatMode: chatMode,
+            userDisplayMessage: userDisplayMessage,
+            contextItems: contextItems,
+            includeDocument: includeDocument,
           },
         },
       );
@@ -730,6 +743,26 @@ export function AIChatPanel({
               if (oldText && newText) {
                 replaceTextInEditor(editor, oldText, newText);
               }
+            }
+          }
+        }
+
+        // Agent Mode: If the AI response has NO editor markers, treat the entire
+        // response as content to insert into the editor at cursor position.
+        // This handles cases where the AI just writes content directly without
+        // using the [INSERT_INTO_EDITOR] markers.
+        const hasEditorMarkers =
+          aiResponse.includes("[INSERT_INTO_EDITOR]") ||
+          aiResponse.includes("[DELETE_IN_EDITOR]") ||
+          aiResponse.includes("[REPLACE_IN_EDITOR]");
+
+        if (!hasEditorMarkers && aiResponse.trim()) {
+          // Strip any markdown formatting for cleaner insertion
+          const cleanContent = stripEditorMarkers(aiResponse.trim());
+          if (cleanContent) {
+            const contentToInsert = formatContentForTiptap(cleanContent);
+            if (contentToInsert) {
+              editor.chain().focus().insertContent(contentToInsert).run();
             }
           }
         }
@@ -850,14 +883,21 @@ export function AIChatPanel({
 
           // Show welcome message if no messages
           if (chatMessages.length === 0) {
+            const cleanName = (name: string | undefined): string | null => {
+              if (!name) return null;
+              if (name.includes("@")) {
+                return name.split("@")[0];
+              }
+              return name;
+            };
             const userName =
-              user?.user_metadata?.name ||
-              user?.user_metadata?.full_name ||
-              user?.email ||
+              cleanName(user?.user_metadata?.full_name) ||
+              cleanName(user?.user_metadata?.name) ||
+              cleanName(user?.user_metadata?.first_name) ||
               "there";
             const welcomeMessage: ChatMessage = {
               id: "welcome-" + Date.now(),
-              content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
+              content: `Hello ${userName}! I'm WorkContext AI. How can I help you today?`,
               role: "assistant",
               message_type: "text",
               created_at: new Date().toISOString(),
@@ -874,14 +914,21 @@ export function AIChatPanel({
           setSessions([session]);
 
           // Add welcome message
+          const cleanName = (name: string | undefined): string | null => {
+            if (!name) return null;
+            if (name.includes("@")) {
+              return name.split("@")[0];
+            }
+            return name;
+          };
           const userName =
-            user?.user_metadata?.name ||
-            user?.user_metadata?.full_name ||
-            user?.email ||
+            cleanName(user?.user_metadata?.full_name) ||
+            cleanName(user?.user_metadata?.name) ||
+            cleanName(user?.user_metadata?.first_name) ||
             "there";
           const welcomeMessage: ChatMessage = {
             id: "welcome-" + Date.now(),
-            content: `Hello ${userName}! I'm WorkContext. How can I help you with your research paper today?`,
+            content: `Hello ${userName}! I'm WorkContext AI. How can I help you today?`,
             role: "assistant",
             message_type: "text",
             created_at: new Date().toISOString(),
@@ -1112,6 +1159,21 @@ export function AIChatPanel({
     return "..." + allBefore.slice(-2000);
   };
 
+  // Helper to format relative time
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
+
   // Original functionality preserved
   const getDocumentContext = () => {
     if (!editor || !editor.state || !editor.state.doc) return "";
@@ -1328,123 +1390,141 @@ export function AIChatPanel({
         lineHeight: responsiveLineHeight,
       }}
     >
-      {/* Sessions Modal */}
+      {/* Sessions History Sidebar */}
       {showSessions && (
-        <div className="absolute inset-y-4 right-4 bg-white z-10 flex flex-col shadow-lg border border-white rounded-lg w-96 overflow-x-hidden">
+        <>
+          {/* Backdrop */}
           <div
-            className="p-4 border-b border-white"
-            style={{
-              fontSize: "inherit",
-              lineHeight: "inherit",
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <h3
-                className="font-semibold"
-                style={{
-                  fontSize: "inherit",
-                  lineHeight: "inherit",
-                }}
-              >
-                Chat Sessions
-              </h3>
-              <button
-                onClick={() => setShowSessions(false)}
-                className="p-1 rounded hover:bg-gray-100"
-                style={{
-                  fontSize: "inherit",
-                  lineHeight: "inherit",
-                }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          <div
-            className="flex-1 overflow-y-auto p-4 overflow-x-hidden"
-            style={{
-              fontSize: "inherit",
-              lineHeight: "inherit",
-            }}
-          >
-            <div className="mb-4">
-              <input
-                type="text"
-                value={newSessionTitle}
-                onChange={(e) => setNewSessionTitle(e.target.value)}
-                placeholder="New session title"
-                className="w-full px-3 py-2 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={!hasAccess}
-                style={{
-                  fontSize: "inherit",
-                  lineHeight: "inherit",
-                }}
-              />
-              <button
-                onClick={handleCreateNewSession}
-                className="mt-2 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center disabled:opacity-50"
-                disabled={!hasAccess}
-                style={{
-                  fontSize: "inherit",
-                  lineHeight: "inherit",
-                }}
-              >
-                <Plus size={16} className="mr-2" />
-                Create New Session
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={`p-3 rounded-lg border cursor-pointer flex justify-between items-center ${
-                    sessionId === session.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-white hover:bg-gray-50"
-                  }`}
-                  onClick={() => switchSession(session)}
+            className="absolute inset-0 bg-black/20 z-20"
+            onClick={() => setShowSessions(false)}
+          />
+          {/* Sidebar Panel */}
+          <div className="absolute inset-y-0 right-0 bg-white z-30 flex flex-col shadow-2xl border-l border-gray-200 w-[360px] max-w-[90%]">
+            {/* Header */}
+            <div className="shrink-0 p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <History size={18} className="text-blue-600" />
+                  Chat History
+                </h3>
+                <button
+                  onClick={() => setShowSessions(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                  <div
-                    style={{
-                      fontSize: "inherit",
-                      lineHeight: "inherit",
-                    }}
-                  >
-                    <div
-                      className="font-medium"
-                      style={{
-                        fontSize: "inherit",
-                        lineHeight: "inherit",
-                      }}
-                    >
-                      {session.title}
-                    </div>
-                    <div
-                      className="text-xs text-black"
-                      style={{
-                        fontSize: `${responsiveExtraSmallFontSize}px`,
-                        lineHeight: "inherit",
-                      }}
-                    >
-                      {new Date(session.last_message_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSession(session.id);
-                    }}
-                    className="p-1 text-red-500 hover:bg-red-100 rounded"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <X size={16} />
+                </button>
+              </div>
+              {/* New Session Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newSessionTitle}
+                  onChange={(e) => setNewSessionTitle(e.target.value)}
+                  placeholder="New session title..."
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                  disabled={!hasAccess}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newSessionTitle.trim()) {
+                      handleCreateNewSession();
+                    }
+                  }}
+                />
+                <button
+                  onClick={handleCreateNewSession}
+                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                  disabled={!hasAccess || !newSessionTitle.trim()}
+                  title="Create new session"
+                >
+                  <MessageSquarePlus size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Sessions List */}
+            <div className="flex-1 overflow-y-auto p-3">
+              {sessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <Clock size={40} className="mb-3 opacity-50" />
+                  <p className="text-sm font-medium">No chat sessions yet</p>
+                  <p className="text-xs mt-1">
+                    Start a new conversation to see it here
+                  </p>
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-2">
+                  {sessions.map((session) => {
+                    const isActive = sessionId === session.id;
+                    const lastDate = new Date(session.last_message_at);
+                    const timeAgo = getTimeAgo(lastDate);
+                    return (
+                      <div
+                        key={session.id}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                          isActive
+                            ? "border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200"
+                            : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                        }`}
+                        onClick={() => switchSession(session)}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              {isActive && (
+                                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                              )}
+                              <span className="font-medium text-sm text-gray-900 truncate">
+                                {session.title}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className="text-xs text-gray-400">
+                                {timeAgo}
+                              </span>
+                              <span className="text-xs text-gray-300">•</span>
+                              <span className="text-xs text-gray-400">
+                                {lastDate.toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSession(session.id);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete session"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="shrink-0 p-3 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => {
+                  setNewSessionTitle("");
+                  handleCreateNewSession();
+                }}
+                className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
+                disabled={!hasAccess}
+              >
+                <Plus size={16} />
+                New Chat Session
+              </button>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Error message */}
@@ -1603,9 +1683,22 @@ export function AIChatPanel({
       )}
 
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Mode Selector */}
-        <div className="shrink-0 p-3 border-b border-border">
+        {/* Mode Selector + History Button */}
+        <div className="shrink-0 p-3 border-b border-border flex items-center justify-between gap-2">
           <ChatModeSelector mode={chatMode} onChange={setChatMode} />
+          <button
+            type="button"
+            onClick={() => setShowSessions(!showSessions)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+              showSessions
+                ? "bg-blue-100 text-blue-700 border border-blue-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
+            }`}
+            title="Chat history"
+          >
+            <History size={14} />
+            History
+          </button>
         </div>
         <div
           ref={messagesContainerRef}
@@ -1615,28 +1708,11 @@ export function AIChatPanel({
             <div
               key={message.id}
               className={cn(
-                "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
-                message.role === "user" ? "flex-row-reverse" : "",
+                "flex animate-in fade-in slide-in-from-bottom-2 duration-300",
+                message.role === "user" ? "justify-end" : "justify-start",
               )}
             >
-              <Avatar className="h-7 w-7 shrink-0">
-                <AvatarFallback
-                  className={
-                    message.role === "assistant"
-                      ? "bg-green-500 text-white font-bold"
-                      : "bg-gray-500 text-white font-bold"
-                  }
-                >
-                  {message.role === "assistant" ? "AI" : "U"}
-                </AvatarFallback>
-              </Avatar>
-
-              <div
-                className={cn(
-                  "min-w-0",
-                  message.role === "assistant" ? "flex-1 mr-4" : "max-w-[85%]",
-                )}
-              >
+              <div className={cn("max-w-[80%]")}>
                 <div
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm shadow-sm",
@@ -1797,12 +1873,7 @@ export function AIChatPanel({
           ))}
 
           {isLoading && (
-            <div className="flex gap-3">
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  AI
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex justify-start">
               <div className="bg-card text-card-foreground border border-border rounded-lg px-3 py-2">
                 <div className="flex gap-1">
                   <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce" />

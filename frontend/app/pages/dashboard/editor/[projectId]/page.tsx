@@ -589,7 +589,7 @@ export default function EditorPage() {
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
         isCreating={isCreatingProject}
-        onConfirm={async (prompt, outlineType) => {
+        onConfirm={async (prompt, outlineType, workspaceId) => {
           try {
             setIsCreatingProject(true);
 
@@ -620,11 +620,12 @@ export default function EditorPage() {
               initialContent = prompt ? `<h1>${prompt}</h1><p></p>` : "";
             }
 
-            // Create project
+            // Create project — include workspace_id if selected
             const newProject = await ProjectService.createProject({
               userId,
               title: prompt || "Untitled Document",
               content: initialContent,
+              ...(workspaceId ? { workspace_id: workspaceId } : {}),
             });
 
             // Refresh and switch
@@ -665,6 +666,7 @@ export default function EditorPage() {
         {viewMode === "write" ? (
           project && documentId && user?.id ? (
             <MainEditor
+              key={`${documentId}-${isTeamProject ? "collab" : "solo"}`}
               project={project}
               documentId={documentId}
               userId={user.id}
@@ -759,7 +761,6 @@ export default function EditorPage() {
             {rightPanel === "team-chat" && (
               <TeamChat
                 projectId={documentId}
-                title="Project Chat"
                 onClose={() => setRightPanel(null)}
               />
             )}

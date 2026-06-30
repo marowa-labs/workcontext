@@ -1,43 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lock, MapPin, Shield, Download, Trash2 } from "lucide-react";
-
-import PrivacySettingsService, {
-  PrivacySettings,
-} from "../../../lib/utils/privacySettingsService";
+import { Lock, Shield, Download, Trash2 } from "lucide-react";
+import { PrivacySettings } from "../../../lib/utils/privacySettingsService";
 import { useToast } from "../../../hooks/use-toast";
-
-interface Session {
-  id: string;
-  user_id: string;
-  device_info: string;
-  ip_address: string;
-  location: string | null;
-  last_active: string;
-  is_current: boolean;
-  created_at: string;
-  expires_at: string;
-  browser: string;
-  device: string;
-  lastActive: Date;
-  current: boolean;
-}
-
-interface LoginHistoryItem {
-  id: string;
-  user_id: string;
-  ip_address: string;
-  device_info: string;
-  location: string | null;
-  status: string;
-  error_code: string | null;
-  created_at: string;
-  date: Date;
-  device: string;
-  browser: string;
-  ip: string;
-}
 
 const PrivacySettingsPage: React.FC = () => {
   const { toast } = useToast();
@@ -87,13 +53,6 @@ const PrivacySettingsPage: React.FC = () => {
     console.log("Refreshing privacy settings");
   };
 
-  // Real data for sessions and login history
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loginHistory, setLoginHistory] = useState<LoginHistoryItem[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(true);
-  const [loginHistoryLoading, setLoginHistoryLoading] = useState(true);
-  const [sessionOperationLoading, setSessionOperationLoading] = useState(false);
-
   // State for tracking when settings are being updated
   const [updatingSettings, setUpdatingSettings] = useState(false);
 
@@ -125,122 +84,6 @@ const PrivacySettingsPage: React.FC = () => {
     }
   };
 
-  // Fetch real session data
-  useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        setSessionsLoading(true);
-        const sessionData = await PrivacySettingsService.getUserSessions();
-
-        // Check if sessionData is valid before mapping
-        if (Array.isArray(sessionData)) {
-          // Transform backend data to match our interface
-          const transformedSessions: Session[] = sessionData.map((session) => ({
-            ...session,
-            device: session.device_info.split(" ")[0] || "Unknown Device",
-            browser: session.device_info.split(" ")[1] || "Unknown Browser",
-            lastActive: new Date(session.last_active),
-            current: session.is_current,
-          }));
-
-          setSessions(transformedSessions);
-        } else {
-          // Set empty array if no data or invalid data
-          setSessions([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch sessions:", err);
-        // Set empty array on error
-        setSessions([]);
-      } finally {
-        setSessionsLoading(false);
-      }
-    };
-
-    const fetchLoginHistory = async () => {
-      try {
-        setLoginHistoryLoading(true);
-        const loginData = await PrivacySettingsService.getLoginHistory();
-
-        // Check if loginData is valid before mapping
-        if (Array.isArray(loginData)) {
-          // Transform backend data to match our interface
-          const transformedLoginHistory: LoginHistoryItem[] = loginData.map(
-            (login) => ({
-              ...login,
-              date: new Date(login.created_at),
-              device: login.device_info.split(" ")[0] || "Unknown Device",
-              browser: login.device_info.split(" ")[1] || "Unknown Browser",
-              ip: login.ip_address,
-            }),
-          );
-
-          setLoginHistory(transformedLoginHistory);
-        } else {
-          // Set empty array if no data or invalid data
-          setLoginHistory([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch login history:", err);
-        // Set empty array on error
-        setLoginHistory([]);
-      } finally {
-        setLoginHistoryLoading(false);
-      }
-    };
-
-    fetchSessions();
-    fetchLoginHistory();
-  }, []);
-
-  const handleSignOutSession = async (id: string) => {
-    setSessionOperationLoading(true);
-    try {
-      await PrivacySettingsService.endSession(id);
-      setSessions(sessions.filter((session) => session.id !== id));
-      toast({
-        title: "Session Ended",
-        description: "The session has been successfully ended.",
-      });
-    } catch (err) {
-      console.error("Failed to end session:", err);
-      toast({
-        title: "Session End Failed",
-        description: "Failed to end the session. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSessionOperationLoading(false);
-    }
-  };
-
-  const handleSignOutAll = async () => {
-    setSessionOperationLoading(true);
-    try {
-      // End all non-current sessions
-      const nonCurrentSessions = sessions.filter((session) => !session.current);
-      await Promise.all(
-        nonCurrentSessions.map((session) =>
-          PrivacySettingsService.endSession(session.id),
-        ),
-      );
-      setSessions(sessions.filter((session) => session.current));
-      toast({
-        title: "Sessions Ended",
-        description: "All other sessions have been successfully ended.",
-      });
-    } catch (err) {
-      console.error("Failed to end all sessions:", err);
-      toast({
-        title: "Session End Failed",
-        description: "Failed to end all sessions. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSessionOperationLoading(false);
-    }
-  };
-
   const getStatusBadge = (status: "success" | "failed") => {
     return status === "success" ? (
       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
@@ -268,7 +111,8 @@ const PrivacySettingsPage: React.FC = () => {
           <div className="text-red-800">Error: {error}</div>
           <button
             onClick={refreshSettings}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
             Retry
           </button>
         </div>
@@ -347,7 +191,8 @@ const PrivacySettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="public"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     <span className="font-medium">Public</span>
                     <p className="text-muted-foreground">
                       Anyone can see your profile
@@ -371,7 +216,8 @@ const PrivacySettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="collaborators"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     <span className="font-medium">Collaborators</span>
                     <p className="text-muted-foreground">
                       Only people you work with
@@ -393,7 +239,8 @@ const PrivacySettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="private"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     <span className="font-medium">Private</span>
                     <p className="text-muted-foreground">
                       Only you can see your profile
@@ -425,7 +272,8 @@ const PrivacySettingsPage: React.FC = () => {
                     }
                     className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                       mockSettings.show_activity ? "bg-blue-600" : "bg-gray-200"
-                    }`}>
+                    }`}
+                  >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                         mockSettings.show_activity
@@ -456,7 +304,8 @@ const PrivacySettingsPage: React.FC = () => {
                       mockSettings.show_location_in_document
                         ? "bg-blue-600"
                         : "bg-gray-200"
-                    }`}>
+                    }`}
+                  >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                         mockSettings.show_location_in_document
@@ -486,7 +335,8 @@ const PrivacySettingsPage: React.FC = () => {
                 }
                 className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                   mockSettings.search_indexing ? "bg-blue-600" : "bg-gray-200"
-                }`}>
+                }`}
+              >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                     mockSettings.search_indexing
@@ -531,7 +381,8 @@ const PrivacySettingsPage: React.FC = () => {
                 }
                 className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                   mockSettings.share_analytics ? "bg-blue-600" : "bg-gray-200"
-                }`}>
+                }`}
+              >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                     mockSettings.share_analytics
@@ -561,7 +412,8 @@ const PrivacySettingsPage: React.FC = () => {
                   mockSettings.share_crash_reports
                     ? "bg-blue-600"
                     : "bg-gray-200"
-                }`}>
+                }`}
+              >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                     mockSettings.share_crash_reports
@@ -591,7 +443,8 @@ const PrivacySettingsPage: React.FC = () => {
                   mockSettings.third_party_cookies
                     ? "bg-blue-600"
                     : "bg-gray-200"
-                }`}>
+                }`}
+              >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                     mockSettings.third_party_cookies
@@ -637,7 +490,8 @@ const PrivacySettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="doc-private"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     <span className="font-medium">Private</span>
                     <p className="text-muted-foreground">
                       Only you can access (default)
@@ -659,7 +513,8 @@ const PrivacySettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="doc-unlisted"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     <span className="font-medium">Unlisted</span>
                     <p className="text-muted-foreground">Anyone with link</p>
                   </label>
@@ -677,7 +532,8 @@ const PrivacySettingsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="doc-public"
-                    className="ml-3 block text-sm text-foreground">
+                    className="ml-3 block text-sm text-foreground"
+                  >
                     <span className="font-medium">Public</span>
                     <p className="text-muted-foreground">
                       Anyone can find and view
@@ -705,7 +561,8 @@ const PrivacySettingsPage: React.FC = () => {
                   }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                     mockSettings.auto_save ? "bg-blue-600" : "bg-gray-200"
-                  }`}>
+                  }`}
+                >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                       mockSettings.auto_save ? "translate-x-6" : "translate-x-1"
@@ -731,7 +588,8 @@ const PrivacySettingsPage: React.FC = () => {
                   }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                     mockSettings.offline_mode ? "bg-blue-600" : "bg-gray-200"
-                  }`}>
+                  }`}
+                >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                       mockSettings.offline_mode
@@ -740,221 +598,6 @@ const PrivacySettingsPage: React.FC = () => {
                     }`}
                   />
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Security Settings */}
-        <div className="bg-card rounded-xl shadow-sm border border-border">
-          <div className="p-6 border-b border-border flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-foreground">
-              Security Settings
-            </h2>
-            {updatingSettings && (
-              <div className="flex items-center text-sm text-red-600 dark:text-red-400">
-                <div className="animate-spin h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full mr-2"></div>
-                <span>Saving...</span>
-              </div>
-            )}
-          </div>
-
-          <div className="p-6 space-y-6">
-            {/* Session Management */}
-            <div>
-              <h3 className="font-medium text-foreground mb-3">
-                Active Sessions
-              </h3>
-              {sessionsLoading ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-3">
-                    {sessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className="flex items-center justify-between p-3 border border-border rounded-lg">
-                        <div>
-                          <div className="flex items-center">
-                            <span className="font-medium text-foreground">
-                              {session.device} - {session.browser}
-                            </span>
-                            {session.current && (
-                              <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                This Device
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {session.location}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Last active: {session.lastActive.toLocaleString()}
-                          </p>
-                        </div>
-                        {!session.current && (
-                          <button
-                            onClick={() => handleSignOutSession(session.id)}
-                            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center"
-                            disabled={sessionOperationLoading}>
-                            {sessionOperationLoading && (
-                              <div className="animate-spin h-3 w-3 border border-red-600 border-t-transparent rounded-full mr-1"></div>
-                            )}
-                            Sign Out
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4">
-                    <button
-                      onClick={handleSignOutAll}
-                      className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center"
-                      disabled={sessionsLoading || sessionOperationLoading}>
-                      {sessionOperationLoading && (
-                        <div className="animate-spin h-3 w-3 border border-red-600 border-t-transparent rounded-full mr-1"></div>
-                      )}
-                      Sign Out All Other Devices
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Login History */}
-            <div>
-              <h3 className="font-medium text-black mb-3">Login History</h3>
-              {loginHistoryLoading ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                          Date/Time
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                          Device/Browser
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                          Location
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                          IP Address
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {loginHistory.map((login) => (
-                        <tr key={login.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.date.toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.device} - {login.browser}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.location || "Unknown"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.ip}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {getStatusBadge(
-                              login.status as "success" | "failed",
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Security Alerts */}
-            <div>
-              <h3 className="font-medium text-black mb-3">Security Alerts</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="font-medium text-black">
-                      Email me about unusual login attempts
-                    </label>
-                    <p className="text-sm text-black">
-                      Get notified when we detect suspicious activity
-                    </p>
-                  </div>
-                  <button
-                    onClick={() =>
-                      updateSettingWithFeedback({
-                        email_unusual_logins:
-                          !mockSettings.email_unusual_logins,
-                      })
-                    }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                      mockSettings.email_unusual_logins
-                        ? "bg-blue-600"
-                        : "bg-gray-200"
-                    }`}>
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        mockSettings.email_unusual_logins
-                          ? "translate-x-6"
-                          : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="font-medium text-black">
-                      Notify me of new device logins
-                    </label>
-                    <p className="text-sm text-black">
-                      Get notified when you sign in from a new device
-                    </p>
-                  </div>
-                  <button
-                    onClick={() =>
-                      updateSettingWithFeedback({
-                        notify_new_devices: !mockSettings.notify_new_devices,
-                      })
-                    }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                      mockSettings.notify_new_devices
-                        ? "bg-blue-600"
-                        : "bg-gray-200"
-                    }`}>
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        mockSettings.notify_new_devices
-                          ? "translate-x-6"
-                          : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -992,7 +635,8 @@ const PrivacySettingsPage: React.FC = () => {
                         "Your data export has started. You'll receive an email when it's ready.",
                     });
                   }}
-                  className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700">
+                  className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
                   Export Data
                 </button>
               </div>
@@ -1013,7 +657,8 @@ const PrivacySettingsPage: React.FC = () => {
                         "Your data export has started. You'll receive an email when it's ready.",
                     });
                   }}
-                  className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700">
+                  className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
                   Export Data
                 </button>
               </div>
@@ -1035,7 +680,8 @@ const PrivacySettingsPage: React.FC = () => {
                       variant: "destructive",
                     });
                   }}
-                  className="mt-3 text-sm font-medium text-red-600 hover:text-red-700">
+                  className="mt-3 text-sm font-medium text-red-600 hover:text-red-700"
+                >
                   Delete Account
                 </button>
               </div>

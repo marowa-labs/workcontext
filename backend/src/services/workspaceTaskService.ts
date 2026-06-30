@@ -11,6 +11,7 @@ export interface TaskData {
   priority?: string;
   due_date?: Date;
   assignee_ids?: string[]; // Multiple Assignees
+  actorUserId?: string; // User performing the action (for notifications)
 
   // Recurrence fields
   is_recurring?: boolean;
@@ -601,6 +602,10 @@ export class WorkspaceTaskService {
         }
       }
 
+      // Notify workspace members about new task
+      const { notifyTaskCreated } = require("./workspaceActivityService");
+      await notifyTaskCreated(task.id, creatorId);
+
       // Broadcast real-time event
       try {
         const ns = getNotificationServer();
@@ -624,6 +629,14 @@ export class WorkspaceTaskService {
    */
   static async updateTask(taskId: string, data: Partial<TaskData>) {
     try {
+      // Capture old values for change detection
+      const oldTask = await prisma.workspaceTask.findUnique({
+        where: { id: taskId },
+        select: { status: true, priority: true },
+      });
+      const oldStatus = oldTask?.status;
+      const oldPriority = oldTask?.priority;
+
       let newlyAssignedUserIds: string[] = [];
 
       // If assignee_ids is provided, we need to handle the update carefully
@@ -696,6 +709,32 @@ export class WorkspaceTaskService {
         }
       }
 
+      // Notify on status change
+      if (data.status && oldStatus && data.status !== oldStatus) {
+        const {
+          notifyTaskStatusChanged,
+        } = require("./workspaceActivityService");
+        await notifyTaskStatusChanged(
+          taskId,
+          oldStatus,
+          data.status,
+          data.actorUserId || updatedTask.creator_id,
+        );
+      }
+
+      // Notify on priority change
+      if (data.priority && oldPriority && data.priority !== oldPriority) {
+        const {
+          notifyTaskPriorityChanged,
+        } = require("./workspaceActivityService");
+        await notifyTaskPriorityChanged(
+          taskId,
+          oldPriority,
+          data.priority,
+          data.actorUserId || updatedTask.creator_id,
+        );
+      }
+
       // Broadcast real-time event
       try {
         const ns = getNotificationServer();
@@ -717,17 +756,28 @@ export class WorkspaceTaskService {
   /**
    * Delete a task
    */
-  static async deleteTask(taskId: string) {
+  static async deleteTask(taskId: string, actorUserId?: string) {
     try {
-      // Get task info before deletion to know the workspace ID
+      // Get task info before deletion
       const task = await prisma.workspaceTask.findUnique({
         where: { id: taskId },
-        select: { workspace_id: true },
+        select: { workspace_id: true, title: true },
       });
 
       await prisma.workspaceTask.delete({
         where: { id: taskId },
       });
+
+      // Notify workspace members
+      if (task) {
+        const { notifyTaskDeleted } = require("./workspaceActivityService");
+        await notifyTaskDeleted(
+          taskId,
+          task.title,
+          task.workspace_id,
+          actorUserId || "",
+        );
+      }
 
       // Broadcast real-time event
       if (task) {

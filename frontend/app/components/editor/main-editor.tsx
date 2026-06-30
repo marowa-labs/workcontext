@@ -41,6 +41,7 @@ import {
   FootnoteContentExtension,
 } from "./FootnoteExtension"; // Import useCollaborationPresence hook
 import { SettingsModal, defaultSettings } from "./settings-modal";
+import ProjectService from "../../lib/utils/projectService";
 import { ImageUploadModal } from "./image-upload-modal";
 import { KeyboardShortcutsModal } from "./keyboard-shortcuts-modal";
 import DocumentHistory from "./DocumentHistory"; // Import DocumentHistory modal
@@ -99,7 +100,6 @@ import { MathExtension } from "./MathExtension"; // Add new import
 import { MentionExtension } from "../../lib/utils/mentionExtension";
 import { useMentions } from "../mentions/useMentions";
 import { MentionSuggestionList } from "../mentions/MentionSuggestionList";
-import { TaskExtractionToolbar } from "./TaskExtractionToolbar";
 
 const lowlight = createLowlight(common);
 
@@ -425,45 +425,7 @@ export const MainEditor = forwardRef<
           FootnoteExtension,
           FootnoteContentExtension,
           AIAutocompleteExtension.configure({
-            onSuggestion: ({
-              suggestion,
-              position,
-            }: {
-              suggestion: string;
-              position: number;
-            }) => {
-              setAutocompleteSuggestion({ text: suggestion, position });
-            },
-            getResearchContext: async () => {
-              // 1. Fetch library for this user
-              // We use a small optimization to not fetch if not needed, handled by extension debounce
-              try {
-                // Dynamically import to avoid circular deps if any
-                const { ResearchService } =
-                  await import("../../lib/utils/researchService");
-                const library = await ResearchService.getUserLibrary();
-
-                if (!library || library.length === 0) return null;
-
-                // 2. Format top 5 most relevant (or just recent for now)
-                const context = library
-                  .slice(0, 5)
-                  .map(
-                    (source: any) =>
-                      `[Source: ${source.title} (${source.year || "n.d."})] ${
-                        source.abstract
-                          ? source.abstract.substring(0, 200) + "..."
-                          : ""
-                      }`,
-                  )
-                  .join("\n\n");
-
-                return `Reference Context from user library:\n${context}`;
-              } catch (e) {
-                console.error("Error getting research context", e);
-                return null;
-              }
-            },
+            isEnabled: true,
           }),
 
           SpellCheckExtension.configure({
@@ -479,7 +441,7 @@ export const MainEditor = forwardRef<
             },
           } as any),
           GrammarCheckingExtension.configure({
-            debounceTime: 5000,
+            debounceTime: 30000,
           }),
           AuthorBlockExtension,
           AuthorExtension,
@@ -520,11 +482,12 @@ export const MainEditor = forwardRef<
               ]
             : []),
         ],
-        content: provider // When collaborative, leave content undefined to let Y.js load it
-          ? undefined
-          : project
-            ? initialContent
-            : { type: "doc", content: [{ type: "paragraph" }] },
+        content:
+          provider && isProviderReady // When collaborative and synced, leave content undefined to let Y.js load it
+            ? undefined
+            : project
+              ? initialContent
+              : { type: "doc", content: [{ type: "paragraph" }] },
         editorProps: {
           attributes: {
             class:
@@ -540,6 +503,84 @@ export const MainEditor = forwardRef<
       },
       [project, provider, isProviderReady], // Re-init if provider readiness changes
     );
+
+    // Seed Yjs document from project content if collaborative doc is empty
+    useEffect(() => {
+      if (
+        isCollaborative &&
+        provider &&
+        isProviderReady &&
+        provider.document &&
+        project?.content
+      ) {
+        try {
+          const ydoc = provider.document;
+
+          // Safely get the prosemirror type - it may not exist yet on first load
+          let prosemirrorJSON = null;
+          try {
+            // Check if the type exists in the document
+            const ytypes = ydoc.share;
+            if (ytypes && ytypes.has("prosemirror")) {
+              prosemirrorJSON = ydoc.get("prosemirror") as any;
+            } else {
+              console.log(
+                "[MainEditor] prosemirror type not yet initialized in Yjs document",
+              );
+            }
+          } catch (typeError) {
+            console.log(
+              "[MainEditor] Could not read prosemirror type:",
+              typeError,
+            );
+          }
+
+          const hasContent =
+            prosemirrorJSON &&
+            prosemirrorJSON.content &&
+            prosemirrorJSON.content.length > 0 &&
+            !(
+              prosemirrorJSON.content.length === 1 &&
+              prosemirrorJSON.content[0].type === "paragraph" &&
+              (!prosemirrorJSON.content[0].content ||
+                prosemirrorJSON.content[0].content.length === 0)
+            );
+
+          if (!hasContent && editor) {
+            console.log(
+              "[MainEditor] Collaborative doc is empty, seeding from project content via editor commands",
+            );
+            try {
+              const contentToInsert = project.content;
+              if (
+                contentToInsert &&
+                typeof contentToInsert === "object" &&
+                contentToInsert.type === "doc" &&
+                contentToInsert.content &&
+                Array.isArray(contentToInsert.content) &&
+                contentToInsert.content.length > 0
+              ) {
+                // Use the editor's commands to insert content through the Collaboration extension
+                // This ensures the content is properly synced through Yjs
+                editor.chain().clearContent().run();
+                // Insert the document content as JSON
+                editor.commands.setContent(contentToInsert);
+                console.log(
+                  "[MainEditor] Successfully seeded collaborative document",
+                );
+              }
+            } catch (seedError) {
+              console.error(
+                "[MainEditor] Failed to seed collaborative document:",
+                seedError,
+              );
+            }
+          }
+        } catch (e) {
+          console.error("[MainEditor] Error checking Yjs document:", e);
+        }
+      }
+    }, [isCollaborative, provider, isProviderReady, project?.content, editor]);
 
     // Initialize mentions hook (after editor is declared)
     const {
@@ -636,7 +677,6 @@ export const MainEditor = forwardRef<
             content,
             documentTitle,
             wordCount,
-            { keepalive: true },
           );
           setSaveStatus("saved");
         } catch (error) {
@@ -982,23 +1022,124 @@ export const MainEditor = forwardRef<
     // Handler for restoring document version
     const handleRestoreVersion = useCallback(
       async (versionId: string) => {
-        console.log("Restoring version:", versionId);
-        toast({
-          title: "Version Restored",
-          description: "Document restored to selected version",
-        });
+        try {
+          if (!editor) {
+            toast({
+              title: "Error",
+              description: "Editor is not ready",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Call the API to restore the version
+          const result = await ProjectService.restoreDocumentVersion(
+            documentId,
+            versionId,
+          );
+
+          if (!result || !result.content) {
+            toast({
+              title: "Error",
+              description: "Failed to restore version",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Update the editor content with the restored version
+          const restoredContent = result.content;
+          editor.chain().clearContent().setContent(restoredContent).run();
+
+          toast({
+            title: "Success",
+            description: "Document restored to selected version",
+          });
+        } catch (error: any) {
+          console.error("Error restoring document version:", error);
+          toast({
+            title: "Error",
+            description: error.message || "Failed to restore document version",
+            variant: "destructive",
+          });
+        }
       },
-      [toast],
+      [editor, documentId, toast],
     );
 
     // Handler for creating document version
     const handleCreateVersion = useCallback(async () => {
-      console.log("Creating new version");
-      toast({
-        title: "Version Created",
-        description: "New document version saved",
-      });
-    }, [toast]);
+      try {
+        if (!editor) {
+          toast({
+            title: "Error",
+            description: "Editor is not ready",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Get the actual editor content
+        let content = {};
+        let wordCount = 0;
+
+        if (editor.state && editor.state.doc) {
+          content = editor.getJSON();
+          if (editor.storage && editor.storage.characterCount) {
+            wordCount = editor.storage.characterCount.words
+              ? editor.storage.characterCount.words()
+              : editor.storage.characterCount.characters();
+          }
+        }
+
+        // Validate we have actual content
+        if (
+          !content ||
+          (typeof content === "object" && Object.keys(content).length === 0)
+        ) {
+          toast({
+            title: "Warning",
+            description:
+              "Document is empty. Add some content before creating a version.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Create the version via API (force:true ensures it's always created)
+        const result = await ProjectService.createDocumentVersion(
+          documentId,
+          content,
+          wordCount,
+        );
+
+        if (!result) {
+          toast({
+            title: "Info",
+            description:
+              "Version was not created. Try making changes to the document first.",
+          });
+          return;
+        }
+
+        toast({
+          title: "Success",
+          description: `Document version ${result.version || ""} created successfully`,
+        });
+
+        // Refresh the version list if the history modal is open
+        if (showHistoryModal) {
+          // The DocumentHistory component will reload versions via its own loadVersions
+        }
+      } catch (error: any) {
+        console.error("Error creating document version:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create document version",
+          variant: "destructive",
+        });
+      }
+    }, [editor, documentId, toast, showHistoryModal]);
 
     // Loading State for Collaboration - Moved here to ensure hooks run first
     if (isCollaborative && !isProviderReady) {
@@ -1060,13 +1201,6 @@ export const MainEditor = forwardRef<
             query={mentionQuery}
           />
         )}
-
-        {/* Quick Task Extraction Toolbar */}
-        <TaskExtractionToolbar
-          editor={editor}
-          workspaceId={workspaceId || ""}
-          onCreateTask={handleCreateTaskFromText}
-        />
 
         <div className="flex flex-col flex-1 overflow-hidden">
           {!isFocusMode && (

@@ -895,16 +895,16 @@ class AIService {
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/ai/chat/session`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${API_BASE_URL}/api/ai/chat/session/${sessionId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-        body: JSON.stringify({
-          sessionId,
-        }),
-      });
+      );
 
       const data = await response.json();
 

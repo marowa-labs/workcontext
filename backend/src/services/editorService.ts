@@ -652,177 +652,77 @@ export class EditorService {
         );
       }
 
-      // Start a transaction to optimize database operations
-      const result = await prisma.$transaction(async (tx: any) => {
-        // Check if content has actually changed before updating
-        const existingProject = await tx.project.findUnique({
-          where: { id: projectId },
-          select: {
-            content: true,
-            title: true,
-            word_count: true,
-            updated_at: true, // Include updated_at for optimistic locking
-          },
-        });
-
-        // Only update if content, title, or word count has changed substantially
-        const existingContentStr = JSON.stringify(existingProject?.content);
-        const newContentStr = JSON.stringify(validatedContent);
-        const contentChanged = existingContentStr !== newContentStr;
-
-        // Check for substantial content changes (more than 2000 characters difference to reduce false positives)
-        // This prevents unnecessary saves for minor formatting changes while still catching real content updates
-        const contentLengthDiff = Math.abs(
-          existingContentStr?.length - newContentStr?.length,
-        );
-        const substantialContentChange = contentLengthDiff > 0; // Changed from 50 to 0 to prevent data loss on small edits
-        const titleChanged =
-          title !== undefined && existingProject?.title !== title;
-        const wordCountChanged =
-          wordCount !== undefined && existingProject?.word_count !== wordCount;
-
-        let updatedProject;
-        // Only update for substantial changes or metadata changes
-        if (
-          (contentChanged && substantialContentChange) ||
-          titleChanged ||
-          wordCountChanged
-        ) {
-          let retryCount = 0;
-          const maxRetries = 3;
-          let lastUpdatedAt = existingProject?.updated_at;
-
-          while (retryCount < maxRetries) {
-            try {
-              // Update project with new content using optimistic locking
-              updatedProject = await tx.project.update({
-                where: {
-                  id: projectId,
-                  user_id: userId,
-                  updated_at: lastUpdatedAt, // Optimistic locking condition using updated_at
-                },
-                data: {
-                  content: contentChanged ? validatedContent : undefined,
-                  title: titleChanged ? title : undefined,
-                  word_count: wordCountChanged ? wordCount : undefined,
-                  updated_at: new Date(),
-                },
-                select: {
-                  id: true,
-                  title: true,
-                  content: true,
-                  word_count: true,
-                  updated_at: true,
-                  citation_style: true,
-                },
-              });
-              // Success! Break the loop
-              break;
-            } catch (updateError: any) {
-              retryCount++;
-
-              // If it's a Prisma error indicating the record wasn't found (likely due to updated_at mismatch)
-              // or if we reached max retries, handle the final failure
-              if (retryCount >= maxRetries) {
-                logger.warn(
-                  `Concurrency conflict detected during save after ${maxRetries} retries, fetching latest version`,
-                  { projectId, userId, error: updateError },
-                );
-
-                // Fetch the latest version to return current state as fallback
-                updatedProject = await tx.project.findUnique({
-                  where: { id: projectId, user_id: userId },
-                  select: {
-                    id: true,
-                    title: true,
-                    content: true,
-                    word_count: true,
-                    updated_at: true,
-                    citation_style: true,
-                  },
-                });
-
-                if (updatedProject) {
-                  (updatedProject as any)._conflictResolved = true;
-                }
-                break;
-              }
-
-              // Otherwise, fetch the newest updated_at and try again
-              const latest = await tx.project.findUnique({
-                where: { id: projectId },
-                select: { updated_at: true },
-              });
-
-              if (!latest) break; // Project disappeared?
-              lastUpdatedAt = latest.updated_at;
-
-              logger.debug(
-                `Retrying save due to conflict (attempt ${retryCount}/${maxRetries})`,
-                {
-                  projectId,
-                  newUpdatedAt: lastUpdatedAt,
-                },
-              );
-            }
-          }
-
-          // Only track editor activity for genuine user interactions, not system operations
-          if (!isSystemOperation) {
-            // Track editor activity (batch this operation)
-            setImmediate(async () => {
-              try {
-                await prisma.$transaction(async (tx: any) => {
-                  // Track editor activity (batch this operation)
-                  await this.trackEditorActivity(
-                    userId,
-                    projectId,
-                    "save",
-                    {
-                      projectId,
-                      contentChanged,
-                      titleChanged,
-                      wordCountChanged,
-                    },
-                    tx,
-                  );
-
-                  // Track editor event for analytics
-                  await this.trackEditorEvent(
-                    userId,
-                    projectId,
-                    "document_save",
-                    {
-                      contentChanged,
-                      titleChanged,
-                      wordCountChanged,
-                      wordCount: wordCount || existingProject?.word_count || 0,
-                    },
-                  );
-                });
-              } catch (activityError) {
-                logger.error("Error tracking editor activity", {
-                  error: activityError,
-                  projectId,
-                  userId,
-                });
-              }
-            });
-          }
-        } else {
-          // No substantial changes, return existing project data
-          updatedProject = existingProject;
-          updatedProject.id = projectId; // Add the id since it's not in the select
-        }
-
-        return updatedProject;
+      // Save project content directly without complex transaction logic
+      // This avoids Prisma transaction timeouts caused by too many operations
+      const existingProject = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+          content: true,
+          title: true,
+          word_count: true,
+          updated_at: true,
+        },
       });
 
-      // Return the result with a flag indicating if it was a conflict resolution
-      return {
-        ...(result || {}),
-        _conflictResolved: (result as any)?._conflictResolved || false,
-      };
+      const existingContentStr = JSON.stringify(existingProject?.content);
+      const newContentStr = JSON.stringify(validatedContent);
+      const contentChanged = existingContentStr !== newContentStr;
+      const titleChanged =
+        title !== undefined && existingProject?.title !== title;
+      const wordCountChanged =
+        wordCount !== undefined && existingProject?.word_count !== wordCount;
+
+      let updatedProject;
+      if (contentChanged || titleChanged || wordCountChanged) {
+        updatedProject = await prisma.project.update({
+          where: { id: projectId, user_id: userId },
+          data: {
+            ...(contentChanged ? { content: validatedContent } : {}),
+            ...(titleChanged ? { title } : {}),
+            ...(wordCountChanged ? { word_count: wordCount } : {}),
+            updated_at: new Date(),
+          },
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            word_count: true,
+            updated_at: true,
+            citation_style: true,
+          },
+        });
+      } else {
+        // No changes, return existing
+        updatedProject = existingProject;
+      }
+
+      // Track activity outside the main save to avoid transaction timeouts
+      if (!isSystemOperation) {
+        setImmediate(async () => {
+          try {
+            await this.trackEditorActivity(userId, projectId, "save", {
+              projectId,
+              contentChanged,
+              titleChanged,
+              wordCountChanged,
+            });
+            await this.trackEditorEvent(userId, projectId, "document_save", {
+              contentChanged,
+              titleChanged,
+              wordCountChanged,
+              wordCount: wordCount || existingProject?.word_count || 0,
+            });
+          } catch (activityError) {
+            logger.error("Error tracking editor activity", {
+              error: activityError,
+              projectId,
+              userId,
+            });
+          }
+        });
+      }
+
+      return updatedProject;
     } catch (error) {
       logger.error("Error saving project content", {
         error,
@@ -900,6 +800,18 @@ export class EditorService {
             count: 1,
           },
         });
+      }
+
+      // Notify collaborators about editor activity (throttled)
+      if (["save", "edit", "view"].includes(action) && validatedProjectId) {
+        const { notifyEditorActive } = require("./workspaceActivityService");
+        const project = await prismaClient.project.findUnique({
+          where: { id: validatedProjectId },
+          select: { title: true },
+        });
+        if (project) {
+          await notifyEditorActive(validatedProjectId, userId, project.title);
+        }
       }
     } catch (error) {
       // Don't throw error for activity tracking as it shouldn't block the main operation

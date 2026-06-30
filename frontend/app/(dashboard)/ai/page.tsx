@@ -13,6 +13,9 @@ import {
   Edit,
   Trash2,
   Search,
+  ThumbsUp,
+  ThumbsDown,
+  X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -33,6 +36,14 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   created_at: string;
+}
+
+interface AIFeedbackData {
+  action: string;
+  originalText: string;
+  suggestion: string;
+  isHelpful: boolean;
+  feedback?: string;
 }
 
 interface ChatSession {
@@ -60,6 +71,8 @@ function ChatContent({
   isConfirming,
   onConfirmAction,
   onCancelAction,
+  onThumbsClick,
+  messageRatings,
 }: {
   messages: Message[];
   loading: boolean;
@@ -74,6 +87,8 @@ function ChatContent({
   isConfirming: boolean;
   onConfirmAction: () => void;
   onCancelAction: () => void;
+  onThumbsClick: (message: Message, isHelpful: boolean) => void;
+  messageRatings: Record<string, boolean>;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -265,6 +280,35 @@ function ChatContent({
                       </div>
                     )}
                   </div>
+                  {/* Thumbs Up/Down Buttons for Assistant Messages */}
+                  {message.role === "assistant" && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        onClick={() => onThumbsClick(message, true)}
+                        className={cn(
+                          "p-1.5 rounded-md transition-colors",
+                          messageRatings[message.id] === true
+                            ? "text-green-600 bg-green-100 dark:bg-green-900/30"
+                            : "text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20",
+                        )}
+                        title="Helpful"
+                      >
+                        <ThumbsUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onThumbsClick(message, false)}
+                        className={cn(
+                          "p-1.5 rounded-md transition-colors",
+                          messageRatings[message.id] === false
+                            ? "text-red-600 bg-red-100 dark:bg-red-900/30"
+                            : "text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20",
+                        )}
+                        title="Not helpful"
+                      >
+                        <ThumbsDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -417,6 +461,56 @@ export default function AIPage() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("ai_current_session");
   });
+
+  // AI Feedback state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
+  const [feedbackIsHelpful, setFeedbackIsHelpful] = useState(true);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  // Track which messages have been rated: messageIdful) | false (not helpful)
+  const [messageRatings, setMessageRatings] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  // Handle thumbs click
+  const handleThumbsClick = (message: Message, isHelpful: boolean) => {
+    setFeedbackMessage(message);
+    setFeedbackIsHelpful(isHelpful);
+    setFeedbackText("");
+    setShowFeedbackModal(true);
+  };
+
+  // Submit feedback to backend
+  const submitFeedback = async () => {
+    if (!feedbackMessage) return;
+
+    setFeedbackSubmitting(true);
+    try {
+      await apiClient.post("/api/ai/feedback", {
+        action: "chat_response",
+        originalText: feedbackMessage.content.substring(0, 500), // Limit text length
+        suggestion: feedbackMessage.content.substring(0, 500),
+        isHelpful: feedbackIsHelpful,
+        feedback: feedbackText || undefined,
+      });
+
+      // Mark this message as rated so the thumb stays highlighted
+      if (feedbackMessage) {
+        setMessageRatings((prev) => ({
+          ...prev,
+          [feedbackMessage.id]: feedbackIsHelpful,
+        }));
+      }
+      setShowFeedbackModal(false);
+      setFeedbackText("");
+      setFeedbackMessage(null);
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
 
   // Save current session to localStorage whenever it changes
   useEffect(() => {
@@ -928,8 +1022,73 @@ export default function AIPage() {
           isConfirming={isConfirming}
           onConfirmAction={handleConfirmAction}
           onCancelAction={handleCancelAction}
+          onThumbsClick={handleThumbsClick}
+          messageRatings={messageRatings}
         />
       </div>
+
+      {/* AI Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50 transition-opacity"
+            onClick={() => setShowFeedbackModal(false)}
+          />
+          <div className="relative bg-card border border-border rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
+                {feedbackIsHelpful
+                  ? "Glad it was helpful!"
+                  : "Sorry to hear that"}
+              </h3>
+              <button
+                onClick={() => setShowFeedbackModal(false)}
+                className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              {feedbackIsHelpful
+                ? "What did you find helpful? (optional)"
+                : "What went wrong? How can we improve?"}
+            </p>
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder={
+                feedbackIsHelpful
+                  ? "Tell us what was useful..."
+                  : "Tell us how we can improve..."
+              }
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              rows={4}
+            />
+            <div className="flex items-center justify-end gap-3 mt-4">
+              <button
+                onClick={() => setShowFeedbackModal(false)}
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitFeedback}
+                disabled={feedbackSubmitting}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+              >
+                {feedbackSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Feedback"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

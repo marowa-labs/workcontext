@@ -5,10 +5,72 @@ import { authenticateExpressRequest } from "../../middleware/auth";
 
 const router: ExpressRouter = Router();
 
-// Apply authentication middleware to all routes in this file
+// Public endpoint for feature requests (no auth required)
+router.post("/public", async (req, res) => {
+  try {
+    const feedbackData = req.body;
+
+    // Validate required fields
+    if (
+      !feedbackData.type ||
+      !feedbackData.title ||
+      !feedbackData.description
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Type, title, and description are required",
+      });
+    }
+
+    // Only allow feature requests via public endpoint
+    if (feedbackData.type !== "feature_request") {
+      return res.status(400).json({
+        success: false,
+        message: "Public endpoint only accepts feature requests",
+      });
+    }
+
+    const validPriorities = ["low", "medium", "high", "critical"];
+    if (
+      feedbackData.priority &&
+      !validPriorities.includes(feedbackData.priority)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid priority level",
+      });
+    }
+
+    const feedback = await FeedbackService.createFeedback({
+      user_id: null,
+      type: feedbackData.type,
+      category: feedbackData.category || null,
+      priority: feedbackData.priority || "medium",
+      title: feedbackData.title,
+      description: feedbackData.description,
+      status: "open",
+      attachment_urls: feedbackData.attachment_urls || [],
+      browser_info: feedbackData.browser_info || null,
+      os_info: feedbackData.os_info || null,
+      screen_size: feedbackData.screen_size || null,
+      user_plan: feedbackData.user_plan || null,
+      admin_notes: null,
+    });
+
+    return res.json({ success: true, feedback });
+  } catch (error) {
+    logger.error("Error creating public feedback:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create feature request",
+    });
+  }
+});
+
+// Apply authentication middleware to all subsequent routes
 router.use(authenticateExpressRequest);
 
-// Create a new feedback item
+// Create a new feedback item (authenticated)
 router.post("/", async (req, res) => {
   try {
     // User ID will be attached by the authentication middleware in main-server.ts

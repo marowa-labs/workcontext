@@ -12,7 +12,6 @@ import {
 } from "../ui/dialog";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
-import { Checkbox } from "../ui/checkbox";
 import { Download, FileText, FileIcon, File, Loader2 } from "lucide-react";
 import ExportService from "../../lib/utils/exportService";
 
@@ -46,7 +45,6 @@ export function ExportModal({
 }: ExportModalProps) {
   const [activeTab, setActiveTab] = useState<"download">("download");
   const [format, setFormat] = useState<ExportFormat>("pdf");
-  const [includeHistory, setIncludeHistory] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   // Add state for project template and citation style
@@ -109,7 +107,7 @@ export function ExportModal({
     loadProjectData();
   }, [projectId, editor, isOpen, projectTemplate, projectCitationStyle]);
 
-  // All export formats available to all users
+  // Export formats: PDF, DOCX, and TXT only
   const getDownloadFormats = () => {
     return [
       {
@@ -129,30 +127,6 @@ export function ExportModal({
         label: "Plain Text",
         icon: <FileText className="h-5 w-5 text-black" />,
         ext: ".txt",
-      },
-      {
-        id: "tex",
-        label: "LaTeX Document",
-        icon: <FileText className="h-5 w-5 text-blue-500" />,
-        ext: ".tex",
-      },
-      {
-        id: "rtf",
-        label: "Rich Text Format",
-        icon: <File className="h-5 w-5 text-purple-500" />,
-        ext: ".rtf",
-      },
-      {
-        id: "journal-pdf",
-        label: "Journal-Ready PDF",
-        icon: <FileText className="h-5 w-5 text-purple-500" />,
-        ext: "-journal.pdf",
-      },
-      {
-        id: "journal-latex",
-        label: "Journal-Ready LaTeX",
-        icon: <FileText className="h-5 w-5 text-green-500" />,
-        ext: "-journal.tex",
       },
     ];
   };
@@ -177,7 +151,6 @@ export function ExportModal({
         // Prepare export options for regular formats
         const options = {
           format: format, // Use the selected format directly
-          includeHistory: includeHistory,
           includeCitations: true, // Include citations by default
           includeComments: true, // Include comments by default
           citationStyle: projectCitationStyle || "apa", // Default citation style
@@ -262,23 +235,6 @@ export function ExportModal({
                 </div>
               ))}
             </RadioGroup>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Options</Label>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="history"
-                  className="bg-cw-light-gray rounded-lg hover:bg-cw-light-gray/80 transition-colors cursor-pointer"
-                  checked={includeHistory}
-                  onCheckedChange={(c) => setIncludeHistory(!!c)}
-                />
-                <Label htmlFor="history" className="text-sm cursor-pointer">
-                  Include version history
-                </Label>
-              </div>
-            </div>
           </div>
         </div>
 

@@ -132,17 +132,17 @@ export function TaskDetailsModal({
     }
   }, [isOpen, workspaceId]);
 
-  // Fetch workspace projects for project linking
+// Fetch workspace projects for project linking
   React.useEffect(() => {
     if (isOpen && workspaceId) {
-      fetch(`/api/workspaces/${workspaceId}`, {
+      fetch(`/api/workspaces/${workspaceId}/projects`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       })
         .then((res) => res.json())
-        .then((workspace) => {
-          setWorkspaceProjects(workspace.projects || []);
+        .then((data) => {
+          setWorkspaceProjects(data.projects || []);
         })
         .catch((err) => console.error("Failed to fetch projects:", err));
     }

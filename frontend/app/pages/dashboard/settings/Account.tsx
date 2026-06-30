@@ -2,17 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Download,
-  Trash2,
+  XCircle,
+  MapPin,
   Eye,
   EyeOff,
   Loader2,
   AlertTriangle,
   User,
+  CheckCircle,
   Phone,
   BookOpen,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
+import PrivacySettingsService, {
+  PrivacySettings,
+} from "../../../lib/utils/privacySettingsService";
 import AccountService from "../../../lib/utils/accountService";
 import { useToast } from "../../../hooks/use-toast";
 import { supabase } from "../../../lib/supabase/client";
@@ -33,6 +37,37 @@ interface User {
     plan: string;
     status: string;
   };
+}
+
+interface Session {
+  id: string;
+  user_id: string;
+  device_info: string;
+  ip_address: string;
+  location: string | null;
+  last_active: string;
+  is_current: boolean;
+  created_at: string;
+  expires_at: string;
+  browser: string;
+  device: string;
+  lastActive: Date;
+  current: boolean;
+}
+
+interface LoginHistoryItem {
+  id: string;
+  user_id: string;
+  ip_address: string;
+  device_info: string;
+  location: string | null;
+  status: string;
+  error_code: string | null;
+  created_at: string;
+  date: Date;
+  device: string;
+  browser: string;
+  ip: string;
 }
 
 const AccountSettingsPage: React.FC = () => {
@@ -60,6 +95,13 @@ const AccountSettingsPage: React.FC = () => {
   const [deleteVerification, setDeleteVerification] = useState("");
   const [deleteStep, setDeleteStep] = useState(1); // 1: confirm, 2: verify, 3: final confirm
 
+  // Real data for sessions and login history
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loginHistory, setLoginHistory] = useState<LoginHistoryItem[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [loginHistoryLoading, setLoginHistoryLoading] = useState(true);
+  const [sessionOperationLoading, setSessionOperationLoading] = useState(false);
+
   // OTP states for profile update
   const [showProfileOTP, setShowProfileOTP] = useState(false);
   const [otpStep, setOtpStep] = useState(1); // 1: send OTP, 2: enter OTP
@@ -75,6 +117,102 @@ const AccountSettingsPage: React.FC = () => {
   const [pendingEmailChange, setPendingEmailChange] = useState("");
 
   const { toast } = useToast();
+
+  // Privacy settings state
+  const [privacySettings, setPrivacySettings] =
+    useState<PrivacySettings | null>(null);
+  const [privacySettingsLoading, setPrivacySettingsLoading] = useState(true);
+
+  // State for tracking when settings are being updated
+  const [updatingSettings, setUpdatingSetting] = useState<string | null>(null);
+
+  // Fetch privacy settings on mount
+  useEffect(() => {
+    const fetchPrivacySettings = async () => {
+      try {
+        setPrivacySettingsLoading(true);
+        const settings = await PrivacySettingsService.getSettings();
+        setPrivacySettings(settings);
+      } catch (error: any) {
+        console.error("Error fetching privacy settings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load privacy settings.",
+          variant: "destructive",
+        });
+      } finally {
+        setPrivacySettingsLoading(false);
+      }
+    };
+
+    fetchPrivacySettings();
+  }, [toast]);
+
+  // Update a single privacy setting
+  const updateSettingWithFeedback = async (
+    key: keyof PrivacySettings,
+    value: boolean | string,
+  ) => {
+    if (!privacySettings) return;
+
+    const previousValue = privacySettings[key];
+    setUpdatingSetting(key);
+
+    // Optimistic update
+    setPrivacySettings((prev) => (prev ? { ...prev, [key]: value } : prev));
+
+    try {
+      const updatedSettings = await PrivacySettingsService.updateSettings({
+        [key]: value,
+      });
+      setPrivacySettings(updatedSettings);
+
+      toast({
+        title: "Setting Updated",
+        description: "Your privacy settings have been updated successfully.",
+      });
+    } catch (error: any) {
+      // Revert on error
+      setPrivacySettings((prev) =>
+        prev ? { ...prev, [key]: previousValue } : prev,
+      );
+
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      toast({
+        title: "Update Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      console.error("Error updating privacy settings:", error);
+    } finally {
+      setUpdatingSetting(null);
+    }
+  };
+
+  // Helper function to render status badges
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "success":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+            <CheckCircle className="w-3 h-3 mr-1" /> Success
+          </span>
+        );
+      case "failed":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+            <XCircle className="w-3 h-3 mr-1" /> Failed
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+            {status}
+          </span>
+        );
+    }
+  };
 
   // Fetch user account details
   useEffect(() => {
@@ -112,6 +250,126 @@ const AccountSettingsPage: React.FC = () => {
 
     fetchAccountDetails();
   }, [toast]);
+
+  // Fetch real session data
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        setSessionsLoading(true);
+        const sessionData = await PrivacySettingsService.getUserSessions();
+
+        // Check if sessionData is valid before mapping
+        if (Array.isArray(sessionData)) {
+          // Transform backend data to match our interface
+          // Backend now stores formatted device_info like "Chrome - Windows 10/11"
+          const transformedSessions: Session[] = sessionData.map((session) => {
+            const parts = session.device_info.split(" - ");
+            return {
+              ...session,
+              device: parts[0] || "Unknown Device",
+              browser: parts[1] || "Unknown OS",
+              lastActive: new Date(session.last_active),
+              current: session.is_current,
+            };
+          });
+
+          setSessions(transformedSessions);
+        } else {
+          // Set empty array if no data or invalid data
+          setSessions([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err);
+        // Set empty array on error
+        setSessions([]);
+      } finally {
+        setSessionsLoading(false);
+      }
+    };
+
+    const fetchLoginHistory = async () => {
+      try {
+        setLoginHistoryLoading(true);
+        const loginData = await PrivacySettingsService.getLoginHistory();
+
+        // Check if loginData is valid before mapping
+        if (Array.isArray(loginData)) {
+          // Transform backend data to match our interface
+          const transformedLoginHistory: LoginHistoryItem[] = loginData.map(
+            (login) => ({
+              ...login,
+              date: new Date(login.created_at),
+              device: login.device_info.split(" - ")[0] || "Unknown Device",
+              browser: login.device_info.split(" - ")[1] || "Unknown OS",
+              ip: login.ip_address,
+            }),
+          );
+
+          setLoginHistory(transformedLoginHistory);
+        } else {
+          // Set empty array if no data or invalid data
+          setLoginHistory([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch login history:", err);
+        // Set empty array on error
+        setLoginHistory([]);
+      } finally {
+        setLoginHistoryLoading(false);
+      }
+    };
+
+    fetchSessions();
+    fetchLoginHistory();
+  }, []);
+
+  const handleSignOutSession = async (id: string) => {
+    setSessionOperationLoading(true);
+    try {
+      await PrivacySettingsService.endSession(id);
+      setSessions(sessions.filter((session) => session.id !== id));
+      toast({
+        title: "Session Ended",
+        description: "The session has been successfully ended.",
+      });
+    } catch (err) {
+      console.error("Failed to end session:", err);
+      toast({
+        title: "Session End Failed",
+        description: "Failed to end the session. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSessionOperationLoading(false);
+    }
+  };
+
+  const handleSignOutAll = async () => {
+    setSessionOperationLoading(true);
+    try {
+      // End all non-current sessions
+      const nonCurrentSessions = sessions.filter((session) => !session.current);
+      await Promise.all(
+        nonCurrentSessions.map((session) =>
+          PrivacySettingsService.endSession(session.id),
+        ),
+      );
+      setSessions(sessions.filter((session) => session.current));
+      toast({
+        title: "Sessions Ended",
+        description: "All other sessions have been successfully ended.",
+      });
+    } catch (err) {
+      console.error("Failed to end all sessions:", err);
+      toast({
+        title: "Session End Failed",
+        description: "Failed to end all sessions. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSessionOperationLoading(false);
+    }
+  };
 
   const handleProfileChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -155,7 +413,7 @@ const AccountSettingsPage: React.FC = () => {
         title: "OTP Sent",
         description: pendingProfileUpdate.email
           ? "Please check your new email address for the verification code."
-          : "Please check your phone for the verification code.",
+          : "Please check your email for the verification code.",
       });
     } catch (error: any) {
       toast({
@@ -547,7 +805,8 @@ const AccountSettingsPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="full_name"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Full Name
                 </label>
                 <div className="relative">
@@ -568,7 +827,8 @@ const AccountSettingsPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="phone_number"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Phone Number
                 </label>
                 <div className="relative">
@@ -589,7 +849,8 @@ const AccountSettingsPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="user_type"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   User Type
                 </label>
                 <select
@@ -597,7 +858,8 @@ const AccountSettingsPage: React.FC = () => {
                   name="user_type"
                   value={profileForm.user_type}
                   onChange={handleProfileChange}
-                  className="w-full px-3 py-2 rounded-lg bg-background text-foreground shadow-sm border border-input focus:outline-none focus:ring-2 focus:ring-primary">
+                  className="w-full px-3 py-2 rounded-lg bg-background text-foreground shadow-sm border border-input focus:outline-none focus:ring-2 focus:ring-primary"
+                >
                   <option value="">Select your type</option>
                   <option value="Undergraduate Student">
                     Undergraduate Student
@@ -612,7 +874,8 @@ const AccountSettingsPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="field_of_study"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Field of Study
                 </label>
                 <div className="relative">
@@ -678,7 +941,8 @@ const AccountSettingsPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="currentPassword"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Current Password
                 </label>
                 <div className="relative">
@@ -693,7 +957,8 @@ const AccountSettingsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
                     {showCurrentPassword ? (
                       <EyeOff className="h-5 w-5 text-muted-foreground" />
                     ) : (
@@ -708,7 +973,8 @@ const AccountSettingsPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="newPassword"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   New Password
                 </label>
                 <div className="relative">
@@ -723,7 +989,8 @@ const AccountSettingsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
                     {showNewPassword ? (
                       <EyeOff className="h-5 w-5 text-muted-foreground" />
                     ) : (
@@ -759,7 +1026,8 @@ const AccountSettingsPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Confirm New Password
                 </label>
                 <div className="relative">
@@ -774,7 +1042,8 @@ const AccountSettingsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
                     {showConfirmPassword ? (
                       <EyeOff className="h-5 w-5 text-muted-foreground" />
                     ) : (
@@ -800,7 +1069,7 @@ const AccountSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Two-Factor Authentication */}
+        {/* Two-Factor Authentication 
         <div className="bg-card rounded-xl shadow-sm border border-border">
           <div className="p-6">
             <h2 className="text-lg font-medium text-foreground mb-4">
@@ -820,88 +1089,244 @@ const AccountSettingsPage: React.FC = () => {
               </Button>
             </div>
           </div>
-        </div>
+        </div>*/}
 
-        {/* Connected Accounts */}
+        {/* Security Settings */}
         <div className="bg-card rounded-xl shadow-sm border border-border">
-          <div className="p-6">
-            <h2 className="text-lg font-medium text-foreground mb-4">
-              Connected Accounts
+          <div className="p-6 border-b border-border flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-foreground">
+              Security Settings
             </h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-red-600 dark:text-red-400"
-                      fill="currentColor"
-                      viewBox="0 0 24 24">
-                      <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <p className="font-medium text-foreground">Google</p>
-                    <p className="text-sm text-muted-foreground">
-                      {user?.email}
-                    </p>
-                  </div>
-                </div>
-                <Button variant="outline">Disconnect</Button>
+            {updatingSettings && (
+              <div className="flex items-center text-sm text-red-600 dark:text-red-400">
+                <div className="animate-spin h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full mr-2"></div>
+                <span>Saving...</span>
               </div>
-            </div>
+            )}
           </div>
-        </div>
 
-        {/* Danger Zone */}
-        <div className="bg-card rounded-xl shadow-sm border border-border">
-          <div className="p-6">
-            <h2 className="text-lg font-medium text-destructive mb-4">
-              Danger Zone
-            </h2>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">
-                    Export Account Data
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Download all your documents, citations, and data
-                  </p>
+          <div className="p-6 space-y-6">
+            {/* Session Management */}
+            <div>
+              <h3 className="font-medium text-foreground mb-3">
+                Active Sessions
+              </h3>
+              {sessionsLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-                <Button
-                  onClick={handleExportData}
-                  variant="outline"
-                  disabled={exportLoading}>
-                  {exportLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Your Data
-                    </>
-                  )}
-                </Button>
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="flex items-center justify-between p-3 border border-border rounded-lg"
+                      >
+                        <div>
+                          <div className="flex items-center">
+                            <span className="font-medium text-foreground">
+                              {session.device} - {session.browser}
+                            </span>
+                            {session.current && (
+                              <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                This Device
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center text-sm text-muted-foreground mt-1">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {session.location}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Last active: {session.lastActive.toLocaleString()}
+                          </p>
+                        </div>
+                        {!session.current && (
+                          <button
+                            onClick={() => handleSignOutSession(session.id)}
+                            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center"
+                            disabled={sessionOperationLoading}
+                          >
+                            {sessionOperationLoading && (
+                              <div className="animate-spin h-3 w-3 border border-red-600 border-t-transparent rounded-full mr-1"></div>
+                            )}
+                            Sign Out
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={handleSignOutAll}
+                      className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center"
+                      disabled={sessionsLoading || sessionOperationLoading}
+                    >
+                      {sessionOperationLoading && (
+                        <div className="animate-spin h-3 w-3 border border-red-600 border-t-transparent rounded-full mr-1"></div>
+                      )}
+                      Sign Out All Other Devices
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">Delete Account</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    This action cannot be undone
-                  </p>
+            {/* Login History */}
+            <div>
+              <h3 className="font-medium text-black mb-3">Login History</h3>
+              {loginHistoryLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-                <Button
-                  onClick={handleDeleteAccount}
-                  variant="outline"
-                  className="border-destructive/50 text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Account
-                </Button>
-              </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
+                        >
+                          Date/Time
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
+                        >
+                          Device/Browser
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
+                        >
+                          Location
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
+                        >
+                          IP Address
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
+                        >
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {loginHistory.map((login) => (
+                        <tr key={login.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                            {login.date.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                            {login.device} - {login.browser}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                            {login.location || "Unknown"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                            {login.ip}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                            {getStatusBadge(
+                              login.status as "success" | "failed",
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Security Alerts */}
+            <div>
+              <h3 className="font-medium text-foreground mb-3">
+                Security Alerts
+              </h3>
+              {privacySettingsLoading ? (
+                <div className="flex justify-center items-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                </div>
+              ) : privacySettings ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="font-medium text-foreground">
+                        Email me about unusual login attempts
+                      </label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when we detect suspicious activity
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateSettingWithFeedback(
+                          "email_unusual_logins",
+                          !privacySettings.email_unusual_logins,
+                        )
+                      }
+                      disabled={updatingSettings === "email_unusual_logins"}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        privacySettings.email_unusual_logins
+                          ? "bg-blue-600"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      } ${updatingSettings === "email_unusual_logins" ? "opacity-50" : ""}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                          privacySettings.email_unusual_logins
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="font-medium text-foreground">
+                        Notify me of new device logins
+                      </label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when you sign in from a new device
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateSettingWithFeedback(
+                          "notify_new_devices",
+                          !privacySettings.notify_new_devices,
+                        )
+                      }
+                      disabled={updatingSettings === "notify_new_devices"}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        privacySettings.notify_new_devices
+                          ? "bg-blue-600"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      } ${updatingSettings === "notify_new_devices" ? "opacity-50" : ""}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                          privacySettings.notify_new_devices
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Failed to load privacy settings.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -914,7 +1339,8 @@ const AccountSettingsPage: React.FC = () => {
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-white bg-opacity-50 transition-opacity"
-              onClick={cancelDelete}></div>
+              onClick={cancelDelete}
+            ></div>
 
             {/* Modal */}
             <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md mx-auto border border-border">
@@ -944,7 +1370,8 @@ const AccountSettingsPage: React.FC = () => {
                       </Button>
                       <Button
                         onClick={handleDeleteVerification}
-                        className="bg-red-600 hover:bg-red-700">
+                        className="bg-red-600 hover:bg-red-700"
+                      >
                         Continue
                       </Button>
                     </div>
@@ -984,7 +1411,8 @@ const AccountSettingsPage: React.FC = () => {
                       <Button
                         onClick={handleDeleteVerification}
                         className="bg-red-600 hover:bg-red-700"
-                        disabled={deleteVerification !== "DELETE"}>
+                        disabled={deleteVerification !== "DELETE"}
+                      >
                         Confirm
                       </Button>
                     </div>
@@ -1017,7 +1445,8 @@ const AccountSettingsPage: React.FC = () => {
                       <Button
                         onClick={handleDeleteVerification}
                         className="bg-red-600 hover:bg-red-700"
-                        disabled={deleteLoading}>
+                        disabled={deleteLoading}
+                      >
                         {deleteLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1043,7 +1472,8 @@ const AccountSettingsPage: React.FC = () => {
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-white bg-opacity-50 transition-opacity"
-              onClick={cancelProfileOTP}></div>
+              onClick={cancelProfileOTP}
+            ></div>
 
             {/* Modal */}
             <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md mx-auto border border-border">
@@ -1056,7 +1486,8 @@ const AccountSettingsPage: React.FC = () => {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1073,7 +1504,7 @@ const AccountSettingsPage: React.FC = () => {
                         <p className="text-sm text-muted-foreground">
                           {pendingProfileUpdate?.email
                             ? "To confirm your email change, we'll send a verification code to your new email address."
-                            : "To confirm your profile update, we'll send a verification code to your registered phone number."}
+                            : "To confirm your profile update, we'll send a verification code to your registered email."}
                         </p>
                       </div>
                     </div>
@@ -1083,7 +1514,8 @@ const AccountSettingsPage: React.FC = () => {
                       </Button>
                       <Button
                         onClick={handleSendProfileOTP}
-                        disabled={otpLoading}>
+                        disabled={otpLoading}
+                      >
                         {otpLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1105,7 +1537,8 @@ const AccountSettingsPage: React.FC = () => {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1122,7 +1555,7 @@ const AccountSettingsPage: React.FC = () => {
                         <p className="text-sm text-muted-foreground">
                           {pendingProfileUpdate?.email
                             ? "Please enter the 6-digit code sent to your new email address."
-                            : "Please enter the 6-digit code sent to your phone."}
+                            : "Please enter the 6-digit code sent to your email."}
                         </p>
                         <input
                           type="text"
@@ -1140,7 +1573,8 @@ const AccountSettingsPage: React.FC = () => {
                       </Button>
                       <Button
                         onClick={handleVerifyProfileOTP}
-                        disabled={otpLoading || otpValue.length !== 6}>
+                        disabled={otpLoading || otpValue.length !== 6}
+                      >
                         {otpLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1162,7 +1596,8 @@ const AccountSettingsPage: React.FC = () => {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1201,7 +1636,8 @@ const AccountSettingsPage: React.FC = () => {
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-white bg-opacity-50 transition-opacity"
-              onClick={cancelEmailChange}></div>
+              onClick={cancelEmailChange}
+            ></div>
 
             {/* Modal */}
             <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md mx-auto border border-border">
@@ -1214,7 +1650,8 @@ const AccountSettingsPage: React.FC = () => {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1235,7 +1672,8 @@ const AccountSettingsPage: React.FC = () => {
                         <div className="mt-4">
                           <label
                             htmlFor="newEmail"
-                            className="block text-sm font-medium text-foreground mb-1 text-left">
+                            className="block text-sm font-medium text-foreground mb-1 text-left"
+                          >
                             New Email Address
                           </label>
                           <input
@@ -1257,7 +1695,8 @@ const AccountSettingsPage: React.FC = () => {
                         onClick={handleSendEmailChangeOTP}
                         disabled={
                           otpLoading || !newEmail || newEmail === user?.email
-                        }>
+                        }
+                      >
                         {otpLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1279,7 +1718,8 @@ const AccountSettingsPage: React.FC = () => {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1313,7 +1753,8 @@ const AccountSettingsPage: React.FC = () => {
                       </Button>
                       <Button
                         onClick={handleVerifyEmailChangeOTP}
-                        disabled={otpLoading || otpValue.length !== 6}>
+                        disabled={otpLoading || otpValue.length !== 6}
+                      >
                         {otpLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

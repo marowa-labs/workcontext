@@ -1297,28 +1297,7 @@ export default function DashboardLayout({
               sidebarCollapsed ? "left-20" : "left-64"
             }`}
           >
-            <div className="h-full flex flex-col">
-              {/* Inbox Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <h2 className="text-lg font-semibold text-foreground">Inbox</h2>
-                <button
-                  onClick={() => setIsInboxPinned(false)}
-                  className="p-2 hover:bg-muted rounded-lg text-muted-foreground"
-                  title="Unpin inbox"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M12 2v10M5 12h14M12 12l-4 8M12 12l4 8" />
-                  </svg>
-                </button>
-              </div>
-              <InboxPanel isPinned onPinChange={setIsInboxPinned} />
-            </div>
+            <InboxPanel isPinned onPinChange={setIsInboxPinned} />
           </div>
         )}
       </div>

@@ -248,7 +248,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 {/* Added dark mode support to the input */}
@@ -269,7 +270,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Email
                 </label>
                 <div className="relative">
@@ -296,7 +298,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="username"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Username
                 </label>
                 {/* Added dark mode support to the input */}
@@ -322,7 +325,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="bio"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Bio
                 </label>
                 {/* Added dark mode support to the textarea */}
@@ -356,7 +360,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="fieldOfStudy"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Field of Study
                 </label>
                 {/* Added dark mode support to the input */}
@@ -373,7 +378,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="academicLevel"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Academic Level
                 </label>
                 {/* Added dark mode support to the select */}
@@ -382,7 +388,8 @@ export default function Profile() {
                   name="academicLevel"
                   value={profile.academicLevel}
                   onChange={handleSelectChange}
-                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground">
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground"
+                >
                   <option value="">Select level</option>
                   <option value="High School">High School</option>
                   <option value="Undergraduate">Undergraduate</option>
@@ -396,7 +403,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="institution"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Institution
                 </label>
                 {/* Added dark mode support to the input */}
@@ -413,7 +421,8 @@ export default function Profile() {
               <div>
                 <label
                   htmlFor="location"
-                  className="block text-sm font-medium text-foreground mb-1">
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Location
                 </label>
                 {/* Added dark mode support to the input */}
@@ -434,7 +443,8 @@ export default function Profile() {
             <Button
               onClick={handleSave}
               disabled={!hasChanges() || saving}
-              className="bg-primary hover:opacity-90 text-primary-foreground">
+              className="bg-primary hover:opacity-90 text-primary-foreground"
+            >
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -456,13 +466,14 @@ export default function Profile() {
               Verify Profile Update
             </h3>
             <p className="text-muted-foreground mb-4">
-              We've sent a 6-digit verification code to your phone number.
-              Please enter it below to confirm your profile update.
+              We've sent a 6-digit verification code to your email. Please enter
+              it below to confirm your profile update.
             </p>
             <div className="mb-4">
               <Label
                 htmlFor="otp"
-                className="block text-sm font-medium text-foreground mb-1">
+                className="block text-sm font-medium text-foreground mb-1"
+              >
                 Verification Code
               </Label>
               <Input
@@ -482,13 +493,15 @@ export default function Profile() {
                   setShowOTPModal(false);
                   setOtp("");
                   setPendingProfileData(null);
-                }}>
+                }}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={handleOTPSubmit}
                 disabled={otpLoading || !otp || otp.length !== 6}
-                className="bg-primary hover:opacity-90 text-primary-foreground">
+                className="bg-primary hover:opacity-90 text-primary-foreground"
+              >
                 {otpLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

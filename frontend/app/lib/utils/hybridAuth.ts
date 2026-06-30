@@ -450,38 +450,6 @@ export async function getIdToken(
 }
 
 /**
- * Send password reset email
- */
-export async function resetPassword(email: string): Promise<void> {
-  try {
-    // Send request to our hybrid backend endpoint
-    const response = await fetchWithTimeout(
-      `${API_BASE_URL}/api/auth/hybrid/reset-password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-        }),
-      },
-    );
-
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      logger.info("Password reset email sent", { email });
-    } else {
-      throw new Error(result.error || "Failed to send password reset email");
-    }
-  } catch (error: any) {
-    logger.error("Password reset error", { error: error.message, email });
-    throw error;
-  }
-}
-
-/**
  * Verify OTP code for email confirmation
  */
 export async function verifyEmailOTP(

@@ -95,6 +95,19 @@ export default function WorkspaceProjectsPage() {
     };
   }, [user, workspaceId, activeFilter]);
 
+  // Compute progress from word_count
+  const computeProgress = (wordCount: number): number => {
+    if (!wordCount || wordCount <= 0) return 0;
+    return Math.min(100, Math.round((wordCount / 2000) * 100));
+  };
+
+  // Determine effective status based on progress
+  const getEffectiveStatus = (project: any): string => {
+    const progress = computeProgress(project.word_count);
+    if (progress >= 100) return "completed";
+    return project.status;
+  };
+
   // Filter by status (client-side); archived handled as separate data source
   useEffect(() => {
     if (activeFilter === "archived") {
@@ -104,7 +117,7 @@ export default function WorkspaceProjectsPage() {
 
     let filtered = [...projects];
     if (activeFilter !== "all") {
-      filtered = filtered.filter((p) => p.status === activeFilter);
+      filtered = filtered.filter((p) => getEffectiveStatus(p) === activeFilter);
     }
     setFilteredProjects(filtered);
   }, [projects, archivedProjects, activeFilter]);

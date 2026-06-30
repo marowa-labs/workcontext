@@ -75,6 +75,19 @@ export default function ProjectsListPage() {
     };
   }, [user?.id, activeFilter]);
 
+  // Compute progress from word_count
+  const computeProgress = (wordCount) => {
+    if (!wordCount || wordCount <= 0) return 0;
+    return Math.min(100, Math.round((wordCount / 2000) * 100));
+  };
+
+  // Determine effective status based on progress
+  const getEffectiveStatus = (project) => {
+    const progress = computeProgress(project.word_count);
+    if (progress >= 100) return "completed";
+    return project.status;
+  };
+
   // Filter projects by status (client-side, except "archived" which is loaded separately)
   useEffect(() => {
     if (activeFilter === "archived") {
@@ -84,9 +97,11 @@ export default function ProjectsListPage() {
 
     let filtered = [...projects];
 
-    // Apply status filter
+    // Apply status filter using effective status (considers progress)
     if (activeFilter !== "all") {
-      filtered = filtered.filter((project) => project.status === activeFilter);
+      filtered = filtered.filter(
+        (project) => getEffectiveStatus(project) === activeFilter,
+      );
     }
 
     setFilteredProjects(filtered);

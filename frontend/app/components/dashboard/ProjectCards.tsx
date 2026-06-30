@@ -201,9 +201,19 @@ export default function ProjectCards({
   const getProgressColor = (progress: number): string => {
     if (progress == null || isNaN(progress) || progress <= 0)
       return "bg-gray-300";
-    if (progress <= 30) return "bg-red-500";
-    if (progress <= 70) return "bg-purple-500";
-    return "bg-green-500";
+    if (progress < 30) return "bg-red-500";
+    if (progress < 70) return "bg-purple-500";
+    if (progress >= 100) return "bg-green-500";
+    return "bg-amber-500";
+  };
+
+  // Determine effective status based on progress
+  const getEffectiveStatus = (project: Project): string => {
+    const progress = computeProgress(project.word_count);
+    // If progress is 100%, always show as completed
+    if (progress >= 100) return "completed";
+    // Otherwise use the stored status
+    return project.status;
   };
 
   // Compute progress from word_count — since projects don't have a stored progress field.
@@ -400,7 +410,7 @@ export default function ProjectCards({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(project.status)}
+                    {getStatusBadge(getEffectiveStatus(project))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     <div className="flex items-center space-x-4">
@@ -693,7 +703,7 @@ export default function ProjectCards({
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {getStatusBadge(project.status)}
+                {getStatusBadge(getEffectiveStatus(project))}
                 {project.due_date && (
                   <span
                     className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

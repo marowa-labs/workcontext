@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { WorkspaceTask } from "../../../lib/utils/workspaceTaskService";
 import {
   format,
@@ -32,6 +32,70 @@ interface CalendarViewProps {
   onToggleSelection: (id: string, selected: boolean) => void;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Curated pastel palette – keyed by priority / label colour          */
+/* ------------------------------------------------------------------ */
+const PRIORITY_STYLES: Record<
+  string,
+  { bg: string; border: string; text: string; accent: string; chip: string }
+> = {
+  high: {
+    bg: "bg-rose-50",
+    border: "border-rose-200",
+    text: "text-rose-900",
+    accent: "bg-rose-400",
+    chip: "bg-rose-100 text-rose-700",
+  },
+  medium: {
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    text: "text-amber-900",
+    accent: "bg-amber-400",
+    chip: "bg-amber-100 text-amber-700",
+  },
+  low: {
+    bg: "bg-sky-50",
+    border: "border-sky-200",
+    text: "text-sky-900",
+    accent: "bg-sky-400",
+    chip: "bg-sky-100 text-sky-700",
+  },
+};
+
+const DEFAULT_STYLES = {
+  bg: "bg-violet-50",
+  border: "border-violet-200",
+  text: "text-violet-900",
+  accent: "bg-violet-400",
+  chip: "bg-violet-100 text-violet-700",
+};
+
+/** Pick a colour-scheme based on the first label's colour or priority */
+function getTaskStyles(task: WorkspaceTask) {
+  if (task.labels && task.labels.length > 0 && task.labels[0]?.color) {
+    const c = task.labels[0].color;
+    return {
+      bg: `bg-[${c}]/10`,
+      border: `border-[${c}]/40`,
+      text: `text-[${c}]`,
+      accent: `bg-[${c}]`,
+      chip: `bg-[${c}]/20 text-[${c}]`,
+    };
+  }
+  return PRIORITY_STYLES[task.priority] ?? DEFAULT_STYLES;
+}
+
+/** Strip HTML tags from a string */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").trim();
+}
+
+/** Truncate a string to max chars */
+function truncate(text: string, max = 32) {
+  if (text.length <= max) return text;
+  return text.slice(0, max).trimEnd() + "…";
+}
+
 export function CalendarView({
   tasks,
   onTaskClick,
@@ -45,21 +109,24 @@ export function CalendarView({
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
 
-  const days = eachDayOfInterval({
-    start: startDate,
-    end: endDate,
-  });
+  const days = useMemo(
+    () =>
+      eachDayOfInterval({
+        start: startDate,
+        end: endDate,
+      }),
+    [startDate, endDate],
+  );
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
-  const getTasksForDay = (day: Date) => {
-    return tasks.filter((task) => {
+  const getTasksForDay = (day: Date) =>
+    tasks.filter((task) => {
       if (!task.due_date) return false;
       return isSameDay(new Date(task.due_date), day);
     });
-  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-[600px]">
@@ -138,31 +205,57 @@ export function CalendarView({
                 <div className="space-y-1">
                   {dayTasks.slice(0, 3).map((task) => {
                     const isSelected = selectedTaskIds.includes(task.id);
+                    const styles = getTaskStyles(task);
+
                     return (
                       <div
                         key={task.id}
                         onClick={() => onTaskClick(task)}
-                        className={`px-2 py-1 rounded-md text-[10px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer truncate ${
-                          isSelected
-                            ? "bg-teal-50 border-teal-200 text-teal-700 shadow-sm"
-                            : "bg-white border-slate-100 text-slate-700 hover:border-teal-200 hover:bg-teal-50/50"
-                        }`}
-                        title={task.title}>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleSelection(task.id, !isSelected);
-                          }}
-                          className={`w-3 h-3 rounded-[3px] border flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
+                        className={`
+                          rounded-lg
+                          px-2.5 py-1.5
+                          border
+                          transition-all
+                          cursor-pointer
+                          flex flex-col gap-0.5
+                          ${
                             isSelected
-                              ? "bg-teal-500 border-teal-500 text-white"
-                              : "bg-white border-slate-300"
-                          }`}>
-                          {isSelected && (
-                            <CheckSquare className="w-2.5 h-2.5" />
-                          )}
+                              ? "bg-teal-50 border-teal-300 shadow-sm ring-1 ring-teal-200"
+                              : `${styles.bg} ${styles.border} hover:shadow-sm hover:brightness-95`
+                          }
+                        `}
+                        title={`${task.title}${task.description ? ` – ${task.description}` : ""}`}>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleSelection(task.id, !isSelected);
+                            }}
+                            className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
+                              isSelected
+                                ? "bg-teal-500 border-teal-500 text-white"
+                                : "bg-white border-slate-300"
+                            }`}>
+                            {isSelected && (
+                              <CheckSquare className="w-2.5 h-2.5" />
+                            )}
+                          </div>
+                          <span
+                            className={`text-[11px] font-bold leading-tight truncate ${
+                              isSelected ? "text-teal-800" : styles.text
+                            }`}>
+                            {task.title}
+                          </span>
                         </div>
-                        <span className="truncate">{task.title}</span>
+
+                        {task.description && (
+                          <p
+                            className={`text-[10px] leading-snug pl-5 line-clamp-1 ${
+                              isSelected ? "text-teal-600" : "text-slate-500"
+                            }`}>
+                            {truncate(stripHtml(task.description), 38)}
+                          </p>
+                        )}
                       </div>
                     );
                   })}

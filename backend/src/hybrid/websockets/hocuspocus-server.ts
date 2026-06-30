@@ -376,11 +376,16 @@ export class HocuspocusCollaborationServer {
               );
             }
 
+            // Calculate word count from content to keep word_count in sync
+            const wordCount =
+              HocuspocusCollaborationServer.calculateWordCount(content);
+
             // Update the project with new content
             await tx.project.update({
               where: { id: projectId },
               data: {
                 content: content,
+                word_count: wordCount,
                 updated_at: new Date(),
               },
             });
@@ -1042,6 +1047,22 @@ export class HocuspocusCollaborationServer {
     }
 
     return "";
+  }
+
+  /**
+   * Calculate word count from a ProseMirror JSON document.
+   * Extracts all text nodes and counts words using the same algorithm as the frontend.
+   */
+  static calculateWordCount(content: any): number {
+    if (!content) return 0;
+
+    const text = HocuspocusCollaborationServer.extractTextFromNode(content);
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .filter((w: string) => w.length > 0);
+
+    return words.length;
   }
 
   async start(): Promise<void> {

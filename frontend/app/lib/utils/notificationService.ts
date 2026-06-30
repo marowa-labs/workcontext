@@ -80,6 +80,18 @@ export interface NotificationSettings {
   in_app_notifications_enabled: boolean;
   in_app_notifications_sound: boolean;
   in_app_notifications_desktop: boolean;
+  // Task notification settings
+  task_notifications_enabled: boolean;
+  task_status_changed: boolean;
+  task_priority_changed: boolean;
+  task_created: boolean;
+  task_completed: boolean;
+  task_deleted: boolean;
+  task_assigned_enabled: boolean;
+  // Editor / workspace activity settings
+  editor_activity_enabled: boolean;
+  document_edited_enabled: boolean;
+  workspace_activity_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -128,7 +140,20 @@ type NotificationType =
   // Editor notification types
   | "editor_activity"
   | "comment_added"
-  | "document_exported";
+  | "document_exported"
+  // Task notification types
+  | "task_assigned"
+  | "task_status_changed"
+  | "task_priority_changed"
+  | "task_deleted"
+  | "task_created"
+  | "task_completed"
+  | "task_overdue"
+  | "task_due_soon"
+  // Workspace activity
+  | "workspace_activity"
+  | "editor_active"
+  | "document_edited";
 
 class NotificationService {
   // Notification event listeners
@@ -840,6 +865,21 @@ class NotificationService {
       backup_available: null,
       document_version: null,
       document_exported: null,
+
+      // Workspace & editor notifications
+      workspace_activity: null,
+      editor_active: null,
+      document_edited: null,
+
+      // Task notifications - available to all users
+      task_assigned: null,
+      task_status_changed: null,
+      task_priority_changed: null,
+      task_deleted: null,
+      task_created: null,
+      task_completed: null,
+      task_overdue: null,
+      task_due_soon: null,
 
       // Other notifications
       collaborator_request: "collaboration",

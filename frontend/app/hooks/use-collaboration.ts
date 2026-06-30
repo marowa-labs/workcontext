@@ -68,17 +68,32 @@ export const useCollaboration = ({
             // CRITICAL: Only consider ready when fully synced
             console.log(
               "Collab Synced - Doc Ready, doc size:",
-              newProvider?.document?.encodeStateAsUpdate?.()?.length ?? 0,
+              (newProvider?.document as any)?.encodeStateAsUpdate?.()?.length ??
+                0,
               "bytes",
             );
             if (mounted && newProvider?.document) {
               // Log the actual document content for debugging
               try {
                 const ydoc = newProvider.document;
-                const prosemirrorJSON = ydoc.get("prosemirror", "json");
+                // Safely check if the prosemirror type exists
+                let prosemirrorJSON = null;
+                try {
+                  const ytypes = ydoc.share;
+                  if (ytypes && ytypes.has("prosemirror")) {
+                    prosemirrorJSON = ydoc.get("prosemirror") as any;
+                  }
+                } catch (typeError) {
+                  console.log(
+                    "[Collab Synced] prosemirror type not initialized yet:",
+                    typeError,
+                  );
+                }
                 console.log(
                   "[Collab Synced] Document content:",
-                  JSON.stringify(prosemirrorJSON).substring(0, 200),
+                  prosemirrorJSON
+                    ? JSON.stringify(prosemirrorJSON).substring(0, 200)
+                    : "not available",
                 );
               } catch (e) {
                 console.log(

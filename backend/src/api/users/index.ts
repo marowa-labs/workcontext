@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { GET, PUT, DELETE } from "./route";
+import {
+  GET,
+  PUT,
+  DELETE,
+  changePasswordPOST as POST_CHANGE_PASSWORD_ROUTE,
+} from "./route";
 import { POST_REQUEST_OTP as REQUEST_OTP_POST } from "./route";
 
 const router: Router = Router();
@@ -94,6 +99,25 @@ router.delete("/", async (req, res) => {
     };
 
     const response = await DELETE(mockRequest as any);
+    const data = await response.json();
+
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Change user password (authenticated)
+router.post("/change-password", async (req, res) => {
+  try {
+    const mockRequest = {
+      json: async () => req.body,
+      headers: {
+        get: (name: string) => req.headers[name.toLowerCase()],
+      },
+    };
+
+    const response = await POST_CHANGE_PASSWORD_ROUTE(mockRequest as any);
     const data = await response.json();
 
     return res.status(response.status).json(data);

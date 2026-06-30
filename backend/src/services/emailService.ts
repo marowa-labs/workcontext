@@ -785,6 +785,41 @@ export class EmailService {
       return false;
     }
   }
+
+  // Send custom HTML email (for security alerts, etc.)
+  static async sendCustomEmail(
+    to: string,
+    subject: string,
+    htmlBody: string,
+  ): Promise<boolean> {
+    try {
+      if (!plunk) {
+        console.error("Plunk client not initialized");
+        return false;
+      }
+
+      const success = await plunk.emails.send({
+        to,
+        subject,
+        body: htmlBody,
+      });
+
+      if (!success) {
+        console.error("Plunk custom email error:", { to, subject });
+        return false;
+      }
+
+      console.log("Custom email sent successfully via Plunk", { to, subject });
+      return true;
+    } catch (error) {
+      console.error("Error sending custom email via Plunk:", {
+        error,
+        to,
+        subject,
+      });
+      return false;
+    }
+  }
 }
 
 export default EmailService;

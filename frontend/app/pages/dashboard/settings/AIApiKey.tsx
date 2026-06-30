@@ -310,17 +310,22 @@ const AIApiKeyPage = () => {
     try {
       const result = await BYOKFrontendService.saveApiKey(provider, key);
       toast({ title: "Success", description: result.message });
+
+      // Refresh models list first
+      const modelsData = await AIService.getAvailableModels();
+      setModels(modelsData.models || []);
+      setByokEnabled(modelsData.byokEnabled || false);
+
+      // Then refresh settings to get updated hasKey and maskedKeys
       const updatedSettings = await BYOKFrontendService.getSettings();
       setByokSettings(updatedSettings);
+
+      // Clear input and set connection status after settings are updated
       setByokInputKeys((prev) => ({ ...prev, [provider!]: "" }));
       setByokConnectionStatus((prev) => ({
         ...prev,
         [provider!]: "connected",
       }));
-      // Refresh models list
-      const modelsData = await AIService.getAvailableModels();
-      setModels(modelsData.models || []);
-      setByokEnabled(modelsData.byokEnabled || false);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -867,6 +872,31 @@ const AIApiKeyPage = () => {
                             </button>
                           </div>
 
+                          {/* Test result status indicator */}
+                          {byokConnectionStatus[provider] !== "unknown" &&
+                            !isTesting && (
+                              <div
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium ${
+                                  byokConnectionStatus[provider] === "connected"
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                }`}
+                              >
+                                {byokConnectionStatus[provider] ===
+                                "connected" ? (
+                                  <>
+                                    <Wifi className="h-3 w-3" />
+                                    <span>Connection Successful</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <WifiOff className="h-3 w-3" />
+                                    <span>Connection Failed</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+
                           <div className="flex space-x-2">
                             {byokInputKeys[
                               provider as keyof typeof byokInputKeys
@@ -877,12 +907,42 @@ const AIApiKeyPage = () => {
                                     handleTestKey(provider as BYOKProvider)
                                   }
                                   disabled={isTesting}
-                                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                                  className={`flex-1 px-3 py-2 text-sm border rounded-lg disabled:opacity-50 transition-colors ${
+                                    isTesting
+                                      ? "border-blue-300 bg-blue-50 text-blue-600 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                                      : byokConnectionStatus[provider] ===
+                                          "connected"
+                                        ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-700 dark:bg-green-900/20 dark:text-green-400"
+                                        : byokConnectionStatus[provider] ===
+                                            "error"
+                                          ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-700 dark:bg-red-900/20 dark:text-red-400"
+                                          : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                  }`}
                                 >
                                   {isTesting ? (
-                                    <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
+                                      Testing...
+                                    </>
                                   ) : (
-                                    "Test"
+                                    <>
+                                      {byokConnectionStatus[provider] ===
+                                      "connected" ? (
+                                        <Check className="h-4 w-4 inline mr-1" />
+                                      ) : byokConnectionStatus[provider] ===
+                                        "error" ? (
+                                        <X className="h-4 w-4 inline mr-1" />
+                                      ) : (
+                                        <Wifi className="h-4 w-4 inline mr-1" />
+                                      )}
+                                      {byokConnectionStatus[provider] ===
+                                      "connected"
+                                        ? "Test Again"
+                                        : byokConnectionStatus[provider] ===
+                                            "error"
+                                          ? "Retry"
+                                          : "Test"}
+                                    </>
                                   )}
                                 </button>
                                 <button
@@ -1388,8 +1448,8 @@ const AIApiKeyPage = () => {
                 Limits are provider-based.
               </strong>{" "}
               Rate limits (RPM/TPM) are determined by your API provider, not
-              WorkContext. Check your provider&apos;s dashboard for current
-              rate limits and billing details.
+              WorkContext. Check your provider&apos;s dashboard for current rate
+              limits and billing details.
               {!hasAnyApiKey &&
                 " Configure an API key to remove all platform-imposed limits."}
             </p>

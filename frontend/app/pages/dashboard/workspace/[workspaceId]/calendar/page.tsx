@@ -8,6 +8,11 @@ import { WorkspaceTask } from "../../../../../lib/utils/workspaceTaskService";
 import WorkspaceTaskService from "../../../../../lib/utils/workspaceTaskService";
 import { format } from "date-fns";
 
+/** Strip HTML tags from a string */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").trim();
+}
+
 const PRIORITY_COLORS: Record<string, string> = {
   high: "text-red-500",
   medium: "text-amber-500",
@@ -308,14 +313,14 @@ export default function WorkspaceCalendarPage() {
               )}
             </div>
 
-            {/* Description */}
+{/* Description */}
             {selectedTask.description && (
               <div>
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                   Description
                 </h3>
                 <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {selectedTask.description}
+                  {stripHtml(selectedTask.description)}
                 </p>
               </div>
             )}

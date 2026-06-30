@@ -1532,27 +1532,49 @@ app.post("/api/editor", async (req, res) => {
 // Mount auth router
 app.use("/api/auth", authRouter);
 
-// Start the server
-app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
-
-// Reset password endpoint
+// Reset password endpoint (verify oobCode + set new password)
 app.post("/api/auth/reset-password", async (req, res) => {
   try {
     logger.info("Reset password request");
-    const { token, password } = req.body;
+    const { token, email, password } = req.body;
 
-    // For Supabase, we need to use the token to update the password
-    // This requires the user to have clicked the reset link and be in the reset flow
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and password are required",
+      });
+    }
+
     const client = await supabase;
-    const { error } = await client.auth.updateUser({
+
+    // First verify the oobCode to establish a recovery session
+    const { error: verifyError } = await client.auth.verifyOtp({
+      token: token,
+      type: "recovery",
+      email: email || "",
+    });
+
+    if (verifyError) {
+      logger.error("Reset password token verification failed", {
+        error: verifyError.message,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset link. Please request a new one.",
+      });
+    }
+
+    // Now update the password — recovery session is established
+    const { error: updateError } = await client.auth.updateUser({
       password: password,
     });
 
-    if (error) {
-      logger.error("Reset password failed", { error: error.message });
-      return res.status(400).json({ success: false, message: error.message });
+    if (updateError) {
+      logger.error("Reset password failed", { error: updateError.message });
+      return res.status(400).json({
+        success: false,
+        message: updateError.message || "Failed to reset password",
+      });
     }
 
     logger.info("Password reset successfully");
@@ -1562,8 +1584,16 @@ app.post("/api/auth/reset-password", async (req, res) => {
     });
   } catch (error: any) {
     logger.error("Reset password failed", { error: error.message });
-    return res.status(400).json({ success: false, message: error.message });
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to reset password",
+    });
   }
+});
+
+// Start the server
+app.listen(PORT, () => {
+  logger.info(`Server is running on port ${PORT}`);
 });
 
 // OTP endpoints

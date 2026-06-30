@@ -4,7 +4,7 @@ import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import AIService from "../../lib/utils/aiService";
-import { safeResolvePosition } from "../../lib/utils/editorUtils"; // Import safe editor utilities
+import { safeResolvePosition } from "../../lib/utils/editorUtils";
 
 // Cache for usage
 let usageCache = null;
@@ -15,14 +15,18 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 let requestQueue = [];
 let isProcessingQueue = false;
 
-// Track recent user activity to avoid excessive requests
-let lastTriggerTime = 0;
-let lastCursorPosition = 0;
-let lastTextContext = "";
-let isActiveTyping = false;
-let lastRequestedParagraph = ""; // Track the last paragraph we requested for
-const TRIGGER_COOLDOWN = 10000; // Increase cooldown to 10 seconds between triggers
-const ACTIVE_TYPING_TIMEOUT = 10000; // Consider typing active for 10 seconds after last keystroke
+// Track recent user activity - use a ref-like pattern for module state
+const state = {
+  lastTriggerTime: 0,
+  lastCursorPosition: 0,
+  lastTextContext: "",
+  lastRequestedParagraph: "",
+  sessionStartTime: Date.now(),
+};
+
+const TRIGGER_COOLDOWN = 5000; // 5 seconds between triggers (reduced from 10)
+const ACTIVE_TYPING_TIMEOUT = 3000; // 3 seconds
+const SESSION_TIMEOUT = 6 * 60 * 1000; // 6 minutes
 
 // Get AI usage info with caching
 async function getAIUsage() {
@@ -44,23 +48,9 @@ async function getAIUsage() {
   }
 }
 
-// Check if user can make an autocomplete request - all users have unlimited access
-async function canMakeAutocompleteRequest() {
-  return { allowed: true };
-}
-
-// Process the request queue with exponential backoff
+// Process the request queue
 async function processRequestQueue() {
   if (isProcessingQueue || requestQueue.length === 0) {
-    return;
-  }
-
-  // Check if session has timed out (6 minutes)
-  const now = Date.now();
-  if (now - sessionStartTime > SESSION_TIMEOUT) {
-    // Clear the queue and don't process any requests
-    requestQueue = [];
-    isProcessingQueue = false;
     return;
   }
 
@@ -68,51 +58,25 @@ async function processRequestQueue() {
 
   while (requestQueue.length > 0) {
     const request = requestQueue.shift();
-    let retryCount = 0;
-    const maxRetries = 3;
-    let delay = 1000; // Start with 1 second delay
 
-    // Check if session has timed out during processing
-    if (Date.now() - sessionStartTime > SESSION_TIMEOUT) {
-      // Clear remaining queue and exit
-      requestQueue = [];
-      break;
-    }
+    try {
+      const suggestion = await AIService.getAutocompleteSuggestion(
+        request.textBefore,
+        request.context,
+        true,
+      );
 
-    while (retryCount <= maxRetries) {
-      try {
-        // Get AI suggestion
-        // This is an automatic autocomplete suggestion
-        const suggestion = await AIService.getAutocompleteSuggestion(
-          request.textBefore,
-          request.context, // Pass context to service
-          true, // isAutomatic
-        );
-
-        // Call the success callback
-        if (request.onSuggestion) {
-          request.onSuggestion({
-            suggestion,
-            position: request.position,
-          });
-        }
-
-        break; // Success, exit retry loop
-      } catch (error) {
-        if (retryCount < maxRetries) {
-          // Exponential backoff
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          delay *= 2; // Double the delay for next retry
-          retryCount++;
-        } else {
-          // Max retries reached, call error callback
-          console.error("AI Autocomplete error after retries:", error);
-          break; // Exit retry loop on max retries
-        }
+      if (suggestion && request.onSuggestion) {
+        request.onSuggestion({
+          suggestion,
+          position: request.position,
+        });
       }
+    } catch (error) {
+      console.error("AI Autocomplete error:", error);
     }
 
-    // Small delay between processing requests to prevent overwhelming the server
+    // Small delay between requests
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
@@ -141,111 +105,72 @@ function getCurrentParagraphContent(state, pos) {
   return "";
 }
 
-// Enhanced function to check if we should trigger autocomplete based on user activity and context
+// Check if we should trigger autocomplete
 function shouldTriggerAutocomplete(
   textContext,
   cursorPosition,
   editorView,
-  state,
+  editorState,
 ) {
   const now = Date.now();
 
-  // Check if session has timed out (6 minutes)
-  if (now - sessionStartTime > SESSION_TIMEOUT) {
+  // Check session timeout - reset if needed
+  if (now - state.sessionStartTime > SESSION_TIMEOUT) {
+    state.sessionStartTime = now;
+    state.lastTriggerTime = 0;
+    state.lastRequestedParagraph = "";
+  }
+
+  // Check cooldown
+  if (now - state.lastTriggerTime < TRIGGER_COOLDOWN) {
     return false;
   }
 
-  // Update active typing status
-  if (isActiveTyping) {
-    // If we were actively typing, check if we've stopped
-    if (now - lastTriggerTime > ACTIVE_TYPING_TIMEOUT) {
-      isActiveTyping = false;
-    }
-  }
-
-  // Check if enough time has passed since last trigger
-  if (now - lastTriggerTime < TRIGGER_COOLDOWN) {
-    return false;
-  }
-
-  // Check if cursor is within editable content (not in UI elements)
-  if (editorView) {
-    const domAtPos = editorView.domAtPos(cursorPosition);
-    if (domAtPos && domAtPos.node) {
-      // Check if we're in a non-editable area
-      let currentNode = domAtPos.node;
-      while (currentNode && currentNode !== editorView.dom) {
-        // Skip if we're in a non-editable element
-        if (
-          currentNode.nodeType === 1 &&
-          currentNode.hasAttribute("contenteditable") &&
-          currentNode.getAttribute("contenteditable") === "false"
-        ) {
-          return false;
-        }
-        // Skip if we're in certain UI elements
-        if (
-          currentNode.classList &&
-          (currentNode.classList.contains("non-editable") ||
-            currentNode.classList.contains("ui-element"))
-        ) {
-          return false;
-        }
-        currentNode = currentNode.parentNode;
-      }
-    }
-  }
-
-  // Get current paragraph content to check if we've already requested for this paragraph
-  const currentParagraph = getCurrentParagraphContent(state, cursorPosition);
+  // Get current paragraph content
+  const currentParagraph = getCurrentParagraphContent(
+    editorState,
+    cursorPosition,
+  );
 
   // Don't trigger if we've already requested for this paragraph
-  if (currentParagraph === lastRequestedParagraph) {
+  if (
+    currentParagraph === state.lastRequestedParagraph &&
+    currentParagraph.length > 10
+  ) {
     return false;
   }
 
-  // Check if cursor position has changed significantly
-  if (Math.abs(cursorPosition - lastCursorPosition) < 5) {
-    // Cursor hasn't moved much, check if text context has changed
-    if (textContext === lastTextContext) {
-      return false;
-    }
+  // Don't trigger if text is too short
+  if (textContext.trim().length < 10) {
+    return false;
   }
 
-  // Check if we're at a logical point to trigger autocomplete
-  // (e.g., end of sentence, after punctuation, etc.)
+  // Check if we're at a logical point to trigger
   if (textContext.length > 0) {
     const lastChar = textContext.slice(-1);
-    const secondLastChar =
-      textContext.length > 1 ? textContext.slice(-2, -1) : "";
 
-    // Don't trigger if we're in the middle of typing a word
-    if (lastChar.match(/[a-zA-Z]/)) {
-      return false;
-    }
-
-    // Don't trigger immediately after certain punctuation unless it's end of sentence
-    if ([".", "!", "?"].includes(secondLastChar) && lastChar === " ") {
-      // This is a good place to trigger - end of sentence followed by space
-    } else if ([" ", "\n", "\t"].includes(lastChar)) {
-      // Check if there's meaningful content before this space
-      const trimmedContext = textContext.trim();
-      if (trimmedContext.length === 0) {
-        // Don't trigger at the beginning of document or paragraph
+    // Trigger after space or newline (word boundary)
+    if ([" ", "\n", "\t"].includes(lastChar)) {
+      const trimmed = textContext.trim();
+      if (trimmed.length < 10) {
         return false;
       }
-    } else if (![".", "!", "?", ",", ";", ":"].includes(lastChar)) {
-      // Don't trigger after other punctuation that doesn't indicate a pause
+    }
+    // Trigger after sentence-ending punctuation
+    else if ([".", "!", "?"].includes(lastChar)) {
+      // Good trigger point
+    }
+    // Don't trigger in the middle of a word
+    else if (/[a-zA-Z]/.test(lastChar)) {
       return false;
     }
   }
 
-  // Update tracking variables
-  lastTriggerTime = now;
-  lastCursorPosition = cursorPosition;
-  lastTextContext = textContext;
-  lastRequestedParagraph = currentParagraph; // Track the paragraph we're requesting for
-  isActiveTyping = true;
+  // Update tracking
+  state.lastTriggerTime = now;
+  state.lastCursorPosition = cursorPosition;
+  state.lastTextContext = textContext;
+  state.lastRequestedParagraph = currentParagraph;
 
   return true;
 }
@@ -332,7 +257,7 @@ export const AIAutocompleteExtension = Extension.create({
               editor.storage.aiAutocomplete.suggestion = null;
               editor.storage.aiAutocomplete.isActive = false;
               editor.storage.aiAutocomplete.position = null;
-              lastRequestedParagraph = ""; // Reset paragraph tracking on acceptance
+              state.lastRequestedParagraph = "";
 
               return true;
             }
@@ -346,19 +271,8 @@ export const AIAutocompleteExtension = Extension.create({
             editor.storage.aiAutocomplete.suggestion = null;
             editor.storage.aiAutocomplete.isActive = false;
             editor.storage.aiAutocomplete.position = null;
-            lastRequestedParagraph = ""; // Reset paragraph tracking on dismissal
+            state.lastRequestedParagraph = "";
             return true;
-          }
-
-          // Mark that user is actively typing when they press a key
-          if (
-            event.key.length === 1 ||
-            event.key === "Backspace" ||
-            event.key === "Delete"
-          ) {
-            const now = Date.now();
-            lastTriggerTime = now;
-            isActiveTyping = true;
           }
 
           return false;
@@ -380,7 +294,7 @@ export const AIAutocompleteExtension = Extension.create({
 
             // Reset session start time on editor focus or initialization
             if (!prevState || prevState !== view.state) {
-              sessionStartTime = Date.now();
+              state.sessionStartTime = Date.now();
             }
 
             // Only trigger on user-initiated transactions
@@ -388,42 +302,42 @@ export const AIAutocompleteExtension = Extension.create({
 
             // Check if session has timed out before setting timer
             const currentTime = Date.now();
-            if (currentTime - sessionStartTime > SESSION_TIMEOUT) {
-              // Session timed out, don't set timer
+            if (currentTime - state.sessionStartTime > SESSION_TIMEOUT) {
+              state.sessionStartTime = currentTime;
+              state.lastTriggerTime = 0;
+              state.lastRequestedParagraph = "";
               return;
             }
 
-            // Clear any existing debounce timer
-            if (debounceTimer) {
-              clearTimeout(debounceTimer);
-            }
-
-            // Set new debounce timer
-            debounceTimer = setTimeout(async () => {
+            // Set debounce timer
+            setTimeout(async () => {
               try {
                 // Double-check session timeout before processing
-                if (Date.now() - sessionStartTime > SESSION_TIMEOUT) {
+                if (Date.now() - state.sessionStartTime > SESSION_TIMEOUT) {
                   return;
                 }
 
-                const state = view.state;
-                const { from } = state.selection;
+                const editorState = view.state;
+                const { from } = editorState.selection;
 
                 // Get text before cursor position
-                // Safely resolve position to prevent NaN errors
-                const $from = safeResolvePosition({ state }, from);
-                if (!$from) return false;
+                const $from = safeResolvePosition({ state: editorState }, from);
+                if (!$from) return;
 
-                const textBefore = state.doc.textBetween(
-                  Math.max(0, from - this.options?.maxLength || 500),
+                const textBefore = editorState.doc.textBetween(
+                  Math.max(0, from - (this.options?.maxLength || 500)),
                   from,
                   "",
                 );
 
                 // Check if we should trigger autocomplete
-                // Pass the state to access paragraph information
                 if (
-                  !shouldTriggerAutocomplete(textBefore, $from.pos, view, state)
+                  !shouldTriggerAutocomplete(
+                    textBefore,
+                    $from.pos,
+                    view,
+                    editorState,
+                  )
                 ) {
                   return;
                 }

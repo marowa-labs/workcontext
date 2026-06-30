@@ -65,8 +65,11 @@ router.delete(
       }
 
       // Verify the session belongs to the user
-      const session = await SessionService.getCurrentSession(userId);
-      if (!session || session.id !== sessionId) {
+      const userSessions = await SessionService.getUserSessions(userId);
+      const session = userSessions.find(
+        (s: { id: string }) => s.id === sessionId,
+      );
+      if (!session) {
         return res.status(403).json({ error: "Forbidden" });
       }
 

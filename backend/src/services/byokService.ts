@@ -683,6 +683,9 @@ export class BYOKService {
         case "openai":
           // Test with a minimal OpenAI request
           return await this.testOpenAIKey(apiKey);
+        case "openrouter":
+          // Test with OpenRouter
+          return await this.testOpenRouterKey(apiKey);
         default:
           return { success: false, message: "Unknown provider" };
       }
@@ -795,6 +798,58 @@ export class BYOKService {
     } catch (error: any) {
       if (error.message?.includes("Incorrect API key")) {
         return { success: false, message: "Invalid OpenAI API key" };
+      }
+      return { success: false, message: `Test failed: ${error.message}` };
+    }
+  }
+
+  private static async testOpenRouterKey(
+    apiKey: string,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      // Test OpenRouter key by fetching models list
+      const response = await fetch("https://openrouter.ai/api/v1/models", {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && Array.isArray(data.data)) {
+          return {
+            success: true,
+            message: `OpenRouter API key is valid (${data.data.length} models available)`,
+          };
+        }
+        return {
+          success: true,
+          message: "OpenRouter API key is valid and working",
+        };
+      }
+
+      if (response.status === 401) {
+        return {
+          success: false,
+          message: "Invalid OpenRouter API key - authentication failed",
+        };
+      }
+
+      return {
+        success: false,
+        message: `OpenRouter API returned status ${response.status}`,
+      };
+    } catch (error: any) {
+      if (
+        error.message?.includes("fetch failed") ||
+        error.message?.includes("network")
+      ) {
+        return {
+          success: false,
+          message:
+            "Could not connect to OpenRouter - check your internet connection",
+        };
       }
       return { success: false, message: `Test failed: ${error.message}` };
     }

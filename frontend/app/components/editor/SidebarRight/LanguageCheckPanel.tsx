@@ -65,88 +65,70 @@ export function LanguageCheckPanel({
     results: any,
     documentText: string,
   ): Suggestion[] => {
-    // If the backend already returned structured data, use it directly
-    if (Array.isArray(results)) return results;
+    // If the backend already returned structured array data, use it directly
+    if (Array.isArray(results)) {
+      // Validate and normalize each suggestion
+      return results
+        .filter((item: any) => item && item.original && item.suggestion)
+        .map((item: any, index: number) => ({
+          id: item.id || `s-${index}`,
+          type: item.type || detectType(item.reason || ""),
+          original: item.original,
+          suggestion: item.suggestion,
+          reason: item.reason || "Improvement suggested",
+          context: item.context || "",
+        }));
+    }
 
     // If results is an object with suggestions array (directly from backend)
-    if (results && Array.isArray(results.suggestions))
-      return results.suggestions;
+    if (results && Array.isArray(results.suggestions)) {
+      return results.suggestions
+        .filter((item: any) => item && item.original && item.suggestion)
+        .map((item: any, index: number) => ({
+          id: item.id || `s-${index}`,
+          type: item.type || detectType(item.reason || ""),
+          original: item.original,
+          suggestion: item.suggestion,
+          reason: item.reason || "Improvement suggested",
+          context: item.context || "",
+        }));
+    }
 
     // Try to parse as JSON string
     const raw = typeof results === "string" ? results : JSON.stringify(results);
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed?.suggestions && Array.isArray(parsed.suggestions))
-        return parsed.suggestions;
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((item: any) => item && item.original && item.suggestion)
+          .map((item: any, index: number) => ({
+            id: item.id || `s-${index}`,
+            type: item.type || detectType(item.reason || ""),
+            original: item.original,
+            suggestion: item.suggestion,
+            reason: item.reason || "Improvement suggested",
+            context: item.context || "",
+          }));
+      }
+      if (parsed?.suggestions && Array.isArray(parsed.suggestions)) {
+        return parsed.suggestions
+          .filter((item: any) => item && item.original && item.suggestion)
+          .map((item: any, index: number) => ({
+            id: item.id || `s-${index}`,
+            type: item.type || detectType(item.reason || ""),
+            original: item.original,
+            suggestion: item.suggestion,
+            reason: item.reason || "Improvement suggested",
+            context: item.context || "",
+          }));
+      }
     } catch {
-      /* not JSON, fall through to regex extraction */
+      /* not JSON - return empty array instead of regex parsing */
     }
 
-    // Regex: extract snippets like ' "old" → "new" ' or bullet-point suggestions
-    const suggestions: Suggestion[] = [];
-    const lines = raw.split("\n").filter((l: string) => l.trim());
-
-    for (const line of lines) {
-      // Pattern: Original: "text" → Suggestion: "text" [reason]
-      const arrowMatch = line.match(/"(.+?)"\s*(?:→|->|→|->)\s*"(.+?)"/);
-      if (arrowMatch) {
-        const original = arrowMatch[1];
-        const suggestion = arrowMatch[2];
-        if (original && suggestion && documentText.includes(original)) {
-          suggestions.push({
-            id: `s-${suggestions.length}`,
-            type: detectType(line),
-            original,
-            suggestion,
-            reason:
-              line
-                .replace(arrowMatch[0], "")
-                .trim()
-                .replace(/^[-\s]+/, "") || "Improvement suggested",
-            context: "",
-          });
-          continue;
-        }
-      }
-
-      // Pattern: **Original**: "text" **Suggestion**: "text"
-      const boldMatch = line.match(
-        /\*\*Original\*\*:\s*"(.+?)"\s*\*\*Suggestion\*\*:\s*"(.+?)"/i,
-      );
-      if (boldMatch) {
-        suggestions.push({
-          id: `s-${suggestions.length}`,
-          type: detectType(line),
-          original: boldMatch[1],
-          suggestion: boldMatch[2],
-          reason: "Improvement suggested",
-          context: "",
-        });
-        continue;
-      }
-
-      // Pattern: bullet-point "Original: text → text"
-      const bulletMatch = line.match(
-        /(?:Original|Found):\s*"?(.+?)"?\s*(?:→|->)\s*"?(.+?)"?$/i,
-      );
-      if (
-        bulletMatch &&
-        bulletMatch[1].length > 2 &&
-        documentText.includes(bulletMatch[1].trim())
-      ) {
-        suggestions.push({
-          id: `s-${suggestions.length}`,
-          type: detectType(line),
-          original: bulletMatch[1].trim(),
-          suggestion: bulletMatch[2].trim(),
-          reason: "Improvement suggested",
-          context: "",
-        });
-      }
-    }
-
-    return suggestions;
+    // Return empty array - no structured data found
+    // This avoids false positives from regex parsing of free text
+    return [];
   };
 
   const detectType = (text: string): Suggestion["type"] => {
@@ -222,6 +204,42 @@ export function LanguageCheckPanel({
     }
   };
 
+  const handleHighlight = (suggestion: Suggestion) => {
+    if (!editor) return;
+
+    const { state } = editor;
+    if (!state) return;
+
+    let found = false;
+
+    state.doc.descendants((node: any, pos: number) => {
+      if (found || !node.isText) return;
+
+      const index = node.text.indexOf(suggestion.original);
+      if (index !== -1) {
+        const from = pos + index;
+        const to = from + suggestion.original.length;
+
+        editor
+          .chain()
+          .focus()
+          .setTextSelection({ from, to })
+          .run();
+        
+        found = true;
+      }
+    });
+
+    if (!found) {
+      toast({
+        title: "Highlight Failed",
+        description:
+          "Could not find the text in the editor. It might have been changed.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAcceptAll = () => {
     if (!editor || suggestions.length === 0) return;
 
@@ -276,36 +294,6 @@ export function LanguageCheckPanel({
     setSuggestions(suggestions.filter((s) => s.id !== id));
   };
 
-  if (suggestions.length === 0) {
-    return (
-      <div className="h-full flex flex-col bg-gray-50/50">
-        {onClose && (
-          <div className="flex justify-end px-3 pt-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 hover:bg-gray-200"
-              onClick={onClose}
-              title="Close language check"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-gray-500">
-          <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-            <Check className="w-8 h-8 text-green-600" />
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-1">All clear!</h3>
-          <p className="text-sm">
-            Your document meets academic standards. Click "Check Now" above to
-            analyze.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col bg-gray-50/50">
       {/* Close Button */}
@@ -336,7 +324,9 @@ export function LanguageCheckPanel({
               <p className="text-xs text-gray-500">
                 {isLoading
                   ? "Analyzing..."
-                  : `${suggestions.length} suggestions found`}
+                  : suggestions.length > 0
+                    ? `${suggestions.length} suggestions found`
+                    : "No issues found"}
               </p>
             </div>
           </div>
@@ -397,7 +387,8 @@ export function LanguageCheckPanel({
         {suggestions.map((suggestion) => (
           <div
             key={suggestion.id}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer hover:border-blue-300 transition-colors"
+            onClick={() => handleHighlight(suggestion)}
           >
             {/* Header / Reason */}
             <div className="bg-gray-50/80 px-4 py-2 border-b border-gray-100 flex items-center gap-2">

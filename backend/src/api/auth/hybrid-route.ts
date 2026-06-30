@@ -2,10 +2,78 @@ import { AuthService } from "../../services/hybridAuthService";
 import { OTPService } from "../../services/otpService";
 import { SubscriptionService } from "../../services/subscriptionService";
 import { EmailService } from "../../services/emailService";
+import { SessionService } from "../../services/sessionService";
+import { SecurityNotificationService } from "../../services/securityNotificationService";
 import { getSupabaseAdminClient } from "../../lib/supabase/client";
 import logger from "../../monitoring/logger";
 import { Request, Response } from "express";
 import axios from "axios";
+
+// Helper function to record session, login history, and send security notifications
+async function recordUserSession(
+  userId: string,
+  req: Request,
+  isNewUser: boolean = false,
+): Promise<void> {
+  try {
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const ipAddress =
+      (req.headers["x-forwarded-for"] as string) ||
+      req.socket?.remoteAddress ||
+      "Unknown";
+
+    // Parse user agent for display
+    const parsed = SessionService.parseUserAgent(userAgent);
+    const deviceInfo = `${parsed.browser} - ${parsed.os}`;
+
+    // Create session
+    await SessionService.createSession(userId, userAgent, ipAddress);
+
+    // Record login attempt
+    await SessionService.recordLoginAttempt(
+      userId,
+      ipAddress,
+      userAgent,
+      undefined,
+      "success",
+    );
+
+    logger.info("Session recorded for user", { userId, ipAddress });
+
+    // Send security notifications (don't await - don't block auth flow)
+    if (!isNewUser) {
+      // Check if this is a new device
+      const existingSessions = await SessionService.getUserSessions(userId);
+      const isNewDevice = !existingSessions.some(
+        (s: { id: string; device_info: string }) =>
+          s.device_info === deviceInfo && s.id !== existingSessions[0]?.id,
+      );
+
+      if (isNewDevice) {
+        // Send new device notification
+        SecurityNotificationService.sendNewDeviceNotification(
+          userId,
+          deviceInfo,
+          SessionService.formatIpAddress(ipAddress),
+          null,
+        ).catch((err) =>
+          logger.error("Error sending new device notification:", err),
+        );
+      }
+
+      // Always send unusual login notification
+      SecurityNotificationService.sendUnusualLoginNotification(
+        userId,
+        deviceInfo,
+        SessionService.formatIpAddress(ipAddress),
+        null,
+      ).catch((err) => logger.error("Error sending login notification:", err));
+    }
+  } catch (error) {
+    logger.error("Error recording session:", error);
+    // Don't throw - session recording should not block auth flow
+  }
+}
 
 // Hybrid signup route - uses Supabase Auth for authentication and Supabase for user data
 export async function POST(req: Request, res: Response) {
@@ -87,10 +155,14 @@ export async function POST(req: Request, res: Response) {
         createUserError,
       );
       // If user already exists, return 409 Conflict status
-      if (createUserError.code === "USER_EXISTS" || createUserError.message?.includes("User already registered")) {
+      if (
+        createUserError.code === "USER_EXISTS" ||
+        createUserError.message?.includes("User already registered")
+      ) {
         return res.status(409).json({
           success: false,
-          message: "An account with this email already exists. Please log in instead.",
+          message:
+            "An account with this email already exists. Please log in instead.",
           code: "USER_EXISTS",
         });
       }
@@ -309,6 +381,9 @@ export async function POST(req: Request, res: Response) {
       });
     }
 
+    // Record session and login history
+    await recordUserSession(supabaseUser.id, req);
+
     // Return success response with proper flags for frontend
     const userData = {
       id: supabaseUser.id,
@@ -345,7 +420,7 @@ async function sendDiscordWebhookNotification(
 ) {
   try {
     const discordWebhookUrl = process.env.SIGNUP_SURVEY_DISCORD_WEBHOOK_URL;
-    
+
     if (!discordWebhookUrl) {
       // Silently skip if no webhook configured
       return;
@@ -628,6 +703,9 @@ export async function PUT_SIGNIN(req: Request, res: Response) {
     };
     logger.info("Hybrid signin successful", { userId: supabaseUser.id });
 
+    // Record session and login history
+    await recordUserSession(supabaseUser.id, req);
+
     return res.status(200).json({
       success: true,
       message: "Signin successful",
@@ -868,6 +946,9 @@ export async function POST_OAUTH_SIGNUP(req: Request, res: Response) {
         message: "Failed to send verification code",
       });
     }
+
+    // Record session and login history for OAuth user
+    await recordUserSession(id, req);
 
     return res.status(200).json({
       success: true,

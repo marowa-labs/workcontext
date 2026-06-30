@@ -3,6 +3,7 @@ import {
   getSupabaseAdminClient,
 } from "../../lib/supabase/client";
 import { prisma } from "../../lib/prisma";
+import logger from "../../monitoring/logger";
 
 // Request OTP for profile update
 export async function POST_REQUEST_OTP(request: Request) {
@@ -16,7 +17,7 @@ export async function POST_REQUEST_OTP(request: Request) {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -28,7 +29,7 @@ export async function POST_REQUEST_OTP(request: Request) {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -44,7 +45,7 @@ export async function POST_REQUEST_OTP(request: Request) {
           {
             status: 500,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
       const {
@@ -58,7 +59,7 @@ export async function POST_REQUEST_OTP(request: Request) {
           {
             status: 401,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
 
@@ -69,7 +70,7 @@ export async function POST_REQUEST_OTP(request: Request) {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -91,11 +92,8 @@ export async function POST_REQUEST_OTP(request: Request) {
       });
     }
 
-    // Determine OTP method (email or SMS)
-    let method = "email";
-    if (prismaUser.phone_number) {
-      method = "sms";
-    }
+    // Always use email for OTP
+    const method = "email";
 
     // Import OTP service
     const { OTPService } = await import("../../services/otpService");
@@ -107,7 +105,7 @@ export async function POST_REQUEST_OTP(request: Request) {
       prismaUser.phone_number || "",
       method,
       prismaUser.full_name || "",
-      true // isProfileUpdate
+      true, // isProfileUpdate
     );
 
     if (!result) {
@@ -125,7 +123,7 @@ export async function POST_REQUEST_OTP(request: Request) {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("Error requesting OTP:", error);
@@ -147,7 +145,7 @@ export async function GET(request: Request) {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -163,7 +161,7 @@ export async function GET(request: Request) {
           {
             status: 500,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
       const {
@@ -177,7 +175,7 @@ export async function GET(request: Request) {
           {
             status: 401,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
 
@@ -188,7 +186,7 @@ export async function GET(request: Request) {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -236,7 +234,7 @@ export async function GET(request: Request) {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("Error getting user details:", error);
@@ -259,6 +257,8 @@ export async function PUT(request: Request) {
       bio,
       institution,
       location,
+      email,
+      otp,
     } = body;
 
     // Get user from authorization header
@@ -269,7 +269,7 @@ export async function PUT(request: Request) {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -285,7 +285,7 @@ export async function PUT(request: Request) {
           {
             status: 500,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
       const {
@@ -299,7 +299,7 @@ export async function PUT(request: Request) {
           {
             status: 401,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
 
@@ -310,8 +310,34 @@ export async function PUT(request: Request) {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
+    }
+
+    // If email change is requested, verify OTP first
+    if (email && email !== user.email) {
+      if (!otp) {
+        return new Response(
+          JSON.stringify({ error: "OTP is required to change email" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      // Verify OTP against database (checks both email and SMS OTPs)
+      const { OTPService } = await import("../../services/otpService");
+      const isValid = await OTPService.verifyOTP(user.id, otp);
+      if (!isValid) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or expired OTP" }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     // Update user in database
@@ -325,6 +351,7 @@ export async function PUT(request: Request) {
         bio,
         institution,
         location,
+        ...(email && email !== user.email ? { email } : {}),
         updated_at: new Date(),
       },
       select: {
@@ -351,22 +378,39 @@ export async function PUT(request: Request) {
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
-    const { error: updateError } = await client.auth.updateUser({
+    // Update Supabase Auth user (email + metadata)
+    const authUpdateData: any = {
       data: {
         full_name,
         phone_number,
         user_type,
         field_of_study,
       },
-    });
+    };
+    if (email && email !== user.email) {
+      authUpdateData.email = email;
+    }
+    const { error: updateError } = await client.auth.updateUser(authUpdateData);
 
     if (updateError) {
       console.error(
         "Error updating user metadata in Supabase Auth:",
-        updateError
+        updateError,
+      );
+    }
+
+    // Send email change notification if email was changed
+    if (email && email !== user.email) {
+      const { SecurityNotificationService } =
+        await import("../../services/securityNotificationService");
+      SecurityNotificationService.sendEmailChangedNotification(
+        user.id,
+        email,
+      ).catch((err) =>
+        logger.error("Error sending email change notification:", err),
       );
     }
 
@@ -379,7 +423,7 @@ export async function PUT(request: Request) {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("Error updating user profile:", error);
@@ -407,7 +451,7 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
           {
             status: 401,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
 
@@ -422,7 +466,7 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
             {
               status: 500,
               headers: { "Content-Type": "application/json" },
-            }
+            },
           );
         }
         const {
@@ -436,7 +480,7 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
             {
               status: 401,
               headers: { "Content-Type": "application/json" },
-            }
+            },
           );
         }
 
@@ -447,7 +491,7 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
           {
             status: 401,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
     }
@@ -471,7 +515,7 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
           {
             status: 500,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
       const { data, error } = await client.auth.signInWithPassword({
@@ -496,7 +540,7 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
     const adminClient = await getSupabaseAdminClient();
     if (adminClient) {
       const { error: deleteError } = await adminClient.auth.admin.deleteUser(
-        user.id
+        user.id,
       );
 
       if (deleteError) {
@@ -513,7 +557,7 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("Error deleting user account:", error);
@@ -521,5 +565,159 @@ export async function DELETE(request: Request & { user?: { id: string } }) {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
+  }
+}
+
+// Change user password (authenticated)
+export async function changePasswordPOST(request: Request) {
+  try {
+    const body = await request.json();
+    const { currentPassword, newPassword } = body;
+
+    if (!currentPassword || !newPassword) {
+      return new Response(
+        JSON.stringify({
+          error: "Current password and new password are required",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (newPassword.length < 8) {
+      return new Response(
+        JSON.stringify({ error: "New password must be at least 8 characters" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Get user from authorization header
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid authorization header" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const token = authHeader.substring(7);
+
+    // Verify the token with Supabase Auth
+    let user;
+    try {
+      const client = await getSupabaseClient();
+      if (!client) {
+        return new Response(
+          JSON.stringify({ error: "Supabase client not initialized" }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      const {
+        data: { user: userData },
+        error,
+      } = await client.auth.getUser(token);
+
+      if (error || !userData) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or expired token" }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      user = userData;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Verify current password by attempting sign-in
+    const client = await getSupabaseClient();
+    if (!client) {
+      return new Response(
+        JSON.stringify({ error: "Supabase client not initialized" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const { error: signInError } = await client.auth.signInWithPassword({
+      email: user.email || "",
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      return new Response(
+        JSON.stringify({ error: "Current password is incorrect" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Update password
+    const { error: updateError } = await client.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (updateError) {
+      return new Response(
+        JSON.stringify({
+          error: updateError.message || "Failed to update password",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Send password changed notification (don't await - don't block response)
+    const { SecurityNotificationService } =
+      await import("../../services/securityNotificationService");
+    SecurityNotificationService.sendPasswordChangedNotification(user.id).catch(
+      (err) => logger.error("Error sending password change notification:", err),
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Password updated successfully",
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  } catch (error: any) {
+    console.error("Error changing password:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Internal server error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 }

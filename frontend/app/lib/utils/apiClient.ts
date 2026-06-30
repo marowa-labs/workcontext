@@ -25,7 +25,7 @@ class ApiClient {
     options: RequestInit = {},
     retryCount = 0, // DISABLE retries by default to prevent infinite loops
   ): Promise<any> {
-    // Always use relative URL to go through Next.js proxy (avoids CORS + auth issues)
+    // Use relative URL to go through Next.js API route proxy
     const fullUrl = url.startsWith("/api") ? url : `${this.baseUrl}${url}`;
 
     console.log("Making API request to:", fullUrl);
@@ -228,10 +228,9 @@ class ApiClient {
           console.log(
             `Retrying request to ${url} due to network error... (${retryCount} attempts left)`,
           );
-          // Wait before retrying with exponential backoff (increased delay)
-          await new Promise((resolve) =>
-            setTimeout(resolve, 10000 * (4 - retryCount)),
-          );
+          // Wait before retrying with exponential backoff (faster for auto-save recovery)
+          const retryDelay = Math.min(3000 * (4 - retryCount), 5000);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
           return this.request(url, options, retryCount - 1);
         }
 
@@ -302,8 +301,8 @@ class ApiClient {
   }
 
   async put(url: string, data: any, options: RequestInit = {}) {
-    // IMPORTANT: Dynamic routes like /api/projects and /api/billing/subscription must NOT retry
-    // Mutations should never retry to prevent duplicate operations
+    // Allow 1 retry for PUT requests (e.g., auto-save) on network errors
+    // but not on server errors to prevent duplicate operations
     return this.request(
       url,
       {
@@ -311,8 +310,8 @@ class ApiClient {
         method: "PUT",
         body: JSON.stringify(data),
       },
-      0,
-    ); // Never retry PUT requests
+      1,
+    ); // 1 retry for network errors only
   }
 
   async patch(url: string, data: any, options: RequestInit = {}) {

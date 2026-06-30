@@ -144,6 +144,7 @@ export class ProjectService {
         {
           content,
           wordCount,
+          force: true, // Always create version when manually requested
         },
       );
       return response.version || response;
@@ -153,7 +154,7 @@ export class ProjectService {
     }
   }
 
-  // Get a specific document version - currently not supported by backend
+  // Get a specific document version
   static async getDocumentVersion(projectId: string, versionId: string) {
     try {
       // Get all versions and find the specific one
@@ -167,6 +168,23 @@ export class ProjectService {
       return specificVersion;
     } catch (error) {
       console.error("Error fetching document version:", error);
+      throw error;
+    }
+  }
+
+  // Restore a document version (replaces current project content with version content)
+  static async restoreDocumentVersion(projectId: string, versionId: string) {
+    try {
+      const response = await apiClient.post(
+        `/api/projects/${projectId}/restore-version`,
+        {
+          projectId,
+          versionId,
+        },
+      );
+      return response.project || response;
+    } catch (error) {
+      console.error("Error restoring document version:", error);
       throw error;
     }
   }

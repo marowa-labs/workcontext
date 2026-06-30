@@ -90,7 +90,19 @@ export type NotificationType =
   // Task specific notification types
   | "task_overdue"
   | "task_due_soon"
-  | "task_assigned";
+  | "task_assigned"
+  | "task_status_changed"
+  | "task_priority_changed"
+  | "task_deleted"
+  | "task_created"
+  | "task_completed"
+  // Editor / workspace activity notification types
+  | "editor_active"
+  | "document_edited"
+  | "document_exported"
+  | "document_imported"
+  // Generic workspace activity
+  | "workspace_activity";
 
 // Define notification data structure
 export interface NotificationData {
@@ -205,6 +217,15 @@ const notificationTypeToSubscriptionFeature: Record<
   task_assigned: "task_assigned_task_assigned",
   task_overdue: "task_overdue_task_overdue",
   task_due_soon: "task_due_soon_task_due_soon",
+  task_status_changed: null,
+  task_priority_changed: null,
+  task_deleted: null,
+  task_created: null,
+  task_completed: null,
+  editor_active: null,
+  document_edited: null,
+  document_imported: null,
+  workspace_activity: null,
 };
 
 // Helper function to check if user can receive a notification based on their subscription
@@ -790,6 +811,19 @@ function shouldSendNotification(
     subscription_expired: "account_billing_subscription_expiring",
     payment_refunded: "account_billing_payment_success",
     invoice_available: "account_billing_payment_success",
+    // Task notification types
+    task_assigned: "project_activity_changes",
+    task_status_changed: "project_activity_changes",
+    task_priority_changed: "project_activity_changes",
+    task_deleted: "project_activity_changes",
+    task_created: "project_activity_changes",
+    task_completed: "project_activity_changes",
+    task_overdue: "project_activity_changes",
+    task_due_soon: "project_activity_changes",
+    // Editor / workspace activity
+    editor_active: "collaboration_real_time",
+    document_edited: "collaboration_real_time",
+    workspace_activity: "project_activity_changes",
   };
 
   // Get the setting field name for this notification type

@@ -25,6 +25,96 @@ import {
 import NotificationService from "../../lib/utils/notificationService";
 import { Button } from "../ui/button";
 
+// ── Shared priority logic ─────────────────────────────────────────────────────
+// Used by both NotificationBell and InboxPanel so priority grouping is consistent.
+
+const HIGH_PRIORITY_TYPES = [
+  "comment",
+  "mention",
+  "document_change",
+  "document_shared",
+  "new_collaborator",
+  "permission_change",
+  "comment_resolved",
+  "real_time_edit",
+  "plagiarism_complete",
+  "ai_limit",
+  "payment_failed",
+  "subscription_expiring",
+  "security_alert",
+  "document_deadline",
+  "ai_suggestion",
+  "citation_reminder",
+  "collaborator_request",
+  "collaboration_invite",
+  "collaboration_invite_accepted",
+  "collaboration_invite_declined",
+  "collaboration_removed",
+  "comment_added",
+  "document_exported",
+  "writing_streak",
+  "goal_achieved",
+  "invoice_available",
+];
+
+const MEDIUM_PRIORITY_TYPES = [
+  "new_feature",
+  "weekly_summary",
+  "payment_success",
+  "subscription_renewed",
+  "new_feature_announcement",
+  "product_tip",
+  "research_update",
+  "template_update",
+  "collaboration_session_started",
+  "collaboration_session_ended",
+  "subscription_created",
+  "subscription_updated",
+  "subscription_resumed",
+  "payment_refunded",
+  "backup_available",
+  "document_version",
+  "template_created",
+  "template_updated",
+  "template_deleted",
+  "template_used",
+  "template_shared",
+  "template_downloaded",
+  "template_reviewed",
+  "template_review_updated",
+  "template_review_deleted",
+  "template_shared_with_you",
+  "template_share_updated",
+  "template_share_removed",
+  "template_share_removed_for_you",
+  "template_versioned",
+  "template_restored",
+  "template_version_deleted",
+  "template_featured",
+  "template_categorized",
+  "template_uncategorized",
+  "template_exported",
+  "template_imported",
+  "template_batch_exported",
+  "template_batch_imported",
+  "template_preview_generated",
+  "template_preview_updated",
+  "template_preview_deleted",
+];
+
+const LOW_PRIORITY_TYPES = ["newsletter", "special_offer"];
+
+export function getNotificationPriority(
+  type: string,
+): "high" | "medium" | "low" {
+  if (HIGH_PRIORITY_TYPES.includes(type)) return "high";
+  if (MEDIUM_PRIORITY_TYPES.includes(type)) return "medium";
+  if (LOW_PRIORITY_TYPES.includes(type)) return "low";
+  return "low";
+}
+
+// ── NotificationBell Component ────────────────────────────────────────────────
+
 interface NotificationBellProps {
   isPinned?: boolean;
   onPinChange?: (pinned: boolean) => void;
@@ -248,93 +338,8 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
   };
 
-  // Get priority level for notification - matches backend priority mapping
-  const getPriority = (type: string): "high" | "medium" | "low" => {
-    const highPriorityTypes = [
-      "comment",
-      "mention",
-      "document_change",
-      "document_shared",
-      "new_collaborator",
-      "permission_change",
-      "comment_resolved",
-      "real_time_edit",
-      "plagiarism_complete",
-      "ai_limit",
-      "payment_failed",
-      "subscription_expiring",
-      "security_alert",
-      "document_deadline",
-      "ai_suggestion",
-      "citation_reminder",
-      "collaborator_request",
-      "collaboration_invite",
-      "collaboration_invite_accepted",
-      "collaboration_invite_declined",
-      "collaboration_removed",
-      "comment_added",
-      "document_exported",
-      "subscription_cancelled",
-      "subscription_expired",
-      "writing_streak",
-      "goal_achieved",
-      "invoice_available",
-    ];
-
-    const mediumPriorityTypes = [
-      "new_feature",
-      "weekly_summary",
-      "payment_success",
-      "subscription_renewed",
-      "new_feature_announcement",
-      "product_tip",
-      "research_update",
-      "template_update",
-      "collaboration_session_started",
-      "collaboration_session_ended",
-      "subscription_created",
-      "subscription_updated",
-      "subscription_resumed",
-      "payment_refunded",
-      "backup_available",
-      "document_version",
-      "template_created",
-      "template_updated",
-      "template_deleted",
-      "template_used",
-      "template_shared",
-      "template_downloaded",
-      "template_reviewed",
-      "template_review_updated",
-      "template_review_deleted",
-      "template_shared_with_you",
-      "template_share_updated",
-      "template_share_removed",
-      "template_share_removed_for_you",
-      "template_versioned",
-      "template_restored",
-      "template_version_deleted",
-      "template_featured",
-      "template_categorized",
-      "template_uncategorized",
-      "template_exported",
-      "template_imported",
-      "template_batch_exported",
-      "template_batch_imported",
-      "template_preview_generated",
-      "template_preview_updated",
-      "template_preview_deleted",
-    ];
-
-    // Low priority notification types (explicitly defined for clarity)
-    const lowPriorityTypes = ["newsletter", "special_offer"];
-
-    if (highPriorityTypes.includes(type)) return "high";
-    if (mediumPriorityTypes.includes(type)) return "medium";
-    if (lowPriorityTypes.includes(type)) return "low";
-    // All other notification types are considered low priority by default
-    return "low";
-  };
+  // Get priority level for notification - uses shared logic
+  const getPriority = getNotificationPriority;
 
   // Get icon for notification type
   const getIcon = (type: string) => {
@@ -789,6 +794,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
 
       {/* Full Screen Modal Overlay - Portal to render outside sidebar (non-pinned) */}
       {!renderInline &&
+        !isPinned &&
         isOpen &&
         ReactDOM.createPortal(
           <div className="fixed inset-0 z-[100] flex pointer-events-none">
@@ -1149,30 +1155,7 @@ export function InboxPanel({
     return date.toLocaleDateString();
   };
 
-  const getPriority = (type: string): "high" | "medium" | "low" => {
-    const high = [
-      "comment",
-      "mention",
-      "document_change",
-      "document_shared",
-      "new_collaborator",
-      "permission_change",
-      "ai_limit",
-      "payment_failed",
-      "subscription_expiring",
-      "security_alert",
-      "document_deadline",
-    ];
-    const medium = [
-      "new_feature",
-      "weekly_summary",
-      "payment_success",
-      "subscription_renewed",
-    ];
-    if (high.includes(type)) return "high";
-    if (medium.includes(type)) return "medium";
-    return "low";
-  };
+  const getPriority = getNotificationPriority;
 
   const getIcon = (type: string) => {
     switch (type) {

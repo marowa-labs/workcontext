@@ -137,29 +137,15 @@ const HelpSettingsPage: React.FC = () => {
         screen_size: `${window.screen.width}x${window.screen.height}`,
       };
 
-      // Send feedback to backend using the public endpoint
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/feedback/public`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(feedbackData),
-        },
-      );
+      // Send feedback to backend using the authenticated endpoint
+      const result = await feedbackService.createFeedback(feedbackData);
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setFeedbackSubmitted(true);
-          setFeedbackRating(0);
-          setFeedbackComment("");
-          // Reset success message after 3 seconds
-          setTimeout(() => setFeedbackSubmitted(false), 3000);
-        } else {
-          throw new Error(result.message || "Failed to submit feedback");
-        }
+      if (result) {
+        setFeedbackSubmitted(true);
+        setFeedbackRating(0);
+        setFeedbackComment("");
+        // Reset success message after 3 seconds
+        setTimeout(() => setFeedbackSubmitted(false), 3000);
       } else {
         throw new Error("Failed to submit feedback");
       }
@@ -431,88 +417,6 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
       </div>
 
       <div className="space-y-6">
-        {/* Quick Help */}
-        <div className="bg-card rounded-xl shadow-sm border border-border">
-          <div className="p-6 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">
-              Quick Help
-            </h2>
-          </div>
-
-          <div className="p-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search help articles..."
-                className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"
-              />
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-              {helpArticles.map((article) => (
-                <div
-                  key={article.id}
-                  onClick={() => handleArticleClick(article.id)}
-                  className="border border-border rounded-lg p-4 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors duration-200"
-                >
-                  <h3 className="font-medium text-foreground">
-                    {article.title}
-                  </h3>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded">
-                      {article.category}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {article.views} views
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Video Tutorials */}
-        <div className="bg-card rounded-xl shadow-sm border border-border">
-          <div className="p-6 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">
-              Video Tutorials
-            </h2>
-          </div>
-
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {videoTutorials.map((video) => (
-                <div
-                  key={video.id}
-                  className="border border-border rounded-lg overflow-hidden hover:border-blue-300 dark:hover:border-blue-500 cursor-pointer"
-                >
-                  <div className="bg-muted h-32 flex items-center justify-center text-4xl">
-                    {video.thumbnail}
-                  </div>
-                  <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-medium text-foreground">
-                        {video.title}
-                      </h3>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                        {video.duration}
-                      </span>
-                    </div>
-                    <button className="mt-3 flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                      <Play className="h-4 w-4 mr-1" />
-                      Watch Tutorial
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Contact Support */}
         <div className="bg-card rounded-xl shadow-sm border border-border">
           <div className="p-6 border-b border-border">
@@ -522,46 +426,18 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
           </div>
 
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="border border-border rounded-lg p-4 text-center">
-                <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <h3 className="font-medium text-foreground">Email Support</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  support@WorkContextai.com
-                </p>
-                <button className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                  Send Email
-                </button>
-              </div>
-
-              <div className="border border-border rounded-lg p-4 text-center">
-                <MessageCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <h3 className="font-medium text-foreground">
-                  Schedule a Meeting
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Available Mon-Fri 9AM-5PM EST
-                </p>
-                <a
-                  href="https://calendly.com/audacityimpact/30min"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 block"
-                >
-                  Schedule Now
-                </a>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6">
               <div className="border border-border rounded-lg p-4 text-center">
                 <Users className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
                 <h3 className="font-medium text-foreground">Community</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Forum and Discord
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">Github</p>
                 <button
                   className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   onClick={() =>
-                    window.open("https://discord.gg/2MMSdX3Uee", "_blank")
+                    window.open(
+                      "https://github.com/marowa-labs/workcontext",
+                      "_blank",
+                    )
                   }
                 >
                   Join Community
@@ -585,7 +461,6 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                     className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-background text-foreground"
                   >
                     <option value="technical">Technical Issue</option>
-                    <option value="billing">Billing Question</option>
                     <option value="feature">Feature Request</option>
                     <option value="bug">Bug Report</option>
                     <option value="other">Other</option>
@@ -631,7 +506,7 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">
-                    Priority (Pro users)
+                    Priority
                   </label>
                   <select
                     value={ticketPriority}
@@ -642,14 +517,6 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                     <option value="high">High</option>
                     <option value="urgent">Urgent</option>
                   </select>
-                </div>
-
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <span className="font-medium">Response Time:</span> Free:
-                    Within 48 hours | Pro: Within 24 hours | Researcher: Within
-                    12 hours
-                  </p>
                 </div>
 
                 <div className="flex justify-end">
@@ -724,7 +591,7 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Last Updated:</span>
                     <span className="font-medium text-foreground">
-                      Oct 1, 2024
+                      Jun 30, 2026
                     </span>
                   </div>
                 </div>
@@ -735,17 +602,19 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
                   Support Resources
                 </h3>
                 <div className="space-y-2">
-                  <button className="flex items-center text-sm text-foreground hover:text-blue-600 transition-colors">
+                  <button
+                    onClick={() => router.push("/legal/terms")}
+                    className="flex items-center text-sm text-foreground hover:text-blue-600 transition-colors"
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Terms of Service
                   </button>
-                  <button className="flex items-center text-sm text-foreground hover:text-blue-600 transition-colors">
+                  <button
+                    onClick={() => router.push("/legal/privacy")}
+                    className="flex items-center text-sm text-foreground hover:text-blue-600 transition-colors"
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Privacy Policy
-                  </button>
-                  <button className="flex items-center text-sm text-foreground hover:text-blue-600 transition-colors">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Cookie Policy
                   </button>
                   <button
                     onClick={handleCopySystemInfo}

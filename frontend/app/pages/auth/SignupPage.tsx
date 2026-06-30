@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import FormInput from "../../components/auth/FormInput";
 import PasswordStrength from "../../components/auth/PasswordStrength";
@@ -127,34 +127,6 @@ const ALLOWED_DOMAINS = [
   // Add more domains as needed
 ];
 
-// List of country codes with unique keys
-const countryCodes = [
-  { key: "us", code: "+1", name: "United States" },
-  { key: "ca", code: "+1", name: "Canada" },
-  { key: "uk", code: "+44", name: "United Kingdom" },
-  { key: "au", code: "+61", name: "Australia" },
-  { key: "in", code: "+91", name: "India" },
-  { key: "jp", code: "+81", name: "Japan" },
-  { key: "de", code: "+49", name: "Germany" },
-  { key: "fr", code: "+33", name: "France" },
-  { key: "cn", code: "+86", name: "China" },
-  { key: "mx", code: "+52", name: "Mexico" },
-  { key: "it", code: "+39", name: "Italy" },
-  { key: "es", code: "+34", name: "Spain" },
-  { key: "br", code: "+55", name: "Brazil" },
-  { key: "ru", code: "+7", name: "Russia" },
-  { key: "kr", code: "+82", name: "South Korea" },
-  { key: "sg", code: "+65", name: "Singapore" },
-  { key: "my", code: "+60", name: "Malaysia" },
-  { key: "za", code: "+27", name: "South Africa" },
-  { key: "nl", code: "+31", name: "Netherlands" },
-  { key: "se", code: "+46", name: "Sweden" },
-  { key: "no", code: "+47", name: "Norway" },
-  { key: "dk", code: "+45", name: "Denmark" },
-  { key: "fi", code: "+358", name: "Finland" },
-  { key: "pl", code: "+48", name: "Poland" },
-];
-
 // Timeout wrapper for fetch requests
 const fetchWithTimeout = (
   url: string,
@@ -217,9 +189,6 @@ const signupSchema = z
   .object({
     fullName: z.string().min(1, "Full name is required"),
     email: z.string().email("Please enter a valid email address"),
-    countryCode: z.string().optional(),
-    phoneNumber: z.string().min(1, "Phone number is required"),
-    otpMethod: z.enum(["sms", "email"]),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -244,22 +213,6 @@ const signupSchema = z
     userRole: z.string().optional(),
     mainJob: z.string().optional(),
   })
-  .refine(
-    (data) => {
-      // Validate phone number format based on selected country code
-      if (data.otpMethod === "sms") {
-        // Remove all non-digit characters
-        const cleanNumber = data.phoneNumber.replace(/\D/g, "");
-        // Check if it's a valid length (typically 7-15 digits)
-        return cleanNumber.length >= 7 && cleanNumber.length <= 15;
-      }
-      return true; // No validation needed for email method
-    },
-    {
-      message: "Please enter a valid phone number (7-15 digits)",
-      path: ["phoneNumber"],
-    },
-  )
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
@@ -299,7 +252,7 @@ const SignupPage: React.FC = () => {
   const [, setOtpSent] = React.useState(false);
   const [surveyStep, setSurveyStep] = React.useState(false);
   const [userId, setUserId] = React.useState<string | null>(null);
-  const [selectedCountryCode, setSelectedCountryCode] = React.useState("+1");
+
   const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
   const [redirectPath, setRedirectPath] = React.useState<string | null>(null);
   const [requiresEmailVerification, setRequiresEmailVerification] =
@@ -308,13 +261,11 @@ const SignupPage: React.FC = () => {
   const [validationErrors, setValidationErrors] = React.useState<{
     fullName?: string;
     email?: string;
-    phoneNumber?: string;
   }>({});
   // Add state for validation loading
   const [validating, setValidating] = React.useState<{
     fullName?: boolean;
     email?: boolean;
-    phoneNumber?: boolean;
   }>({});
 
   // Add state for social signup
@@ -491,8 +442,6 @@ const SignupPage: React.FC = () => {
     mode: "onTouched", // Change from "onChange" to "onTouched" to only validate after user interacts with field
     defaultValues: {
       agreeToTerms: false,
-      otpMethod: "email",
-      countryCode: "+1",
     },
   });
 
@@ -543,13 +492,6 @@ const SignupPage: React.FC = () => {
         const validationData: { [key: string]: string } = {};
         if (field === "fullName") validationData.fullName = value;
         if (field === "email") validationData.email = value;
-        if (field === "phoneNumber") {
-          // Combine with country code for phone number validation
-          const fullPhoneNumber = value.startsWith("+")
-            ? value
-            : `${selectedCountryCode}${value}`;
-          validationData.phoneNumber = fullPhoneNumber;
-        }
 
         // Call validation API with timeout
         const response = await fetchWithTimeout(
@@ -589,20 +531,6 @@ const SignupPage: React.FC = () => {
               delete newErrors.email;
             }
 
-            if (
-              field === "phoneNumber" &&
-              validationResults.phoneNumberExists
-            ) {
-              newErrors.phoneNumber =
-                validationResults.message ||
-                "This phone number is already registered";
-            } else if (
-              field === "phoneNumber" &&
-              !validationResults.phoneNumberExists
-            ) {
-              delete newErrors.phoneNumber;
-            }
-
             return newErrors;
           });
         } else if (!response.ok) {
@@ -631,8 +559,8 @@ const SignupPage: React.FC = () => {
         setValidating((prev) => ({ ...prev, [field]: false }));
       }
     },
-    [selectedCountryCode],
-  ); // Remove API_BASE_URL as it's a constant
+    [],
+  );
 
   // Debounced validation effect
   React.useEffect(() => {
@@ -651,10 +579,6 @@ const SignupPage: React.FC = () => {
       if (watchedFields.email) {
         validateUserDetails("email", watchedFields.email);
       }
-
-      if (watchedFields.phoneNumber) {
-        validateUserDetails("phoneNumber", watchedFields.phoneNumber);
-      }
     }, 500); // 500ms debounce
 
     // Return cleanup function
@@ -663,17 +587,9 @@ const SignupPage: React.FC = () => {
         clearTimeout(validationTimerRef.current);
       }
     };
-  }, [
-    watchedFields.fullName,
-    watchedFields.email,
-    watchedFields.phoneNumber,
-    selectedCountryCode,
-    // The function reference changes when selectedCountryCode changes,
-    // which would cause infinite loop. Instead, call it directly inside useCallback.
-  ]);
+  }, [watchedFields.fullName, watchedFields.email]);
 
   const passwordValue = watch("password");
-  const otpMethod = watch("otpMethod");
 
   // Function to complete signup
   const completeSignup = async (data: SignupFormData) => {
@@ -683,19 +599,9 @@ const SignupPage: React.FC = () => {
       hasSupabase: typeof supabase !== "undefined" && supabase !== null,
     });
     try {
-      // Combine country code and phone number
-      const fullPhoneNumber =
-        data.countryCode &&
-        data.phoneNumber &&
-        !data.phoneNumber.startsWith("+")
-          ? `${data.countryCode}${data.phoneNumber}`
-          : data.phoneNumber || "";
-
       console.log("Attempting signup with data:", {
         email: data.email,
         fullName: data.fullName,
-        phoneNumber: fullPhoneNumber,
-        otpMethod: data.otpMethod,
         selectedPlan: selectedPlan,
       });
 
@@ -711,8 +617,6 @@ const SignupPage: React.FC = () => {
         // First, create user in Supabase Authentication
         const result = await hybridSignUpWithEmail(data.email, data.password, {
           full_name: data.fullName,
-          phone_number: fullPhoneNumber,
-          otp_method: data.otpMethod,
           selected_plan: selectedPlan || "free",
         });
 
@@ -987,24 +891,12 @@ const SignupPage: React.FC = () => {
       const currentData = {
         fullName: watchedFields.fullName || "",
         email: watchedFields.email || "",
-        countryCode: watchedFields.countryCode || selectedCountryCode,
-        phoneNumber: watchedFields.phoneNumber || "",
-        otpMethod: watchedFields.otpMethod || "email",
         password: watchedFields.password || "",
         confirmPassword: watchedFields.confirmPassword || "",
         agreeToTerms: watchedFields.agreeToTerms || false,
         userType: watchedFields.userType || "",
         fieldOfStudy: watchedFields.fieldOfStudy || "",
       } as SignupFormData;
-
-      // Combine country code and phone number for SMS
-      // Only add country code if phone number doesn't already start with +
-      const fullPhoneNumber =
-        currentData.countryCode &&
-        currentData.phoneNumber &&
-        !currentData.phoneNumber.startsWith("+")
-          ? `${currentData.countryCode}${currentData.phoneNumber}`
-          : currentData.phoneNumber;
 
       // Make sure we have a userId
       if (!userId) {
@@ -1013,13 +905,7 @@ const SignupPage: React.FC = () => {
         );
       }
 
-      await sendOTP(
-        {
-          ...currentData,
-          phoneNumber: fullPhoneNumber,
-        } as SignupFormData,
-        userId,
-      );
+      await sendOTP(currentData, userId);
       console.log("OTP resent successfully");
     } catch (error: unknown) {
       console.error("Failed to resend OTP:", error);
@@ -1050,29 +936,17 @@ const SignupPage: React.FC = () => {
 
       console.log("Sending OTP with data:", {
         userId: effectiveUserId,
-        method: data.otpMethod,
+        method: "email",
         email: data.email,
-        phoneNumber: data.phoneNumber,
         fullName: data.fullName,
       });
 
-      // Combine country code and phone number for SMS
-      // Only add country code if phone number doesn't already start with +
-      const fullPhoneNumber =
-        data.countryCode &&
-        data.phoneNumber &&
-        !data.phoneNumber.startsWith("+")
-          ? `${data.countryCode}${data.phoneNumber}`
-          : data.phoneNumber || "";
-
-      // For Supabase, we'll send OTP through the hybrid backend API for both email and SMS
-      // Send email OTP through hybrid system (like SMS flow)
+      // Send email OTP through hybrid system
       console.log("OTP send request:", {
         userId: effectiveUserId,
-        method: data.otpMethod,
+        method: "email",
         email: data.email,
         fullName: data.fullName,
-        phoneNumber: fullPhoneNumber,
       });
 
       const response = await fetch(`${API_BASE_URL}/api/auth/hybrid/send-otp`, {
@@ -1082,10 +956,9 @@ const SignupPage: React.FC = () => {
         },
         body: JSON.stringify({
           userId: effectiveUserId,
-          method: data.otpMethod,
+          method: "email",
           email: data.email,
           fullName: data.fullName,
-          phoneNumber: fullPhoneNumber,
         }),
       });
 
@@ -1191,7 +1064,7 @@ const SignupPage: React.FC = () => {
         surveyStep
           ? "Help us understand how we can better serve you"
           : showOtpStep
-            ? `We've sent a code to your ${otpMethod === "sms" ? "phone number" : "email"}`
+            ? "We've sent a code to your email"
             : selectedPlan
               ? `Start your 14-day Free of the ${selectedPlan} plan`
               : "Start writing better papers today"
@@ -1266,7 +1139,7 @@ const SignupPage: React.FC = () => {
               label="Full Name"
               type="text"
               placeholder="Enter your full name"
-              leftIcon={<User className="h-4 w-4" />}
+              leftIcon={<Mail className="h-4 w-4" />}
               error={
                 watchedFields.fullName !== undefined &&
                 watchedFields.fullName !== ""
@@ -1304,117 +1177,6 @@ const SignupPage: React.FC = () => {
               {...registerWithValidationClear("email")}
               className="bg-white border-white text-gray-600 placeholder-gray-500"
             />
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600 block">
-                Phone Number *
-              </label>
-              <div className="flex gap-2 items-start">
-                <div className="w-24 mt-4">
-                  <Select
-                    onValueChange={(value) => {
-                      // Find the selected country by key
-                      const selectedCountry = countryCodes.find(
-                        (c) => c.key === value,
-                      );
-                      if (selectedCountry) {
-                        setSelectedCountryCode(selectedCountry.code);
-                        setValue("countryCode", selectedCountry.code, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                        });
-                      }
-                    }}
-                    value={
-                      countryCodes.find((c) => c.code === selectedCountryCode)
-                        ?.key || "us"
-                    }
-                  >
-                    <SelectTrigger className="h-12 rounded-xl bg-white border-white focus:ring-2 focus:ring-blue-500 text-gray-600">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-white text-gray-600">
-                      {countryCodes.map((country) => (
-                        <SelectItem
-                          key={country.key}
-                          value={country.key}
-                          className="text-gray-600"
-                        >
-                          {country.name} ({country.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex-1">
-                  <FormInput
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    leftIcon={<User className="h-4 w-4" />}
-                    error={
-                      watchedFields.phoneNumber !== undefined &&
-                      watchedFields.phoneNumber !== ""
-                        ? errors.phoneNumber?.message ||
-                          validationErrors.phoneNumber
-                        : undefined
-                    }
-                    success={
-                      !errors.phoneNumber &&
-                      !validationErrors.phoneNumber &&
-                      !!watchedFields.phoneNumber &&
-                      watchedFields.phoneNumber.length > 0
-                    }
-                    loading={validating.phoneNumber}
-                    {...registerWithValidationClear("phoneNumber")}
-                    className="h-12 bg-white border-white text-gray-600 placeholder-gray-500"
-                  />
-                </div>
-              </div>
-              {watchedFields.phoneNumber !== undefined &&
-                watchedFields.phoneNumber !== "" &&
-                (errors.phoneNumber || validationErrors.phoneNumber) && (
-                  <p className="text-sm text-red-400">
-                    {errors.phoneNumber?.message ||
-                      validationErrors.phoneNumber}
-                  </p>
-                )}
-            </div>
-
-            {/* OTP Method Selection */}
-            <div>
-              <label className="text-sm font-medium text-gray-600 block mb-2">
-                How would you like to receive your verification code? *
-              </label>
-              <Select
-                onValueChange={(value) => {
-                  // Allow both email and SMS selection
-                  if (value === "email" || value === "sms") {
-                    setValue("otpMethod", value as "sms" | "email", {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    });
-                  }
-                }}
-                value={watchedFields.otpMethod || "email"}
-              >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-white focus:ring-2 focus:ring-blue-500 text-gray-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-white text-gray-600">
-                  <SelectItem value="email" className="text-gray-700">
-                    Email
-                  </SelectItem>
-                  <SelectItem value="sms" className="text-gray-700">
-                    SMS
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {watchedFields.otpMethod !== undefined && errors.otpMethod && (
-                <p className="text-sm text-red-400 mt-1">
-                  {errors.otpMethod.message}
-                </p>
-              )}
-            </div>
 
             <div>
               <FormInput
@@ -1493,7 +1255,7 @@ const SignupPage: React.FC = () => {
                 </Link>{" "}
                 and{" "}
                 <Link
-                  href="/docs/privacy"
+                  href="/legal/privacy"
                   className="text-blue-400 hover:underline font-medium"
                 >
                   Privacy Policy
@@ -1532,8 +1294,7 @@ const SignupPage: React.FC = () => {
           <div className="space-y-4">
             <div className="text-center mb-4">
               <p className="text-gray-600 mb-2">
-                Enter the 6-digit code we sent to your{" "}
-                {otpMethod === "sms" ? "phone number" : "email"}
+                Enter the 6-digit code we sent to your email
               </p>
               <p className="text-sm text-gray-600">
                 Didn't receive it?{" "}

@@ -117,9 +117,9 @@ const DocumentHistory = ({
         let content = {};
         let wordCount = 0;
 
-        if (editor) {
+        if (editor && editor.state && editor.state.doc) {
           content = editor.getJSON();
-          // Try to get word count from editor, fallback to character count if not available
+          // Try to get word count from editor storage
           if (editor.storage && editor.storage.characterCount) {
             wordCount = editor.storage.characterCount.words
               ? editor.storage.characterCount.words()
@@ -127,8 +127,22 @@ const DocumentHistory = ({
           }
         }
 
-        // Create the version with content and metadata
-        await ProjectService.createDocumentVersion(
+        // Validate we have actual content before creating version
+        if (
+          !content ||
+          (typeof content === "object" && Object.keys(content).length === 0)
+        ) {
+          toast({
+            title: "Warning",
+            description:
+              "Document is empty. Add some content before creating a version.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Create the version with content and metadata (force:true ensures it's always created)
+        const result = await ProjectService.createDocumentVersion(
           projectId,
           content,
           wordCount,
@@ -141,18 +155,14 @@ const DocumentHistory = ({
         // Show success notification
         toast({
           title: "Success",
-          description: "Document version created successfully",
+          description: `Document version ${result?.version || ""} created successfully`,
         });
-
-        if (onClose) {
-          onClose();
-        }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error creating document version:", error);
         // Show error notification
         toast({
           title: "Error",
-          description: "Failed to create document version",
+          description: error.message || "Failed to create document version",
           variant: "destructive",
         });
       }
@@ -419,7 +429,8 @@ const DocumentHistory = ({
             </h3>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -430,7 +441,8 @@ const DocumentHistory = ({
             <div className="mb-4 flex justify-end">
               <button
                 onClick={handleCreateVersion}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+              >
                 <Plus className="h-4 w-4" />
                 Create Version
               </button>
@@ -445,7 +457,8 @@ const DocumentHistory = ({
                 </h4>
                 <button
                   onClick={() => setShowScheduleForm(!showScheduleForm)}
-                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                >
                   <Settings className="h-4 w-4" />
                   {showScheduleForm ? "Cancel" : "Add Schedule"}
                 </button>
@@ -467,7 +480,8 @@ const DocumentHistory = ({
                             frequency: e.target.value as any,
                           })
                         }
-                        className="w-full p-2 border rounded text-sm">
+                        className="w-full p-2 border rounded text-sm"
+                      >
                         <option value="30min">Every 30 Minutes</option>
                         <option value="hourly">Hourly</option>
                         <option value="daily">Daily</option>
@@ -477,7 +491,8 @@ const DocumentHistory = ({
                     </div>
                     <button
                       onClick={handleCreateSchedule}
-                      className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors">
+                      className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                    >
                       Save
                     </button>
                   </div>
@@ -489,7 +504,8 @@ const DocumentHistory = ({
                   {schedules.map((schedule) => (
                     <div
                       key={schedule.id}
-                      className="flex items-center justify-between p-3 border rounded-lg">
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <div>
                         <div className="font-medium capitalize">
                           {schedule.frequency} schedule
@@ -513,7 +529,8 @@ const DocumentHistory = ({
                         </label>
                         <button
                           onClick={() => deleteSchedule(schedule.id)}
-                          className="text-red-600 hover:text-red-800 text-sm">
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
                           Delete
                         </button>
                       </div>
@@ -546,7 +563,8 @@ const DocumentHistory = ({
                   {versions.map((version) => (
                     <div
                       key={version.id}
-                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
@@ -568,7 +586,8 @@ const DocumentHistory = ({
                         </div>
                         <button
                           onClick={() => handleRestore(version.id)}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                        >
                           Restore
                         </button>
                       </div>
@@ -587,7 +606,8 @@ const DocumentHistory = ({
             </div>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors">
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+            >
               Close
             </button>
           </div>
