@@ -107,10 +107,22 @@ const app: Application = express();
 // Initialize PORT using SecretsService
 let PORT: number = 3001; // Default value
 
-// Async function to initialize PORT from secrets
-async function initializePort() {
+// Resolve the listening port synchronously so it is always set before app.listen runs.
+function initializePort() {
   try {
-    const portStr = await SecretsService.getBackendUrl();
+    // Render (and most PaaS) inject the listening port via process.env.PORT.
+    // This MUST take precedence, otherwise the platform can't detect the open port.
+    if (process.env.PORT) {
+      const envPort = parseInt(process.env.PORT, 10);
+      if (!isNaN(envPort)) {
+        PORT = envPort;
+        console.log(`Starting server on platform PORT ${PORT}`);
+        return;
+      }
+    }
+
+    // Fall back to BACKEND_URL (read synchronously to avoid an await race).
+    const portStr = process.env.BACKEND_URL || "http://localhost:3001";
     let newPort = 3001;
     if (portStr) {
       // If it's a URL, parse it
@@ -130,7 +142,7 @@ async function initializePort() {
     PORT = newPort;
     console.log(`Starting server on port ${PORT}`);
   } catch (error) {
-    console.error("Error initializing PORT from secrets:", error);
+    console.error("Error initializing PORT:", error);
     PORT = 3001; // fallback to default
     console.log(`Starting server on default port ${PORT}`);
   }
@@ -250,6 +262,17 @@ app.use("/api/backup", backupRouter);
 app.use("/api/search", searchRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/stats", statsRouter);
+
+// Root health check - Render sends HEAD / for health checks
+const rootHealth = (req: any, res: any) => {
+  res.status(200).set("content-type", "application/json").json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    service: "WorkContext",
+  });
+};
+app.head("/", rootHealth);
+app.get("/", rootHealth);
 
 // Health check endpoint
 app.get("/health", async (req, res) => {
@@ -1599,11 +1622,6 @@ app.post("/api/auth/reset-password", async (req, res) => {
   }
 });
 
-// Start the server
-app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
-
 // OTP endpoints
 app.post("/api/auth/send-otp", async (req, res) => {
   try {
@@ -2087,10 +2105,6 @@ app.post("/api/users/request-otp", async (req, res) => {
 // The correct route with authMiddleware is registered later in the file
 
 // Route to handle user account updates
-
-app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
 
 app.post("/api/users/export", async (req, res) => {
   try {
