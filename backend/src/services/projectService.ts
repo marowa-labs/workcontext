@@ -1,4 +1,6 @@
 import { prisma } from "../lib/prisma";
+import logger from "../monitoring/logger";
+import { ContextEmbeddingService } from "./contextEmbeddingService";
 
 export class ProjectService {
   // Get all projects for a user
@@ -83,9 +85,14 @@ export class ProjectService {
   // Create a new project
   static async createProject(projectData: any) {
     try {
-      return await prisma.project.create({
+      const project = await prisma.project.create({
         data: projectData,
       });
+      // Fire-and-forget: keep the unified context layer in sync.
+      ContextEmbeddingService.upsertForProject(project).catch((e) =>
+        logger.warn("Failed to embed new project", { error: e.message }),
+      );
+      return project;
     } catch (error) {
       throw new Error(`Error creating project: ${(error as Error).message}`);
     }
@@ -94,10 +101,14 @@ export class ProjectService {
   // Update a project
   static async updateProject(projectId: string, updateData: Partial<any>) {
     try {
-      return await prisma.project.update({
+      const project = await prisma.project.update({
         where: { id: projectId },
         data: updateData,
       });
+      ContextEmbeddingService.upsertForProject(project).catch((e) =>
+        logger.warn("Failed to re-embed project", { error: e.message }),
+      );
+      return project;
     } catch (error) {
       throw new Error(`Error updating project: ${(error as Error).message}`);
     }
@@ -109,6 +120,9 @@ export class ProjectService {
       await prisma.project.delete({
         where: { id: projectId },
       });
+      ContextEmbeddingService.remove("project", projectId).catch((e) =>
+        logger.warn("Failed to remove project embedding", { error: e.message }),
+      );
       return true;
     } catch (error) {
       throw new Error(`Error deleting project: ${(error as Error).message}`);

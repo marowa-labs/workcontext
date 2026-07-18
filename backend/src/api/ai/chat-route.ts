@@ -5,6 +5,36 @@ import { authenticateExpressRequest } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
 import { SubscriptionService } from "../../services/subscriptionService";
 import { createNotification } from "../../services/notificationService";
+import { ContextEmbeddingService } from "../../services/contextEmbeddingService";
+
+// Retrieve semantically related workspace items to ground the AI answer
+// ("workspace memory") — scoped to the session's project workspace when present.
+async function retrieveWorkspaceContext(
+  userId: string,
+  projectId: string | null,
+  query: string,
+): Promise<any[]> {
+  try {
+    let workspaceId: string | null = null;
+    if (projectId) {
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { workspace_id: true },
+      });
+      workspaceId = project?.workspace_id || null;
+    }
+    return await ContextEmbeddingService.similaritySearch({
+      ownerId: userId,
+      workspaceId,
+      query,
+      k: 4,
+      threshold: 0.2,
+    });
+  } catch (err: any) {
+    logger.warn("Workspace context retrieval failed", { error: err.message });
+    return [];
+  }
+}
 
 const router: ExpressRouter = Router();
 
@@ -255,6 +285,13 @@ async function handlePostChatMessage(req: any, res: any) {
     // Track AI usage
     await AIService.trackAIUsage(userId, "chat_message");
 
+    // Retrieve related workspace items for RAG grounding
+    const workspaceContext = await retrieveWorkspaceContext(
+      userId,
+      session.project_id,
+      content,
+    );
+
     // Process AI response with streaming support
     const aiResponse = await AIService.processChatMessage({
       sessionId,
@@ -263,7 +300,7 @@ async function handlePostChatMessage(req: any, res: any) {
       messageType,
       imageUrl,
       fileUrl,
-      metadata,
+      metadata: { ...metadata, workspaceContext },
     });
 
     // Save AI response
@@ -404,6 +441,13 @@ async function handlePostChatMessageStream(req: any, res: any) {
     // Track AI usage
     await AIService.trackAIUsage(userId, "chat_message");
 
+    // Retrieve related workspace items for RAG grounding
+    const workspaceContext = await retrieveWorkspaceContext(
+      userId,
+      session.project_id,
+      content,
+    );
+
     // Set response headers for streaming
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -419,7 +463,7 @@ async function handlePostChatMessageStream(req: any, res: any) {
       messageType,
       imageUrl,
       fileUrl,
-      metadata,
+      metadata: { ...metadata, workspaceContext },
       onToken: (token) => {
         // Send token to client
         res.write(`data: ${JSON.stringify({ token })}\n\n`);

@@ -145,10 +145,29 @@ ${content}`,
             throw new Error(
               "No AI model available. Please configure an API key in your AI settings.",
             );
+
+          // Ground the answer with semantically related workspace items
+          // ("workspace memory") when available.
+          let workspaceContextBlock = "";
+          if (
+            Array.isArray(options.workspaceContext) &&
+            options.workspaceContext.length > 0
+          ) {
+            const ctxLines = (options.workspaceContext as any[])
+              .map(
+                (r) =>
+                  `- [${r.entity_type}] ${r.title || "(untitled)"}: ${(
+                    r.content || ""
+                  ).slice(0, 300)}`,
+              )
+              .join("\n");
+            workspaceContextBlock = `\n\nWORKSPACE CONTEXT — related items from across the user's workspace (use only if relevant to the question):\n${ctxLines}`;
+          }
+
           result = await this.routeToProvider(
             modelUsed,
             userId,
-            `Document content:\n${options.documentContent}\n\nQuestion:\n${content}`,
+            `Document content:\n${options.documentContent}${workspaceContextBlock}\n\nQuestion:\n${content}`,
             { maxTokens: 2048, temperature: 0.5 },
           );
           break;

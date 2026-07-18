@@ -3,6 +3,7 @@ import logger from "../monitoring/logger";
 import { createNotification } from "./notificationService";
 import { getNotificationServer } from "../lib/notificationServer";
 import RecurringTaskService from "./RecurringTaskService";
+import { ContextEmbeddingService } from "./contextEmbeddingService";
 
 export interface TaskData {
   title: string;
@@ -617,6 +618,11 @@ export class WorkspaceTaskService {
         logger.error("Failed to broadcast TASK_CREATED event:", err);
       }
 
+      // Fire-and-forget: keep the unified context layer in sync.
+      ContextEmbeddingService.upsertForTask(task).catch((e) =>
+        logger.warn("Failed to embed new task", { error: e.message }),
+      );
+
       return task;
     } catch (error) {
       logger.error("Error creating workspace task:", error);
@@ -746,6 +752,11 @@ export class WorkspaceTaskService {
         logger.error("Failed to broadcast TASK_UPDATED event:", err);
       }
 
+      // Fire-and-forget: keep the unified context layer in sync.
+      ContextEmbeddingService.upsertForTask(updatedTask).catch((e) =>
+        logger.warn("Failed to re-embed task", { error: e.message }),
+      );
+
       return updatedTask;
     } catch (error) {
       logger.error("Error updating workspace task:", error);
@@ -767,6 +778,11 @@ export class WorkspaceTaskService {
       await prisma.workspaceTask.delete({
         where: { id: taskId },
       });
+
+      // Fire-and-forget: keep the unified context layer in sync.
+      ContextEmbeddingService.remove("task", taskId).catch((e) =>
+        logger.warn("Failed to remove task embedding", { error: e.message }),
+      );
 
       // Notify workspace members
       if (task) {

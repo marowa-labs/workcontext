@@ -4,6 +4,7 @@
 import { prisma } from "../lib/prisma";
 import logger from "../monitoring/logger";
 import { UnifiedAIService } from "./unifiedAIService";
+import { ContextEmbeddingService } from "./contextEmbeddingService";
 import {
   ActionDefinition,
   ActionResult,
@@ -455,6 +456,10 @@ export class AIActionExecutor {
       },
     });
 
+    ContextEmbeddingService.upsertForProject(project as any).catch((e) =>
+      logger.warn("AI executor: failed to embed new project", { error: e.message }),
+    );
+
     return {
       success: true,
       data: project,
@@ -483,6 +488,10 @@ export class AIActionExecutor {
       data: updateData,
     });
 
+    ContextEmbeddingService.upsertForProject(project as any).catch((e) =>
+      logger.warn("AI executor: failed to re-embed project", { error: e.message }),
+    );
+
     return {
       success: true,
       data: project,
@@ -504,6 +513,12 @@ export class AIActionExecutor {
     await this.prisma.project.delete({
       where: { id: params.projectId },
     });
+
+    ContextEmbeddingService.remove("project", params.projectId).catch((e) =>
+      logger.warn("AI executor: failed to remove project embedding", {
+        error: e.message,
+      }),
+    );
 
     return {
       success: true,
@@ -558,6 +573,10 @@ export class AIActionExecutor {
       },
     });
 
+    ContextEmbeddingService.upsertForTask(task as any).catch((e) =>
+      logger.warn("AI executor: failed to embed new task", { error: e.message }),
+    );
+
     // Add assignees if specified
     if (params.assigneeEmails && params.assigneeEmails.length > 0) {
       for (const email of params.assigneeEmails) {
@@ -600,6 +619,10 @@ export class AIActionExecutor {
       data: updateData,
     });
 
+    ContextEmbeddingService.upsertForTask(task as any).catch((e) =>
+      logger.warn("AI executor: failed to re-embed task", { error: e.message }),
+    );
+
     return {
       success: true,
       data: task,
@@ -619,6 +642,12 @@ export class AIActionExecutor {
     await this.prisma.workspaceTask.delete({
       where: { id: params.taskId },
     });
+
+    ContextEmbeddingService.remove("task", params.taskId).catch((e) =>
+      logger.warn("AI executor: failed to remove task embedding", {
+        error: e.message,
+      }),
+    );
 
     return {
       success: true,
@@ -641,6 +670,10 @@ export class AIActionExecutor {
         updated_at: new Date(),
       },
     });
+
+    ContextEmbeddingService.upsertForTask(task as any).catch((e) =>
+      logger.warn("AI executor: failed to re-embed task", { error: e.message }),
+    );
 
     return {
       success: true,
@@ -1100,6 +1133,10 @@ Summary:`;
       },
     });
 
+    ContextEmbeddingService.upsertForProject(project as any).catch((e) =>
+      logger.warn("AI executor: failed to embed new project", { error: e.message }),
+    );
+
     // Create tasks if workspace is provided
     const createdTasks = [];
     if (params.workspaceId && params.tasks && params.tasks.length > 0) {
@@ -1114,6 +1151,9 @@ Summary:`;
             priority: "medium",
           },
         });
+        ContextEmbeddingService.upsertForTask(task as any).catch((e) =>
+          logger.warn("AI executor: failed to embed new task", { error: e.message }),
+        );
         createdTasks.push(task);
       }
     }

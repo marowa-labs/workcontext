@@ -1437,6 +1437,21 @@ Type: ${session.project.type}
 Document Content: ${docContent}`;
     }
 
+    // Append semantically related workspace items ("workspace memory") so the
+    // AI can answer questions that span the whole workspace, not just this doc.
+    const wsCtx = (metadata as any)?.workspaceContext;
+    if (Array.isArray(wsCtx) && wsCtx.length > 0) {
+      const relatedText = wsCtx
+        .map(
+          (r: any) =>
+            `- [${r.entity_type}] ${r.title || "(untitled)"}: ${(
+              r.content || ""
+            ).slice(0, 300)}`,
+        )
+        .join("\n");
+      projectContext += `\n\nRelated workspace items (semantic matches — use only if relevant to the question):\n${relatedText}`;
+    }
+
     // MODE-SPECIFIC SYSTEM PROMPT — context-aware based on whether a document is open
     const mode = metadata?.chatMode || "general";
     const hasDocument = !!session?.project;

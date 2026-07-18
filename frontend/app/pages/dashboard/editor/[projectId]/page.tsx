@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AIChatPanel } from "../../../../components/ai-chat/AIChat";
 import { Button } from "../../../../components/ui/button";
-import { X, FileText, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { X, FileText, ChevronLeft, ChevronRight, Plus, Link2 } from "lucide-react";
 import { cn } from "../../../../lib/utils";
 import ProjectService from "../../../../lib/utils/projectService";
 import { useUser } from "../../../../lib/utils/useUser";
@@ -22,6 +22,7 @@ import { LanguageCheckPanel } from "../../../../components/editor/SidebarRight/L
 import { DocumentOutlinePanel } from "../../../../components/editor/SidebarLeft/DocumentOutlinePanel";
 import { ConceptMapPanel } from "../../../../components/editor/SidebarLeft/ConceptMapPanel";
 import { TeamChat } from "../../../../components/dashboard/team/TeamChat";
+import { RelatedItems } from "../../../../components/related/RelatedItems";
 
 // Define panel types
 export type LeftPanelType =
@@ -30,7 +31,7 @@ export type LeftPanelType =
   | "language"
   | "concept-map"
   | null;
-export type RightPanelType = "ai-chat" | "team-chat" | null;
+export type RightPanelType = "ai-chat" | "team-chat" | "related" | null;
 
 interface Project {
   id: string;
@@ -698,13 +699,22 @@ export default function EditorPage() {
       {/* Right Panel Toggle Button */}
       <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-2">
         {!rightPanel && (
-          <button
-            onClick={() => toggleRightPanel("ai-chat")}
-            className="bg-white border border-gray-200 rounded-l-md p-1.5 hover:bg-gray-50 shadow-sm"
-            title="AI Assistant"
-          >
-            <ChevronLeft className="h-4 w-4 text-gray-600" />
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => toggleRightPanel("ai-chat")}
+              className="bg-white border border-gray-200 rounded-l-md p-1.5 hover:bg-gray-50 shadow-sm"
+              title="AI Assistant"
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            </button>
+            <button
+              onClick={() => toggleRightPanel("related")}
+              className="bg-white border border-gray-200 rounded-l-md p-1.5 hover:bg-gray-50 shadow-sm"
+              title="Related Items"
+            >
+              <Link2 className="h-4 w-4 text-gray-600" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -727,6 +737,7 @@ export default function EditorPage() {
             <h3 className="text-sm font-semibold text-gray-900">
               {rightPanel === "ai-chat" && "AI Assistant"}
               {rightPanel === "team-chat" && "Team Chat"}
+              {rightPanel === "related" && "Related Items"}
             </h3>
             <Button
               variant="ghost"
@@ -762,6 +773,12 @@ export default function EditorPage() {
               <TeamChat
                 projectId={documentId}
                 onClose={() => setRightPanel(null)}
+              />
+            )}
+            {rightPanel === "related" && (
+              <RelatedItems
+                projectId={documentId}
+                workspaceId={project?.workspace_id}
               />
             )}
           </div>

@@ -17,6 +17,27 @@ model Document {
   @@map("documents")
 }
 
+// Unified context layer: vector embeddings for workspace items (projects, tasks, notes)
+// used for semantic "related items" and cross-workspace RAG retrieval.
+model ContextEmbedding {
+  id           String   @id @default(uuid())
+  owner_id     String // creator of the entity — used to scope retrieval when no workspace is available
+  workspace_id String? // workspace the entity belongs to — primary retrieval scope
+  entity_type  String // "project" | "task" | "note"
+  entity_id    String
+  title        String?
+  content      String // plain-text used to generate the embedding
+  embedding    Unsupported("vector")? // dimension-flexible (768 for Gemini, 1536 for OpenAI)
+  dim          Int? // embedding dimension — used to keep same-dimension comparisons safe
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([owner_id])
+  @@index([workspace_id])
+  @@index([entity_type, entity_id])
+  @@map("context_embeddings")
+}
+
 model User {
   id                       String                  @id @default(uuid())
   email                    String                  @unique
