@@ -78,7 +78,7 @@ async function recordUserSession(
 // Hybrid signup route - uses Supabase Auth for authentication and Supabase for user data
 export async function POST(req: Request, res: Response) {
   try {
-    const {
+    let {
       email,
       password,
       full_name,
@@ -97,6 +97,12 @@ export async function POST(req: Request, res: Response) {
       field_of_study: string;
       selected_plan: string;
     };
+
+    // Email-based signups don't send otp_method; default to "email" so OTP
+    // storage/verification has a valid method (the DB unique key requires it).
+    if (otp_method !== "sms") {
+      otp_method = "email";
+    }
 
     if (!email) {
       return res.status(400).json({
