@@ -255,7 +255,7 @@ export async function generateDocx(
                     new TextRun({
                       text: cellText,
                       bold: cellRuns[0]?.bold,
-                      size: 20,
+                      size: 24, // 12pt
                     }),
                   ],
                 }),
@@ -326,7 +326,7 @@ export async function generateDocx(
                           text: run.text,
                           bold: run.bold,
                           italics: run.italic,
-                          size: 20,
+                          size: 24, // 12pt
                         }),
                     )
                   : [new TextRun({ text: "" })],
@@ -347,6 +347,17 @@ export async function generateDocx(
         5: HeadingLevel.HEADING_5,
         6: HeadingLevel.HEADING_6,
       };
+
+      // Determine font size based on heading level
+      // Heading 1: Title or top section, 14pt+ (28+)
+      // Heading 2: 14pt (28)
+      // Heading 3+: Smaller (e.g., 14 - (level-2)*2)
+
+      let size = 28; // Default to 14pt for H2
+      if (block.level === 1)
+        size = 32; // 16pt for H1
+      else if (block.level > 2) size = Math.max(24, 28 - (block.level - 2) * 2);
+
       children.push(
         new Paragraph({
           heading: headingMap[block.level] || HeadingLevel.HEADING_1,
@@ -357,6 +368,7 @@ export async function generateDocx(
                 bold: run.bold,
                 italics: run.italic,
                 strike: run.strikethrough,
+                size: size,
               }),
           ),
           spacing: { before: 200, after: 100 },
@@ -367,7 +379,7 @@ export async function generateDocx(
         new Paragraph({
           children: block.runs.map(
             (run) =>
-              new TextRun({ text: run.text, font: "Courier New", size: 20 }),
+              new TextRun({ text: run.text, font: "Courier New", size: 24 }),
           ),
           spacing: { before: 100, after: 100 },
           shading: { type: "clear", color: "auto", fill: "F0F0F0" },
@@ -388,7 +400,7 @@ export async function generateDocx(
                     italics: run.italic,
                     strike: run.strikethrough,
                     font: run.code ? "Courier New" : undefined,
-                    size: 20,
+                    size: 24, // 12pt
                   }),
               ),
           spacing: { before: 60, after: 60 },
@@ -425,7 +437,6 @@ export function generatePdf(
 
       doc.fontSize(24).font("Helvetica-Bold").text(title, { align: "center" });
       doc.moveDown(2);
-
       for (const block of blocks) {
         if (block.type === "table" && block.tableRows) {
           const startX = doc.page.margins.left;
@@ -443,7 +454,7 @@ export function generatePdf(
               const cellText = row.cells[c].map((r) => r.text).join("");
               if (cellText) {
                 doc
-                  .fontSize(10)
+                  .fontSize(12)
                   .font("Helvetica")
                   .text(cellText, cellX + 4, tableY + 4, {
                     width: colWidth - 8,
@@ -460,7 +471,7 @@ export function generatePdf(
 
         if (block.type === "image") {
           doc
-            .fontSize(10)
+            .fontSize(12)
             .font("Helvetica-Oblique")
             .text(`[Image: ${block.imageAlt || "image"}]`, { align: "center" });
           doc.moveDown(1);
@@ -472,7 +483,7 @@ export function generatePdf(
             for (const colBlock of colBlocks) {
               const text = colBlock.runs.map((r) => r.text).join("");
               if (text.trim()) {
-                doc.fontSize(10).font("Helvetica").text(text);
+                doc.fontSize(12).font("Helvetica").text(text);
               }
             }
           }
@@ -481,16 +492,20 @@ export function generatePdf(
         }
 
         if (block.type === "heading" && block.level) {
-          const size = Math.max(12, 22 - (block.level - 1) * 2);
+          const size = Math.max(14, 20 - (block.level - 1) * 2);
           doc.fontSize(size).font("Helvetica-Bold");
           doc.text(block.runs.map((r) => r.text).join(""), {
             continued: false,
           });
           doc.moveDown(0.5);
         } else if (block.type === "codeBlock") {
-          doc.fontSize(10).font("Courier");
+          doc.fontSize(12).font("Courier");
           for (const run of block.runs) doc.text(run.text);
           doc.moveDown(0.5);
+        } else if (block.type === "listItem") {
+          const text = block.runs.map((r) => r.text).join("");
+          doc.fontSize(12).font("Helvetica");
+          doc.list([text], { bulletRadius: 2, textIndent: 10 });
         } else {
           const text = block.runs.map((r) => r.text).join("");
           if (!text.trim()) {
@@ -504,7 +519,6 @@ export function generatePdf(
           if (!hasFormatting) {
             doc.fontSize(12).font("Helvetica");
             if (block.type === "blockquote") doc.text(text, { indent: 30 });
-            else if (block.type === "listItem") doc.text(text, { indent: 20 });
             else doc.text(text);
           } else {
             doc.fontSize(12);

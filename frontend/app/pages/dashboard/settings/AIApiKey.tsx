@@ -498,11 +498,37 @@ const AIApiKeyPage = () => {
     }
   };
 
-  const renderConnectionStatus = (provider: string) => {
+  const getHasKeyForProvider = (provider: BYOKProvider) => {
+    if (!byokSettings) return false;
+    switch (provider) {
+      case "google":
+        return byokSettings.hasGoogleKey;
+      case "anthropic":
+        return byokSettings.hasClaudeKey;
+      case "openai":
+        return byokSettings.hasOpenAIKey;
+      case "openrouter":
+        return byokSettings.hasOpenRouterKey;
+    }
+  };
+
+  const getMaskedKeyForProvider = (provider: BYOKProvider) => {
+    if (!byokSettings) return undefined;
+    switch (provider) {
+      case "google":
+        return byokSettings.maskedKeys.google;
+      case "anthropic":
+        return byokSettings.maskedKeys.claude;
+      case "openai":
+        return byokSettings.maskedKeys.openai;
+      case "openrouter":
+        return byokSettings.maskedKeys.openrouter;
+    }
+  };
+
+  const renderConnectionStatus = (provider: BYOKProvider) => {
     const status = byokConnectionStatus[provider];
-    const hasKey = byokSettings?.[
-      `has${provider.charAt(0).toUpperCase() + provider.slice(1)}Key` as keyof BYOKSettings
-    ] as boolean;
+    const hasKey = getHasKeyForProvider(provider);
 
     if (hasKey && status === "connected") {
       return (
@@ -599,9 +625,7 @@ const AIApiKeyPage = () => {
             <div className="flex items-center gap-2 flex-wrap">
               {["google", "openai", "anthropic", "openrouter"].map(
                 (provider) => {
-                  const hasKey = byokSettings?.[
-                    `has${provider.charAt(0).toUpperCase() + provider.slice(1)}Key` as keyof BYOKSettings
-                  ] as boolean;
+                  const hasKey = getHasKeyForProvider(provider as BYOKProvider);
                   if (!hasKey) return null;
                   return (
                     <button
@@ -623,9 +647,7 @@ const AIApiKeyPage = () => {
               )}
               {["google", "anthropic", "openai", "openrouter"].map(
                 (provider) => {
-                  const hasKey = byokSettings?.[
-                    `has${provider.charAt(0).toUpperCase() + provider.slice(1)}Key` as keyof BYOKSettings
-                  ] as boolean;
+                  const hasKey = getHasKeyForProvider(provider as BYOKProvider);
                   if (!hasKey) return null;
                   const status = byokConnectionStatus[provider];
                   return (
@@ -796,13 +818,12 @@ const AIApiKeyPage = () => {
                       BYOKFrontendService.getProviderDisplayName(
                         provider as BYOKProvider,
                       );
-                    const hasKey = byokSettings?.[
-                      `has${provider.charAt(0).toUpperCase() + provider.slice(1)}Key` as keyof BYOKSettings
-                    ] as boolean;
-                    const maskedKey =
-                      byokSettings?.maskedKeys?.[
-                        provider as keyof typeof byokSettings.maskedKeys
-                      ];
+                    const hasKey = getHasKeyForProvider(
+                      provider as BYOKProvider,
+                    );
+                    const maskedKey = getMaskedKeyForProvider(
+                      provider as BYOKProvider,
+                    );
                     const isTesting = byokTesting === provider;
                     const isSaving = byokSaving === provider;
 
@@ -1219,9 +1240,9 @@ const AIApiKeyPage = () => {
                     >
                       {["google", "openai", "anthropic", "openrouter"].map(
                         (p) => {
-                          const hasKey = byokSettings?.[
-                            `has${p.charAt(0).toUpperCase() + p.slice(1)}Key` as keyof BYOKSettings
-                          ] as boolean;
+                          const hasKey = getHasKeyForProvider(
+                            p as BYOKProvider,
+                          );
                           if (!hasKey) return null;
                           return (
                             <option key={p} value={p}>

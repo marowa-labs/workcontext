@@ -76,12 +76,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-green-400" />
-                    <span className="text-lg text-gray-300">
-                      Citation Confidence & Management
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-3">
                     <Network className="h-5 w-5 text-green-400" />
                     <span className="text-lg text-gray-300">
                       Visual Insight Mapping

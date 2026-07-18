@@ -230,7 +230,7 @@ class AIService {
   }
 
   // Language check with structured JSON response
-  static async checkLanguage(text, model) {
+  static async checkLanguage(text, model = null) {
     try {
       const token = await this.getAuthToken();
       if (!token) {
@@ -247,8 +247,8 @@ class AIService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to check language");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Failed to check language");
       }
 
       const data = await response.json();

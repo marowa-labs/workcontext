@@ -6,6 +6,7 @@
 .env.backup
 frontend/.env
 backend/.env
+social-media/
 
 # Dependencies
 node_modules/
@@ -31,3 +32,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Secrets
+mcp.json

@@ -76,24 +76,52 @@ export const useCollaboration = ({
               // Log the actual document content for debugging
               try {
                 const ydoc = newProvider.document;
-                // Safely check if the prosemirror type exists
-                let prosemirrorJSON = null;
+                let fieldName: string | null = null;
+                let sharedType: any = null;
+
                 try {
                   const ytypes = ydoc.share;
-                  if (ytypes && ytypes.has("prosemirror")) {
-                    prosemirrorJSON = ydoc.get("prosemirror") as any;
+                  if (ytypes) {
+                    if (ytypes.has("default")) {
+                      fieldName = "default";
+                    } else if (ytypes.has("prosemirror")) {
+                      fieldName = "prosemirror";
+                    } else {
+                      const keys = Array.from(ytypes.keys());
+                      fieldName = keys.length > 0 ? keys[0] : null;
+                    }
+
+                    if (fieldName) {
+                      sharedType = ydoc.get(fieldName);
+                    }
                   }
                 } catch (typeError) {
                   console.log(
-                    "[Collab Synced] prosemirror type not initialized yet:",
+                    "[Collab Synced] Shared type not initialized yet:",
                     typeError,
                   );
                 }
+
+                let contentPreview = "not available";
+                try {
+                  if (sharedType !== null && sharedType !== undefined) {
+                    const serialized = JSON.stringify(sharedType);
+                    contentPreview =
+                      typeof serialized === "string"
+                        ? serialized.substring(0, 200)
+                        : String(serialized);
+                  }
+                } catch (previewError) {
+                  contentPreview = `failed to serialize (${previewError})`;
+                }
+
+                console.log(
+                  "[Collab Synced] Document content type:",
+                  fieldName ?? "unknown",
+                );
                 console.log(
                   "[Collab Synced] Document content:",
-                  prosemirrorJSON
-                    ? JSON.stringify(prosemirrorJSON).substring(0, 200)
-                    : "not available",
+                  contentPreview,
                 );
               } catch (e) {
                 console.log(
@@ -122,6 +150,43 @@ export const useCollaboration = ({
           });
         }
 
+        // Add lightweight Yjs update tracing for debugging duplication issues
+        try {
+          const ydoc = (newProvider as any).document;
+          if (ydoc && typeof ydoc.on === "function") {
+            const onUpdate = (
+              update: Uint8Array | ArrayBuffer,
+              origin: any,
+            ) => {
+              try {
+                const size = (update && (update as any).byteLength) || 0;
+                console.debug("[Yjs] update event", {
+                  documentId,
+                  size,
+                  origin,
+                });
+              } catch (e) {
+                console.debug("[Yjs] update event (failed to read size)", {
+                  documentId,
+                  origin,
+                });
+              }
+            };
+
+            // Listen for updates to the Yjs doc
+            ydoc.on("update", onUpdate);
+
+            // Attach a quick detach helper so the provider cleanup removes the listener
+            // @ts-ignore
+            newProvider.__yjs_on_update = onUpdate;
+          }
+        } catch (traceErr) {
+          console.warn(
+            "[useCollaboration] Could not attach Yjs update listener:",
+            traceErr,
+          );
+        }
+
         setProvider(newProvider);
       } catch (err) {
         console.error("Collab Init Error:", err);
@@ -135,6 +200,20 @@ export const useCollaboration = ({
     return () => {
       mounted = false;
       if (newProvider) {
+        try {
+          const ydoc = (newProvider as any).document;
+          const onUpdate = (newProvider as any).__yjs_on_update;
+          if (ydoc && typeof ydoc.off === "function" && onUpdate) {
+            try {
+              ydoc.off("update", onUpdate);
+            } catch (e) {
+              // ignore
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+
         newProvider.destroy();
       }
       setProvider(null);

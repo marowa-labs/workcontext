@@ -1,5 +1,6 @@
+import { randomUUID } from "crypto";
 import prisma from "../lib/prisma";
-import { getSupabaseClient } from "../lib/supabase/client";
+import { getSupabaseAdminClient } from "../lib/supabase/client";
 import logger from "../monitoring/logger";
 
 export interface TeamChatFilter {
@@ -55,15 +56,17 @@ export class TeamChatService {
     filter: TeamChatFilter,
   ) {
     try {
-      const supabase = await getSupabaseClient();
+      const supabase = await getSupabaseAdminClient();
       if (!supabase) {
-        throw new Error("Supabase client not available");
+        throw new Error("Supabase admin client not available");
       }
 
-      // Use Supabase client directly so real-time subscriptions fire
+      // Use Supabase admin client so server-side inserts and relation selects bypass RLS
+      const id = randomUUID();
       const { data, error } = await supabase
         .from("TeamChatMessage")
         .insert({
+          id,
           user_id: userId,
           content,
           workspace_id: filter.workspaceId || null,
@@ -110,9 +113,9 @@ export class TeamChatService {
       }
 
       // Use Supabase client for delete so real-time subscription fires
-      const supabase = await getSupabaseClient();
+      const supabase = await getSupabaseAdminClient();
       if (!supabase) {
-        throw new Error("Supabase client not available");
+        throw new Error("Supabase admin client not available");
       }
 
       const { error } = await supabase

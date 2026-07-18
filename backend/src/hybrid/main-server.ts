@@ -13,6 +13,7 @@ import { scheduleCleanupTask } from "../scheduledTasks/cleanupExpiredItems";
 import { scheduleVersionCleanupTask } from "../scheduledTasks/versionCleanupTask";
 import { scheduleVersionSchedulingTask } from "../scheduledTasks/versionSchedulingTask";
 import { scheduleTaskReminderTask } from "../scheduledTasks/taskReminderTask";
+import { refreshMissingEmbeddings } from "../scheduledTasks/contextEmbeddingRefresh";
 
 // Load environment variables
 dotenv.config();
@@ -146,6 +147,13 @@ scheduleCleanupTask();
 scheduleVersionCleanupTask();
 scheduleVersionSchedulingTask();
 scheduleTaskReminderTask();
+
+// Self-healing context embeddings: re-embed items missing a vector (runs hourly)
+setInterval(() => {
+  refreshMissingEmbeddings().catch((err) =>
+    logger.error("Embedding refresh tick failed", { error: err.message }),
+  );
+}, 60 * 60 * 1000);
 
 // Middleware
 let frontendUrl: string = process.env.FRONTEND_URL || "http://localhost:3000";

@@ -324,6 +324,8 @@ export const MainEditor = forwardRef<
 
     // Smart Features - Phase 3
     const [workspaceId, setWorkspaceId] = useState<string | undefined>();
+    const seededCollaborativeDocRef = useRef(false);
+    const seededDocumentIdRef = useRef<string | undefined>(undefined);
 
     // Update document title when project loads
     useEffect(() => {
@@ -335,6 +337,13 @@ export const MainEditor = forwardRef<
         setWorkspaceId(project.workspace_id);
       }
     }, [project?.title, project?.workspace_id]);
+
+    useEffect(() => {
+      if (documentId !== seededDocumentIdRef.current) {
+        seededDocumentIdRef.current = documentId;
+        seededCollaborativeDocRef.current = false;
+      }
+    }, [documentId]);
 
     // Memoize initial content to avoid re-calculation on every render
     const initialContent = useMemo(() => {
@@ -361,6 +370,116 @@ export const MainEditor = forwardRef<
       username: userName,
     });
 
+    const collaborationFieldName = useMemo(() => {
+      if (!isCollaborative || !provider?.document || !isProviderReady) {
+        return "default";
+      }
+
+      try {
+        const ydoc = provider.document;
+        const ytypes = ydoc.share;
+        if (ytypes?.has("prosemirror")) {
+          return "prosemirror";
+        }
+        if (ytypes?.has("default")) {
+          return "default";
+        }
+
+        const keys = Array.from(ytypes?.keys?.() ?? []);
+        return keys.length > 0 ? keys[0] : "default";
+      } catch (error) {
+        console.error(
+          "[MainEditor] Could not determine collaboration field:",
+          error,
+        );
+        return "default";
+      }
+    }, [isCollaborative, provider, isProviderReady]);
+
+    const seedCollaborativeDocument = useCallback((): void => {
+      const currentEditor = editorRef.current;
+      if (
+        seededCollaborativeDocRef.current ||
+        !currentEditor ||
+        !project?.content
+      ) {
+        return;
+      }
+
+      try {
+        const editorJson = currentEditor.getJSON();
+        const currentContent = editorJson?.content ?? [];
+        const isEmptyDocument =
+          Array.isArray(currentContent) &&
+          currentContent.length === 1 &&
+          currentContent[0]?.type === "paragraph" &&
+          (!currentContent[0]?.content ||
+            currentContent[0]?.content.length === 0);
+
+        if (!isEmptyDocument) {
+          seededCollaborativeDocRef.current = true;
+          return;
+        }
+
+        if (provider?.document) {
+          try {
+            const sharedType = provider.document.get(collaborationFieldName);
+            const snapshot = (
+              sharedType as { toJSON?: () => unknown }
+            )?.toJSON?.();
+            const alreadyHasSharedContent =
+              !!snapshot &&
+              (Array.isArray(snapshot)
+                ? snapshot.length > 0
+                : typeof snapshot === "object" &&
+                  Object.keys(snapshot).length > 0);
+
+            if (alreadyHasSharedContent) {
+              seededCollaborativeDocRef.current = true;
+              console.log(
+                "[MainEditor] Skipping collaborative seed because shared content already exists",
+              );
+              return;
+            }
+          } catch (sharedError) {
+            console.warn(
+              "[MainEditor] Could not inspect shared content state:",
+              sharedError,
+            );
+          }
+        }
+
+        const contentToInsert =
+          project.content && project.content.type === "doc"
+            ? project.content
+            : initialContent;
+
+        if (
+          contentToInsert &&
+          typeof contentToInsert === "object" &&
+          contentToInsert.type === "doc" &&
+          Array.isArray(contentToInsert.content) &&
+          contentToInsert.content.length > 0
+        ) {
+          // Replace the editor content atomically to avoid duplicate insertions
+          currentEditor
+            .chain()
+            .clearContent()
+            .setContent(contentToInsert)
+            .run();
+          seededCollaborativeDocRef.current = true;
+          console.info(
+            "[MainEditor] Seeded collaborative document on first render",
+          );
+        }
+      } catch (seedError) {
+        console.error(
+          "[MainEditor] Failed to seed collaborative document on first render:",
+          seedError,
+        );
+      }
+    }, [collaborationFieldName, initialContent, project?.content, provider]);
+
     /*
      * Initialize editor
      */
@@ -375,7 +494,34 @@ export const MainEditor = forwardRef<
           }
           editor.on("transaction", (transaction) => {
             try {
-              // Transaction processed successfully
+              const origin = (transaction as any).origin ?? null;
+              const steps = (transaction as any).steps?.length ?? 0;
+              const docSize = editor.state?.doc?.content?.size ?? null;
+              console.debug("[MainEditor] transaction", {
+                origin,
+                steps,
+                docSize,
+              });
+
+              // If a transaction results in non-empty doc and we haven't marked seeded, log stack
+              try {
+                const hasContent = editor.state.doc.content.size > 1;
+                if (hasContent && !seededCollaborativeDocRef.current) {
+                  console.warn(
+                    "[MainEditor] Editor content changed before marking seeded",
+                    {
+                      origin,
+                      stack:
+                        new Error().stack
+                          ?.split("\n")
+                          .slice(0, 5)
+                          .join(" | ") ?? null,
+                    },
+                  );
+                }
+              } catch (e) {
+                // ignore
+              }
             } catch (error) {
               console.error("Error processing editor transaction:", error);
             }
@@ -470,6 +616,8 @@ export const MainEditor = forwardRef<
             ? [
                 Collaboration.configure({
                   document: provider.document,
+                  field: collaborationFieldName,
+                  onFirstRender: seedCollaborativeDocument,
                 }),
                 CollaborationCursor.configure({
                   provider: provider,
@@ -482,12 +630,11 @@ export const MainEditor = forwardRef<
               ]
             : []),
         ],
-        content:
-          provider && isProviderReady // When collaborative and synced, leave content undefined to let Y.js load it
-            ? undefined
-            : project
-              ? initialContent
-              : { type: "doc", content: [{ type: "paragraph" }] },
+        content: isCollaborative
+          ? undefined
+          : project
+            ? initialContent
+            : { type: "doc", content: [{ type: "paragraph" }] },
         editorProps: {
           attributes: {
             class:
@@ -501,86 +648,8 @@ export const MainEditor = forwardRef<
           },
         },
       },
-      [project, provider, isProviderReady], // Re-init if provider readiness changes
+      [project, provider, isProviderReady, collaborationFieldName], // Re-init if provider readiness or field changes
     );
-
-    // Seed Yjs document from project content if collaborative doc is empty
-    useEffect(() => {
-      if (
-        isCollaborative &&
-        provider &&
-        isProviderReady &&
-        provider.document &&
-        project?.content
-      ) {
-        try {
-          const ydoc = provider.document;
-
-          // Safely get the prosemirror type - it may not exist yet on first load
-          let prosemirrorJSON = null;
-          try {
-            // Check if the type exists in the document
-            const ytypes = ydoc.share;
-            if (ytypes && ytypes.has("prosemirror")) {
-              prosemirrorJSON = ydoc.get("prosemirror") as any;
-            } else {
-              console.log(
-                "[MainEditor] prosemirror type not yet initialized in Yjs document",
-              );
-            }
-          } catch (typeError) {
-            console.log(
-              "[MainEditor] Could not read prosemirror type:",
-              typeError,
-            );
-          }
-
-          const hasContent =
-            prosemirrorJSON &&
-            prosemirrorJSON.content &&
-            prosemirrorJSON.content.length > 0 &&
-            !(
-              prosemirrorJSON.content.length === 1 &&
-              prosemirrorJSON.content[0].type === "paragraph" &&
-              (!prosemirrorJSON.content[0].content ||
-                prosemirrorJSON.content[0].content.length === 0)
-            );
-
-          if (!hasContent && editor) {
-            console.log(
-              "[MainEditor] Collaborative doc is empty, seeding from project content via editor commands",
-            );
-            try {
-              const contentToInsert = project.content;
-              if (
-                contentToInsert &&
-                typeof contentToInsert === "object" &&
-                contentToInsert.type === "doc" &&
-                contentToInsert.content &&
-                Array.isArray(contentToInsert.content) &&
-                contentToInsert.content.length > 0
-              ) {
-                // Use the editor's commands to insert content through the Collaboration extension
-                // This ensures the content is properly synced through Yjs
-                editor.chain().clearContent().run();
-                // Insert the document content as JSON
-                editor.commands.setContent(contentToInsert);
-                console.log(
-                  "[MainEditor] Successfully seeded collaborative document",
-                );
-              }
-            } catch (seedError) {
-              console.error(
-                "[MainEditor] Failed to seed collaborative document:",
-                seedError,
-              );
-            }
-          }
-        } catch (e) {
-          console.error("[MainEditor] Error checking Yjs document:", e);
-        }
-      }
-    }, [isCollaborative, provider, isProviderReady, project?.content, editor]);
 
     // Initialize mentions hook (after editor is declared)
     const {

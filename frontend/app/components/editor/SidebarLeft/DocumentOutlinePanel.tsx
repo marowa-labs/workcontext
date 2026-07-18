@@ -31,7 +31,7 @@ interface DocumentOutlinePanelProps {
   onClose?: () => void;
 }
 
-// Default academic research paper template
+// Default academic paper template
 const DEFAULT_TEMPLATE: OutlineSection[] = [
   { id: "1", name: "Title", level: 1, order: 0 },
   { id: "2", name: "Abstract", level: 2, order: 1 },
@@ -41,7 +41,6 @@ const DEFAULT_TEMPLATE: OutlineSection[] = [
   { id: "6", name: "Results", level: 2, order: 5 },
   { id: "7", name: "Discussion", level: 2, order: 6 },
   { id: "8", name: "Conclusion", level: 2, order: 7 },
-  { id: "9", name: "References", level: 2, order: 8 },
 ];
 
 export function DocumentOutlinePanel({
@@ -383,7 +382,7 @@ export function DocumentOutlinePanel({
               size="sm"
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              Load Research Paper Template
+              Load Paper Template
             </Button>
           </div>
         ) : (

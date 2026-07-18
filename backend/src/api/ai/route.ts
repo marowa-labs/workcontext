@@ -1091,10 +1091,14 @@ async function handleDeleteBYOKKey(req: any, res: any) {
       });
     }
 
-    if (!provider || !["google", "anthropic", "openai"].includes(provider)) {
+    if (
+      !provider ||
+      !["google", "anthropic", "openai", "openrouter"].includes(provider)
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Valid provider required (google, anthropic, or openai)",
+        message:
+          "Valid provider required (google, anthropic, openai, or openrouter)",
       });
     }
 
