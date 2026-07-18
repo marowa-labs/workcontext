@@ -19,7 +19,6 @@
     "@hocuspocus/extension-logger": "^3.4.4",
     "@hocuspocus/server": "^3.4.3",
     "@hocuspocus/transformer": "^3.4.4",
-    "@langchain/community": "^1.1.9",
     "@langchain/core": "^1.1.17",
     "@langchain/openai": "^1.2.3",
     "@langchain/textsplitters": "^1.0.1",
