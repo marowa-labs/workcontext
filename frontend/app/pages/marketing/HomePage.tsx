@@ -1,5 +1,6 @@
 "use client";
 
+import homeGif from "@/app/assets/home.gif";
 import {
   PenTool,
   Shield,
@@ -217,7 +218,7 @@ function PreviewSection() {
         <div className="relative mt-16 flex justify-center">
           <div className="rounded-2xl border border-gray-300 shadow-2xl overflow-hidden max-w-6xl w-full">
             <img
-              src="https://www.image2url.com/r2/default/gifs/1782221447847-0402c750-20fe-41ef-b142-c5a08a2d0d4b.gif"
+              src={homeGif.src}
               alt="WorkContext in Action"
               className="w-full h-auto object-cover"
             />
