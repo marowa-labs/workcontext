@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 // Supabase configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,14 +30,6 @@ export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
     // Persist via cookies (managed by @supabase/ssr)
     persistSession: true,
     autoRefreshToken: true,
-    // Keep the session cookie out of client-accessible JS storage
-    storage: undefined,
-  },
-  realtime: {
-    connect: true,
-    heartbeatIntervalMs: 30000,
-    reconnectDelayMs: 1000,
-    presence: true,
   },
 });
 // Enhanced session management
@@ -57,7 +50,7 @@ class SessionManager {
     this.rememberMe = rememberMe;
     console.log(
       "Session persistence set to:",
-      rememberMe ? "persistent" : "session-only"
+      rememberMe ? "persistent" : "session-only",
     );
 
     // Additional logic could be added here for more advanced session management
