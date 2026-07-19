@@ -1146,6 +1146,7 @@ export class EditorService {
       content: any;
       fileType: string;
       wordCount?: number;
+      workspace_id?: string | null;
     },
   ) {
     try {
@@ -1174,6 +1175,9 @@ export class EditorService {
         citation_style: "apa", // Default citation style
         content: processedContent,
         word_count: fileData.wordCount || calculatedWordCount,
+        ...(fileData.workspace_id
+          ? { workspace_id: fileData.workspace_id }
+          : {}),
       };
 
       // Use ProjectServiceEnhanced to create the project

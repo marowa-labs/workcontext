@@ -591,6 +591,7 @@ async function handlePOST_IMPORT(request: Request & { user?: any }) {
         content: any;
         fileType: string;
         wordCount?: number;
+        workspace_id?: string | null;
       };
     };
     const { fileData } = body;

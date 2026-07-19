@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Plus, Grid3X3, List, Download } from "lucide-react";
+import { Plus, Grid3X3, List, Download, Upload } from "lucide-react";
 import ProjectCards from "../../../../../components/dashboard/ProjectCards";
 import CreateProjectModal from "../../../../../components/dashboard/CreateProjectModal";
+import DocumentImportModal from "../../../../../components/editor/DocumentImportModal";
 import { ExportModal } from "../../../../../components/editor/export-modal";
 import { useUser } from "../../../../../lib/utils/useUser";
 import ProjectService from "../../../../../lib/utils/projectService";
@@ -22,6 +23,7 @@ export default function WorkspaceProjectsPage() {
   const [archivedProjects, setArchivedProjects] = useState<any[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [activeFilter, setActiveFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
@@ -124,6 +126,23 @@ export default function WorkspaceProjectsPage() {
 
   const handleCreateProject = () => {
     setIsCreateModalOpen(true);
+  };
+
+  const handleDocumentImport = (importedProject: any) => {
+    try {
+      setProjects((prev: any[]) => [importedProject, ...prev]);
+      toast({
+        title: "Success",
+        description: "Document imported successfully!",
+      });
+    } catch (error: any) {
+      console.error("Failed to import document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to import document. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleProjectCreate = async (newProject: any) => {
@@ -504,6 +523,14 @@ export default function WorkspaceProjectsPage() {
           )}
 
           <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center px-6 py-3 bg-background border border-border hover:bg-muted text-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+          >
+            <Upload className="w-5 h-5 mr-2" />
+            Import
+          </button>
+
+          <button
             onClick={handleCreateProject}
             className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
           >
@@ -725,6 +752,19 @@ export default function WorkspaceProjectsPage() {
         }}
         onProjectCreate={handleProjectCreate}
         initialWorkspaceId={workspaceId}
+        showWorkspaceSelector
+      />
+
+      {/* Import Document Modal */}
+      <DocumentImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleDocumentImport}
+        accept=".docx"
+        validTypes={[
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ]}
+        workspaceId={workspaceId}
       />
 
       {/* Export Modal */}

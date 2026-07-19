@@ -49,6 +49,7 @@ export async function importDocument(fileData: {
   content: any;
   fileType: string;
   wordCount?: number;
+  workspace_id?: string | null;
 }): Promise<any> {
   try {
     const response = await apiClient.post("/api/projects/import", fileData);

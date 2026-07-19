@@ -9,12 +9,23 @@ interface DocumentImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: (content: any) => void;
+  accept?: string;
+  validTypes?: string[];
+  workspaceId?: string;
 }
 
 const DocumentImportModal: React.FC<DocumentImportModalProps> = ({
   isOpen,
   onClose,
   onImport,
+  accept = ".txt,.doc,.docx,.pdf",
+  validTypes = [
+    "text/plain",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/pdf",
+  ],
+  workspaceId,
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -33,16 +44,9 @@ const DocumentImportModal: React.FC<DocumentImportModalProps> = ({
 
   const validateAndSetFile = (file: File) => {
     // Validate file type
-    const validTypes = [
-      "text/plain",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/pdf",
-    ];
-
     if (!validTypes.includes(file.type)) {
       setError(
-        "Unsupported file type. Please upload a TXT, DOC, DOCX, or PDF file.",
+        `Unsupported file type. Please upload a ${accept} file.`,
       );
       return;
     }
@@ -79,6 +83,7 @@ const DocumentImportModal: React.FC<DocumentImportModalProps> = ({
         fileType: file.type,
         fileName: file.name, // Include the original file name
         wordCount: wordCount,
+        workspace_id: workspaceId || null,
       };
 
       // Check online status
@@ -152,13 +157,15 @@ const DocumentImportModal: React.FC<DocumentImportModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-50">
-        <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-xl border border-border">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Import Document</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              Import Document
+            </h2>
             <button
               onClick={onClose}
-              className="rounded-full p-1 text-black hover:bg-cw-light-gray hover:text-black">
+              className="rounded-full p-1 text-foreground hover:bg-muted">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -167,42 +174,46 @@ const DocumentImportModal: React.FC<DocumentImportModalProps> = ({
             <button
               type="button"
               onClick={triggerFileSelect}
-              className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-white p-4 hover:border-blue-500 hover:bg-blue-50 transition-colors">
-              <HardDrive className="h-8 w-8 text-black mb-2" />
-              <span className="text-sm font-medium text-black">Local File</span>
+              className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-4 hover:border-primary hover:bg-primary/5 transition-colors">
+              <HardDrive className="h-8 w-8 text-foreground mb-2" />
+              <span className="text-sm font-medium text-foreground">
+                Local File
+              </span>
             </button>
           </div>
 
           {file && (
-            <div className="mb-4 flex items-center justify-between rounded-md bg-cw-light-gray p-3">
+            <div className="mb-4 flex items-center justify-between rounded-md bg-muted p-3">
               <div className="flex items-center">
-                <FileText className="mr-2 h-5 w-5 text-black" />
+                <FileText className="mr-2 h-5 w-5 text-foreground" />
                 <div>
-                  <p className="text-sm font-medium text-black">{file.name}</p>
-                  <p className="text-xs text-black">
+                  <p className="text-sm font-medium text-foreground">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
                     {(file.size / 1024).toFixed(1)} KB
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setFile(null)}
-                className="text-black hover:text-black">
+                className="text-foreground hover:text-foreground/70">
                 <X className="h-5 w-5" />
               </button>
             </div>
           )}
 
           {error && (
-            <div className="mb-4 rounded-md bg-red-50 p-3">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="mb-4 rounded-md bg-destructive/10 border border-destructive/20 p-3">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
           {isImported && (
-            <div className="mb-4 rounded-md bg-green-50 p-3">
+            <div className="mb-4 rounded-md bg-emerald-50 p-3">
               <div className="flex items-center">
-                <CheckCircle className="mr-2 h-5 w-5 text-green-400" />
-                <p className="text-sm text-green-700">
+                <CheckCircle className="mr-2 h-5 w-5 text-emerald-500" />
+                <p className="text-sm text-emerald-700">
                   Document imported successfully!
                 </p>
               </div>
@@ -213,14 +224,14 @@ const DocumentImportModal: React.FC<DocumentImportModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-4 py-2 text-sm font-medium text-black hover:bg-cw-light-gray">
+              className="rounded-md px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
               Cancel
             </button>
             <button
               type="button"
               onClick={handleImport}
               disabled={!file || isImporting}
-              className="flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              className="flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
               {isImporting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -238,7 +249,7 @@ const DocumentImportModal: React.FC<DocumentImportModalProps> = ({
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept=".txt,.doc,.docx,.pdf"
+        accept={accept}
         className="hidden"
       />
     </>
