@@ -69,7 +69,13 @@ export default function CreateProjectModal({
       };
       fetchWorkspaces();
     }
-  }, [isOpen, user, initialWorkspaceId, showWorkspaceSelector, selectedWorkspace]);
+  }, [
+    isOpen,
+    user,
+    initialWorkspaceId,
+    showWorkspaceSelector,
+    selectedWorkspace,
+  ]);
 
   const {
     register,
@@ -159,7 +165,7 @@ export default function CreateProjectModal({
       } else if (err.toString().includes("NetworkError")) {
         setError("Network error. Please check your connection and try again.");
       } else {
-        setError("Failed to create space. Please try again.");
+        setError("Failed to create project. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -194,17 +200,17 @@ export default function CreateProjectModal({
                 <div className="space-y-4">
                   <div>
                     <FormInput
-                      label="Space Name"
+                      label="Project Name"
                       error={errors.name?.message}
                       required
                       {...register("name", {
-                        required: "Space name is required",
+                        required: "Project name is required",
                       })}
                       type="text"
-                      placeholder="Enter space name"
+                      placeholder="Enter project name"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Give your space a meaningful name
+                      Give your project a meaningful name
                     </p>
                   </div>
 
@@ -271,7 +277,8 @@ export default function CreateProjectModal({
                         ))}
                       </select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Select a workspace to organize your project with your team
+                        Select a workspace to organize your project with your
+                        team
                       </p>
                     </div>
                   )}
@@ -299,7 +306,7 @@ export default function CreateProjectModal({
                     loading={isLoading}
                     disabled={!isValid || isLoading || !watchedFields.name}
                   >
-                    {isLoading ? "Creating..." : "Create Space"}
+                    {isLoading ? "Creating..." : "Create project"}
                   </Button>
                 </div>
               </form>
