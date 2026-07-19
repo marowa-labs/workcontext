@@ -98,6 +98,10 @@ import { POST as documentQaPOST } from "../api/ai/document-qa-route";
 // Import support ticket service
 import { SupportTicketService } from "../services/SupportTicketService";
 
+// Import storage service for support ticket attachments
+import { SupabaseStorageService } from "../services/supabaseStorageService";
+import multer from "multer";
+
 // Import feature request service
 import { handleSimpleFeatureRequest } from "../api/feature-requests/simple-feature-request-route";
 import { POST as writingProjectPOST } from "../api/ai/writing-project-route";
@@ -737,6 +741,86 @@ app.post("/api/support-ticket", async (req, res) => {
     });
   }
 });
+
+// Support ticket attachment upload endpoint
+// Uploads the attachment to the "uploads" Supabase Storage bucket and returns a
+// public URL that can be stored on the ticket as attachment_url. This route is
+// intentionally public (like the ticket submission) so anonymous users can
+// attach screenshots. The file is namespaced under the authenticated user id
+// when available, otherwise under "anonymous".
+const supportTicketUpload = multer({
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+    ];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Unsupported file type. Allowed: images and PDF."));
+    }
+  },
+});
+
+app.post(
+  "/api/support-ticket/upload",
+  supportTicketUpload.single("file"),
+  async (req: any, res) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded",
+        });
+      }
+
+      // Resolve a user id for namespacing the object. The support ticket flow
+      // allows anonymous users, so fall back to "anonymous" when no valid token.
+      let userId = "anonymous";
+      const authHeader = req.headers.authorization || "";
+      const token = authHeader.toLowerCase().startsWith("bearer ")
+        ? authHeader.substring(7).trim()
+        : null;
+      if (token) {
+        try {
+          const supabaseClient = await supabase;
+          const { data } = await supabaseClient.auth.getUser(token);
+          if (data?.user?.id) {
+            userId = data.user.id;
+          }
+        } catch {
+          // Ignore auth errors and keep the "anonymous" namespace
+        }
+      }
+
+      const { url, filePath } = await SupabaseStorageService.uploadFile(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        userId,
+      );
+
+      return res.status(200).json({
+        success: true,
+        fileUrl: url,
+        url,
+        filePath,
+        message: "Attachment uploaded successfully",
+      });
+    } catch (error: any) {
+      logger.error("Support ticket attachment upload failed:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to upload attachment",
+      });
+    }
+  },
+);
 
 // Authentication endpoints
 app.post("/api/auth/hybrid/signup", async (req, res) => {
