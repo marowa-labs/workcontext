@@ -3,6 +3,7 @@
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -50,6 +51,7 @@ export default function RootLayout({
           <OnboardingProvider>
             {children}
             <OnboardingModal />
+            <CookieConsentBanner />
           </OnboardingProvider>
         </ThemeProvider>
         <Script

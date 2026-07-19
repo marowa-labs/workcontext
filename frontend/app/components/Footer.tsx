@@ -16,6 +16,7 @@ const footerLinks = {
   ],
   legal: [
     { name: "Cookie Policy", href: "/legal/cookies" },
+    { name: "Cookie Settings", href: "#", action: "cookie-settings" },
     { name: "GDPR", href: "/legal/gdpr" },
     { name: "Security", href: "/legal/security" },
   ],
@@ -117,15 +118,29 @@ export default function Footer() {
               <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
                 Legal
               </h3>
-              <ul className="space-y-3">
+               <ul className="space-y-3">
                 {footerLinks.legal.map((link) => (
                   <li key={link.name}>
-                    <Link
-                      href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
-                    >
-                      {link.name}
-                    </Link>
+                    {"action" in link && link.action === "cookie-settings" ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          window.dispatchEvent(
+                            new Event("workcontext:open-cookie-settings"),
+                          )
+                        }
+                        className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                      >
+                        {link.name}
+                      </button>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                      >
+                        {link.name}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
