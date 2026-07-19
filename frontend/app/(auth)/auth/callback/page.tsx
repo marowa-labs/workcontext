@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import CallbackPage from "../../pages/auth/CallbackPage";
+import CallbackPage from "../../../pages/auth/CallbackPage";
 
 export default function Page() {
   return (
