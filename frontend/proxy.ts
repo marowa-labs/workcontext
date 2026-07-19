@@ -44,7 +44,8 @@ export async function proxy(request: NextRequest) {
   const redirectWithCookies = (url: URL) => {
     const redirect = NextResponse.redirect(url);
     for (const c of response.cookies.getAll()) {
-      redirect.cookies.set(c.name, c.value, c.options);
+      const { name, value, ...options } = c;
+      redirect.cookies.set(name, value, options);
     }
     return redirect;
   };
