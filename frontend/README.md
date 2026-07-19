@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/WorkContext-Frontend-7C3AED?style=for-the-badge&logo=next.js&logoColor=white" alt="WorkContext Frontend" width="380">
+  <img src="https://workcontext.vercel.app/assets/images/WorkContext-Logo.png" alt="WorkContext Logo" width="160">
 </p>
 
 <p align="center">
@@ -43,15 +43,15 @@ This package is the **frontend** of WorkContext. It renders the marketing site, 
 
 ## 🛠️ Tech Stack
 
-| Concern | Technology |
-| ------- | ---------- |
-| Framework | Next.js 16 (App Router) · React · TypeScript |
-| Styling | Tailwind CSS · Radix UI · NextUI |
-| Editor | TipTap 3 · Yjs (collaboration) |
-| Auth | Supabase Auth (`@supabase/ssr`) |
+| Concern    | Technology                                     |
+| ---------- | ---------------------------------------------- |
+| Framework  | Next.js 16 (App Router) · React · TypeScript   |
+| Styling    | Tailwind CSS · Radix UI · NextUI               |
+| Editor     | TipTap 3 · Yjs (collaboration)                 |
+| Auth       | Supabase Auth (`@supabase/ssr`)                |
 | API Client | Fetch wrapper with bearer auth + retry/backoff |
-| Realtime | Hocuspocus provider (WebSocket) |
-| Analytics | Vercel Analytics |
+| Realtime   | Hocuspocus provider (WebSocket)                |
+| Analytics  | Vercel Analytics                               |
 
 ---
 
@@ -118,12 +118,12 @@ NEXT_PUBLIC_COLLABORATION_API_URL=ws://localhost:9081
 
 ## 📜 Scripts
 
-| Script | Description |
-| ------ | ----------- |
-| `npm run dev` | Start the dev server (hot reload) |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | ESLint |
+| Script          | Description                       |
+| --------------- | --------------------------------- |
+| `npm run dev`   | Start the dev server (hot reload) |
+| `npm run build` | Production build                  |
+| `npm run start` | Serve the production build        |
+| `npm run lint`  | ESLint                            |
 
 ---
 

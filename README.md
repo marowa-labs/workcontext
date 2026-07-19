@@ -3,10 +3,6 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/WorkContext-AI%20Workspace-7C3AED?style=for-the-badge&logo=openai&logoColor=white" alt="WorkContext" width="420">
-</p>
-
-<p align="center">
   <a href="https://github.com/marowa-labs/workcontext/actions"><img src="https://img.shields.io/badge/build-passing-brightgreen?style=flat-square" alt="Build"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"></a>
@@ -205,12 +201,12 @@ const ai = await fetch(`${API_URL}/api/ai/process`, {
 
 > Screenshots below are served from the repo (`frontend/public/assets/images/`). They also appear on the live site at `https://workcontext.vercel.app/assets/images/<file>` once the latest build is deployed.
 
-| Homepage | Dashboard | Editor |
-| -------- | --------- | ------ |
+| Homepage                                                | Dashboard                                                 | Editor                                              |
+| ------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------- |
 | ![Homepage](frontend/public/assets/images/homepage.png) | ![Dashboard](frontend/public/assets/images/dashboard.png) | ![Editor](frontend/public/assets/images/editor.png) |
 
-| AI Chat | Projects |
-| ------- | -------- |
+| AI Chat                                              | Projects                                                |
+| ---------------------------------------------------- | ------------------------------------------------------- |
 | ![AI Chat](frontend/public/assets/images/aichat.png) | ![Projects](frontend/public/assets/images/projects.png) |
 
 <p align="center">

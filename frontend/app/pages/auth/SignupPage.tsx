@@ -1126,7 +1126,7 @@ const SignupPage: React.FC = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowOtpStep(true)}
+                onClick={() => setSurveyStep(false)}
                 className="flex-1 bg-white border-white text-gray-600 hover:bg-white"
               >
                 Back

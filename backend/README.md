@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/WorkContext-Backend-7C3AED?style=for-the-badge&logo=node.js&logoColor=white" alt="WorkContext Backend" width="380">
+  <img src="https://workcontext.vercel.app/assets/images/WorkContext-Logo.png" alt="WorkContext Logo" width="160">
 </p>
 
 <p align="center">
@@ -44,14 +44,14 @@ This package is the **backend** of WorkContext. It exposes the REST API and WebS
 
 ## 🛠️ Tech Stack
 
-| Concern | Technology |
-| ------- | ---------- |
-| Runtime | Node.js 20+ · Express 5 · TypeScript |
-| ORM / DB | Prisma 7 · PostgreSQL 17 + pgvector |
-| Auth | Supabase Auth |
-| Realtime | Hocuspocus 3 · Yjs (CRDT) |
-| AI SDKs | `@google/generative-ai` · `openai` · `@anthropic-ai/sdk` · `@openrouter/sdk` |
-| Security | AES-256-GCM encryption · rate limiting · CORS (credential-aware) |
+| Concern  | Technology                                                                   |
+| -------- | ---------------------------------------------------------------------------- |
+| Runtime  | Node.js 20+ · Express 5 · TypeScript                                         |
+| ORM / DB | Prisma 7 · PostgreSQL 17 + pgvector                                          |
+| Auth     | Supabase Auth                                                                |
+| Realtime | Hocuspocus 3 · Yjs (CRDT)                                                    |
+| AI SDKs  | `@google/generative-ai` · `openai` · `@anthropic-ai/sdk` · `@openrouter/sdk` |
+| Security | AES-256-GCM encryption · rate limiting · CORS (credential-aware)             |
 
 ---
 
@@ -95,6 +95,7 @@ sequenceDiagram
 ```
 
 Key points:
+
 - Keys are validated (format + live test) **before** they are stored.
 - Saving a key auto-enables BYOK; deleting the last key disables it.
 - CORS is credential-aware and allows the Vercel frontend (including preview deploys).
@@ -143,12 +144,12 @@ CORS_ORIGINS=https://your-app.vercel.app,https://www.your-app.com
 
 ## 📜 Scripts
 
-| Script | Description |
-| ------ | ----------- |
-| `npm run dev` | Run with hot reload (`tsx watch`) |
-| `npm run build` | Compile TypeScript (`tsc`) |
-| `npm run start` | Start the compiled/server directly |
-| `npm run lint` | ESLint |
+| Script                            | Description                            |
+| --------------------------------- | -------------------------------------- |
+| `npm run dev`                     | Run with hot reload (`tsx watch`)      |
+| `npm run build`                   | Compile TypeScript (`tsc`)             |
+| `npm run start`                   | Start the compiled/server directly     |
+| `npm run lint`                    | ESLint                                 |
 | `npx tsx tests/aiRouting.test.ts` | Run AI routing + key-format unit tests |
 
 ---
