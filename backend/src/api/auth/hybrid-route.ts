@@ -283,6 +283,11 @@ export async function POST(req: Request, res: Response) {
     // emailRedirectTo: /auth/callback, so Supabase sends a confirmation
     // link to the user. No custom OTP / Plunk email is sent here.
 
+    // Supabase only returns a session (and sets email_confirmed_at)
+    // immediately when "Confirm email" is disabled. When it's enabled,
+    // the user must confirm via email first, so no session is returned.
+    const needsVerification = !supabaseUser?.email_confirmed_at;
+
     // Record session and login history
     await recordUserSession(supabaseUser.id, req);
 
@@ -296,11 +301,12 @@ export async function POST(req: Request, res: Response) {
 
     return res.status(200).json({
       success: true,
-      message:
-        "User created successfully. Please check your email to confirm your account.",
+      message: needsVerification
+        ? "User created successfully. Please check your email to confirm your account."
+        : "User created successfully.",
       user: userData,
       otpSent: false,
-      needsVerification: true,
+      needsVerification,
     });
   } catch (error: any) {
     logger.error("Hybrid signup error:", {
