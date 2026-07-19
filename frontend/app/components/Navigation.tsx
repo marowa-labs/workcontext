@@ -511,28 +511,28 @@ export default function Navigation() {
                 Features
               </Link>
               <Link
-                href="/about"
+                href="/roadmap"
                 className={cn(
                   "text-base font-medium transition-colors duration-200 px-2 py-1 text-gray-700 hover:text-gray-900",
-                  pathname === "/about"
+                  pathname === "/roadmap"
                     ? "text-white nav-link-active"
                     : "text-gray-700",
                 )}
                 onClick={() => setIsOpen(false)}
               >
-                About
+                Roadmap
               </Link>
               <Link
-                href="/contact"
+                href="/changelog"
                 className={cn(
                   "text-base font-medium transition-colors duration-200 px-2 py-1 text-gray-700 hover:text-gray-900",
-                  pathname === "/contact"
+                  pathname === "/changelog"
                     ? "text-white nav-link-active"
                     : "text-gray-700",
                 )}
                 onClick={() => setIsOpen(false)}
               >
-                Contact
+                Changelog
               </Link>
 
               <Link

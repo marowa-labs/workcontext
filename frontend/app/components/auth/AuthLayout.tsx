@@ -29,10 +29,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               className="absolute inset-0 bg-cover bg-center"
               style={{
                 backgroundImage:
-                  "url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop')",
+                  "url('https://www.keyvalue.systems/blog/content/images/2025/10/Context-engineering-for-smart-AI-agents.webp?w=800&h=600&fit=crop')",
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 via-blue-800/80 to-purple-900/90 backdrop-blur-sm" />
+              <div className="absolute inset-0" />
             </div>
 
             {/* Content */}
@@ -42,7 +42,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
                 <img
                   src="/assets/images/WorkContext-Logo.png"
                   alt="WorkContextLogo"
-                  className="h-12 w-auto"
+                  className="h-22 w-auto"
                 />
                 <span className="text-xl font-bold text-white">
                   WorkContext

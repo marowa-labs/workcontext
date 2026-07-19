@@ -145,6 +145,14 @@ export class OTPService {
               userId,
               email: emailToSend,
             });
+            // Dev fallback: surface the OTP in logs so signup can be completed
+            // locally without a working email provider. Never active in production.
+            if (process.env.NODE_ENV !== "production") {
+              console.log(
+                `[DEV OTP FALLBACK] email=${emailToSend} otp=${otp}`,
+              );
+              return true;
+            }
             return false;
           }
           logger.info("OTP email sent successfully", {

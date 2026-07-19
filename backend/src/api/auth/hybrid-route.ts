@@ -7,7 +7,6 @@ import { SecurityNotificationService } from "../../services/securityNotification
 import { getSupabaseAdminClient } from "../../lib/supabase/client";
 import logger from "../../monitoring/logger";
 import { Request, Response } from "express";
-import axios from "axios";
 
 // Helper function to record session, login history, and send security notifications
 async function recordUserSession(
@@ -418,73 +417,6 @@ export async function POST(req: Request, res: Response) {
   }
 }
 
-// Function to send Discord webhook notification
-async function sendDiscordWebhookNotification(
-  userId: string,
-  surveyData: any,
-  selectedPlan: string,
-) {
-  try {
-    const discordWebhookUrl = process.env.SIGNUP_SURVEY_DISCORD_WEBHOOK_URL;
-
-    if (!discordWebhookUrl) {
-      // Silently skip if no webhook configured
-      return;
-    }
-
-    // Format the survey data for Discord
-    const embed = {
-      title: "New User Survey Submission",
-      color: 0x00ff00, // Green color
-      fields: [
-        {
-          name: "User ID",
-          value: userId,
-          inline: true,
-        },
-        {
-          name: "Selected Plan",
-          value: selectedPlan || "None",
-          inline: true,
-        },
-        {
-          name: "User Role",
-          value: surveyData.userRole || "Not provided",
-          inline: true,
-        },
-        {
-          name: "Heard About Platform",
-          value: surveyData.heardAboutPlatform || "Not provided",
-          inline: true,
-        },
-        {
-          name: "User Goal",
-          value: surveyData.userGoal || "Not provided",
-          inline: false,
-        },
-        {
-          name: "Main Job",
-          value: surveyData.mainJob || "Not provided",
-          inline: false,
-        },
-      ],
-      timestamp: new Date().toISOString(),
-    };
-
-    await axios.post(discordWebhookUrl, {
-      embeds: [embed],
-    });
-
-    logger.info("Discord webhook notification sent successfully", { userId });
-  } catch (error) {
-    logger.error("Failed to send Discord webhook notification", {
-      error: error instanceof Error ? error.message : String(error),
-      userId,
-    });
-    // Don't throw error as this is a non-critical notification
-  }
-}
-
 // Hybrid complete signup route - updates user profile with survey data and creates subscription
 export async function POST_COMPLETE_SIGNUP(req: Request, res: Response) {
   try {
@@ -611,9 +543,6 @@ export async function POST_COMPLETE_SIGNUP(req: Request, res: Response) {
         message: "Failed to create subscription. Please try again.",
       });
     }
-
-    // Send Discord webhook notification
-    sendDiscordWebhookNotification(userId, surveyData, selectedPlan);
 
     // Get user details to send welcome email
     try {

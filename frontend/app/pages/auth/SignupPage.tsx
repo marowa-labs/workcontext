@@ -26,7 +26,6 @@ import {
   verifyOTP as hybridVerifyOTP,
   signUpWithGoogle,
 } from "../../lib/utils/hybridAuth";
-import axios from "axios";
 import { useToast } from "../../hooks/use-toast";
 
 // Log the supabase object for debugging
@@ -37,67 +36,6 @@ console.log("Supabase object in SignupPage:", {
 
 // API base URL - adjust this to match your backend URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
-// Function to send Discord webhook notification
-const sendDiscordWebhookNotification = async (
-  userId: string,
-  surveyData: any,
-  selectedPlan: string | null,
-) => {
-  try {
-    const discordWebhookUrl =
-      process.env.NEXT_PUBLIC_SIGNUP_SURVEY_DISCORD_WEBHOOK_URL ||
-      "https://discord.com/api/webhooks/1445798910298816645/jwQCSXU42Z_8yH0mQHRWwsO6EjkkbeY2pJIWaDs9jQk-aazPUETdLfgEeY6GuzFU8jS7";
-
-    // Format the survey data for Discord
-    const embed = {
-      title: "New User Survey Submission",
-      color: 0x00ff00, // Green color
-      fields: [
-        {
-          name: "User ID",
-          value: userId || "Unknown",
-          inline: true,
-        },
-        {
-          name: "Selected Plan",
-          value: selectedPlan || "None",
-          inline: true,
-        },
-        {
-          name: "User Role",
-          value: surveyData.userRole || "Not provided",
-          inline: true,
-        },
-        {
-          name: "Heard About Platform",
-          value: surveyData.heardAboutPlatform || "Not provided",
-          inline: true,
-        },
-        {
-          name: "User Goal",
-          value: surveyData.userGoal || "Not provided",
-          inline: false,
-        },
-        {
-          name: "Main Job",
-          value: surveyData.mainJob || "Not provided",
-          inline: false,
-        },
-      ],
-      timestamp: new Date().toISOString(),
-    };
-
-    await axios.post(discordWebhookUrl, {
-      embeds: [embed],
-    });
-
-    console.log("Discord webhook notification sent successfully");
-  } catch (error) {
-    console.error("Failed to send Discord webhook notification:", error);
-    // Don't throw error as this is a non-critical notification
-  }
-};
 
 // List of allowed email domains
 const ALLOWED_DOMAINS = [
@@ -840,20 +778,6 @@ const SignupPage: React.FC = () => {
         }
 
         console.log("Survey data submitted successfully");
-
-        // Send Discord webhook notification
-        try {
-          await sendDiscordWebhookNotification(
-            userId || "",
-            surveyData,
-            selectedPlan,
-          );
-        } catch (webhookError) {
-          console.error(
-            "Failed to send Discord webhook notification:",
-            webhookError,
-          );
-        }
       } catch (error: any) {
         console.error("Error submitting survey data:", error);
         setError("root", {

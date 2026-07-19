@@ -90,11 +90,12 @@ export const proxyConfig = {
   matcher: [
     /*
      * Match all request paths except:
+     * - _vercel (Vercel platform routes: insights, speed insights, etc.)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (public directory)
      */
-    "/((?!_next/static|_next/image|favicon.ico|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_vercel|_next/static|_next/image|favicon.ico|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
