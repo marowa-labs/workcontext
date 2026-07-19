@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
 import { toast } from "../../../hooks/use-toast";
 import { Loader2, User, Upload, BadgeCheck } from "lucide-react";
 import ProfileService, { ProfileData } from "../../../lib/utils/profileService";
-import apiClient from "../../../lib/utils/apiClient";
+import { supabase } from "../../../lib/supabase/client";
 
 export default function Profile() {
   const [profile, setProfile] = useState<ProfileData>({
@@ -26,10 +24,6 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showOTPModal, setShowOTPModal] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [pendingProfileData, setPendingProfileData] = useState<any>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -79,18 +73,51 @@ export default function Profile() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // First, request OTP for profile update
-      const response = await apiClient.post("/api/users/request-otp", {
-        action: "profile_update",
+      const newEmail = (profile.email || "").trim();
+      const emailChanged =
+        !!originalProfile && newEmail !== (originalProfile.email || "").trim();
+
+      // Email changes are confirmed via Supabase's built-in flow. The client
+      // calls supabase.auth.updateUser({ email }) which sends a confirmation
+      // link to the new address. The database email is synced after the user
+      // clicks the link (see the GET /api/users handler).
+      if (emailChanged) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: newEmail,
+        });
+        if (emailError) {
+          throw new Error(
+            emailError.message || "Failed to request email change",
+          );
+        }
+      }
+
+      const profileData: ProfileData = {
+        name: profile.name,
+        email: profile.email,
+        username: profile.username,
+        bio: profile.bio,
+        fieldOfStudy: profile.fieldOfStudy,
+        academicLevel: profile.academicLevel,
+        institution: profile.institution,
+        location: profile.location,
+      };
+
+      const response = await ProfileService.updateProfile(profileData);
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to update profile");
+      }
+
+      toast({
+        title: "Success",
+        description: emailChanged
+          ? "Profile updated. Check your new email to confirm the change."
+          : "Profile updated successfully.",
       });
 
-      if (response.success) {
-        // Store the profile data temporarily and show OTP modal
-        setPendingProfileData(profile);
-        setShowOTPModal(true);
-      } else {
-        throw new Error(response.message || "Failed to request OTP");
-      }
+      setOriginalProfile({ ...profile });
+      await fetchProfile();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -100,75 +127,6 @@ export default function Profile() {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleOTPSubmit = async () => {
-    const otpValue = otp || "";
-    if (!otpValue || otpValue.length !== 6) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid 6-digit OTP.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setOtpLoading(true);
-    try {
-      // Submit the profile update with OTP
-      const updateData = {
-        ...pendingProfileData,
-        otp: otpValue,
-      };
-
-      // Create a proper ProfileData object
-      const profileData: ProfileData = {
-        name: updateData.name,
-        email: updateData.email,
-        username: updateData.username,
-        bio: updateData.bio,
-        fieldOfStudy: updateData.fieldOfStudy,
-        academicLevel: updateData.academicLevel,
-        institution: updateData.institution,
-        location: updateData.location,
-      };
-
-      // Add OTP to the backend data
-      const backendData = {
-        full_name: profileData.name,
-        field_of_study: profileData.fieldOfStudy,
-        user_type: profileData.academicLevel,
-        bio: profileData.bio,
-        institution: profileData.institution,
-        location: profileData.location,
-        otp: updateData.otp,
-      };
-
-      const response = await apiClient.put("/api/users", backendData);
-
-      // Check if the response indicates success
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: "Profile updated successfully.",
-        });
-
-        setOriginalProfile({ ...pendingProfileData });
-        setShowOTPModal(false);
-        setOtp("");
-        setPendingProfileData(null);
-      } else {
-        throw new Error(response.message || "Failed to update profile");
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to verify OTP. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setOtpLoading(false);
     }
   };
 
@@ -282,8 +240,7 @@ export default function Profile() {
                     name="email"
                     value={profile.email}
                     onChange={handleInputChange}
-                    disabled
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-muted text-muted-foreground"
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <BadgeCheck className="h-5 w-5 text-green-500" />
@@ -291,7 +248,8 @@ export default function Profile() {
                 </div>
                 {/* Added dark mode support to the verified text */}
                 <p className="mt-1 text-sm text-green-600 dark:text-green-400">
-                  Verified
+                  Changing your email sends a confirmation link to the new
+                  address.
                 </p>
               </div>
 
@@ -457,64 +415,6 @@ export default function Profile() {
           </div>
         </div>
       </div>
-
-      {/* OTP Verification Modal */}
-      {showOTPModal && (
-        <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50">
-          <div className="bg-popover border border-border rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-foreground mb-4">
-              Verify Profile Update
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              We've sent a 6-digit verification code to your email. Please enter
-              it below to confirm your profile update.
-            </p>
-            <div className="mb-4">
-              <Label
-                htmlFor="otp"
-                className="block text-sm font-medium text-foreground mb-1"
-              >
-                Verification Code
-              </Label>
-              <Input
-                id="otp"
-                type="text"
-                value={otp || ""}
-                onChange={(e) => setOtp(e.target.value || "")}
-                maxLength={6}
-                placeholder="Enter 6-digit code"
-                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground"
-              />
-            </div>
-            <div className="flex justify-end space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowOTPModal(false);
-                  setOtp("");
-                  setPendingProfileData(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleOTPSubmit}
-                disabled={otpLoading || !otp || otp.length !== 6}
-                className="bg-primary hover:opacity-90 text-primary-foreground"
-              >
-                {otpLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  "Verify"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

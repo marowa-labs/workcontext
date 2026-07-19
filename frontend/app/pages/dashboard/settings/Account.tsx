@@ -102,19 +102,12 @@ const AccountSettingsPage: React.FC = () => {
   const [loginHistoryLoading, setLoginHistoryLoading] = useState(true);
   const [sessionOperationLoading, setSessionOperationLoading] = useState(false);
 
-  // OTP states for profile update
-  const [showProfileOTP, setShowProfileOTP] = useState(false);
-  const [otpStep, setOtpStep] = useState(1); // 1: send OTP, 2: enter OTP
-  const [otpValue, setOtpValue] = useState("");
+  // Loading state for the email change confirmation request
   const [otpLoading, setOtpLoading] = useState(false);
-  const [otpSuccess, setOtpSuccess] = useState(false);
-  const [pendingProfileUpdate, setPendingProfileUpdate] = useState<any>(null);
 
   // Email change states
   const [showEmailChangeModal, setShowEmailChangeModal] = useState(false);
   const [newEmail, setNewEmail] = useState("");
-  const [emailChangeStep, setEmailChangeStep] = useState(1); // 1: enter new email, 2: verify OTP
-  const [pendingEmailChange, setPendingEmailChange] = useState("");
 
   const { toast } = useToast();
 
@@ -384,12 +377,14 @@ const AccountSettingsPage: React.FC = () => {
   const handleUpdateProfile = async () => {
     setProfileLoading(true);
     try {
-      // Show OTP verification modal instead of directly updating
-      setPendingProfileUpdate(profileForm);
-      setShowProfileOTP(true);
-      setOtpStep(1); // Start with sending OTP
-      setOtpValue("");
-      setOtpSuccess(false);
+      const updated = await AccountService.updateProfile(profileForm);
+      if (updated) {
+        setUser((prev) => (prev ? { ...prev, ...updated } : prev));
+      }
+      toast({
+        title: "Success",
+        description: "Profile updated successfully.",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -400,71 +395,6 @@ const AccountSettingsPage: React.FC = () => {
       });
     } finally {
       setProfileLoading(false);
-    }
-  };
-
-  // Send OTP for profile update
-  const handleSendProfileOTP = async () => {
-    setOtpLoading(true);
-    try {
-      await AccountService.sendProfileOTP(pendingProfileUpdate);
-      setOtpStep(2); // Move to enter OTP step
-      toast({
-        title: "OTP Sent",
-        description: pendingProfileUpdate.email
-          ? "Please check your new email address for the verification code."
-          : "Please check your email for the verification code.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send OTP. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  // Verify OTP for profile update
-  const handleVerifyProfileOTP = async () => {
-    setOtpLoading(true);
-    try {
-      // Instead of verifying OTP separately, directly update the profile with OTP included
-      // This matches how the Profile page works
-      await AccountService.updateProfile({
-        ...pendingProfileUpdate,
-        otp: otpValue,
-      });
-
-      // Update local user state
-      if (user) {
-        setUser({
-          ...user,
-          ...pendingProfileUpdate,
-        });
-      }
-
-      toast({
-        title: "Success",
-        description: "Profile updated successfully.",
-      });
-
-      // Close OTP modal after a short delay
-      setTimeout(() => {
-        setShowProfileOTP(false);
-        setOtpValue("");
-        setPendingProfileUpdate(null);
-      }, 2000);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description:
-          error.message || "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setOtpLoading(false);
     }
   };
 
@@ -644,18 +574,9 @@ const AccountSettingsPage: React.FC = () => {
     setDeleteVerification("");
   };
 
-  const cancelProfileOTP = () => {
-    setShowProfileOTP(false);
-    setOtpValue("");
-    setPendingProfileUpdate(null);
-    setOtpStep(1);
-    setOtpSuccess(false);
-  };
-
   // Handle email change button click
   const handleChangeEmail = () => {
     setShowEmailChangeModal(true);
-    setEmailChangeStep(1);
     setNewEmail(user?.email || "");
   };
 
@@ -664,7 +585,7 @@ const AccountSettingsPage: React.FC = () => {
     setNewEmail(e.target.value);
   };
 
-  // Send OTP for email change
+  // Request email change via Supabase's built-in confirmation flow
   const handleSendEmailChangeOTP = async () => {
     if (!newEmail || newEmail === user?.email) {
       toast({
@@ -675,47 +596,11 @@ const AccountSettingsPage: React.FC = () => {
       return;
     }
 
-    setOtpLoading(true);
-    try {
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(newEmail)) {
-        toast({
-          title: "Error",
-          description: "Please enter a valid email address.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Send OTP for email change
-      await AccountService.sendProfileOTP({ email: newEmail });
-      setPendingEmailChange(newEmail);
-      setEmailChangeStep(2); // Move to OTP verification step
-      setOtpValue("");
-
-      toast({
-        title: "OTP Sent",
-        description: `Please check your new email address (${newEmail}) for the verification code.`,
-      });
-    } catch (error: any) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
       toast({
         title: "Error",
-        description: error.message || "Failed to send OTP. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  // Verify OTP for email change
-  const handleVerifyEmailChangeOTP = async () => {
-    console.log("OTP Value:", otpValue); // Debug log
-    if (!otpValue || otpValue.length !== 6) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid 6-digit OTP.",
+        description: "Please enter a valid email address.",
         variant: "destructive",
       });
       return;
@@ -723,44 +608,25 @@ const AccountSettingsPage: React.FC = () => {
 
     setOtpLoading(true);
     try {
-      console.log("Sending profile update with OTP:", {
-        email: pendingEmailChange,
-        otp: otpValue,
-      }); // Debug log
-
-      // Instead of verifying OTP separately, directly update the profile with OTP included
-      // This matches how the Profile page works
-      await AccountService.updateProfile({
-        email: pendingEmailChange,
-        otp: otpValue,
-      });
-
-      // Update local user state
-      if (user) {
-        setUser({
-          ...user,
-          email: pendingEmailChange,
-        });
+      // supabase.auth.updateUser({ email }) sends a confirmation link to the
+      // new address. The database email is synced after the user clicks it
+      // (see the GET /api/users handler on the backend).
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) {
+        throw new Error(error.message || "Failed to request email change");
       }
 
       toast({
-        title: "Success",
-        description: "Email address updated successfully.",
+        title: "Confirmation sent",
+        description: `We sent a confirmation link to ${newEmail}. Click it to finish.`,
       });
-
-      // Close modal after a short delay
-      setTimeout(() => {
-        setShowEmailChangeModal(false);
-        setNewEmail("");
-        setPendingEmailChange("");
-        setOtpValue("");
-      }, 2000);
+      setShowEmailChangeModal(false);
+      setNewEmail("");
     } catch (error: any) {
-      console.error("Error updating email:", error); // Debug log
       toast({
         title: "Error",
         description:
-          error.message || "Failed to update email. Please try again.",
+          error.message || "Failed to send confirmation. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -772,9 +638,6 @@ const AccountSettingsPage: React.FC = () => {
   const cancelEmailChange = () => {
     setShowEmailChangeModal(false);
     setNewEmail("");
-    setPendingEmailChange("");
-    setOtpValue("");
-    setEmailChangeStep(1);
   };
 
   if (loading) {
@@ -1465,170 +1328,6 @@ const AccountSettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Profile Update OTP Modal */}
-      {showProfileOTP && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-white bg-opacity-50 transition-opacity"
-              onClick={cancelProfileOTP}
-            ></div>
-
-            {/* Modal */}
-            <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md mx-auto border border-border">
-              <div className="p-6">
-                {otpStep === 1 && (
-                  <>
-                    <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                      <svg
-                        className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h3 className="text-lg font-medium text-foreground">
-                        Verify Profile Update
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-muted-foreground">
-                          {pendingProfileUpdate?.email
-                            ? "To confirm your email change, we'll send a verification code to your new email address."
-                            : "To confirm your profile update, we'll send a verification code to your registered email."}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-6 flex justify-between">
-                      <Button onClick={cancelProfileOTP} variant="outline">
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleSendProfileOTP}
-                        disabled={otpLoading}
-                      >
-                        {otpLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Send Verification Code"
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                {otpStep === 2 && !otpSuccess && (
-                  <>
-                    <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                      <svg
-                        className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h3 className="text-lg font-medium text-foreground">
-                        Enter Verification Code
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-muted-foreground">
-                          {pendingProfileUpdate?.email
-                            ? "Please enter the 6-digit code sent to your new email address."
-                            : "Please enter the 6-digit code sent to your email."}
-                        </p>
-                        <input
-                          type="text"
-                          value={otpValue}
-                          onChange={(e) => setOtpValue(e.target.value)}
-                          className="mt-3 w-full px-3 py-2 rounded-lg bg-background text-foreground shadow-sm border border-input focus:outline-none focus:ring-2 focus:ring-primary text-center text-2xl tracking-widest"
-                          placeholder="000000"
-                          maxLength={6}
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-6 flex justify-between">
-                      <Button onClick={cancelProfileOTP} variant="outline">
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleVerifyProfileOTP}
-                        disabled={otpLoading || otpValue.length !== 6}
-                      >
-                        {otpLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Verifying...
-                          </>
-                        ) : (
-                          "Verify"
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                {otpSuccess && (
-                  <>
-                    <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full">
-                      <svg
-                        className="w-6 h-6 text-green-600 dark:text-green-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h3 className="text-lg font-medium text-foreground">
-                        Profile Updated Successfully
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-muted-foreground">
-                          Your profile has been updated successfully.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-6">
-                      <Button onClick={cancelProfileOTP} className="w-full">
-                        Close
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Email Change Modal */}
       {showEmailChangeModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -1642,131 +1341,71 @@ const AccountSettingsPage: React.FC = () => {
             {/* Modal */}
             <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md mx-auto border border-border">
               <div className="p-6">
-                {emailChangeStep === 1 && (
-                  <>
-                    <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                      <svg
-                        className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h3 className="text-lg font-medium text-foreground">
-                        Change Email Address
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-muted-foreground">
-                          Enter your new email address below. We'll send a
-                          verification code to confirm the change.
-                        </p>
-                        <div className="mt-4">
-                          <label
-                            htmlFor="newEmail"
-                            className="block text-sm font-medium text-foreground mb-1 text-left"
-                          >
-                            New Email Address
-                          </label>
-                          <input
-                            type="email"
-                            id="newEmail"
-                            value={newEmail}
-                            onChange={handleNewEmailChange}
-                            className="w-full px-3 py-2 rounded-lg bg-background text-foreground shadow-sm border border-input focus:outline-none focus:ring-2 focus:ring-primary"
-                            placeholder="Enter new email address"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-6 flex justify-between">
-                      <Button onClick={cancelEmailChange} variant="outline">
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleSendEmailChangeOTP}
-                        disabled={
-                          otpLoading || !newEmail || newEmail === user?.email
-                        }
-                      >
-                        {otpLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Send Verification Code"
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                {emailChangeStep === 2 && (
-                  <>
-                    <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                      <svg
-                        className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h3 className="text-lg font-medium text-foreground">
-                        Enter Verification Code
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-muted-foreground">
-                          Please enter the 6-digit code sent to your new email
-                          address ({pendingEmailChange}).
-                        </p>
+                <>
+                  <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <svg
+                      className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <h3 className="text-lg font-medium text-foreground">
+                      Change Email Address
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-muted-foreground">
+                        Enter your new email address below. We'll send a
+                        confirmation link to your new email to confirm.
+                      </p>
+                      <div className="mt-4">
+                        <label
+                          htmlFor="newEmail"
+                          className="block text-sm font-medium text-foreground mb-1 text-left"
+                        >
+                          New Email Address
+                        </label>
                         <input
-                          type="text"
-                          value={otpValue}
-                          onChange={(e) => setOtpValue(e.target.value)}
-                          className="mt-3 w-full px-3 py-2 rounded-lg bg-background text-foreground shadow-sm border border-input focus:outline-none focus:ring-2 focus:ring-primary text-center text-2xl tracking-widest"
-                          placeholder="000000"
-                          maxLength={6}
+                          type="email"
+                          id="newEmail"
+                          value={newEmail}
+                          onChange={handleNewEmailChange}
+                          className="w-full px-3 py-2 rounded-lg bg-background text-foreground shadow-sm border border-input focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="Enter new email address"
                         />
                       </div>
                     </div>
-                    <div className="mt-6 flex justify-between">
-                      <Button onClick={cancelEmailChange} variant="outline">
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleVerifyEmailChangeOTP}
-                        disabled={otpLoading || otpValue.length !== 6}
-                      >
-                        {otpLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Verifying...
-                          </>
-                        ) : (
-                          "Verify"
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
+                  </div>
+                  <div className="mt-6 flex justify-between">
+                    <Button onClick={cancelEmailChange} variant="outline">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSendEmailChangeOTP}
+                      disabled={
+                        otpLoading || !newEmail || newEmail === user?.email
+                      }
+                    >
+                      {otpLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Send Confirmation Link"
+                      )}
+                    </Button>
+                  </div>
+                </>
               </div>
             </div>
           </div>

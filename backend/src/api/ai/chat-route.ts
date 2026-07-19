@@ -452,7 +452,10 @@ async function handlePostChatMessageStream(req: any, res: any) {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    // Note: do NOT set Access-Control-Allow-Origin here. The global `cors()`
+    // middleware already reflects the allowed origin and sets
+    // Access-Control-Allow-Credentials. Overriding with "*" would make the
+    // browser reject this credentialed (credentials: "include") response.
     res.flushHeaders();
 
     // Process AI response with streaming

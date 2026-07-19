@@ -1064,6 +1064,13 @@ async function handleSaveBYOKKey(req: any, res: any) {
     // Save the encrypted key
     await BYOKService.saveApiKey(userId, provider, apiKey);
 
+    // Auto-enable BYOK so the key is actually used. getDecryptedKey() only
+    // returns a key when byok_enabled is true, so without this a saved key
+    // would be ignored and every AI request would fail with a confusing
+    // "API key not configured" error. (The user can still toggle it off to
+    // pause usage.)
+    await BYOKService.saveSettings(userId, { enabled: true });
+
     return res.status(200).json({
       success: true,
       message: `${provider} API key saved and validated successfully`,
@@ -1103,6 +1110,18 @@ async function handleDeleteBYOKKey(req: any, res: any) {
     }
 
     await BYOKService.deleteApiKey(userId, provider);
+
+    // If no API keys remain configured, disable BYOK so AI requests don't
+    // fail with a misleading "key configured but disabled" state.
+    const remaining = await BYOKService.getSettings(userId);
+    const hasAnyKey =
+      remaining.hasGoogleKey ||
+      remaining.hasOpenAIKey ||
+      remaining.hasClaudeKey ||
+      remaining.hasOpenRouterKey;
+    if (!hasAnyKey) {
+      await BYOKService.saveSettings(userId, { enabled: false });
+    }
 
     return res.status(200).json({
       success: true,

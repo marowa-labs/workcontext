@@ -19,11 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import OTPInput from "../../components/auth/OTPInput";
 import { supabase } from "../../lib/supabase/client";
 import {
   signUpWithEmail as hybridSignUpWithEmail,
-  verifyOTP as hybridVerifyOTP,
   signUpWithGoogle,
 } from "../../lib/utils/hybridAuth";
 import { useToast } from "../../hooks/use-toast";
@@ -189,8 +187,6 @@ const SignupPage: React.FC = () => {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const [showOtpStep, setShowOtpStep] = React.useState(false);
-  const [, setOtpSent] = React.useState(false);
   const [surveyStep, setSurveyStep] = React.useState(false);
   const [userId, setUserId] = React.useState<string | null>(null);
 
@@ -251,10 +247,10 @@ const SignupPage: React.FC = () => {
             const result = await response.json();
 
             if (response.ok && result.success) {
-              console.log("OAuth user registered successfully, OTP sent");
-              // Set the user ID and proceed to OTP verification
+              console.log("OAuth user registered successfully");
+              // Set the user ID and proceed to the survey step
               setUserId(oauthUserData.id);
-              setShowOtpStep(true);
+              setSurveyStep(true);
             } else {
               throw new Error(
                 result.message || "Failed to register OAuth user",
@@ -318,10 +314,8 @@ const SignupPage: React.FC = () => {
             setUserId(session.user.id);
 
             // For OAuth users who have auth session but need to complete signup,
-            // we should show the OTP verification step
-            if (!showOtpStep && !surveyStep) {
-              setShowOtpStep(true);
-            }
+            // show the survey step
+            setSurveyStep(true);
           }
         }
       } catch (error) {
@@ -330,7 +324,7 @@ const SignupPage: React.FC = () => {
     };
 
     checkSessionAndRedirect();
-  }, [userId, showOtpStep, surveyStep, searchParams, router]);
+  }, [userId, surveyStep, searchParams, router]);
 
   // Get parameters from URL
   React.useEffect(() => {
@@ -561,20 +555,15 @@ const SignupPage: React.FC = () => {
           selected_plan: selectedPlan || "free",
         });
 
-        // Store the user ID for OTP verification
+        // Store the user ID for the survey step
         const newUserId = result.user ? result.user.id : null;
         if (newUserId) {
           setUserId(newUserId);
-          const otpSent = (result as any).otpSent || false;
           const needsVerification = (result as any).needsVerification || false;
-
-          // Update state
-          setOtpSent(otpSent);
 
           return {
             success: true,
             userId: newUserId,
-            otpSent: otpSent,
             needsVerification: needsVerification,
           };
         } else {
@@ -592,7 +581,6 @@ const SignupPage: React.FC = () => {
 
   const onSubmit = async (data: SignupFormData) => {
     console.log("onSubmit called with step:", {
-      showOtpStep,
       surveyStep,
       data,
       userId,
@@ -607,7 +595,7 @@ const SignupPage: React.FC = () => {
     }
 
     // Handle each step separately
-    if (!showOtpStep && !surveyStep) {
+    if (!surveyStep) {
       // First step: Create user account
       console.log("Processing signup step");
       setIsLoading(true);
@@ -649,35 +637,14 @@ const SignupPage: React.FC = () => {
           }
         }
 
-        // Check if OTP was already sent by the backend during signup
-        const otpAlreadySent = (signupResult as any).otpSent || false;
+        // The backend now relies on Supabase's built-in email confirmation,
+        // so there is no custom OTP step. Go straight to the survey step.
         const needsVerification =
           (signupResult as any).needsVerification || false;
         setRequiresEmailVerification(!!needsVerification);
 
-        // Always go to OTP verification step if OTP was sent or if verification is needed
-        if (otpAlreadySent || needsVerification) {
-          console.log(
-            "OTP sent or verification needed, moving to OTP verification step",
-          );
-          setShowOtpStep(true);
-        } else {
-          // If not, we need to send it now
-          console.log("Sending OTP after signup");
-          try {
-            // Pass the user ID directly from the signup result instead of relying on state
-            await sendOTP(data, finalUserId);
-            console.log(
-              "OTP sent successfully, moving to OTP verification step",
-            );
-            setShowOtpStep(true);
-          } catch (otpError: any) {
-            console.error("Failed to send OTP after signup:", otpError);
-            throw new Error(
-              `Failed to send verification code: ${otpError.message || "Unknown error"}`,
-            );
-          }
-        }
+        console.log("Signup successful, moving to survey step");
+        setSurveyStep(true);
       } catch (error: unknown) {
         console.error("Signup failed:", error);
         // Check if it's the "already registered" error
@@ -705,29 +672,6 @@ const SignupPage: React.FC = () => {
                 : "Failed to create account. Please try again or contact support if the problem persists.",
           });
         }
-      } finally {
-        setIsLoading(false);
-      }
-      return; // Important: return here to prevent executing the next steps
-    }
-
-    if (showOtpStep && !surveyStep) {
-      // Second step: Verify OTP
-      console.log("Processing OTP verification step");
-      setIsLoading(true);
-      try {
-        // The verifyOTP function returns true on success or throws on error
-        await verifyOTP(data.otp || "");
-        console.log("OTP verified, moving to survey step");
-        // Move to survey step
-        setValue("otpVerified", true);
-        setSurveyStep(true);
-        setShowOtpStep(false); // Hide OTP step
-      } catch (error: unknown) {
-        console.error("Failed to verify OTP:", error);
-        setError("otp", {
-          message: error instanceof Error ? error.message : "Invalid OTP code",
-        });
       } finally {
         setIsLoading(false);
       }
@@ -806,150 +750,7 @@ const SignupPage: React.FC = () => {
   };
 
   const handleBackToSignup = () => {
-    setShowOtpStep(false);
     setSurveyStep(false);
-  };
-
-  // Function to resend OTP
-  const handleResendOTP = async () => {
-    setIsLoading(true);
-    try {
-      // Get the current form data
-      const currentData = {
-        fullName: watchedFields.fullName || "",
-        email: watchedFields.email || "",
-        password: watchedFields.password || "",
-        confirmPassword: watchedFields.confirmPassword || "",
-        agreeToTerms: watchedFields.agreeToTerms || false,
-        userType: watchedFields.userType || "",
-        fieldOfStudy: watchedFields.fieldOfStudy || "",
-      } as SignupFormData;
-
-      // Make sure we have a userId
-      if (!userId) {
-        throw new Error(
-          "User ID not available. Please restart the signup process.",
-        );
-      }
-
-      await sendOTP(currentData, userId);
-      console.log("OTP resent successfully");
-    } catch (error: unknown) {
-      console.error("Failed to resend OTP:", error);
-      setError("root", {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to resend OTP. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Function to send OTP
-  const sendOTP = async (data: SignupFormData, userIdParam?: string) => {
-    try {
-      // Use the passed userIdParam if provided, otherwise use the state userId
-      const effectiveUserId = userIdParam || userId;
-
-      if (!effectiveUserId) {
-        const error = new Error(
-          "User ID is required to send OTP. Please complete signup first.",
-        );
-        console.error("OTP send error:", error.message);
-        throw error;
-      }
-
-      console.log("Sending OTP with data:", {
-        userId: effectiveUserId,
-        method: "email",
-        email: data.email,
-        fullName: data.fullName,
-      });
-
-      // Send email OTP through hybrid system
-      console.log("OTP send request:", {
-        userId: effectiveUserId,
-        method: "email",
-        email: data.email,
-        fullName: data.fullName,
-      });
-
-      const response = await fetch(`${API_BASE_URL}/api/auth/hybrid/send-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: effectiveUserId,
-          method: "email",
-          email: data.email,
-          fullName: data.fullName,
-        }),
-      });
-
-      const result = await response.json();
-      console.log("OTP send response:", {
-        status: response.status,
-        result,
-      });
-
-      if (response.ok && (result.success || result.message)) {
-        console.log("OTP sent successfully via hybrid system");
-        return true;
-      } else {
-        const errorMessage =
-          result.message || result.error || "Failed to send OTP";
-        console.error("OTP send failed:", errorMessage);
-        throw new Error(errorMessage);
-      }
-    } catch (error: unknown) {
-      console.error("Failed to send OTP:", error);
-      // Re-throw the error so it can be handled by the calling function
-      throw error instanceof Error ? error : new Error(String(error));
-    }
-  };
-
-  // Function to verify OTP
-  const verifyOTP = async (otp: string) => {
-    try {
-      if (!userId) {
-        const error = new Error("User ID is required to verify OTP");
-        console.error("OTP verify error:", error.message);
-        throw error;
-      }
-
-      if (!otp) {
-        const error = new Error("OTP is required");
-        console.error("OTP verify error:", error.message);
-        throw error;
-      }
-
-      console.log("Verifying OTP:", { userId: userId, otp });
-
-      // Use the hybrid OTP verification function
-      const result = await hybridVerifyOTP(userId, otp);
-
-      if (result.success) {
-        console.log("OTP verified successfully");
-        return true;
-      } else {
-        const errorMessage = result.message || "Failed to verify OTP";
-        console.error("OTP verify failed:", errorMessage);
-        throw new Error(errorMessage);
-      }
-    } catch (error: unknown) {
-      console.error("Failed to verify OTP:", error);
-      setError("root", {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to verify OTP. Please try again.",
-      });
-      // Re-throw the error so the calling function can handle it properly
-      throw error;
-    }
   };
 
   // Function to handle Google signup
@@ -981,20 +782,16 @@ const SignupPage: React.FC = () => {
       title={
         surveyStep
           ? "One Last Step - Tell Us About Yourself"
-          : showOtpStep
-            ? "Verify Your Account"
-            : selectedPlan
-              ? `Sign up for ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan`
-              : "Create your account"
+          : selectedPlan
+            ? `Sign up for ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan`
+            : "Create your account"
       }
       subtitle={
         surveyStep
           ? "Help us understand how we can better serve you"
-          : showOtpStep
-            ? "We've sent a code to your email"
-            : selectedPlan
-              ? `Start your 14-day Free of the ${selectedPlan} plan`
-              : "Start writing better papers today"
+          : selectedPlan
+            ? `Start your 14-day Free of the ${selectedPlan} plan`
+            : "Start writing better papers today"
       }
     >
       {/* Recaptcha container - invisible */}
@@ -1011,7 +808,7 @@ const SignupPage: React.FC = () => {
           <div className="text-red-400 text-sm py-2">{errors.root.message}</div>
         )}
 
-        {!showOtpStep && !surveyStep && (
+        {!surveyStep && (
           <>
             {/* Social Signup Buttons - Re-enabled
             <div className="grid grid-cols-1 gap-3">
@@ -1214,67 +1011,6 @@ const SignupPage: React.FC = () => {
               )}
             </Button>
           </>
-        )}
-
-        {/* OTP Verification Step */}
-        {showOtpStep && !surveyStep && (
-          <div className="space-y-4">
-            <div className="text-center mb-4">
-              <p className="text-gray-600 mb-2">
-                Enter the 6-digit code we sent to your email
-              </p>
-              <p className="text-sm text-gray-600">
-                Didn't receive it?{" "}
-                <button
-                  type="button"
-                  className="text-blue-400 hover:text-blue-300 font-medium"
-                  onClick={handleResendOTP}
-                  disabled={isLoading}
-                >
-                  Resend code
-                </button>
-              </p>
-            </div>
-
-            <OTPInput
-              length={6}
-              onChange={(value) =>
-                setValue("otp", value, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                })
-              }
-              onAutoVerify={async (value) => {
-                // Auto-submit the form when all digits are entered
-                try {
-                  await handleSubmit(onSubmit)();
-                } catch (error) {
-                  // Error is already handled in onSubmit, no need to do anything here
-                  console.log("Auto-verify error handled in onSubmit");
-                }
-              }}
-              error={errors.otp?.message}
-            />
-
-            <div className="flex space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleBackToSignup}
-                className="flex-1 bg-white border-white text-gray-600 hover:bg-white"
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-gray-600 font-medium rounded-xl transition-all duration-200 btn-glow"
-                disabled={true} // Hidden but kept for form structure
-                style={{ display: "none" }} // Hide the button
-              >
-                Verify
-              </Button>
-            </div>
-          </div>
         )}
 
         {/* Survey Step */}

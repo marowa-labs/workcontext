@@ -1,6 +1,8 @@
 "use client";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { OnboardingProvider } from "./contexts/OnboardingContext";
+import OnboardingModal from "./components/onboarding/OnboardingModal";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -44,7 +46,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <OnboardingProvider>
+            {children}
+            <OnboardingModal />
+          </OnboardingProvider>
+        </ThemeProvider>
         <Script
           src="https://va.vercel-scripts.com/v1/script.js"
           strategy="afterInteractive"

@@ -232,26 +232,7 @@ export const hasFeatureAccess = async (
   }
 };
 
-/**
- * Send OTP for profile update
- * @param data The profile data to update
- * @returns Promise resolving when OTP is sent
- */
-export const sendProfileOTP = async (data: any): Promise<boolean> => {
-  try {
-    // Send an OTP to the user via email
-    const response = await apiClient.post("/api/auth/send-otp", {
-      ...data,
-      method: "email",
-      purpose: "profile_update",
-    });
 
-    return response.success || false;
-  } catch (error) {
-    console.error("Error sending OTP for profile update:", error);
-    throw error;
-  }
-};
 
 /**
  * Update profile with OTP verification
@@ -346,7 +327,6 @@ const accountService = {
   updateAccountPreferences,
   getUserPlan,
   hasFeatureAccess,
-  sendProfileOTP,
   updateProfile,
   updatePassword,
   enable2FA,

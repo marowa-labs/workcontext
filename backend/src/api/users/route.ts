@@ -92,33 +92,15 @@ export async function POST_REQUEST_OTP(request: Request) {
       });
     }
 
-    // Always use email for OTP
-    const method = "email";
-
-    // Import OTP service
-    const { OTPService } = await import("../../services/otpService");
-
-    // Send OTP for profile update
-    const result = await OTPService.sendOTP(
-      user.id,
-      prismaUser.email,
-      prismaUser.phone_number || "",
-      method,
-      prismaUser.full_name || "",
-      true, // isProfileUpdate
-    );
-
-    if (!result) {
-      return new Response(JSON.stringify({ error: "Failed to send OTP" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
+    // Email changes are now confirmed via Supabase's built-in email
+    // confirmation flow: the client calls supabase.auth.updateUser({ email })
+    // which sends a confirmation link to the new address. No custom OTP is
+    // sent here.
     return new Response(
       JSON.stringify({
         success: true,
-        message: `OTP sent successfully to your ${method}`,
+        message:
+          "Email changes are confirmed via a link sent to your new email address.",
       }),
       {
         status: 200,
@@ -215,6 +197,28 @@ export async function GET(request: Request) {
       });
     }
 
+    // Keep the Prisma email in sync with Supabase Auth. When a user changes
+    // their email, Supabase only updates the auth email after the
+    // confirmation link is clicked. Mirror the confirmed email here.
+    try {
+      const adminClient = await getSupabaseAdminClient();
+      if (adminClient) {
+        const { data: supabaseUser } =
+          await adminClient.auth.admin.getUserById(user.id);
+        const supabaseEmail = supabaseUser?.user?.email;
+        if (supabaseEmail && supabaseEmail !== prismaUser.email) {
+          const synced = await prisma.user.update({
+            where: { id: user.id },
+            data: { email: supabaseEmail, updated_at: new Date() },
+            select: { email: true },
+          });
+          prismaUser.email = synced.email;
+        }
+      }
+    } catch (syncError) {
+      logger.error("Failed to sync email from Supabase:", syncError);
+    }
+
     // Get user subscription info
     const subscription = await prisma.subscription.findUnique({
       where: { user_id: user.id },
@@ -257,8 +261,6 @@ export async function PUT(request: Request) {
       bio,
       institution,
       location,
-      email,
-      otp,
     } = body;
 
     // Get user from authorization header
@@ -314,31 +316,10 @@ export async function PUT(request: Request) {
       );
     }
 
-    // If email change is requested, verify OTP first
-    if (email && email !== user.email) {
-      if (!otp) {
-        return new Response(
-          JSON.stringify({ error: "OTP is required to change email" }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-
-      // Verify OTP against database (checks both email and SMS OTPs)
-      const { OTPService } = await import("../../services/otpService");
-      const isValid = await OTPService.verifyOTP(user.id, otp);
-      if (!isValid) {
-        return new Response(
-          JSON.stringify({ error: "Invalid or expired OTP" }),
-          {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-    }
+    // Email changes are now handled by Supabase's built-in confirmation flow:
+    // the client calls supabase.auth.updateUser({ email }) which emails a
+    // confirmation link to the new address. The Prisma email is synced from
+    // Supabase after confirmation (see GET handler). No custom OTP is used.
 
     // Update user in database
     const updatedUser = await prisma.user.update({
@@ -351,7 +332,6 @@ export async function PUT(request: Request) {
         bio,
         institution,
         location,
-        ...(email && email !== user.email ? { email } : {}),
         updated_at: new Date(),
       },
       select: {
@@ -381,7 +361,8 @@ export async function PUT(request: Request) {
         },
       );
     }
-    // Update Supabase Auth user (email + metadata)
+    // Update Supabase Auth user metadata (email changes are handled
+    // separately by the client via supabase.auth.updateUser)
     const authUpdateData: any = {
       data: {
         full_name,
@@ -390,27 +371,12 @@ export async function PUT(request: Request) {
         field_of_study,
       },
     };
-    if (email && email !== user.email) {
-      authUpdateData.email = email;
-    }
     const { error: updateError } = await client.auth.updateUser(authUpdateData);
 
     if (updateError) {
       console.error(
         "Error updating user metadata in Supabase Auth:",
         updateError,
-      );
-    }
-
-    // Send email change notification if email was changed
-    if (email && email !== user.email) {
-      const { SecurityNotificationService } =
-        await import("../../services/securityNotificationService");
-      SecurityNotificationService.sendEmailChangedNotification(
-        user.id,
-        email,
-      ).catch((err) =>
-        logger.error("Error sending email change notification:", err),
       );
     }
 

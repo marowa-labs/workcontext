@@ -1,5 +1,4 @@
 import { prisma } from "../../lib/prisma";
-import { OTPService } from "../../services/otpService";
 import { SubscriptionService } from "../../services/subscriptionService";
 import { AuthService } from "../../services/hybridAuthService";
 import logger from "../../monitoring/logger";
@@ -210,47 +209,16 @@ export async function POST(request: Request) {
         phone_number,
       });
 
-      // For both email and SMS, send OTP after signup
-      let otpSent = true; // Default to true
-
-      // Send OTP using our custom service for both email and SMS
-      logger.info("Sending OTP for user:", supabaseUser.id);
-      try {
-        otpSent = await OTPService.sendOTP(
-          supabaseUser.id,
-          email || "",
-          phone_number || "",
-          otp_method,
-          full_name
-        );
-        logger.info("OTP send result:", otpSent);
-      } catch (otpError: any) {
-        logger.error("Error sending OTP:", {
-          error: otpError.message,
-          userId: supabaseUser.id,
-          email,
-          phone_number,
-          otp_method,
-        });
-        // Return an error response but don't delete the user
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: "Failed to send verification code. Please try again.",
-          }),
-          {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
+      // Email confirmation is handled by Supabase's built-in auth email
+      // (AuthService.createUser calls supabase.auth.signUp with a
+      // confirmation redirect). No custom OTP / Plunk email is sent here.
 
       // Return success response
       return new Response(
         JSON.stringify({
           success: true,
           message:
-            "User created successfully. Please check your email for the verification code.",
+            "User created successfully. Please check your email to confirm your account.",
           user: userData,
         }),
         {

@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient, SupabaseClient } from "@supabase/ssr";
 
 // Supabase configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,34 +20,25 @@ if (!supabaseAnonKey) {
   throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable");
 }
 
-// Store the initial client configuration
-const initialSupabaseOptions = {
+// Browser client stores the session in HttpOnly cookies (SSR-compatible),
+// handles token refresh, and exposes the JWT for Bearer API auth.
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // Enable automatic token refresh
-    autoRefreshToken: true,
-    // Persist session in local storage
-    persistSession: true,
-    // Detect session changes
+    // Detect session changes from the OAuth callback URL
     detectSessionInUrl: true,
+    // Persist via cookies (managed by @supabase/ssr)
+    persistSession: true,
+    autoRefreshToken: true,
+    // Keep the session cookie out of client-accessible JS storage
+    storage: undefined,
   },
   realtime: {
-    // Enable realtime connections
     connect: true,
-    // Set heartbeat interval
     heartbeatIntervalMs: 30000,
-    // Set timeout for reconnection attempts
     reconnectDelayMs: 1000,
-    // Enable presence tracking
     presence: true,
   },
-};
-
-// Create Supabase client with proper session persistence and auto-refresh settings
-export const supabase = createClient(
-  supabaseUrl,
-  supabaseAnonKey,
-  initialSupabaseOptions
-);
+});
 // Enhanced session management
 class SessionManager {
   private static instance: SessionManager;

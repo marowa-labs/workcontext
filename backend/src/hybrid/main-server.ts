@@ -184,20 +184,50 @@ async function initializeFrontendUrl() {
 // Initialize the frontend URL
 initializeFrontendUrl();
 
+// Build the list of allowed CORS origins.
+// Supports: the configured frontend URL(s), an explicit CORS_ORIGINS env
+// (comma-separated), and any Vercel deployment (incl. preview *.vercel.app).
+function getAllowedOrigins(): string[] {
+  const origins = new Set<string>();
+
+  if (frontendUrl) origins.add(frontendUrl);
+  if (appUrl && appUrl !== frontendUrl) origins.add(appUrl);
+  if (process.env.FRONTEND_URL) origins.add(process.env.FRONTEND_URL);
+  if (process.env.APP_URL) origins.add(process.env.APP_URL);
+
+  if (process.env.CORS_ORIGINS) {
+    process.env.CORS_ORIGINS.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean)
+      .forEach((o) => origins.add(o));
+  }
+
+  return Array.from(origins);
+}
+
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return false;
+  const allowed = getAllowedOrigins();
+  if (allowed.includes(origin)) return true;
+  // Allow any Vercel deployment (production + preview branches)
+  return origin.endsWith(".vercel.app");
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // In development, allow any origin
       if (nodeEnv === "development") {
         callback(null, true);
+      } else if (!origin) {
+        // Requests without an Origin header (e.g. same-origin, server-to-server,
+        // curl) are allowed. Note: browsers send `null`, not "file://", for
+        // file:// pages, so we don't special-case the string "file://".
+        callback(null, true);
+      } else if (isAllowedOrigin(origin)) {
+        callback(null, true);
       } else {
-        // In production, only allow specific origins
-        const allowedOrigins = [frontendUrl, "file://"];
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,

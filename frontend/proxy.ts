@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { updateSession } from "./app/lib/supabase/middleware";
 
 // Define route patterns
 const publicRoutes = [
@@ -33,15 +33,21 @@ const authRoutes = [
 
 const protectedRoutes = ["/dashboard", "/settings"];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
+  // Resolve the Supabase session from the auth cookies and refresh it.
+  // `response` already carries any refreshed Set-Cookie headers.
+  const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
+  const isAuthenticated = !!user;
 
-  // Get authentication token from cookies
-  const token =
-    request.cookies.get("sb-access-token")?.value ||
-    request.cookies.get("supabase-auth-token")?.value;
-
-  const isAuthenticated = !!token;
+  // Helper to forward refreshed auth cookies onto a redirect response.
+  const redirectWithCookies = (url: URL) => {
+    const redirect = NextResponse.redirect(url);
+    for (const c of response.cookies.getAll()) {
+      redirect.cookies.set(c.name, c.value, c.options);
+    }
+    return redirect;
+  };
 
   // Check if route is public (allow access)
   const isPublicRoute = publicRoutes.some(
@@ -49,7 +55,7 @@ export function proxy(request: NextRequest) {
   );
 
   if (isPublicRoute) {
-    return NextResponse.next();
+    return response;
   }
 
   // Check if route is auth-only (redirect if already authenticated)
@@ -60,9 +66,9 @@ export function proxy(request: NextRequest) {
   if (isAuthRoute) {
     if (isAuthenticated) {
       // User is already logged in, redirect to dashboard
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return redirectWithCookies(new URL("/dashboard", request.url));
     }
-    return NextResponse.next();
+    return response;
   }
 
   // Check if route is protected (require authentication)
@@ -76,13 +82,13 @@ export function proxy(request: NextRequest) {
       const loginUrl = new URL("/login", request.url);
       // Save the original URL to redirect back after login
       loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+      return redirectWithCookies(loginUrl);
     }
-    return NextResponse.next();
+    return response;
   }
 
   // Default: allow access
-  return NextResponse.next();
+  return response;
 }
 
 // Configure which routes use this proxy

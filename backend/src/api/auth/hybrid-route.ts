@@ -1,5 +1,4 @@
 import { AuthService } from "../../services/hybridAuthService";
-import { OTPService } from "../../services/otpService";
 import { SubscriptionService } from "../../services/subscriptionService";
 import { EmailService } from "../../services/emailService";
 import { SessionService } from "../../services/sessionService";
@@ -279,112 +278,10 @@ export async function POST(req: Request, res: Response) {
       });
     }
 
-    // For both email and SMS, send OTP after signup
-    let otpSent = false;
-
-    // Send OTP using our custom service for both email and SMS
-    logger.info("Sending OTP for user:", supabaseUser.id);
-    try {
-      otpSent = await OTPService.sendOTP(
-        supabaseUser.id,
-        email || "",
-        formattedPhoneNumber || "", // Use the formatted phone number
-        otp_method,
-        full_name,
-      );
-      logger.info("OTP send result:", otpSent);
-
-      // If OTP sending fails, we should not proceed with the signup
-      if (!otpSent) {
-        // Delete the Supabase Auth user and database user since we couldn't send the OTP
-        try {
-          const adminClient = await getSupabaseAdminClient();
-          if (adminClient) {
-            await adminClient.auth.admin.deleteUser(supabaseUser.id);
-            logger.info("Cleaned up Supabase Auth user after OTP failure", {
-              userId: supabaseUser.id,
-            });
-          }
-          // Also delete the database user (delete related records first to avoid FK constraint)
-          const { prisma } = await import("../../lib/prisma");
-          // Delete subscription first if it exists
-          await prisma.subscription.deleteMany({
-            where: { user_id: supabaseUser.id },
-          });
-          // Delete OTPCode if it exists
-          await prisma.oTPCode.deleteMany({
-            where: { user_id: supabaseUser.id },
-          });
-          await prisma.user.delete({
-            where: { id: supabaseUser.id },
-          });
-          logger.info("Cleaned up database user after OTP failure", {
-            userId: supabaseUser.id,
-          });
-        } catch (deleteError) {
-          logger.error("Failed to cleanup user after OTP error", {
-            error:
-              deleteError instanceof Error
-                ? deleteError.message
-                : String(deleteError),
-            userId: supabaseUser.id,
-          });
-        }
-
-        // Return an error response
-        return res.status(500).json({
-          success: false,
-          message: "Failed to send verification code. Please try again.",
-        });
-      }
-    } catch (otpError: any) {
-      logger.error("Error sending OTP:", {
-        error: otpError.message,
-        userId: supabaseUser.id,
-        email,
-        phone_number,
-        otp_method,
-      });
-      // Delete the Supabase Auth user and database user since we couldn't send the OTP
-      try {
-        const adminClient = await getSupabaseAdminClient();
-        if (adminClient) {
-          await adminClient.auth.admin.deleteUser(supabaseUser.id);
-          logger.info("Cleaned up Supabase Auth user after OTP failure", {
-            userId: supabaseUser.id,
-          });
-        }
-        // Also delete the database user (delete related records first to avoid FK constraint)
-        const { prisma } = await import("../../lib/prisma");
-        // Delete subscription first if it exists
-        await prisma.subscription.deleteMany({
-          where: { user_id: supabaseUser.id },
-        });
-        // Delete OTPCode if it exists
-        await prisma.oTPCode.deleteMany({
-          where: { user_id: supabaseUser.id },
-        });
-        await prisma.user.delete({
-          where: { id: supabaseUser.id },
-        });
-        logger.info("Cleaned up database user after OTP failure", {
-          userId: supabaseUser.id,
-        });
-      } catch (deleteError) {
-        logger.error("Failed to cleanup user after OTP error", {
-          error:
-            deleteError instanceof Error
-              ? deleteError.message
-              : String(deleteError),
-          userId: supabaseUser.id,
-        });
-      }
-      // Return an error response
-      return res.status(500).json({
-        success: false,
-        message: `Failed to send verification code: ${otpError.message}`,
-      });
-    }
+    // Email confirmation is handled by Supabase's built-in auth email.
+    // AuthService.createUser calls supabase.auth.signUp with
+    // emailRedirectTo: /auth/callback, so Supabase sends a confirmation
+    // link to the user. No custom OTP / Plunk email is sent here.
 
     // Record session and login history
     await recordUserSession(supabaseUser.id, req);
@@ -400,9 +297,9 @@ export async function POST(req: Request, res: Response) {
     return res.status(200).json({
       success: true,
       message:
-        "User created successfully. Please check your email for the verification code.",
+        "User created successfully. Please check your email to confirm your account.",
       user: userData,
-      otpSent: otpSent,
+      otpSent: false,
       needsVerification: true,
     });
   } catch (error: any) {
@@ -851,36 +748,8 @@ export async function POST_OAUTH_SIGNUP(req: Request, res: Response) {
       }
     }
 
-    // Send OTP to email for verification
-    try {
-      logger.info("Sending OTP for OAuth user:", id);
-      const otpSent = await OTPService.sendOTP(
-        id,
-        email,
-        "", // No phone number for OAuth
-        "email",
-        fullName || email,
-      );
-
-      if (!otpSent) {
-        logger.warn("OTP was not sent successfully for OAuth user", {
-          userId: id,
-          email,
-        });
-        return res.status(500).json({
-          success: false,
-          message: "Failed to send verification code",
-        });
-      }
-
-      logger.info("OTP sent successfully to OAuth user");
-    } catch (otpError: any) {
-      logger.error("Error sending OTP:", otpError);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send verification code",
-      });
-    }
+    // OAuth users (e.g. Google) already have a verified email from the
+    // provider, so no custom OTP / Plunk email is sent here.
 
     // Record session and login history for OAuth user
     await recordUserSession(id, req);
@@ -888,10 +757,10 @@ export async function POST_OAUTH_SIGNUP(req: Request, res: Response) {
     return res.status(200).json({
       success: true,
       message:
-        "OAuth user registered successfully. Please check your email for the verification code.",
+        "OAuth user registered successfully. Your account is ready.",
       user: dbUser,
-      otpSent: true,
-      needsVerification: true,
+      otpSent: false,
+      needsVerification: false,
     });
   } catch (error: any) {
     logger.error("OAuth signup completion failed", { error: error.message });

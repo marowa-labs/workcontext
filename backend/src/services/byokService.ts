@@ -702,35 +702,55 @@ export class BYOKService {
     apiKey: string,
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: "gemini-3.1-flash-lite",
-      });
+      // Validate the key by listing available models rather than issuing a
+      // generate call against a single hard-coded model. This avoids failing
+      // valid keys just because one specific model (e.g. a regional/legacy
+      // model) isn't available for the caller's project.
+      const fetch = (await import("node-fetch")).default;
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+      );
 
-      // Make a minimal test request
-      const result = await model.generateContent("Hi");
-      const response = await result.response;
-
-      if (response.text()) {
+      if (response.status === 400) {
         return {
-          success: true,
-          message: "Google AI Studio API key is valid and working",
+          success: false,
+          message: "Invalid Google AI Studio API key",
+        };
+      }
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: `Google API returned status ${response.status}`,
+        };
+      }
+
+      const data = (await response.json()) as any;
+      const models: any[] = data.models || [];
+      if (models.length === 0) {
+        return {
+          success: false,
+          message:
+            "Google API key is valid but no models were returned. Check API enablement in Google Cloud.",
         };
       }
 
       return {
-        success: false,
-        message: "Key appears valid but test request failed",
+        success: true,
+        message: `Google AI Studio API key is valid (${models.length} models available)`,
       };
     } catch (error: any) {
       if (error.message?.includes("API key not valid")) {
         return { success: false, message: "Invalid Google AI Studio API key" };
       }
-      if (error.message?.includes("quota")) {
+      if (
+        error.message?.includes("fetch failed") ||
+        error.message?.includes("network")
+      ) {
         return {
-          success: true,
-          message: "Key is valid (quota exceeded for test)",
+          success: false,
+          message:
+            "Could not connect to Google AI Studio - check your internet connection",
         };
       }
       return { success: false, message: `Test failed: ${error.message}` };
