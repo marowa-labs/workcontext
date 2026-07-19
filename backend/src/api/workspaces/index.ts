@@ -7,6 +7,7 @@ import subtasksRouter from "./tasks/subtasks/route";
 import labelsRouter from "./labels-route";
 import viewsRouter from "./views-route";
 import customFieldsRouter from "./custom-fields-route";
+import { getSupabaseAdminClient } from "../../lib/supabase/client";
 
 const router = Router();
 
@@ -454,20 +455,20 @@ router.post("/:id/invite", async (req: any, res) => {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
-    // Check if user exists
+    // Look up the user. We allow inviting any email (new or existing); the
+    // membership pre-check below only applies when the user already exists.
     const userToInvite = await prisma.user.findUnique({ where: { email } });
-    if (!userToInvite) {
-      return res.status(404).json({ error: "User not found with that email" });
-    }
 
-    // Check if already a member
-    const existingMember = await prisma.workspaceMember.findUnique({
-      where: {
-        workspace_id_user_id: { workspace_id: id, user_id: userToInvite.id },
-      },
-    });
-    if (existingMember) {
-      return res.status(400).json({ error: "User is already a member" });
+    // Check if already a member (only meaningful if the user already exists)
+    if (userToInvite) {
+      const existingMember = await prisma.workspaceMember.findUnique({
+        where: {
+          workspace_id_user_id: { workspace_id: id, user_id: userToInvite.id },
+        },
+      });
+      if (existingMember) {
+        return res.status(400).json({ error: "User is already a member" });
+      }
     }
 
     // Check for existing pending invitation
@@ -490,20 +491,23 @@ router.post("/:id/invite", async (req: any, res) => {
       },
     });
 
-    // Send email notification
+    // Send the invitation email via Supabase (no custom domain required).
+    // Supabase delivers from its own domain, so this works before the Plunk
+    // domain is verified. New users receive the invite email and set a password;
+    // existing users can't be re-invited via Supabase, so they'll simply see the
+    // pending invitation in-app (GET /invitations/pending) instead.
     try {
-      const EmailService = require("../../services/emailService").EmailService;
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-      await EmailService.sendWorkspaceInvitation({
-        to: email,
-        workspaceName: workspace.name,
-        inviterName: req.user.full_name || req.user.email,
-        role,
-        acceptUrl: `${frontendUrl}/workspaces/accept/${invitation.token}`,
-        expiresAt: invitation.expires_at,
-      });
+      const adminClient = await getSupabaseAdminClient();
+      if (adminClient) {
+        await adminClient.auth.admin.inviteUserByEmail(email, {
+          redirectTo: `${process.env.FRONTEND_URL || "http://localhost:3000"}/workspaces/accept/${invitation.token}`,
+        });
+      }
     } catch (emailError) {
-      logger.error("Failed to send invitation email:", emailError);
+      logger.warn(
+        "Supabase invite email not sent (existing user or error) - invitee will see pending invitation in-app:",
+        emailError,
+      );
       // Continue even if email fails - user can still see invitation in dashboard
     }
 

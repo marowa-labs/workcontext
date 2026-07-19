@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  compiler: {
+    // Strip console.* noise in production builds, but keep error/warn for
+    // real debugging signal.
+    removeConsole: {
+      exclude: ["error", "warn"],
+    },
+  },
   async rewrites() {
     return [
       {

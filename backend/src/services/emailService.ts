@@ -67,44 +67,61 @@ export class EmailService {
         to,
         subject: "Verify your WorkContext sign-up",
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Verify Your Account</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName || "there"},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Thank you for signing up with WorkContext. You're one step closer to protecting your your work. Please use the following code to verify your account:
-              </p>
-
-              <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: center;">
-                <p style="font-size: 32px; font-weight: bold; color: #1e40af; letter-spacing: 4px; margin: 0;">
-                  ${otp}
-                </p>
-                <p style="color: #666666; font-size: 14px; margin-top: 10px;">
-                  This code will expire in 10 minutes
-                </p>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                If you did not request this code, please disregard this email. Your productivity is important to us.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContext- Your Productivity Partner
-              </p>
-
-              <p style="color: #999999; font-size: 12px; margin: 0;">
-                &copy; 2024 WorkContext. All rights reserved.
-              </p>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          Verify your account
+                        </h2>
+                        <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName || "there"}, thank you for signing up with WorkContext. Use the code below to verify your account.
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center" style="border-radius:6px; background-color:#f1f5f9;">
+                              <p style="margin:0; font-size:28px; font-weight:700; color:#0f172a; letter-spacing:6px; padding:16px 28px;">
+                                ${otp}
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin:24px 0 0; color:#94a3b8; font-size:12px;">
+                          This code expires in 10 minutes. If you didn't request it, you can safely ignore this email.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because you signed up for WorkContext.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       if (!success) {
@@ -148,48 +165,70 @@ export class EmailService {
         to,
         subject: "Welcome to WorkContext!",
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Welcome to Your Workspace!</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName || "there"},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Welcome to WorkContext! Your journey to anxiety-free writing starts here.
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                With WorkContext, you can:
-              </p>
-
-              <ul style="color: #666666; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                <li>Check your document's originality with our Smart Context Map</li>
-                <li>Verify citations with our Link Verification</li>
-                <li>Write safely with our Focus Mode</li>
-                <li>Generate Work Certificates to prove your work</li>
-              </ul>
-
-              <div style="margin: 30px 0; text-align: center;">
-                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Get Started
-                </a>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                Your success is our mission. If you have any questions, feel free to reach out to our support team.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          Welcome to Your Workspace!
+                        </h2>
+                        <p style="margin:0 0 24px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName || "there"}, welcome to WorkContext! Your journey to anxiety-free writing starts here.
+                        </p>
+                        <p style="margin:0 0 12px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px; text-align:left;">
+                          With WorkContext, you can:
+                        </p>
+                        <table role="presentation" align="left" cellpadding="0" cellspacing="0" style="margin:0 0 32px; text-align:left;">
+                          <tr><td style="color:#64748b; font-size:13px; line-height:1.8;">&bull; Check your document's originality with our Smart Context Map</td></tr>
+                          <tr><td style="color:#64748b; font-size:13px; line-height:1.8;">&bull; Verify citations with our Link Verification</td></tr>
+                          <tr><td style="color:#64748b; font-size:13px; line-height:1.8;">&bull; Write safely with our Focus Mode</td></tr>
+                          <tr><td style="color:#64748b; font-size:13px; line-height:1.8;">&bull; Generate Work Certificates to prove your work</td></tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center" style="border-radius:6px; background-color:#a855f7;">
+                              <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard" style="display:inline-block; padding:12px 28px; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none;">
+                                Get Started
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin:32px 0 0; color:#94a3b8; font-size:12px; line-height:1.5; max-width:360px;">
+                          Your success is our mission. If you have any questions, feel free to reach out to our support team.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because you joined WorkContext.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       if (!success) {
@@ -205,72 +244,6 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error("Error sending welcome email via Plunk:", error);
-      return false;
-    }
-  }
-
-  // Send password reset email
-  static async sendPasswordResetEmail(
-    to: string,
-    resetLink: string,
-    fullName: string = "",
-  ): Promise<boolean> {
-    try {
-      if (!plunk) {
-        console.error("Plunk client not initialized");
-        return false;
-      }
-
-      const success = await plunk.emails.send({
-        to,
-        subject: "Reset your WorkContextpassword",
-        body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Password Reset</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName || "there"},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                We received a request to reset your password for your WorkContextaccount. Click the button below to create a new password and continue protecting your your work:
-              </p>
-
-              <div style="margin: 30px 0;">
-                <a href="${resetLink}" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Reset Password
-                </a>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6;">
-                If you didn't request a password reset, you can safely ignore this email. Your productivity is important to us.
-              </p>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                This link will expire in 1 hour for security reasons.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
-      });
-
-      if (!success) {
-        console.error("Plunk password reset email error");
-        return false;
-      }
-
-      console.log("Password reset email sent successfully via Plunk");
-      return true;
-    } catch (error) {
-      console.error("Error sending password reset email via Plunk:", error);
       return false;
     }
   }
@@ -293,37 +266,64 @@ export class EmailService {
         to,
         subject: title,
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">${title}</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName || "there"},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                ${message}
-              </p>
-
-              <div style="margin: 30px 0;">
-                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  View in Dashboard
-                </a>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                You're receiving this email because you have notifications enabled in your WorkContextsettings. Your productivity is important to us.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          ${title}
+                        </h2>
+                        <p style="margin:0 0 12px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName || "there"},
+                        </p>
+                        <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          ${message}
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center" style="border-radius:6px; background-color:#a855f7;">
+                              <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard" style="display:inline-block; padding:12px 28px; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none;">
+                                View in Dashboard
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin:32px 0 0; color:#94a3b8; font-size:12px; line-height:1.5; max-width:360px;">
+                          You're receiving this email because you have notifications enabled in your WorkContext settings. Your productivity is important to us.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because you use WorkContext.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       if (!success) {
@@ -335,79 +335,6 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error("Error sending notification email via Plunk:", error);
-      return false;
-    }
-  }
-
-  // Send profile update OTP email
-  static async sendProfileUpdateOTPEmail(
-    to: string,
-    otp: string,
-    isEmailChange: boolean = false,
-  ): Promise<boolean> {
-    try {
-      const subject = isEmailChange
-        ? "Verify your email change request"
-        : "Verify your profile update";
-
-      const bodyMessage = isEmailChange
-        ? "You have requested to change your email address. Please enter the following code to confirm this change."
-        : "You have requested to update your profile information. Please enter the following code to confirm these changes.";
-
-      if (!plunk) {
-        console.error("Plunk client not initialized");
-        return false;
-      }
-
-      const success = await plunk.emails.send({
-        to,
-        subject,
-        body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">${subject}</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                ${bodyMessage}
-              </p>
-
-              <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 30px 0;">
-                <p style="font-size: 32px; font-weight: bold; color: #1e40af; letter-spacing: 4px; margin: 0;">
-                  ${otp}
-                </p>
-                <p style="color: #666666; font-size: 14px; margin-top: 10px;">
-                  This code will expire in 10 minutes
-                </p>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                If you did not request this change, please disregard this email. The code will remain active for 10 minutes.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContext, the all-in-one workspace for modern teams.
-              </p>
-
-              <p style="color: #999999; font-size: 12px; margin: 0;">
-                &copy; 2024 WorkContext. All rights reserved.
-              </p>
-            </div>
-          </div>
-        `,
-      });
-
-      if (!success) {
-        console.error("Plunk profile update OTP email error");
-        return false;
-      }
-
-      console.log("Profile update OTP email sent successfully via Plunk");
-      return true;
-    } catch (error) {
-      console.error("Error sending profile update OTP email via Plunk:", error);
       return false;
     }
   }
@@ -431,39 +358,58 @@ export class EmailService {
         to,
         subject: `WorkContext${planName} Plan Subscription Confirmed`,
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Subscription Confirmed</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Thank you for subscribing to WorkContext${planName} plan! You're now one step closer to protecting your your work and keeping your work on track.
-              </p>
-
-              <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: left;">
-                <h2 style="color: #1e40af; margin-top: 0;">Subscription Details</h2>
-                <p style="margin: 5px 0;"><strong>Plan:</strong> ${planName}</p>
-                <p style="margin: 5px 0;"><strong>Amount:</strong> $${amount.toFixed(2)}</p>
-                <p style="margin: 5px 0;"><strong>Next Billing Date:</strong> ${nextBillingDate}</p>
-                <p style="margin: 5px 0;"><strong>Transaction ID:</strong> ${transactionId}</p>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                You can manage your subscription in your account settings. Your productivity is our priority.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          Subscription Confirmed
+                        </h2>
+                        <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName}, thank you for subscribing to the WorkContext ${planName} plan! You're now one step closer to protecting your work.
+                        </p>
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9; border-radius:8px; margin:0 0 32px;">
+                          <tr><td style="padding:20px 24px 4px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Plan:</strong> ${planName}</td></tr>
+                          <tr><td style="padding:4px 24px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Amount:</strong> $${amount.toFixed(2)}</td></tr>
+                          <tr><td style="padding:4px 24px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Next Billing Date:</strong> ${nextBillingDate}</td></tr>
+                          <tr><td style="padding:4px 24px 20px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Transaction ID:</strong> ${transactionId}</td></tr>
+                        </table>
+                        <p style="margin:0; color:#94a3b8; font-size:12px;">
+                          You can manage your subscription in your account settings.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because you subscribed to WorkContext.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       if (!success) {
@@ -502,38 +448,57 @@ export class EmailService {
         to,
         subject: `WorkContextPayment Successful - $${amount.toFixed(2)}`,
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Payment Successful</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Your payment of $${amount.toFixed(2)} for the ${planName} plan has been processed successfully. You're now one step closer to protecting your your work and keeping your work on track.
-              </p>
-
-              <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: left;">
-                <h2 style="color: #1e40af; margin-top: 0;">Payment Details</h2>
-                <p style="margin: 5px 0;"><strong>Plan:</strong> ${planName}</p>
-                <p style="margin: 5px 0;"><strong>Amount:</strong> $${amount.toFixed(2)}</p>
-                <p style="margin: 5px 0;"><strong>Transaction ID:</strong> ${transactionId}</p>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                Thank you for choosing WorkContext! Your productivity is our priority.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          Payment Successful
+                        </h2>
+                        <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName}, your payment of $${amount.toFixed(2)} for the ${planName} plan has been processed successfully.
+                        </p>
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9; border-radius:8px; margin:0 0 32px;">
+                          <tr><td style="padding:20px 24px 4px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Plan:</strong> ${planName}</td></tr>
+                          <tr><td style="padding:4px 24px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Amount:</strong> $${amount.toFixed(2)}</td></tr>
+                          <tr><td style="padding:4px 24px 20px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Transaction ID:</strong> ${transactionId}</td></tr>
+                        </table>
+                        <p style="margin:0; color:#94a3b8; font-size:12px;">
+                          Thank you for choosing WorkContext! Your productivity is our priority.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because you made a payment to WorkContext.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       if (!success) {
@@ -567,19 +532,62 @@ export class EmailService {
         to,
         subject: `WorkContext — Invoice Available for ${planName}`,
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5;">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <h1 style="color: #1e40af; font-size: 24px;">Invoice Available</h1>
-              <p style="color: #666666; font-size: 16px;">Hello ${fullName},</p>
-              <p style="color: #666666; font-size: 16px;">Your invoice for the ${planName} plan ($${amount.toFixed(2)}) is now available.</p>
-              <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 5px 0;"><strong>Plan:</strong> ${planName}</p>
-                <p style="margin: 5px 0;"><strong>Amount:</strong> $${amount.toFixed(2)}</p>
-              </div>
-              <a href="${downloadUrl}" style="display: inline-block; padding: 12px 24px; background-color: #1e40af; color: #ffffff; text-decoration: none; border-radius: 8px;">Download Invoice</a>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          Invoice Available
+                        </h2>
+                        <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName}, your invoice for the ${planName} plan ($${amount.toFixed(2)}) is now available.
+                        </p>
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9; border-radius:8px; margin:0 0 32px;">
+                          <tr><td style="padding:20px 24px 4px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Plan:</strong> ${planName}</td></tr>
+                          <tr><td style="padding:4px 24px 20px; color:#64748b; font-size:13px;"><strong style="color:#0f172a;">Amount:</strong> $${amount.toFixed(2)}</td></tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center" style="border-radius:6px; background-color:#a855f7;">
+                              <a href="${downloadUrl}" style="display:inline-block; padding:12px 28px; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none;">
+                                Download Invoice
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because you have an invoice from WorkContext.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       console.log("Invoice email sent successfully via Plunk");
@@ -607,37 +615,61 @@ export class EmailService {
         to,
         subject: `WorkContextPayment Failed - $${amount.toFixed(2)}`,
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Payment Failed</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                We're sorry, but your payment of $${amount.toFixed(2)} for the ${planName} plan has failed. We want to ensure you can continue protecting your your work.
-              </p>
-
-              <div style="margin: 30px 0;">
-                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Update Payment Method
-                </a>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                If you have any questions, please contact our support team. Your productivity is our priority.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          Payment Failed
+                        </h2>
+                        <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName}, we're sorry, but your payment of $${amount.toFixed(2)} for the ${planName} plan has failed. Please update your payment method to continue.
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center" style="border-radius:6px; background-color:#a855f7;">
+                              <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/billing" style="display:inline-block; padding:12px 28px; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none;">
+                                Update Payment Method
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin:32px 0 0; color:#94a3b8; font-size:12px; line-height:1.5; max-width:360px;">
+                          If you have any questions, please contact our support team. Your productivity is our priority.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because a payment to WorkContext failed.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       if (!success) {
@@ -670,41 +702,64 @@ export class EmailService {
         to,
         subject: `WorkContext Subscription Cancelled`,
         body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Subscription Cancelled</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello ${fullName},
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                We're sorry to see you go. Your ${planName} plan subscription has been cancelled as of ${cancellationDate}.
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                You'll continue to have access to your plan benefits until the end of your current billing period.
-              </p>
-
-              <div style="margin: 30px 0;">
-                <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/billing" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Reactivate Subscription
-                </a>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                We'd love to hear your feedback. If there's anything we can do to improve, please let us know.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
+        <!DOCTYPE html>
+        <html lang="en">
+          <body style="margin:0; padding:0; background-color:#f8fafc;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                     <!-- Full-Width Header Image (Edge to Edge) -->
+            <tr>
+              <td style="padding:0; margin:0; line-height:0;">
+                <img
+                  src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png"
+                  alt="WorkContext"
+                  width="600"
+                  style="display:block; width:100%; max-width:600px; height:auto; border:0;"
+                />
+              </td>
+            </tr>
+            
+            <!-- Email Body Content -->
+                    <tr>
+                      <td align="center" style="padding:48px 40px 56px;">
+                        <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                          Subscription Cancelled
+                        </h2>
+                        <p style="margin:0 0 12px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          Hello ${fullName}, we're sorry to see you go. Your ${planName} plan subscription has been cancelled as of ${cancellationDate}.
+                        </p>
+                        <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                          You'll continue to have access to your plan benefits until the end of your current billing period.
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center" style="border-radius:6px; background-color:#a855f7;">
+                              <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/billing" style="display:inline-block; padding:12px 28px; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none;">
+                                Reactivate Subscription
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin:32px 0 0; color:#94a3b8; font-size:12px; line-height:1.5; max-width:360px;">
+                          We'd love to hear your feedback. If there's anything we can do to improve, please let us know.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                        &copy; 2026 WorkContext. All rights reserved.<br />
+                        You received this email because you cancelled your WorkContext subscription.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
       });
 
       if (!success) {
@@ -723,12 +778,13 @@ export class EmailService {
     }
   }
 
-  // Send team invitation email
+  // Send team/workspace invitation email (branded)
   static async sendTeamInvitationEmail(
     to: string,
     inviterName: string,
     workspaceName: string,
     invitationLink: string,
+    role?: string,
   ): Promise<boolean> {
     try {
       if (!plunk) {
@@ -736,41 +792,59 @@ export class EmailService {
         return false;
       }
 
+      const roleCopy = role
+        ? ` as a <strong style="color:#0f172a; text-transform:capitalize;">${role}</strong>`
+        : "";
+
       const success = await plunk.emails.send({
         to,
         subject: `You've been invited to join ${workspaceName} on WorkContext`,
-        body: `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; ">
-            <div style="background-color: #ffffff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-              <div style="margin-bottom: 30px;">
-                <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContextLogo"style="width: 100%; height: 120px; max-height: 200px; margin-bottom: 5px;">
-                <h1 style="color: #1e40af; font-size: 24px; margin: 10px 0;">Team Invitation</h1>
-              </div>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                Hello,
-              </p>
-
-              <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                ${inviterName} has invited you to join <strong>${workspaceName}</strong> on WorkContext!
-              </p>
-
-              <div style="margin: 30px 0;">
-                <a href="${invitationLink}" style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Accept Invitation
-                </a>
-              </div>
-
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 20px;">
-                Join your team and start collaborating on projects with confidence.
-              </p>
-
-              <p style="color: #999999; font-size: 13px; margin-top: 40px; margin-bottom: 5px;">
-                WorkContextTeam - Your Productivity Partner
-              </p>
-            </div>
-          </div>
-        `,
+        body: `<!DOCTYPE html>
+<html lang="en">
+  <body style="margin:0; padding:0; background-color:#f8fafc;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:0px; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+            <tr>
+              <td align="center">
+                  <img src="https://cdn.phototourl.com/free/2026-07-19-b81fd007-385a-4aca-8109-2962186f0c6d.png" alt="WorkContext" width="220" style="display:block; width:220px; max-width:220px; height:auto;" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:48px 40px 56px;">
+                <h2 style="margin:0 0 12px; color:#0f172a; font-size:18px; font-weight:700; letter-spacing:-0.3px;">
+                  You're invited to WorkContext
+                </h2>
+                <p style="margin:0 0 32px; color:#64748b; font-size:13px; line-height:1.5; max-width:360px;">
+                  <strong style="color:#0f172a;">${inviterName}</strong> has invited you to join <strong style="color:#0f172a;">${workspaceName}</strong>${roleCopy}. Accept the invite to start collaborating on projects, sharing documents, and staying in sync with your team.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="border-radius:6px; background-color:#a855f7;">
+                      <a href="${invitationLink}" style="display:inline-block; padding:12px 36px; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:6px; letter-spacing:-0.2px;">
+                        Accept invitation
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:32px 0 0; color:#94a3b8; font-size:12px;">
+                  This invitation link expires in 7 days. If you weren't expecting this invite, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="background-color:#ffffff; padding:0 40px 40px; color:#94a3b8; font-size:12px; line-height:1.5;">
+                © 2026 WorkContext. All rights reserved.<br />
+                You received this email because you were invited to a workspace.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`,
       });
 
       if (!success) {

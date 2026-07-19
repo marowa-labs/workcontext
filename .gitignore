@@ -22,6 +22,8 @@ logs/
 backend/logs/
 combined.log
 
+session-ses_088d.md
+
 # Temp files
 dist/backend/scripts/verify_*.ts
 
