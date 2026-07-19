@@ -10,6 +10,7 @@ interface AuthLayoutProps {
   title: string;
   subtitle: string;
   showSidebar?: boolean;
+  white?: boolean;
 }
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({
@@ -17,9 +18,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
   title,
   subtitle,
   showSidebar = true,
+  white = false,
 }) => {
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className={cn("min-h-screen", white ? "bg-white" : "bg-[#121212]")}>
       <div className="flex min-h-screen">
         {/* Left Sidebar - Desktop Only */}
         {showSidebar && (
@@ -112,7 +114,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
             <div className="lg:hidden text-center">
               <Link
                 href="/"
-                className="inline-flex items-center space-x-3 text-gray-300"
+                className={cn(
+                  "inline-flex items-center space-x-3",
+                  white ? "text-gray-900" : "text-gray-300",
+                )}
               >
                 <img
                   src="/assets/images/WorkContext-Logo.png"
@@ -125,8 +130,17 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 
             {/* Header */}
             <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold text-white">{title}</h2>
-              <p className="text-gray-300">{subtitle}</p>
+              <h2
+                className={cn(
+                  "text-3xl font-bold",
+                  white ? "text-gray-900" : "text-white",
+                )}
+              >
+                {title}
+              </h2>
+              <p className={white ? "text-gray-600" : "text-gray-300"}>
+                {subtitle}
+              </p>
             </div>
 
             {/* Form Content */}

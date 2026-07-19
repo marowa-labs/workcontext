@@ -83,7 +83,7 @@ const VerifyEmailPage: React.FC = () => {
   // Show verification success state
   if (isVerified) {
     return (
-      <AuthLayout
+      <AuthLayout white
         title="Email verified!"
         subtitle="Your account is ready. Let's get started."
         showSidebar={false}>
@@ -146,7 +146,7 @@ const VerifyEmailPage: React.FC = () => {
 
   // Show pending verification state
   return (
-    <AuthLayout title="Verify your email" subtitle="" showSidebar={false}>
+    <AuthLayout white title="Verify your email" subtitle="" showSidebar={false}>
       <div className="text-center space-y-6">
         {/* Email Icon */}
         <div className="flex justify-center">

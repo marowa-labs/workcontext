@@ -126,7 +126,7 @@ const ResetPasswordPage: React.FC = () => {
   // Show invalid token state
   if (!isValidToken) {
     return (
-      <AuthLayout
+      <AuthLayout white
         title="Invalid or expired link"
         subtitle="This password reset link is no longer valid"
         showSidebar={false}
@@ -183,7 +183,7 @@ const ResetPasswordPage: React.FC = () => {
   // Show success state
   if (isSuccess) {
     return (
-      <AuthLayout
+      <AuthLayout white
         title="Password reset successful"
         subtitle="You can now sign in with your new password"
         showSidebar={false}
@@ -235,7 +235,7 @@ const ResetPasswordPage: React.FC = () => {
 
   // Show reset form
   return (
-    <AuthLayout
+    <AuthLayout white
       title="Set new password"
       subtitle="Create a strong password for your account"
       showSidebar={false}
