@@ -35,3 +35,7 @@ Thumbs.db
 
 # Secrets
 mcp.json
+
+# TypeScript incremental build info
+*.tsbuildinfo
+next-env.d.ts
