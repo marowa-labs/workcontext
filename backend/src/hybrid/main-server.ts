@@ -4192,18 +4192,21 @@ const server = app.listen(Number(PORT), "0.0.0.0", async () => {
 
   // Initialize notification WebSocket server
   try {
-    const notificationServer = getNotificationServer();
+    const notificationServer = getNotificationServer(server);
     await notificationServer;
-    logger.info("Notification WebSocket server initialized on port 8082");
+    logger.info("Notification WebSocket server initialized on /ws/notifications");
   } catch (error) {
     logger.error("Failed to initialize notification WebSocket server:", error);
   }
 
   // Initialize collaboration WebSocket server (Hocuspocus)
   try {
-    const collaborationServer = new HocuspocusCollaborationServer(9081);
+    const collaborationServer = new HocuspocusCollaborationServer(9081, server, "/hocuspocus");
+    // Store httpServer and path for the start() method to use
+    (collaborationServer as any)._httpServer = server;
+    (collaborationServer as any)._path = "/hocuspocus";
     await collaborationServer.start();
-    logger.info("WebSocket collaboration server initialized on port 9081");
+    logger.info("WebSocket collaboration server initialized on /hocuspocus");
   } catch (error) {
     logger.error("Failed to initialize WebSocket collaboration server:", error);
   }

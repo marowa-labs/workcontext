@@ -1,4 +1,6 @@
 import { Server } from "@hocuspocus/server";
+import { WebSocketServer } from "ws";
+import type { Server as HTTPServer } from "http";
 import logger from "../../monitoring/logger";
 import { prisma } from "../../lib/prisma";
 import { getSupabaseClient } from "../../lib/supabase/client";
@@ -55,8 +57,9 @@ export class HocuspocusCollaborationServer {
   private port: number;
   private updateQueue = new Map<string, any>();
   private isProcessingQueue = false;
+  private attachedWss?: WebSocketServer;
 
-  constructor(port = 9081) {
+  constructor(port = 9081, httpServer?: HTTPServer, path?: string) {
     this.port = port;
     this.server = new Server({
       port: this.port,
@@ -1067,11 +1070,27 @@ export class HocuspocusCollaborationServer {
 
   async start(): Promise<void> {
     try {
-      await this.server.listen();
-      logger.info(`Hocuspocus server started on port ${this.port}`, {
-        port: this.port,
-        timestamp: new Date().toISOString(),
-      });
+      // Check if we should attach to an existing HTTP server
+      const httpServer = (this as any)._httpServer as HTTPServer | undefined;
+      const path = (this as any)._path as string | undefined;
+
+      if (httpServer && path) {
+        // Attached mode: create a WebSocketServer on the existing HTTP server
+        this.attachedWss = new WebSocketServer({ server: httpServer, path });
+        this.attachedWss.on("connection", (ws, req) => {
+          this.server.hocuspocus.handleConnection(ws, req);
+        });
+        logger.info(
+          `Hocuspocus server attached to HTTP server on path ${path}`,
+        );
+      } else {
+        // Standalone mode: listen on its own port
+        await this.server.listen();
+        logger.info(`Hocuspocus server started on port ${this.port}`, {
+          port: this.port,
+          timestamp: new Date().toISOString(),
+        });
+      }
     } catch (error) {
       logger.error("Failed to start Hocuspocus server", {
         error: (error as Error).message,

@@ -190,16 +190,18 @@ class NotificationService {
       return;
     }
 
-    // Get WebSocket URL (use wss:// in production) with token as query parameter
-    // Use explicit env var if available, otherwise derive from current page location
+    // Get WebSocket URL with token as query parameter
+    // In production, WebSocket servers share the main HTTP server on the same port
+    // via path-based routing (/ws/notifications). No separate port needed.
     const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsHost =
       process.env.NEXT_PUBLIC_NOTIFICATION_WS_HOST || window.location.hostname;
     const wsPort =
-      process.env.NEXT_PUBLIC_NOTIFICATION_WS_PORT ||
-      (process.env.NODE_ENV === "production" ? "8082" : "8082");
+      process.env.NEXT_PUBLIC_NOTIFICATION_WS_PORT || "";
 
-    const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}?token=${encodeURIComponent(token)}`;
+    // Build URL: host + optional port + path
+    const portPart = wsPort ? `:${wsPort}` : "";
+    const wsUrl = `${wsProtocol}//${wsHost}${portPart}/ws/notifications?token=${encodeURIComponent(token)}`;
 
     console.log(
       `[NotificationService] Attempting connection to: ${wsUrl.split("?")[0]} (token hidden)`,

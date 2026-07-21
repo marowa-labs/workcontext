@@ -4,7 +4,7 @@ import * as Y from "yjs";
 import useAuth from "../utils/useAuth";
 
 const WEBSOCKET_URL =
-  process.env.NEXT_PUBLIC_COLLABORATION_API_URL || "ws://localhost:9081";
+  process.env.NEXT_PUBLIC_COLLABORATION_API_URL || "ws://localhost:9081/hocuspocus";
 
 export interface PresenceUser {
   clientId: number;

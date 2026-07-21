@@ -45,7 +45,7 @@ export const useCollaboration = ({
 
         // 3. Initialize Hocuspocus Provider
         const wsUrl =
-          process.env.NEXT_PUBLIC_COLLAB_URL || "ws://localhost:9081";
+          process.env.NEXT_PUBLIC_COLLAB_URL || "ws://localhost:9081/hocuspocus";
 
         newProvider = new HocuspocusProvider({
           url: wsUrl,

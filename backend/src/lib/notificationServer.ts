@@ -1,12 +1,20 @@
 import { NotificationServer } from "../hybrid/websockets/notification-server";
+import type { Server as HTTPServer } from "http";
 
 // Singleton instance of NotificationServer
 let notificationServer: NotificationServer | null = null;
 
-export function getNotificationServer(): NotificationServer {
+export function getNotificationServer(
+  httpServer?: HTTPServer,
+): NotificationServer {
   if (!notificationServer) {
-    // Create notification server on port 8082
-    notificationServer = new NotificationServer(8082);
+    if (httpServer) {
+      // Production mode: attach to main HTTP server
+      notificationServer = new NotificationServer(8082, httpServer, "/ws/notifications");
+    } else {
+      // Local dev mode: standalone port
+      notificationServer = new NotificationServer(8082);
+    }
   }
   return notificationServer;
 }
