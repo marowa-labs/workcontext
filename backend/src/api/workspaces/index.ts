@@ -526,6 +526,45 @@ router.post("/:id/invite", async (req: any, res) => {
   }
 });
 
+// GET /api/workspaces/invitations/by-token/:token - Get invitation by token
+router.get("/invitations/by-token/:token", async (req: any, res) => {
+  try {
+    const { token } = req.params;
+    const invitation = await prisma.workspaceInvitation.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        token: true,
+        email: true,
+        role: true,
+        status: true,
+        expires_at: true,
+        created_at: true,
+        workspace_id: true,
+        workspace: {
+          select: { id: true, name: true, description: true },
+        },
+        inviter: {
+          select: { full_name: true, email: true },
+        },
+      },
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ error: "Invitation not found or has expired" });
+    }
+
+    if (invitation.status !== "pending" || invitation.expires_at < new Date()) {
+      return res.status(404).json({ error: "Invitation not found or has expired" });
+    }
+
+    res.json(invitation);
+  } catch (error) {
+    logger.error("Error fetching invitation by token", error);
+    res.status(500).json({ error: "Failed to fetch invitation" });
+  }
+});
+
 // GET /api/workspaces/invitations/pending - Get pending invitations for current user
 router.get("/invitations/pending", async (req: any, res) => {
   try {

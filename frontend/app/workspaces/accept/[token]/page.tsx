@@ -17,22 +17,17 @@ export default function AcceptInvitePage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Since there's no direct GET endpoint for invitation by token,
-    // we'll fetch pending invitations and find the matching one
+    if (!token) {
+      setError("Invitation not found or has expired");
+      setLoading(false);
+      return;
+    }
     const fetchInvitation = async () => {
       try {
-        const invitations = await apiClient.get(
-          "/api/workspaces/invitations/pending",
+        const invitation = await apiClient.get(
+          `/api/workspaces/invitations/by-token/${token}`,
         );
-        const matchingInvite = invitations.find(
-          (inv: any) => inv.token === token,
-        );
-
-        if (matchingInvite) {
-          setInvitation(matchingInvite);
-        } else {
-          setError("Invitation not found or has expired");
-        }
+        setInvitation(invitation);
       } catch (err: any) {
         setError(err.message || "Failed to load invitation");
       } finally {
@@ -94,7 +89,11 @@ export default function AcceptInvitePage() {
           <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Error</h1>
           <p className="text-slate-600 mb-6">{error}</p>
-          <Button onClick={() => router.push("/dashboard")} variant="outline">
+          <Button
+            onClick={() => router.push("/dashboard")}
+            variant="outline"
+            className="bg-white text-black hover-blue-500"
+          >
             Go to Dashboard
           </Button>
         </div>
@@ -144,13 +143,15 @@ export default function AcceptInvitePage() {
             onClick={handleDecline}
             variant="outline"
             className="flex-1"
-            disabled={accepting}>
+            disabled={accepting}
+          >
             Decline
           </Button>
           <Button
             onClick={handleAccept}
             className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-            disabled={accepting}>
+            disabled={accepting}
+          >
             {accepting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
