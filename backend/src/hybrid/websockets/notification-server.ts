@@ -5,6 +5,20 @@ import { AuthService } from "../../services/hybridAuthService";
 import { SecretsService } from "../../services/secrets-service";
 import { getUnreadNotificationCount } from "../../services/notificationService";
 
+function abortHandshake(socket: any, code: number, msg?: string) {
+  const message = msg || http.STATUS_CODES[code] || "Unknown";
+  const headers = {
+    Connection: "close",
+    "Content-Type": "text/html",
+    "Content-Length": Buffer.byteLength(message),
+  };
+  const headerStr = Object.keys(headers)
+    .map((h) => `${h}: ${(headers as any)[h]}`)
+    .join("\r\n");
+  socket.end(`HTTP/1.1 ${code} ${http.STATUS_CODES[code]}\r\n${headerStr}\r\n\r\n${message}`);
+  socket.destroy();
+}
+
 interface NotificationWebSocket extends WebSocket {
   userId?: string;
   isAuthenticated?: boolean;
@@ -22,106 +36,10 @@ export class NotificationServer {
 
     if (httpServer && path) {
       // Attach to existing HTTP server (production mode - Render/Vercel)
-      this.wss = new WebSocketServer({
-        server: httpServer,
-        path,
-        verifyClient: async (info, callback) => {
-          console.log(
-            `[NotificationServer] Connection attempt from ${info.req.headers.origin} - URL: ${info.req.url}`,
-          );
-          try {
-            const urlString = info.req.url || "";
-            const host = info.req.headers.host || "localhost";
-            const url = new URL(urlString, `http://${host}`);
-            const tokenFromUrl = url.searchParams.get("token");
-            const tokenFromHeader = info.req.headers.authorization?.replace(
-              "Bearer ",
-              "",
-            );
-            const tokenFromProtocol =
-              info.req.headers["sec-websocket-protocol"];
-
-            const token =
-              tokenFromUrl || tokenFromHeader || tokenFromProtocol;
-
-            logger.info("New notification WebSocket connection attempt", {
-              url: urlString,
-              hasToken: !!token,
-              tokenSource: tokenFromUrl
-                ? "url"
-                : tokenFromHeader
-                  ? "header"
-                  : tokenFromProtocol
-                    ? "protocol"
-                    : "none",
-              origin: info.req.headers.origin,
-            });
-
-            const origin = info.req.headers.origin;
-            const allowedOrigins = [
-              process.env.FRONTEND_URL || "http://localhost:3000",
-              "http://localhost:5173",
-              "https://localhost:3000",
-              "https://localhost:5173",
-              await SecretsService.getAppUrl(),
-              ...((await SecretsService.getAllowedOrigins())?.split(",") || []),
-            ].filter(Boolean) as string[];
-
-            if (origin && allowedOrigins.length > 0) {
-              const isOriginAllowed = allowedOrigins.some((allowed) => {
-                if (origin === allowed) return true;
-                const cleanOrigin = origin
-                  .replace("https://", "")
-                  .replace("http://", "");
-                const cleanAllowed = allowed
-                  .replace("https://", "")
-                  .replace("http://", "");
-                return (
-                  cleanOrigin === cleanAllowed ||
-                  cleanOrigin.startsWith(cleanAllowed)
-                );
-              });
-
-              if (!isOriginAllowed) {
-                logger.warn(
-                  "WebSocket connection attempt from unauthorized origin",
-                  { origin, allowedOrigins },
-                );
-                callback(false, 403, "Forbidden: Unauthorized origin");
-                return;
-              }
-            }
-
-            if (!token) {
-              console.log(
-                `[NotificationServer] No token provided from ${origin}`,
-              );
-              logger.warn("WebSocket connection attempt without token", {
-                url: urlString,
-              });
-              callback(false, 401, "Unauthorized: No token provided");
-              return;
-            }
-
-            const isValid = await this.verifyAuthToken(token);
-            if (!isValid) {
-              logger.warn("WebSocket connection attempt with invalid token", {
-                tokenPreview: token.substring(0, 10) + "...",
-                tokenLength: token.length,
-              });
-              callback(false, 401, "Unauthorized: Invalid token");
-              return;
-            }
-
-            callback(true);
-          } catch (error) {
-            logger.error("Error during WebSocket verifyClient", {
-              error: error instanceof Error ? error.message : String(error),
-            });
-            callback(false, 401, "Unauthorized: Authentication failed");
-          }
-        },
-      });
+      // Note: noServer:true + path-based upgrade routing in main-server.ts
+      // avoids the ws library's path-abort collision when multiple
+      // WebSocketServer instances share the same HTTP server.
+      this.wss = new WebSocketServer({ noServer: true });
 
       this.setupWebSocketHandlers();
       logger.info(
@@ -255,6 +173,119 @@ export class NotificationServer {
       server.on("error", (error) => {
         logger.error("Notification WebSocket server error", { error });
       });
+    }
+  }
+
+  // Called by the shared upgrade handler in main-server.ts
+  // Verifies the connection then upgrades to WebSocket.
+  public async handleUpgrade(req: any, socket: any, head: any) {
+    try {
+      const result = await this.verifyConnection(req);
+      if (!result.valid) {
+        abortHandshake(socket, result.code || 401, result.message);
+        return;
+      }
+      this.wss.handleUpgrade(req, socket, head, (ws) => {
+        this.wss.emit("connection", ws, req);
+      });
+    } catch (error) {
+      logger.error("Error during notification WebSocket upgrade", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      abortHandshake(socket, 500, "Internal server error");
+    }
+  }
+
+  private async verifyConnection(req: any): Promise<{
+    valid: boolean;
+    code?: number;
+    message?: string;
+  }> {
+    try {
+      const urlString = req.url || "";
+      const host = req.headers.host || "localhost";
+      const url = new URL(urlString, `http://${host}`);
+      const tokenFromUrl = url.searchParams.get("token");
+      const tokenFromHeader = req.headers.authorization?.replace(
+        "Bearer ",
+        "",
+      );
+      const tokenFromProtocol = req.headers["sec-websocket-protocol"];
+
+      const token = tokenFromUrl || tokenFromHeader || tokenFromProtocol;
+
+      logger.info("New notification WebSocket connection attempt", {
+        url: urlString,
+        hasToken: !!token,
+        tokenSource: tokenFromUrl
+          ? "url"
+          : tokenFromHeader
+            ? "header"
+            : tokenFromProtocol
+              ? "protocol"
+              : "none",
+        origin: req.headers.origin,
+      });
+
+      const origin = req.headers.origin;
+      const allowedOrigins = [
+        process.env.FRONTEND_URL || "http://localhost:3000",
+        "http://localhost:5173",
+        "https://localhost:3000",
+        "https://localhost:5173",
+        await SecretsService.getAppUrl(),
+        ...((await SecretsService.getAllowedOrigins())?.split(",") || []),
+      ].filter(Boolean) as string[];
+
+      if (origin && allowedOrigins.length > 0) {
+        const isOriginAllowed = allowedOrigins.some((allowed) => {
+          if (origin === allowed) return true;
+          const cleanOrigin = origin
+            .replace("https://", "")
+            .replace("http://", "");
+          const cleanAllowed = allowed
+            .replace("https://", "")
+            .replace("http://", "");
+          return (
+            cleanOrigin === cleanAllowed ||
+            cleanOrigin.startsWith(cleanAllowed)
+          );
+        });
+
+        if (!isOriginAllowed) {
+          logger.warn(
+            "WebSocket connection attempt from unauthorized origin",
+            { origin, allowedOrigins },
+          );
+          return { valid: false, code: 403, message: "Forbidden: Unauthorized origin" };
+        }
+      }
+
+      if (!token) {
+        console.log(
+          `[NotificationServer] No token provided from ${origin}`,
+        );
+        logger.warn("WebSocket connection attempt without token", {
+          url: urlString,
+        });
+        return { valid: false, code: 401, message: "Unauthorized: No token provided" };
+      }
+
+      const isValid = await this.verifyAuthToken(token);
+      if (!isValid) {
+        logger.warn("WebSocket connection attempt with invalid token", {
+          tokenPreview: token.substring(0, 10) + "...",
+          tokenLength: token.length,
+        });
+        return { valid: false, code: 401, message: "Unauthorized: Invalid token" };
+      }
+
+      return { valid: true };
+    } catch (error) {
+      logger.error("Error during WebSocket verifyConnection", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { valid: false, code: 401, message: "Unauthorized: Authentication failed" };
     }
   }
 

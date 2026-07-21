@@ -4200,8 +4200,9 @@ const server = app.listen(Number(PORT), "0.0.0.0", async () => {
   }
 
   // Initialize collaboration WebSocket server (Hocuspocus)
+  let collaborationServer: HocuspocusCollaborationServer | null = null;
   try {
-    const collaborationServer = new HocuspocusCollaborationServer(9081, server, "/hocuspocus");
+    collaborationServer = new HocuspocusCollaborationServer(9081, server, "/hocuspocus");
     // Store httpServer and path for the start() method to use
     (collaborationServer as any)._httpServer = server;
     (collaborationServer as any)._path = "/hocuspocus";
@@ -4210,6 +4211,35 @@ const server = app.listen(Number(PORT), "0.0.0.0", async () => {
   } catch (error) {
     logger.error("Failed to initialize WebSocket collaboration server:", error);
   }
+
+  // Register a single upgrade handler to route WebSocket requests to the
+  // correct server by path. This avoids the ws library's path-abort collision
+  // where each WebSocketServer with a path option kills sockets for
+  // non-matching paths (preventing other servers from handling them).
+  server.removeAllListeners("upgrade");
+  server.on("upgrade", (req, socket, head) => {
+    try {
+      const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+
+      if (url.pathname === "/ws/notifications") {
+        const ns = getNotificationServer();
+        ns.handleUpgrade(req, socket, head);
+      } else if (url.pathname === "/hocuspocus") {
+        if (collaborationServer && typeof (collaborationServer as any).handleUpgrade === "function") {
+          (collaborationServer as any).handleUpgrade(req, socket, head);
+        } else {
+          socket.destroy();
+        }
+      } else {
+        socket.destroy();
+      }
+    } catch (error) {
+      logger.error("WebSocket upgrade routing error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      socket.destroy();
+    }
+  });
 });
 
 // Enhanced 404 handler - This should be at the VERY END

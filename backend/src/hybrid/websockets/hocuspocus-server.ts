@@ -1075,8 +1075,10 @@ export class HocuspocusCollaborationServer {
       const path = (this as any)._path as string | undefined;
 
       if (httpServer && path) {
-        // Attached mode: create a WebSocketServer on the existing HTTP server
-        this.attachedWss = new WebSocketServer({ server: httpServer, path });
+        // Attached mode: create a WebSocketServer with noServer=true
+        // The upgrade handler is registered once in main-server.ts to avoid
+        // path-based collisions between multiple WebSocketServer instances.
+        this.attachedWss = new WebSocketServer({ noServer: true });
         this.attachedWss.on("connection", (ws, req) => {
           this.server.hocuspocus.handleConnection(ws, req);
         });
@@ -1119,6 +1121,16 @@ export class HocuspocusCollaborationServer {
 
   getServerInstance() {
     return this.server;
+  }
+
+  handleUpgrade(req: any, socket: any, head: any) {
+    if (!this.attachedWss) {
+      socket.destroy();
+      return;
+    }
+    this.attachedWss.handleUpgrade(req, socket, head, (ws) => {
+      this.attachedWss!.emit("connection", ws, req);
+    });
   }
 
   private async processUpdateQueue() {
