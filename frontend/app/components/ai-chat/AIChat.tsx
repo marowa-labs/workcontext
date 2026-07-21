@@ -81,6 +81,7 @@ interface AIChatPanelProps {
   aiMode: boolean;
   searchMode: boolean;
   projectId?: string; // Add projectId prop
+  documentTitle?: string; // Document/project name for AI context
   user?: {
     id: string;
     email: string;
@@ -97,6 +98,7 @@ export function AIChatPanel({
   isOpen,
   editor,
   projectId,
+  documentTitle,
   user,
   onSendPrompt,
 }: AIChatPanelProps) {
@@ -694,6 +696,7 @@ export function AIChatPanel({
             userDisplayMessage: userDisplayMessage,
             contextItems: contextItems,
             includeDocument: includeDocument,
+            documentTitle: documentTitle || null,
           },
         },
       );
@@ -1201,9 +1204,26 @@ export function AIChatPanel({
     setIsLoading(true);
 
     try {
+      // Enrich the message with editor context so the AI action service
+      // can see what's in the editor (it normally has no access to metadata)
+      const docText = getFullDocumentText();
+      const cursorCtx = getContextBeforeCursor();
+      let enrichedContent = content;
+      if (docText) {
+        const contextParts: string[] = [];
+        if (documentTitle) {
+          contextParts.push(`Document: ${documentTitle}`);
+        }
+        contextParts.push(`Current Document Content:\n${docText.substring(0, 10000)}`);
+        if (cursorCtx) {
+          contextParts.push(`Text before cursor:\n${cursorCtx}`);
+        }
+        enrichedContent = `[Editor Context — ${contextParts.join(" | ")}]\n\nUser Message: ${content}`;
+      }
+
       // Use the AI Action Service for intelligent action processing
       await aiActionService.sendMessage(
-        content,
+        enrichedContent,
         {
           pageContext: "editor", // or derive from router
           currentProjectId: projectId || undefined,

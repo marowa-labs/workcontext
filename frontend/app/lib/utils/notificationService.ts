@@ -191,13 +191,13 @@ class NotificationService {
     }
 
     // Get WebSocket URL (use wss:// in production) with token as query parameter
-    // Use window.location.hostname to ensure it works even if accessing via IP
+    // Use explicit env var if available, otherwise derive from current page location
     const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsHost = window.location.hostname;
-    // In production, we might use a different port or path, but for now assuming 8081 for separate WS server
-    // or reusing the same port if proxied.
-    // For local dev, explicit 8081 is set.
-    const wsPort = process.env.NODE_ENV === "production" ? "8082" : "8082";
+    const wsHost =
+      process.env.NEXT_PUBLIC_NOTIFICATION_WS_HOST || window.location.hostname;
+    const wsPort =
+      process.env.NEXT_PUBLIC_NOTIFICATION_WS_PORT ||
+      (process.env.NODE_ENV === "production" ? "8082" : "8082");
 
     const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}?token=${encodeURIComponent(token)}`;
 

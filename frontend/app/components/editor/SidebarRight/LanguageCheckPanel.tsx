@@ -48,11 +48,13 @@ export function LanguageCheckPanel({
       if (parsed.length === 0) {
         toast({ title: "All clear!", description: "No issues found." });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Language check failed:", error);
+      const errorMsg =
+        error?.message || "Could not analyze document.";
       toast({
         title: "Check Failed",
-        description: "Could not analyze document.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -69,7 +71,13 @@ export function LanguageCheckPanel({
     if (Array.isArray(results)) {
       // Validate and normalize each suggestion
       return results
-        .filter((item: any) => item && item.original && item.suggestion)
+        .filter(
+          (item: any) =>
+            item &&
+            item.original &&
+            item.suggestion &&
+            item.original.trim() !== item.suggestion.trim(),
+        )
         .map((item: any, index: number) => ({
           id: item.id || `s-${index}`,
           type: item.type || detectType(item.reason || ""),
@@ -83,7 +91,13 @@ export function LanguageCheckPanel({
     // If results is an object with suggestions array (directly from backend)
     if (results && Array.isArray(results.suggestions)) {
       return results.suggestions
-        .filter((item: any) => item && item.original && item.suggestion)
+        .filter(
+          (item: any) =>
+            item &&
+            item.original &&
+            item.suggestion &&
+            item.original.trim() !== item.suggestion.trim(),
+        )
         .map((item: any, index: number) => ({
           id: item.id || `s-${index}`,
           type: item.type || detectType(item.reason || ""),
@@ -100,7 +114,13 @@ export function LanguageCheckPanel({
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         return parsed
-          .filter((item: any) => item && item.original && item.suggestion)
+          .filter(
+            (item: any) =>
+              item &&
+              item.original &&
+              item.suggestion &&
+              item.original.trim() !== item.suggestion.trim(),
+          )
           .map((item: any, index: number) => ({
             id: item.id || `s-${index}`,
             type: item.type || detectType(item.reason || ""),
@@ -112,7 +132,13 @@ export function LanguageCheckPanel({
       }
       if (parsed?.suggestions && Array.isArray(parsed.suggestions)) {
         return parsed.suggestions
-          .filter((item: any) => item && item.original && item.suggestion)
+          .filter(
+            (item: any) =>
+              item &&
+              item.original &&
+              item.suggestion &&
+              item.original.trim() !== item.suggestion.trim(),
+          )
           .map((item: any, index: number) => ({
             id: item.id || `s-${index}`,
             type: item.type || detectType(item.reason || ""),
@@ -335,7 +361,7 @@ export function LanguageCheckPanel({
             variant="outline"
             onClick={runCheck}
             disabled={isLoading}
-            className="h-8 text-xs gap-1.5"
+            className="h-8 text-xs gap-1.5 bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
           >
             {isLoading ? (
               <Loader2 className="w-3 h-3 animate-spin" />

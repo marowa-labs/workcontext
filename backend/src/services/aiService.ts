@@ -1384,12 +1384,13 @@ Provide a helpful response.`;
     let projectContext = "";
     const liveContent = metadata?.liveDocumentContent || "";
     const cursorContext = metadata?.cursorContext || "";
+    const docTitle = metadata?.documentTitle || "";
 
     if (liveContent) {
       // Use LIVE content from the editor — what the user is currently typing
       projectContext = `
 Project Context:
-Title: ${session?.project?.title || "(untitled)"}
+Title: ${docTitle || session?.project?.title || "(untitled)"}
 Type: ${session?.project?.type || "document"}
 
 // LIVE DOCUMENT CONTENT — this is what the user is currently writing:
@@ -1404,7 +1405,7 @@ Text before cursor: ${cursorContext || "(none)"}`;
         : "(empty)";
       projectContext = `
 Project Context:
-Title: ${session.project.title}
+Title: ${docTitle || session.project.title}
 Type: ${session.project.type}
 Document Content: ${docContent}`;
     }
@@ -2152,11 +2153,12 @@ ${formattedResults}
     let projectContext = "";
     const liveContent = metadata?.liveDocumentContent || "";
     const cursorContext = metadata?.cursorContext || "";
+    const docTitle = metadata?.documentTitle || "";
 
     if (liveContent) {
       projectContext = `
 Project Context:
-Title: ${session?.project?.title || "(untitled)"}
+Title: ${docTitle || session?.project?.title || "(untitled)"}
 Type: ${session?.project?.type || "document"}
 
 // LIVE DOCUMENT CONTENT:
@@ -2167,7 +2169,7 @@ Text before cursor: ${cursorContext || "(none)"}`;
     } else if (session?.project) {
       projectContext = `
 Project Context:
-Title: ${session.project.title}
+Title: ${docTitle || session.project.title}
 Type: ${session.project.type}
 Citation Style: ${session.project.citation_style}
 Content: ${JSON.stringify(session.project.content)}`;

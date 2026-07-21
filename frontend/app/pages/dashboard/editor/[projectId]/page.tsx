@@ -759,6 +759,7 @@ export default function EditorPage() {
                 aiMode={true}
                 searchMode={false}
                 projectId={documentId}
+                documentTitle={project?.title || project?.name}
                 user={{
                   id: userId!,
                   email: userEmail,
