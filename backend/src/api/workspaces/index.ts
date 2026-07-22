@@ -628,6 +628,22 @@ router.post("/invitations/:token/accept", async (req: any, res) => {
       return res.status(410).json({ error: "Invitation has expired" });
     }
 
+    // Ensure the user exists in the app's User table.
+    // Users created via Supabase's inviteUserByEmail only exist in Supabase Auth
+    // and need to be upserted into Prisma before we can reference them.
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: { email: userEmail },
+      create: {
+        id: userId,
+        email: userEmail,
+        full_name:
+          req.user.user_metadata?.full_name ||
+          req.user.user_metadata?.name ||
+          null,
+      },
+    });
+
     // Add user to workspace
     const member = await prisma.workspaceMember.create({
       data: {
