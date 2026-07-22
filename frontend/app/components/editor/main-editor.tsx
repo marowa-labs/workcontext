@@ -66,7 +66,7 @@ import AIAutocompleteSuggestion from "./AIAutocompleteSuggestion"; // Add this i
 import { FloatingAIMenu } from "../ai/floating-ai-menu"; // Import Floating AI Menu
 import GrammarCheckingExtension from "./GrammarCheckingExtension";
 import Collaboration from "@tiptap/extension-collaboration";
-import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
+import { SafeCollaborationCursor } from "../../lib/utils/safeCollaborationCursor";
 import { useCollaboration } from "../../hooks/use-collaboration"; // Import new hook
 
 // Import template styling utilities
@@ -619,7 +619,7 @@ export const MainEditor = forwardRef<
                   field: collaborationFieldName,
                   onFirstRender: seedCollaborativeDocument,
                 }),
-                CollaborationCursor.configure({
+                SafeCollaborationCursor.configure({
                   provider: provider,
                   user: {
                     name: userName,
