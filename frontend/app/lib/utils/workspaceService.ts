@@ -12,6 +12,18 @@ export interface WorkspaceMember {
   };
 }
 
+export interface PendingInvitation {
+  id: string;
+  email: string;
+  role: "admin" | "editor" | "viewer";
+  token: string;
+  created_at: string;
+  inviter: {
+    full_name: string | null;
+    email: string;
+  };
+}
+
 export interface Workspace {
   id: string;
   name: string;
@@ -22,6 +34,7 @@ export interface Workspace {
   updated_at: string;
   role?: string; // Current user's role
   members?: WorkspaceMember[];
+  pendingInvitations?: PendingInvitation[];
   _count?: {
     projects: number;
     members: number;

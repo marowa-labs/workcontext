@@ -423,7 +423,25 @@ router.get("/:id", async (req: any, res) => {
     if (!workspace)
       return res.status(404).json({ error: "Workspace not found" });
 
-    res.json(workspace);
+    const pendingInvitations = await prisma.workspaceInvitation.findMany({
+      where: {
+        workspace_id: id,
+        status: "pending",
+        expires_at: { gt: new Date() },
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        token: true,
+        created_at: true,
+        inviter: {
+          select: { full_name: true, email: true },
+        },
+      },
+    });
+
+    res.json({ ...workspace, pendingInvitations });
   } catch (error) {
     logger.error("Error fetching workspace", error);
     res.status(500).json({ error: "Failed to fetch workspace" });

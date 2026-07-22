@@ -13,9 +13,11 @@ import {
   X,
   Loader2,
   Plus,
+  Hourglass,
 } from "lucide-react";
 import workspaceService, {
   WorkspaceMember,
+  PendingInvitation,
 } from "../../../../lib/utils/workspaceService";
 import { apiClient } from "../../../../lib/utils/apiClient";
 
@@ -133,6 +135,7 @@ export default function WorkspaceMembersPage() {
   const workspaceId = params.workspaceId as string;
 
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>("viewer");
   const [loading, setLoading] = useState(true);
@@ -144,13 +147,16 @@ export default function WorkspaceMembersPage() {
   const fetchMembers = useCallback(async () => {
     try {
       setLoading(true);
-      const list = await workspaceService.getWorkspaceMembers(workspaceId);
-      setMembers(list);
+      const workspaceData = await workspaceService.getWorkspace(workspaceId);
+      setMembers(workspaceData.members ?? []);
+      setPendingInvites(workspaceData.pendingInvitations ?? []);
       // Also fetch current user and determine role
       try {
         const u = await apiClient.get("/api/auth/me");
         setCurrentUser(u.user);
-        const membership = list.find((m: any) => m.user_id === u.user?.id);
+        const membership = workspaceData.members?.find(
+          (m: any) => m.user_id === u.user?.id,
+        );
         setCurrentUserRole(membership?.role ?? "viewer");
       } catch {
         setCurrentUserRole("viewer");
@@ -211,9 +217,10 @@ export default function WorkspaceMembersPage() {
       setIsInviting(true);
       await workspaceService.inviteMember(workspaceId, email, role);
       setInviteModalOpen(false);
+      // Refresh pending invites so the new row appears immediately
+      const workspaceData = await workspaceService.getWorkspace(workspaceId);
+      setPendingInvites(workspaceData.pendingInvitations ?? []);
       alert(`Invitation sent to ${email}`);
-      // Ideally refresh pending invites, but we don't display them here yet.
-      // For now, let's just refresh list in case they were auto-added (unlikely for strict invites)
     } catch (err) {
       alert("Failed to send invite.");
     } finally {
@@ -221,10 +228,14 @@ export default function WorkspaceMembersPage() {
     }
   };
 
-  const filtered = members.filter(
+  const filteredMembers = members.filter(
     (m) =>
       m.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.user?.email.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const filteredPending = pendingInvites.filter((p) =>
+    p.email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -266,7 +277,7 @@ export default function WorkspaceMembersPage() {
         />
       </div>
 
-      {/* ── Table ── */}
+      {/* ── Members Table ── */}
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="bg-muted/40 border-b border-border">
@@ -298,7 +309,7 @@ export default function WorkspaceMembersPage() {
                   </div>
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : filteredMembers.length + filteredPending.length === 0 ? (
               <tr>
                 <td
                   colSpan={4}
@@ -308,72 +319,133 @@ export default function WorkspaceMembersPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((member) => (
-                <tr
-                  key={member.id}
-                  className="hover:bg-muted/20 transition-colors group"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400 flex items-center justify-center text-white font-bold shadow-sm">
-                        {member.user?.full_name?.[0] ||
-                          member.user?.email[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {member.user?.full_name || "Unknown"}
+              <>
+                {filteredMembers.map((member) => (
+                  <tr
+                    key={member.id}
+                    className="hover:bg-muted/20 transition-colors group"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400 flex items-center justify-center text-white font-bold shadow-sm">
+                          {member.user?.full_name?.[0] ||
+                            member.user?.email[0].toUpperCase()}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {member.user?.email}
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {member.user?.full_name || "Unknown"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {member.user?.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="relative inline-block group/role">
-                      <select
-                        value={member.role}
-                        onChange={(e) =>
-                          handleUpdateRole(
-                            member.user_id,
-                            e.target.value as any,
-                          )
-                        }
-                        disabled={
-                          !canManage ||
-                          isUpdating === member.user_id ||
-                          currentUser?.id === member.user_id
-                        }
-                        className={`appearance-none bg-transparent font-medium py-1 pl-2 pr-8 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 hover:bg-muted transition-colors
-                          ${member.role === "admin" ? "text-violet-600" : member.role === "editor" ? "text-blue-600" : "text-slate-600"}`}
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="editor">Editor</option>
-                        <option value="viewer">Viewer</option>
-                      </select>
-                      {isUpdating === member.user_id && (
-                        <Loader2 className="absolute right-2 top-1.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="relative inline-block group/role">
+                        <select
+                          value={member.role}
+                          onChange={(e) =>
+                            handleUpdateRole(
+                              member.user_id,
+                              e.target.value as any,
+                            )
+                          }
+                          disabled={
+                            !canManage ||
+                            isUpdating === member.user_id ||
+                            currentUser?.id === member.user_id
+                          }
+                          className={`appearance-none bg-transparent font-medium py-1 pl-2 pr-8 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 hover:bg-muted transition-colors
+                            ${member.role === "admin" ? "text-violet-600" : member.role === "editor" ? "text-blue-600" : "text-slate-600"}`}
+                        >
+                          <option value="admin">Admin</option>
+                          <option value="editor">Editor</option>
+                          <option value="viewer">Viewer</option>
+                        </select>
+                        {isUpdating === member.user_id && (
+                          <Loader2 className="absolute right-2 top-1.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground text-xs">
+                      {new Date(member.joined_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {canManage && currentUser?.id !== member.user_id && (
+                        <button
+                          onClick={() => handleRemoveMember(member.user_id)}
+                          disabled={isUpdating === member.user_id}
+                          className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                          title="Remove member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
-                      {/* Chevron usually here but basic select handles it. Custom dropdown would be better but keeping simple for MVP */}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground text-xs">
-                    {new Date(member.joined_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {canManage && currentUser?.id !== member.user_id && (
-                      <button
-                        onClick={() => handleRemoveMember(member.user_id)}
-                        disabled={isUpdating === member.user_id}
-                        className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                        title="Remove member"
+                    </td>
+                  </tr>
+                ))}
+                {filteredPending.map((invite) => (
+                  <tr
+                    key={invite.id}
+                    className="hover:bg-muted/20 transition-colors group bg-amber-50/30"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-300 to-yellow-400 flex items-center justify-center text-white font-bold shadow-sm">
+                          <Hourglass className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {invite.email}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">
+                              Pending
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              invited by{" "}
+                              {invite.inviter.full_name ||
+                                invite.inviter.email}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`font-medium text-sm ${
+                          invite.role === "admin"
+                            ? "text-violet-600"
+                            : invite.role === "editor"
+                              ? "text-blue-600"
+                              : "text-slate-600"
+                        }`}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
+                        {invite.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground text-xs">
+                      {new Date(invite.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {canManage && (
+                        <button
+                          onClick={() =>
+                            alert(
+                              "To revoke this invitation, you can delete and re-invite.",
+                            )
+                          }
+                          className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          title="Revoke invitation"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </>
             )}
           </tbody>
         </table>
