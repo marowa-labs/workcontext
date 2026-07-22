@@ -58,21 +58,6 @@ export const SafeCollaborationCursor = Extension.create<
     };
   },
 
-  addCommands() {
-    return {
-      updateUser:
-        (attributes) =>
-        ({ editor }) => {
-          this.options.user = attributes;
-          this.options.provider.awareness.setLocalStateField(
-            "user",
-            this.options.user,
-          );
-          return true;
-        },
-    };
-  },
-
   addProseMirrorPlugins() {
     return [
       yCursorPlugin(
