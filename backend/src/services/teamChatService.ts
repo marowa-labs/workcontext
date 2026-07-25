@@ -56,42 +56,28 @@ export class TeamChatService {
     filter: TeamChatFilter,
   ) {
     try {
-      const supabase = await getSupabaseAdminClient();
-      if (!supabase) {
-        throw new Error("Supabase admin client not available");
-      }
-
-      // Use Supabase admin client so server-side inserts and relation selects bypass RLS
       const id = randomUUID();
-      const { data, error } = await supabase
-        .from("TeamChatMessage")
-        .insert({
+      const message = await prisma.teamChatMessage.create({
+        data: {
           id,
           user_id: userId,
           content,
           workspace_id: filter.workspaceId || null,
           project_id: filter.projectId || null,
           parent_id: filter.parentId || null,
-        })
-        .select(
-          "id, content, workspace_id, project_id, parent_id, created_at, user:User(id, full_name, email)",
-        )
-        .single();
-
-      if (error) throw error;
-
-      // Broadcast via Supabase Realtime for instant delivery to other clients
-      const channelName = filter.workspaceId
-        ? `team-chat-${filter.workspaceId}`
-        : `team-chat-${filter.projectId}`;
-      const broadcastChannel = supabase.channel(channelName);
-      broadcastChannel.send({
-        type: "broadcast",
-        event: "new_message",
-        payload: data,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true,
+            },
+          },
+        },
       });
 
-      return data;
+      return message;
     } catch (error) {
       logger.error("Error sending chat message:", error);
       throw error;
