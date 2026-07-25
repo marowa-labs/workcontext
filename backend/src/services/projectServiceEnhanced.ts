@@ -73,6 +73,7 @@ export class ProjectServiceEnhanced {
         whereClause.OR = [
           { user_id: userId },
           { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
         ];
       } else {
         whereClause.share_settings = { link_sharing_enabled: true };
