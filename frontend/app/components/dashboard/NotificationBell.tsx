@@ -41,6 +41,8 @@ const HIGH_PRIORITY_TYPES = [
   "ai_limit",
   "payment_failed",
   "subscription_expiring",
+  "subscription_cancelled",
+  "subscription_expired",
   "security_alert",
   "document_deadline",
   "ai_suggestion",
