@@ -23,6 +23,7 @@ export class ProjectServiceEnhanced {
         OR: [
           { user_id: userId },
           { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
         ],
       };
 
