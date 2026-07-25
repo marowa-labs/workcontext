@@ -13,6 +13,7 @@ import { scheduleCleanupTask } from "../scheduledTasks/cleanupExpiredItems";
 import { scheduleVersionCleanupTask } from "../scheduledTasks/versionCleanupTask";
 import { scheduleVersionSchedulingTask } from "../scheduledTasks/versionSchedulingTask";
 import { scheduleTaskReminderTask } from "../scheduledTasks/taskReminderTask";
+import { startRecurringTaskGeneration } from "../scheduledTasks/generateRecurringTasks";
 import { refreshMissingEmbeddings } from "../scheduledTasks/contextEmbeddingRefresh";
 
 // Load environment variables
@@ -163,6 +164,7 @@ scheduleCleanupTask();
 scheduleVersionCleanupTask();
 scheduleVersionSchedulingTask();
 scheduleTaskReminderTask();
+startRecurringTaskGeneration();
 
 // Self-healing context embeddings: re-embed items missing a vector (runs hourly)
 setInterval(() => {

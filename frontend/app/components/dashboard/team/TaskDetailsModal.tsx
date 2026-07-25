@@ -37,6 +37,7 @@ import { Priority } from "./PrioritySelector";
 import { toast } from "../../../hooks/use-toast";
 import { CommentSection } from "./CommentSection";
 import useUser from "../../../lib/utils/useUser";
+import apiClient from "../../../lib/utils/apiClient";
 import { SubtaskSection } from "./SubtaskSection";
 import { LabelSelector } from "./LabelSelector";
 import { DependencySection } from "./DependencySection";
@@ -135,12 +136,8 @@ export function TaskDetailsModal({
 // Fetch workspace projects for project linking
   React.useEffect(() => {
     if (isOpen && workspaceId) {
-      fetch(`/api/workspaces/${workspaceId}/projects`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
-        .then((res) => res.json())
+      apiClient
+        .get(`/api/workspaces/${workspaceId}/projects`)
         .then((data) => {
           setWorkspaceProjects(data.projects || []);
         })
