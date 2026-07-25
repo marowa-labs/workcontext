@@ -1015,7 +1015,6 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
           setTasks((prev) =>
             prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
           );
-          loadTasks();
         }}
         onDelete={handleDeleteTask}
         workspaceId={workspaceId}
