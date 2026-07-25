@@ -400,8 +400,7 @@ export const MainEditor = forwardRef<
       const currentEditor = editorRef.current;
       if (
         seededCollaborativeDocRef.current ||
-        !currentEditor ||
-        !project?.content
+        !currentEditor
       ) {
         return;
       }
@@ -437,7 +436,7 @@ export const MainEditor = forwardRef<
             if (alreadyHasSharedContent) {
               seededCollaborativeDocRef.current = true;
               console.log(
-                "[MainEditor] Skipping collaborative seed because shared content already exists",
+                "[MainEditor] Yjs already has content, seeding not needed",
               );
               return;
             }
@@ -449,36 +448,20 @@ export const MainEditor = forwardRef<
           }
         }
 
-        const contentToInsert =
-          project.content && project.content.type === "doc"
-            ? project.content
-            : initialContent;
-
-        if (
-          contentToInsert &&
-          typeof contentToInsert === "object" &&
-          contentToInsert.type === "doc" &&
-          Array.isArray(contentToInsert.content) &&
-          contentToInsert.content.length > 0
-        ) {
-          // Replace the editor content atomically to avoid duplicate insertions
-          currentEditor
-            .chain()
-            .clearContent()
-            .setContent(contentToInsert)
-            .run();
-          seededCollaborativeDocRef.current = true;
-          console.info(
-            "[MainEditor] Seeded collaborative document on first render",
-          );
-        }
+        // Never seed from REST API content in collaborative mode.
+        // The server's onLoadDocument already loaded content into Yjs.
+        // Seeding here would duplicate that content.
+        seededCollaborativeDocRef.current = true;
+        console.info(
+          "[MainEditor] Skipped collaborative seed — Yjs content handled by onLoadDocument",
+        );
       } catch (seedError) {
         console.error(
-          "[MainEditor] Failed to seed collaborative document on first render:",
+          "[MainEditor] Error in collaborative seed check:",
           seedError,
         );
       }
-    }, [collaborationFieldName, initialContent, project?.content, provider]);
+    }, [collaborationFieldName, provider]);
 
     /*
      * Initialize editor
@@ -727,9 +710,12 @@ export const MainEditor = forwardRef<
       return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isFocusMode]);
 
-    // Auto-save functionality - ENABLED for both solo and collaboration modes
+    // Auto-save functionality
+    // In collaborative mode, content persistence is handled by Hocuspocus onStoreDocument.
+    // The REST API auto-save would conflict with Yjs sync and cause content duplication.
     useEffect(() => {
       if (!editor || !documentId) return;
+      if (isCollaborative) return;
 
       const handleUpdate = () => {
         setSaveStatus("unsaved");
@@ -758,9 +744,9 @@ export const MainEditor = forwardRef<
 
       return () => {
         editor.off("update", handleUpdate);
-        debouncedSave.flush(); // Wait to save any final keystrokes before destroying
+        debouncedSave.flush();
       };
-    }, [editor, documentId, documentTitle, provider]);
+    }, [editor, documentId, documentTitle, provider, isCollaborative]);
 
     // Manual save handler - DISABLED as per requirement "avoid manual save totally"
     const handleManualSave = async () => {
