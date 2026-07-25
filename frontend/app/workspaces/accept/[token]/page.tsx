@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "../../../components/ui/button";
 import { apiClient } from "../../../lib/utils/apiClient";
-import { Users, Clock, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { useUser } from "../../../lib/utils/useSupabaseUser";
+import { Users, Clock, Loader2, CheckCircle, XCircle, LogIn } from "lucide-react";
 
 export default function AcceptInvitePage() {
   const params = useParams();
   const token = params?.token as string;
   const router = useRouter();
+  const { user, loading: authLoading } = useUser();
   const [invitation, setInvitation] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingInvite, setLoadingInvite] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -19,7 +21,7 @@ export default function AcceptInvitePage() {
   useEffect(() => {
     if (!token) {
       setError("Invitation not found or has expired");
-      setLoading(false);
+      setLoadingInvite(false);
       return;
     }
     const fetchInvitation = async () => {
@@ -29,9 +31,16 @@ export default function AcceptInvitePage() {
         );
         setInvitation(invitation);
       } catch (err: any) {
-        setError(err.message || "Failed to load invitation");
+        const msg = err.message || "Failed to load invitation";
+        const isAuthError =
+          msg.toLowerCase().includes("authenticate") ||
+          msg.toLowerCase().includes("authentication") ||
+          msg.toLowerCase().includes("auth") ||
+          msg.toLowerCase().includes("login") ||
+          msg.toLowerCase().includes("sign in");
+        setError(isAuthError ? "auth_required" : msg);
       } finally {
-        setLoading(false);
+        setLoadingInvite(false);
       }
     };
     fetchInvitation();
@@ -42,8 +51,6 @@ export default function AcceptInvitePage() {
     try {
       await apiClient.post(`/api/workspaces/invitations/${token}/accept`, {});
       setSuccess(true);
-
-      // Redirect to workspace after a brief delay
       setTimeout(() => {
         router.push(`/dashboard/workspace/${invitation.workspace_id}/projects`);
       }, 2000);
@@ -62,7 +69,7 @@ export default function AcceptInvitePage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loadingInvite) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -77,6 +84,48 @@ export default function AcceptInvitePage() {
           <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Invitation Accepted!</h1>
           <p className="text-slate-600">Redirecting to workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <LogIn className="h-16 w-16 text-blue-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Sign in to Accept Invitation</h1>
+          <p className="text-slate-600 mb-6">
+            You need to sign up or sign in first before you can accept this
+            workspace invitation. After signing in, come back to this link and
+            it will work.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={() =>
+                router.push(`/signup?redirect=/workspaces/accept/${token}`)
+              }
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+            >
+              Sign Up
+            </Button>
+            <Button
+              onClick={() =>
+                router.push(`/login?redirect=/workspaces/accept/${token}`)
+              }
+              variant="outline"
+              className="w-full bg-white text-black hover-blue-500"
+            >
+              Sign In
+            </Button>
+            <Button
+              onClick={() => router.push("/dashboard")}
+              variant="ghost"
+              className="w-full text-slate-500"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     );
