@@ -10,13 +10,20 @@ export class SessionService {
   } {
     let browser = "Unknown Browser";
     let os = "Unknown OS";
-    const device = "Desktop";
+    let device = "Desktop";
 
-    // Detect browser - order matters! Check Chrome before Safari since Chrome UA contains "Safari"
-    if (userAgent.includes("Edg/")) {
+    // Detect browser
+    // Chromium-based browsers must be checked before generic "Chrome/"
+    if (userAgent.includes("Edg/") || userAgent.includes("Edge/")) {
       browser = "Microsoft Edge";
     } else if (userAgent.includes("OPR/") || userAgent.includes("Opera/")) {
       browser = "Opera";
+    } else if (userAgent.includes("Brave")) {
+      browser = "Brave";
+    } else if (userAgent.includes("Vivaldi")) {
+      browser = "Vivaldi";
+    } else if (userAgent.includes("YaBrowser")) {
+      browser = "Yandex Browser";
     } else if (userAgent.includes("Firefox/")) {
       browser = "Firefox";
     } else if (userAgent.includes("Chrome/")) {
@@ -46,6 +53,13 @@ export class SessionService {
       os = "iOS";
     }
 
+    // Detect device type
+    if (userAgent.includes("iPad") || userAgent.includes("Tablet")) {
+      device = "Tablet";
+    } else if (userAgent.includes("Mobile")) {
+      device = "Mobile";
+    }
+
     return { browser, os, device };
   }
 
@@ -54,13 +68,44 @@ export class SessionService {
     if (!ip || ip === "::1" || ip === "::ffff:127.0.0.1") {
       return "Localhost";
     }
-    if (ip.startsWith("::ffff:")) {
-      return ip.substring(7); // Convert IPv4-mapped IPv6 to IPv4
+
+    // x-forwarded-for may contain multiple comma-separated IPs: "client, proxy1, proxy2"
+    // Take the first (client) IP
+    let cleanIp = ip.split(",")[0].trim();
+
+    if (cleanIp.startsWith("::ffff:")) {
+      cleanIp = cleanIp.substring(7); // Convert IPv4-mapped IPv6 to IPv4
     }
-    return ip;
+
+    return cleanIp;
   }
 
-  // Get location from IP address using OpenStreetMap Nominatim API
+  // Try to resolve location via ipapi.co (HTTPS, no key required for low volume)
+  static async resolveLocationIpapi(ip: string): Promise<string | null> {
+    const response = await fetch(`https://ipapi.co/${ip}/json/`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data.error) return null;
+    const parts = [data.city, data.region, data.country_name].filter(Boolean);
+    return parts.length ? parts.join(", ") : null;
+  }
+
+  // Fallback: ip-api.com (free, HTTP only on free tier)
+  static async resolveLocationIpApi(ip: string): Promise<string | null> {
+    const response = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,city,regionName,country`,
+      { signal: AbortSignal.timeout(5000) },
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data.status !== "success") return null;
+    const parts = [data.city, data.regionName, data.country].filter(Boolean);
+    return parts.length ? parts.join(", ") : null;
+  }
+
+  // Get location from IP address
   static async getLocationFromIp(ip: string): Promise<string | null> {
     try {
       // Skip localhost/private IPs
@@ -75,26 +120,12 @@ export class SessionService {
         return "Local Network";
       }
 
-      // Use ip-api.com for geolocation (free, no key required)
-      const response = await fetch(
-        `http://ip-api.com/json/${ip}?fields=status,city,regionName,country`,
-        { signal: AbortSignal.timeout(5000) },
-      );
+      // Try ipapi.co first (HTTPS, more reliable on cloud platforms)
+      const result = await SessionService.resolveLocationIpapi(ip);
+      if (result) return result;
 
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = await response.json();
-
-      if (data.status === "success") {
-        const parts = [data.city, data.regionName, data.country].filter(
-          Boolean,
-        );
-        return parts.join(", ");
-      }
-
-      return null;
+      // Fallback to ip-api.com
+      return await SessionService.resolveLocationIpApi(ip);
     } catch (error) {
       logger.warn("Failed to get location from IP:", { ip, error });
       return null;

@@ -15,10 +15,12 @@ async function recordUserSession(
 ): Promise<void> {
   try {
     const userAgent = req.headers["user-agent"] || "Unknown";
-    const ipAddress =
+    const rawIp =
       (req.headers["x-forwarded-for"] as string) ||
       req.socket?.remoteAddress ||
       "Unknown";
+    // x-forwarded-for may contain multiple IPs: "client, proxy1, proxy2"
+    const ipAddress = rawIp.split(",")[0].trim();
 
     // Parse user agent for display
     const parsed = SessionService.parseUserAgent(userAgent);
