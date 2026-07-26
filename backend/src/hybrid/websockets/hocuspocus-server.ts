@@ -75,63 +75,24 @@ export class HocuspocusCollaborationServer {
         try {
           const project = await prisma.project.findUnique({
             where: { id: projectId },
-            select: { content: true },
+            select: { id: true },
           });
 
-          if (project && project.content) {
+          if (project) {
             logger.info(
-              `[onLoadDocument] Project ${projectId} has content, type: ${typeof project.content}, keys: ${typeof project.content === "object" ? Object.keys(project.content).join(",") : "N/A"}`,
+              `[onLoadDocument] Project ${projectId} exists, returning empty doc — client seeds from REST API`,
             );
-            // Use StarterKit with all extensions enabled to maximize compatibility
-            // with custom extensions used in the frontend editor.
-            // This prevents silent dropping of unknown node types.
-            const extensions = [
-              Document,
-              Paragraph,
-              Text,
-              Bold,
-              Italic,
-              Strike,
-              Underline,
-              Heading,
-              Blockquote,
-              BulletList,
-              OrderedList,
-              ListItem,
-              Link,
-              Code,
-              HorizontalRule,
-              StarterKit,
-              Table.configure({ resizable: true }),
-              TableRow,
-              TableCell,
-              TableHeader,
-              TaskList,
-              TaskItem.configure({ nested: true }),
-              Placeholder.configure({ placeholder: "Start writing..." }),
-              TextAlign.configure({ types: ["heading", "paragraph"] }),
-              Highlight,
-              Superscript,
-              Subscript,
-              CharacterCount,
-              TextStyle,
-              Link.configure({ openOnClick: false }),
-              Underline,
-            ];
-
-            // Sanitize content to ensure compatibility with TiptapTransformer.
-            // If there are unknown node types (from custom extensions),
-            // we convert them to paragraphs to prevent silent data loss.
-            const sanitizedContent =
-              HocuspocusCollaborationServer.sanitizeContentForConversion(
-                project.content,
-              );
-
-            return TiptapTransformer.toYdoc(
-              sanitizedContent,
-              "prosemirror",
-              extensions,
-            );
+            // Don't pre-populate the Yjs document from the database here.
+            // Pre-population causes the client's ySyncPlugin to produce
+            // duplicate structs when it writes the ProseMirror content back
+            // to Yjs during initialization (the round-trip encoding differs
+            // from the server's initial encoding, causing Yjs CRDT to
+            // treat them as concurrent inserts).
+            //
+            // Instead, the client seeds from its REST API initialContent
+            // via seedCollaborativeDocument (onFirstRender), ensuring
+            // only ONE source of truth for the document content.
+            return null;
           }
         } catch (error) {
           logger.error(`Failed to load document ${projectId}:`, error);

@@ -68,6 +68,7 @@ import GrammarCheckingExtension from "./GrammarCheckingExtension";
 import Collaboration from "@tiptap/extension-collaboration";
 import { SafeCollaborationCursor } from "../../lib/utils/safeCollaborationCursor";
 import { useCollaboration } from "../../hooks/use-collaboration"; // Import new hook
+import { prosemirrorJSONToYXmlFragment } from "y-prosemirror";
 
 // Import template styling utilities
 import { applyTemplateStyling } from "../../lib/utils/templateStyling";
@@ -400,7 +401,8 @@ export const MainEditor = forwardRef<
       const currentEditor = editorRef.current;
       if (
         seededCollaborativeDocRef.current ||
-        !currentEditor
+        !currentEditor ||
+        !provider?.document
       ) {
         return;
       }
@@ -420,48 +422,46 @@ export const MainEditor = forwardRef<
           return;
         }
 
-        if (provider?.document) {
-          try {
-            const sharedType = provider.document.get(collaborationFieldName);
-            const snapshot = (
-              sharedType as { toJSON?: () => unknown }
-            )?.toJSON?.();
-            const alreadyHasSharedContent =
-              !!snapshot &&
-              (Array.isArray(snapshot)
-                ? snapshot.length > 0
-                : typeof snapshot === "object" &&
-                  Object.keys(snapshot).length > 0);
+        const sharedType = provider.document.getXmlFragment(
+          collaborationFieldName,
+        );
+        const snapshot = sharedType.toJSON();
+        const alreadyHasSharedContent =
+          typeof snapshot === "string" && snapshot.length > 2;
 
-            if (alreadyHasSharedContent) {
-              seededCollaborativeDocRef.current = true;
-              console.log(
-                "[MainEditor] Yjs already has content, seeding not needed",
-              );
-              return;
-            }
-          } catch (sharedError) {
-            console.warn(
-              "[MainEditor] Could not inspect shared content state:",
-              sharedError,
-            );
-          }
+        if (alreadyHasSharedContent) {
+          seededCollaborativeDocRef.current = true;
+          console.log(
+            "[MainEditor] Yjs already has content, seeding not needed",
+          );
+          return;
         }
 
-        // Never seed from REST API content in collaborative mode.
-        // The server's onLoadDocument already loaded content into Yjs.
-        // Seeding here would duplicate that content.
-        seededCollaborativeDocRef.current = true;
-        console.info(
-          "[MainEditor] Skipped collaborative seed — Yjs content handled by onLoadDocument",
-        );
+        // Seed the Yjs doc from the REST API initialContent when Yjs is
+        // empty.  This is now the SINGLE source of truth (the server's
+        // onLoadDocument no longer pre-populates), so there is no risk of
+        // duplicate structs from concurrent seeds.
+        const schema = currentEditor.state.schema;
+        if (schema && initialContent) {
+          prosemirrorJSONToYXmlFragment(schema, initialContent, sharedType);
+          seededCollaborativeDocRef.current = true;
+          console.info(
+            "[MainEditor] Collaboration doc seeded from REST API content",
+          );
+        } else {
+          seededCollaborativeDocRef.current = true;
+          console.info(
+            "[MainEditor] No initialContent to seed, marking as seeded",
+          );
+        }
       } catch (seedError) {
         console.error(
-          "[MainEditor] Error in collaborative seed check:",
+          "[MainEditor] Error seeding collaborative doc:",
           seedError,
         );
+        seededCollaborativeDocRef.current = true;
       }
-    }, [collaborationFieldName, provider]);
+    }, [collaborationFieldName, provider, initialContent]);
 
     /*
      * Initialize editor
