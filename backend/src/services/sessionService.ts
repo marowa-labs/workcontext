@@ -132,7 +132,7 @@ export class SessionService {
     }
   }
 
-  // Create a new user session
+  // Create or update a user session
   static async createSession(
     userId: string,
     deviceInfo: string,
@@ -155,6 +155,49 @@ export class SessionService {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
+      // Try to find an existing non-expired session with same device
+      const existing = await prisma.userSession.findFirst({
+        where: {
+          user_id: userId,
+          device_info: displayInfo,
+          expires_at: { gt: new Date() },
+        },
+        orderBy: { last_active: "desc" },
+      });
+
+      if (existing) {
+        // Bump the existing session
+        const session = await prisma.userSession.update({
+          where: { id: existing.id },
+          data: {
+            ip_address: formattedIp,
+            location: resolvedLocation,
+            last_active: new Date(),
+            is_current: true,
+            expires_at: expiresAt,
+          },
+        });
+
+        // Mark all other sessions as non-current
+        await prisma.userSession.updateMany({
+          where: {
+            user_id: userId,
+            id: { not: existing.id },
+            is_current: true,
+          },
+          data: { is_current: false },
+        });
+
+        return session;
+      }
+
+      // No existing session found — mark all others as non-current
+      await prisma.userSession.updateMany({
+        where: { user_id: userId, is_current: true },
+        data: { is_current: false },
+      });
+
+      // Create a new session
       const session = await prisma.userSession.create({
         data: {
           user_id: userId,
