@@ -75,19 +75,19 @@ function extractBlockFromNode(node: any): ContentBlock | null {
       return { type: "paragraph", runs: extractRunsFromContent(node.content) };
 
     case "codeBlock":
+    case "code-block":
       return { type: "codeBlock", runs: extractRunsFromContent(node.content) };
 
     case "blockquote":
+    case "quote-block":
       return { type: "blockquote", runs: extractRunsFromContent(node.content) };
 
     case "bulletList":
     case "orderedList":
-    case "taskList": {
+    case "list": {
       const items: string[] = [];
       if (Array.isArray(node.content)) {
         for (const item of node.content) {
-          // listItem → paragraph → text. flattenText recurses into
-          // nested content so we don't miss paragraph-wrapped text.
           const itemText = flattenText(item.content);
           if (itemText.trim()) items.push(itemText);
         }
@@ -105,6 +105,22 @@ function extractBlockFromNode(node: any): ContentBlock | null {
               .join("\n"),
           },
         ],
+      };
+    }
+
+    case "taskList": {
+      const items: string[] = [];
+      if (Array.isArray(node.content)) {
+        for (const item of node.content) {
+          const checked = item.attrs?.checked ? "☑" : "☐";
+          const itemText = flattenText(item.content);
+          if (itemText.trim()) items.push(`${checked} ${itemText}`);
+        }
+      }
+      if (items.length === 0) return null;
+      return {
+        type: "paragraph",
+        runs: [{ text: items.join("\n") }],
       };
     }
 
@@ -133,7 +149,31 @@ function extractBlockFromNode(node: any): ContentBlock | null {
       return { type: "table", runs: [], tableRows: rows };
     }
 
+    case "pricing-table": {
+      const rows: TableRow[] = [];
+      if (Array.isArray(node.content)) {
+        for (const rowNode of node.content) {
+          if (rowNode.type === "tableRow" || rowNode.content) {
+            const cells: TextRun[][] = [];
+            const cellContent = Array.isArray(rowNode.content)
+              ? rowNode.content
+              : [rowNode];
+            for (const cellNode of cellContent) {
+              const cellRuns = extractRunsFromContent(
+                cellNode.content || [cellNode],
+              );
+              cells.push(cellRuns.length > 0 ? cellRuns : [{ text: "" }]);
+            }
+            if (cells.length > 0) rows.push({ cells });
+          }
+        }
+      }
+      if (rows.length === 0) return null;
+      return { type: "table", runs: [], tableRows: rows };
+    }
+
     case "image":
+    case "image-placeholder":
       return {
         type: "image",
         runs: [],
@@ -165,12 +205,100 @@ function extractBlockFromNode(node: any): ContentBlock | null {
     case "text":
       return { type: "paragraph", runs: extractMarksFromText(node) };
 
+    // Inline atom nodes — represented inline in the document but extracted
+    // here in case they appear as standalone blocks (unlikely but defensive).
+    case "math":
+      return {
+        type: "paragraph",
+        runs: [
+          {
+            text: node.attrs?.latex
+              ? `$${node.attrs.latex}$`
+              : "[math formula]",
+          },
+        ],
+      };
+
+    case "footnote":
+      return {
+        type: "paragraph",
+        runs: [{ text: node.attrs?.label ? `[fn:${node.attrs.label}]` : "[footnote]" }],
+      };
+
+    case "citation-chip":
+      return {
+        type: "paragraph",
+        runs: [{ text: node.attrs?.citationText || "[citation]" }],
+      };
+
+    case "ai-tag":
+      return {
+        type: "paragraph",
+        runs: [{ text: "[AI-generated content]" }],
+      };
+
+    // Container nodes — extract child blocks recursively
+    case "section":
+    case "figure":
+    case "callout-block":
+    case "cover-page":
+    case "sidebar-block":
+    case "presentation-deck":
+    case "annotation-block":
+    case "visual-element":
+    case "author-block":
+    case "author":
+    case "footnoteContent":
+    case "caption": {
+      const childBlocks = extractBlocksFromProseMirror(node);
+      if (childBlocks.length === 0) return null;
+      // Flatten single-child containers
+      if (childBlocks.length === 1) return childBlocks[0];
+      // Multi-child: wrap as paragraph with joined text
+      return {
+        type: "paragraph",
+        runs: [
+          {
+            text: childBlocks
+              .map((b) => b.runs.map((r) => r.text).join(""))
+              .filter(Boolean)
+              .join(" "),
+          },
+        ],
+      };
+    }
+
+    case "keywords":
+    case "citation-block":
+      return {
+        type: "paragraph",
+        runs: extractRunsFromContent(node.content),
+      };
+
     default:
       if (Array.isArray(node.content)) {
-        return {
-          type: "paragraph",
-          runs: extractRunsFromContent(node.content),
-        };
+        // First try direct runs (inline content)
+        const runs = extractRunsFromContent(node.content);
+        if (runs.length > 0) {
+          return { type: "paragraph", runs };
+        }
+        // No direct inline content → recursively extract child blocks.
+        // This handles unknown container nodes generically.
+        const childBlocks = extractBlocksFromProseMirror(node);
+        if (childBlocks.length > 0) {
+          if (childBlocks.length === 1) return childBlocks[0];
+          return {
+            type: "paragraph",
+            runs: [
+              {
+                text: childBlocks
+                  .map((b) => b.runs.map((r) => r.text).join(""))
+                  .filter(Boolean)
+                  .join(" "),
+              },
+            ],
+          };
+        }
       }
       return null;
   }
@@ -183,6 +311,16 @@ function flattenText(content: any[]): string {
   for (const node of content) {
     if (node.type === "text") {
       result += node.text || "";
+    } else if (node.type === "hardBreak") {
+      result += "\n";
+    } else if (node.type === "math") {
+      result += node.attrs?.latex ? `$${node.attrs.latex}$` : "[math]";
+    } else if (node.type === "footnote") {
+      result += node.attrs?.label ? `[fn:${node.attrs.label}]` : "[footnote]";
+    } else if (node.type === "citation-chip") {
+      result += node.attrs?.label || "[citation]";
+    } else if (node.type === "ai-tag") {
+      result += " ";
     } else if (Array.isArray(node.content)) {
       result += flattenText(node.content);
     }
@@ -206,6 +344,20 @@ function extractRunsFromContent(content: any[]): TextRun[] {
         }
       }
       runs.push(run);
+    } else if (node.type === "hardBreak") {
+      runs.push({ text: "\n" });
+    } else if (node.type === "math") {
+      runs.push({
+        text: node.attrs?.latex ? `$${node.attrs.latex}$` : "[math]",
+      });
+    } else if (node.type === "footnote") {
+      runs.push({
+        text: node.attrs?.label ? `[fn:${node.attrs.label}]` : "[footnote]",
+      });
+    } else if (node.type === "citation-chip") {
+      runs.push({ text: node.attrs?.label || "[citation]" });
+    } else if (node.type === "ai-tag") {
+      runs.push({ text: "" });
     }
   }
   return runs;
