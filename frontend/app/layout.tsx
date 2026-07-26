@@ -4,6 +4,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import { Toaster } from "./components/ui/toaster";
+import { UpdateNotification } from "./components/UpdateNotification";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -52,6 +54,8 @@ export default function RootLayout({
             {children}
             <OnboardingModal />
             <CookieConsentBanner />
+            <Toaster />
+            <UpdateNotification />
           </OnboardingProvider>
         </ThemeProvider>
         <Script

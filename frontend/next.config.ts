@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
+import { execSync } from "child_process";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  env: {
+    BUILD_VERSION: (() => {
+      try {
+        return execSync("git rev-parse --short HEAD").toString().trim();
+      } catch {
+        return Date.now().toString(36);
+      }
+    })(),
+  },
   compiler: {
     // Strip console.* noise in production builds, but keep error/warn for
     // real debugging signal.
