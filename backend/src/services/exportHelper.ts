@@ -86,8 +86,9 @@ function extractBlockFromNode(node: any): ContentBlock | null {
       const items: string[] = [];
       if (Array.isArray(node.content)) {
         for (const item of node.content) {
-          const itemContent = extractRunsFromContent(item.content);
-          const itemText = itemContent.map((r) => r.text).join("");
+          // listItem → paragraph → text. flattenText recurses into
+          // nested content so we don't miss paragraph-wrapped text.
+          const itemText = flattenText(item.content);
           if (itemText.trim()) items.push(itemText);
         }
       }
@@ -173,6 +174,20 @@ function extractBlockFromNode(node: any): ContentBlock | null {
       }
       return null;
   }
+}
+
+// Flatten nested ProseMirror content into a single string (for lists).
+function flattenText(content: any[]): string {
+  if (!Array.isArray(content)) return "";
+  let result = "";
+  for (const node of content) {
+    if (node.type === "text") {
+      result += node.text || "";
+    } else if (Array.isArray(node.content)) {
+      result += flattenText(node.content);
+    }
+  }
+  return result;
 }
 
 function extractRunsFromContent(content: any[]): TextRun[] {
