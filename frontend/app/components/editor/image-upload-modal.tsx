@@ -335,7 +335,7 @@ export function ImageUploadModal({
         onOpenChange(isOpen);
       }}
     >
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-white">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-card">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
@@ -474,8 +474,7 @@ export function ImageUploadModal({
             </TabsContent>
 
             <TabsContent value="online" className="py-4 h-full flex flex-col">
-              <div className="flex flex-col flex-1 min-h-0">
-                {/* Search input section - fixed height */}
+              <div className="flex flex-col h-full">
                 <div className="flex-shrink-0 mb-4">
                   <div className="flex space-x-2">
                     <Input
@@ -498,59 +497,54 @@ export function ImageUploadModal({
                   </div>
                 </div>
 
-                {/* Error message section - only shown when there's an error */}
                 {onlineImageError && (
                   <div className="flex-shrink-0 mb-4 p-3 bg-destructive/10 text-destructive rounded-lg">
                     {onlineImageError}
                   </div>
                 )}
 
-                {/* Results section - takes remaining space with proper scrolling */}
-                <div className="flex-1 min-h-0 overflow-hidden">
+                <div className="flex-1 min-h-0">
                   {onlineImageLoading ? (
                     <div className="h-full flex items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : onlineImages.length > 0 ? (
                     <div className="h-full overflow-y-auto">
-                      <div className="p-4">
-                        {/* Grid container with explicit overflow control */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-4">
-                          {onlineImages.map((image) => (
-                            <div
-                              key={image.id}
-                              className={`border rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer relative ${
-                                selectedOnlineImage === image.id
-                                  ? "ring-2 ring-primary border-primary"
-                                  : "border-border"
-                              }`}
-                              onClick={() => {
-                                setSelectedOnlineImage(image.id);
-                              }}
-                            >
-                              <div className="aspect-square overflow-hidden relative">
-                                <img
-                                  src={image.thumb || image.url}
-                                  alt={image.alt}
-                                  className="w-full h-full object-cover absolute inset-0"
-                                />
-                              </div>
-                              {selectedOnlineImage === image.id && (
-                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                  <Check className="h-6 w-6 text-primary" />
-                                </div>
-                              )}
-                              <div className="p-2">
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {image.alt}
-                                </p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  by {image.author}
-                                </p>
-                              </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-4">
+                        {onlineImages.map((image) => (
+                          <div
+                            key={image.id}
+                            className={`border rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer relative ${
+                              selectedOnlineImage === image.id
+                                ? "ring-2 ring-primary border-primary"
+                                : "border-border"
+                            }`}
+                            onClick={() => {
+                              setSelectedOnlineImage(image.id);
+                            }}
+                          >
+                            <div className="aspect-square overflow-hidden relative">
+                              <img
+                                src={image.thumb || image.url}
+                                alt={image.alt}
+                                className="w-full h-full object-cover absolute inset-0"
+                              />
                             </div>
-                          ))}
-                        </div>
+                            {selectedOnlineImage === image.id && (
+                              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                <Check className="h-6 w-6 text-primary" />
+                              </div>
+                            )}
+                            <div className="p-2">
+                              <p className="text-xs text-muted-foreground truncate">
+                                {image.alt}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                by {image.author}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ) : (
@@ -582,8 +576,7 @@ export function ImageUploadModal({
                   )}
                 </div>
 
-                {/* Footer note - fixed height */}
-                <div className="flex-shrink-0 mt-4 pt-4 border-t border-border">
+                <div className="flex-shrink-0 pt-4 border-t border-border mt-4">
                   <p className="text-xs text-muted-foreground">
                     Note: These images are sourced from Unsplash. By inserting
                     an image, you agree to Unsplash's licensing terms.
