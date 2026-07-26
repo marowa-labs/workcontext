@@ -33,9 +33,9 @@ interface UserStats {
   totalWorkspaces: number;
   totalMessages: number;
   aiInteractions: number;
-  timeSpent: number; // in minutes
-  productivity: number; // score 0-100
-  productivityPercentile: number; // percentile among all users
+  timeSpent: number;
+  productivity: number;
+  productivityPercentile: number;
   weeklyActivity: { day: string; tasks: number; hours: number }[];
   achievements: {
     id: string;
@@ -65,7 +65,6 @@ export default function StatsPage() {
   }, [timeRange]);
 
   const fetchStats = async () => {
-    // Only set full loading on initial load
     const isInitialLoad = !stats;
     if (isInitialLoad) {
       setLoading(true);
@@ -88,10 +87,10 @@ export default function StatsPage() {
 
   if (userLoading || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-slate-600">Loading your stats...</span>
+          <span className="text-muted-foreground">Loading your stats...</span>
         </div>
       </div>
     );
@@ -106,29 +105,29 @@ export default function StatsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push("/dashboard")}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-slate-600" />
+                <ArrowLeft className="w-5 h-5 text-muted-foreground" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
+                <h1 className="text-2xl font-bold text-foreground">
                   Your Performance
                 </h1>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   Personal KPIs and activity metrics
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center bg-slate-100 rounded-lg p-1">
+              <div className="flex items-center bg-muted rounded-lg p-1">
                 {(["week", "month", "all"] as const).map((range) => (
                   <button
                     key={range}
@@ -136,8 +135,8 @@ export default function StatsPage() {
                     disabled={isRefreshing}
                     className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       timeRange === range
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {range === "week"
@@ -211,21 +210,21 @@ export default function StatsPage() {
         </div>
 
         {/* Activity Chart */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-8">
+        <div className="bg-card rounded-xl border border-border p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Activity className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">
+                <h3 className="font-semibold text-foreground">
                   {timeRange === "week"
                     ? "Weekly Activity"
                     : timeRange === "month"
                       ? "Monthly Activity"
                       : "All-Time Activity"}
                 </h3>
-                <p className="text-sm text-slate-500">Tasks and hours logged</p>
+                <p className="text-sm text-muted-foreground">Tasks and hours logged</p>
               </div>
             </div>
           </div>
@@ -247,11 +246,11 @@ export default function StatsPage() {
           <div className="flex items-center justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded" />
-              <span className="text-sm text-slate-600">Tasks</span>
+              <span className="text-sm text-muted-foreground">Tasks</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-purple-500 rounded" />
-              <span className="text-sm text-slate-600">Hours</span>
+              <span className="text-sm text-muted-foreground">Hours</span>
             </div>
           </div>
         </div>
@@ -259,14 +258,14 @@ export default function StatsPage() {
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Achievements */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+          <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-yellow-50 rounded-lg">
-                <Award className="w-5 h-5 text-yellow-600" />
+              <div className="p-2 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
+                <Award className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Achievements</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="font-semibold text-foreground">Achievements</h3>
+                <p className="text-sm text-muted-foreground">
                   Unlocked {stats.achievements.length} badges
                 </p>
               </div>
@@ -275,9 +274,9 @@ export default function StatsPage() {
               {stats.achievements.map((achievement) => (
                 <div
                   key={achievement.id}
-                  className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200"
+                  className="p-4 bg-muted rounded-xl border border-border"
                 >
-                  <div className="p-3 bg-white rounded-xl shadow-sm w-fit mb-3">
+                  <div className="p-3 bg-card rounded-xl shadow-sm w-fit mb-3 border border-border">
                     {achievement.icon === "trophy" && (
                       <Trophy className="w-6 h-6 text-yellow-500" />
                     )}
@@ -288,13 +287,13 @@ export default function StatsPage() {
                       <Zap className="w-6 h-6 text-purple-500" />
                     )}
                   </div>
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-foreground">
                     {achievement.name}
                   </p>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {achievement.description}
                   </p>
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Unlocked{" "}
                     {new Date(achievement.unlockedAt).toLocaleDateString()}
                   </p>
@@ -304,22 +303,22 @@ export default function StatsPage() {
           </div>
 
           {/* Recent Milestones */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-50 rounded-lg">
-                <Activity className="w-5 h-5 text-emerald-600" />
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-950 rounded-lg">
+                <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">
+                <h3 className="font-semibold text-foreground">
                   Recent Milestones
                 </h3>
-                <p className="text-sm text-slate-500">Latest achievements</p>
+                <p className="text-sm text-muted-foreground">Latest achievements</p>
               </div>
             </div>
             <div className="space-y-4">
               {stats.recentMilestones.map((milestone) => (
                 <div key={milestone.id} className="flex items-start gap-3">
-                  <div className="p-2 bg-slate-100 rounded-lg">
+                  <div className="p-2 bg-muted rounded-lg">
                     {milestone.type === "task" && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     )}
@@ -334,10 +333,10 @@ export default function StatsPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {milestone.title}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground">
                       {new Date(milestone.date).toLocaleDateString()}
                     </p>
                   </div>
@@ -389,13 +388,13 @@ function KpiCard({
   trend: "up" | "down" | "neutral";
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
+    <div className="bg-card rounded-xl border border-border p-5">
       <div className="flex items-start justify-between">
-        <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
+        <div className="p-2 bg-muted rounded-lg">{icon}</div>
         {trend !== "neutral" && (
           <div
             className={
-              "p-1 rounded " + (trend === "up" ? "bg-emerald-50" : "bg-red-50")
+              "p-1 rounded " + (trend === "up" ? "bg-emerald-50 dark:bg-emerald-950" : "bg-red-50 dark:bg-red-950")
             }
           >
             {trend === "up" ? (
@@ -407,9 +406,9 @@ function KpiCard({
         )}
       </div>
       <div className="mt-4">
-        <p className="text-2xl font-bold text-slate-900">{value}</p>
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="text-xs text-slate-400 mt-1">{subtext}</p>
+        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground mt-1">{subtext}</p>
       </div>
     </div>
   );
@@ -425,11 +424,11 @@ function SimpleStat({
   value: string | number;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3">
-      <div className="p-2 bg-slate-50 rounded-lg text-slate-500">{icon}</div>
+    <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
+      <div className="p-2 bg-muted rounded-lg text-muted-foreground">{icon}</div>
       <div>
-        <p className="font-semibold text-slate-900">{value}</p>
-        <p className="text-xs text-slate-500">{label}</p>
+        <p className="font-semibold text-foreground">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
       </div>
     </div>
   );

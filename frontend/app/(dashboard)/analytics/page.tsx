@@ -54,7 +54,6 @@ export default function AnalyticsPage() {
   }, [timeRange]);
 
   const fetchAnalytics = async () => {
-    // Only set full loading on initial load
     const isInitialLoad = !analytics;
     if (isInitialLoad) {
       setLoading(true);
@@ -79,10 +78,10 @@ export default function AnalyticsPage() {
 
   if (userLoading || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-slate-600">Loading analytics...</span>
+          <span className="text-muted-foreground">Loading analytics...</span>
         </div>
       </div>
     );
@@ -91,29 +90,29 @@ export default function AnalyticsPage() {
   if (!analytics) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push("/dashboard")}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-slate-600" />
+                <ArrowLeft className="w-5 h-5 text-muted-foreground" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
+                <h1 className="text-2xl font-bold text-foreground">
                   Platform Analytics
                 </h1>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   Comprehensive view of all platform activities
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center bg-slate-100 rounded-lg p-1">
+              <div className="flex items-center bg-muted rounded-lg p-1">
                 {(["7d", "30d", "90d"] as const).map((range) => (
                   <button
                     key={range}
@@ -121,8 +120,8 @@ export default function AnalyticsPage() {
                     disabled={isRefreshing}
                     className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       timeRange === range
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {range === "7d"
@@ -179,16 +178,16 @@ export default function AnalyticsPage() {
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Activity Chart */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Activity className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">
+                <h3 className="font-semibold text-foreground">
                   Activity Overview
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   Platform activity by day
                 </p>
               </div>
@@ -206,14 +205,14 @@ export default function AnalyticsPage() {
           </div>
 
           {/* AI Usage Chart */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Zap className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">AI Usage</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="font-semibold text-foreground">AI Usage</h3>
+                <p className="text-sm text-muted-foreground">
                   Total requests:{" "}
                   {analytics.aiUsage.totalRequests.toLocaleString()}
                 </p>
@@ -235,14 +234,14 @@ export default function AnalyticsPage() {
         {/* Top Workspaces & Additional Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Top Workspaces */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+          <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-50 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-950 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Top Workspaces</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="font-semibold text-foreground">Top Workspaces</h3>
+                <p className="text-sm text-muted-foreground">
                   Most active by tasks and users
                 </p>
               </div>
@@ -251,27 +250,27 @@ export default function AnalyticsPage() {
               {analytics.topWorkspaces.map((workspace, index) => (
                 <div
                   key={workspace.id}
-                  className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
+                  className="flex items-center justify-between p-4 bg-muted rounded-lg"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="w-8 h-8 flex items-center justify-center bg-white rounded-lg font-semibold text-slate-600 border border-slate-200">
+                    <span className="w-8 h-8 flex items-center justify-center bg-card rounded-lg font-semibold text-muted-foreground border border-border">
                       {index + 1}
                     </span>
                     <div>
-                      <p className="font-medium text-slate-900">
+                      <p className="font-medium text-foreground">
                         {workspace.name}
                       </p>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-muted-foreground">
                         {workspace.users} members
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="font-medium text-slate-900">
+                      <p className="font-medium text-foreground">
                         {workspace.tasks}
                       </p>
-                      <p className="text-xs text-slate-500">tasks</p>
+                      <p className="text-xs text-muted-foreground">tasks</p>
                     </div>
                   </div>
                 </div>
@@ -281,41 +280,41 @@ export default function AnalyticsPage() {
 
           {/* Quick Stats */}
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center gap-3 mb-4">
                 <MessageSquare className="w-5 h-5 text-blue-500" />
-                <h3 className="font-semibold text-slate-900">Messages</h3>
+                <h3 className="font-semibold text-foreground">Messages</h3>
               </div>
-              <p className="text-3xl font-bold text-slate-900">
+              <p className="text-3xl font-bold text-foreground">
                 {analytics.totalMessages.toLocaleString()}
               </p>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Total platform messages
               </p>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Target className="w-5 h-5 text-emerald-500" />
-                <h3 className="font-semibold text-slate-900">
+                <h3 className="font-semibold text-foreground">
                   Completion Rate
                 </h3>
               </div>
-              <p className="text-3xl font-bold text-slate-900">
+              <p className="text-3xl font-bold text-foreground">
                 {analytics.completionRate}%
               </p>
-              <p className="text-sm text-slate-500 mt-1">Tasks completed</p>
+              <p className="text-sm text-muted-foreground mt-1">Tasks completed</p>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Clock className="w-5 h-5 text-orange-500" />
-                <h3 className="font-semibold text-slate-900">Avg. Response</h3>
+                <h3 className="font-semibold text-foreground">Avg. Response</h3>
               </div>
-              <p className="text-3xl font-bold text-slate-900">
+              <p className="text-3xl font-bold text-foreground">
                 {analytics.avgResponseTime}
               </p>
-              <p className="text-sm text-slate-500 mt-1">AI response time</p>
+              <p className="text-sm text-muted-foreground mt-1">AI response time</p>
             </div>
           </div>
         </div>
@@ -340,24 +339,24 @@ function StatCard({
   isLive?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6">
+    <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-start justify-between">
-        <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
+        <div className="p-2 bg-muted rounded-lg">{icon}</div>
         {isLive && (
-          <span className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-full">
+          <span className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-medium rounded-full">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
             Live
           </span>
         )}
       </div>
       <div className="mt-4">
-        <p className="text-2xl font-bold text-slate-900">{value}</p>
-        <p className="text-sm text-slate-500">{label}</p>
+        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-sm text-muted-foreground">{label}</p>
       </div>
       {!isLive && (
         <div className="mt-3 flex items-center gap-1.5">
           <span className="text-sm font-medium text-emerald-600">{change}</span>
-          <span className="text-xs text-slate-500">{changeLabel}</span>
+          <span className="text-xs text-muted-foreground">{changeLabel}</span>
         </div>
       )}
     </div>
