@@ -302,16 +302,23 @@ export class ProjectServiceEnhanced {
       includeComments?: boolean;
       includeCitations?: boolean;
       citationStyle?: "apa" | "mla" | "chicago";
+      documentContent?: any;
+      title?: string;
     },
   ) {
     try {
       const project = await this.getProjectById(projectId, userId);
-      const title = project.title || "Untitled";
+      const title = options.title || project.title || "Untitled";
       const safeTitle = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
       const format = options.format || "pdf";
 
-      // Extract structured content with formatting preserved
-      const structuredContent = extractStructuredContent(project.content);
+      // Extract structured content — use live content from frontend
+      // (collaborative mode) or fall back to database content (solo mode).
+      // Collaborative edits are in Yjs memory, not yet flushed to the DB,
+      // so reading project.content would miss the latest changes.
+      const structuredContent = extractStructuredContent(
+        options.documentContent || project.content,
+      );
 
       let mimeType: string;
       let filename: string;

@@ -158,6 +158,7 @@ export function ExportModal({
           journalTemplate: format.startsWith("journal-") ? "academic" : "", // Apply journal template for journal formats
           isJournalFormat: format.startsWith("journal-"), // Flag to indicate journal format
           documentTitle: documentTitle || "export", // Pass document title for proper filename
+          documentContent: editor?.getJSON(), // Send live editor content so the backend uses the latest version (especially for collaborative docs where Yjs may not have flushed to DB yet)
         };
 
         // Use the real ExportService to export the document

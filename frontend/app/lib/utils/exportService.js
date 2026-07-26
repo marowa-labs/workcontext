@@ -256,25 +256,34 @@ class ExportService {
 
       // Construct the full URL properly
       const baseUrl = `${API_BASE_URL}/api/projects/export`;
-      const fullUrl = `${baseUrl}?${params.toString()}`;
 
-      // Log the actual params string
-      const paramsString = params.toString();
-      console.log("Actual params string:", paramsString);
+      // When live document content is provided (collaborative mode), use POST
+      // so the backend can read the latest editor content instead of stale DB data.
+      const documentContent = options.documentContent;
 
-      console.log("ExportProject URL construction:", {
-        API_BASE_URL,
-        baseUrl,
-        params: params.toString(),
-        fullUrl,
-      });
-
-      const response = await fetch(fullUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = documentContent
+        ? await fetch(baseUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              projectId,
+              format,
+              documentContent,
+              title: options.documentTitle,
+            }),
+          })
+        : await fetch(
+            `${baseUrl}?${params.toString()}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
 
       console.log("Response received:", {
         status: response.status,

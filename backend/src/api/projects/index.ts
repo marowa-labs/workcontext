@@ -181,6 +181,45 @@ router.get("/export", async (req, res) => {
   }
 });
 
+// Export project — POST variant accepts live document content from
+// collaborative editor (which may not have been flushed to DB yet).
+router.post("/export", async (req, res) => {
+  try {
+    const { projectId, format, documentContent, title } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!projectId || !userId) {
+      return res
+        .status(400)
+        .json({ error: "Project ID and User ID are required" });
+    }
+
+    const validFormats = ["pdf", "docx", "txt"];
+    if (!validFormats.includes(format)) {
+      return res.status(400).json({
+        error: `Invalid format. Supported: ${validFormats.join(", ")}`,
+      });
+    }
+
+    const result = await ProjectServiceEnhanced.exportProject(
+      projectId,
+      userId,
+      { format, documentContent, title },
+    );
+
+    res.setHeader("Content-Type", result.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${result.filename}"`,
+    );
+    res.setHeader("Content-Length", result.fileSize.toString());
+    return res.status(200).send(result.buffer);
+  } catch (error: any) {
+    logger.error("Export error (POST):", error);
+    return res.status(500).json({ error: error.message || "Export failed" });
+  }
+});
+
 // Get share settings for a project
 router.get("/:id/share-settings", async (req, res) => {
   const { id: projectId } = req.params;
