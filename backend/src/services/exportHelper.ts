@@ -1,6 +1,9 @@
 // Helper functions for exporting documents with formatting preserved
 
 import PDFDocument from "pdfkit";
+import https from "https";
+import http from "http";
+import { URL } from "url";
 
 export interface TextRun {
   text: string;
@@ -377,6 +380,44 @@ function extractMarksFromText(node: any): TextRun[] {
   return run.text ? [run] : [];
 }
 
+// Download or decode an image URL into a Buffer.
+// Handles data URIs, https, and http URLs. Returns null on failure.
+async function downloadImage(src: string): Promise<{ buffer: Buffer; ext: string } | null> {
+  try {
+    if (src.startsWith("data:")) {
+      const match = src.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (match) {
+        return { buffer: Buffer.from(match[2], "base64"), ext: match[1] };
+      }
+      return null;
+    }
+
+    const url = new URL(src);
+    const mod = url.protocol === "https:" ? https : http;
+
+    return new Promise((resolve) => {
+      mod
+        .get(url, (res) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (ch: Buffer) => chunks.push(ch));
+          res.on("end", () => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              const buffer = Buffer.concat(chunks);
+              const ct = res.headers["content-type"] || "";
+              const ext = ct.includes("png") ? "png" : ct.includes("jpeg") || ct.includes("jpg") ? "jpeg" : "png";
+              resolve({ buffer, ext });
+            } else {
+              resolve(null);
+            }
+          });
+        })
+        .on("error", () => resolve(null));
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function generateDocx(
   title: string,
   blocks: ContentBlock[],
@@ -463,19 +504,36 @@ export async function generateDocx(
     }
 
     if (block.type === "image") {
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `[Image: ${block.imageAlt || "image"}]`,
-              italics: true,
-              color: "666666",
-            }),
-          ],
-          spacing: { before: 100, after: 100 },
-          alignment: AlignmentType.CENTER,
-        }),
-      );
+      const img = block.imageSrc ? await downloadImage(block.imageSrc) : null;
+      if (img) {
+        children.push(
+          new Paragraph({
+            children: [
+              new docx.ImageRun({
+                data: img.buffer,
+                transformation: { width: 400, height: 300 },
+                type: img.ext === "jpeg" ? "jpg" : "png",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 100 },
+          }),
+        );
+      } else {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `[Image: ${block.imageAlt || "image"}]`,
+                italics: true,
+                color: "666666",
+              }),
+            ],
+            spacing: { before: 100, after: 100 },
+            alignment: AlignmentType.CENTER,
+          }),
+        );
+      }
       continue;
     }
 
@@ -597,10 +655,24 @@ function pickFont(run: TextRun): string {
   return "Helvetica";
 }
 
-export function generatePdf(
+export async function generatePdf(
   title: string,
   blocks: ContentBlock[],
 ): Promise<Buffer> {
+  // Pre-download all images in parallel before the synchronous PDF loop.
+  const imageCache = new Map<string, { buffer: Buffer; ext: string }>();
+  await Promise.all(
+    blocks
+      .filter((b) => b.type === "image" && !!b.imageSrc)
+      .map(async (b) => {
+        if (!b.imageSrc) return;
+        const cached = imageCache.get(b.imageSrc);
+        if (cached) return;
+        const img = await downloadImage(b.imageSrc);
+        if (img) imageCache.set(b.imageSrc, img);
+      }),
+  );
+
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -657,15 +729,33 @@ export function generatePdf(
           continue;
         }
 
-        // ── Image placeholder ──
+        // ── Image ──
         if (block.type === "image") {
-          doc
-            .fontSize(11)
-            .font("Helvetica-Oblique")
-            .text(`[Image: ${block.imageAlt || "image"}]`, {
-              align: "center",
-            });
-          doc.moveDown(1);
+          const img = block.imageSrc ? imageCache.get(block.imageSrc) : null;
+          if (img) {
+            const maxW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+            const maxH = 400;
+            try {
+              doc.image(img.buffer, {
+                fit: [maxW, maxH],
+                align: "center",
+                valign: "center",
+              });
+              doc.moveDown(0.5);
+            } catch {
+              doc
+                .fontSize(11)
+                .font("Helvetica-Oblique")
+                .text(`[Image: ${block.imageAlt || "image"}]`, { align: "center" });
+              doc.moveDown(1);
+            }
+          } else {
+            doc
+              .fontSize(11)
+              .font("Helvetica-Oblique")
+              .text(`[Image: ${block.imageAlt || "image"}]`, { align: "center" });
+            doc.moveDown(1);
+          }
           continue;
         }
 
