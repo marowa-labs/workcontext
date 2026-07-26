@@ -730,7 +730,6 @@ router.delete("/", async (req: any, res) => {
 // POST /api/workspaces/tasks/generate-all-recurring - Generate instances for all recurring tasks (for cron jobs)
 router.post("/generate-all-recurring", async (req: any, res) => {
   try {
-    // Support both authenticated users and cron job secret
     const cronSecret = req.headers["x-cron-secret"] || req.body?.cronSecret;
     const isValidCron = cronSecret === process.env.CRON_JOB_SECRET;
 
@@ -743,7 +742,34 @@ router.post("/generate-all-recurring", async (req: any, res) => {
     const RecurringTaskService =
       require("../../../services/RecurringTaskService").default;
 
-    // Generate instances for all active recurring tasks across all workspaces
+    const result =
+      await RecurringTaskService.generateAllRecurringInstances(weeksAhead);
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error: any) {
+    console.error("Error generating all recurring instances:", error);
+    res.status(500).json({ error: error.message || "Internal server error" });
+  }
+});
+
+// Public router for cron jobs — no auth middleware applied at the parent level.
+// Authentication is handled internally via x-cron-secret header.
+export const cronTasksRouter = Router();
+cronTasksRouter.post("/recurring-tasks", async (req: any, res) => {
+  try {
+    const cronSecret = req.headers["x-cron-secret"] || req.body?.cronSecret;
+    if (cronSecret !== process.env.CRON_JOB_SECRET) {
+      return res.status(401).json({ error: "Unauthorized: invalid or missing cron secret" });
+    }
+
+    const weeksAhead = parseInt(req.body?.weeksAhead as string) || 2;
+
+    const RecurringTaskService =
+      require("../../../services/RecurringTaskService").default;
+
     const result =
       await RecurringTaskService.generateAllRecurringInstances(weeksAhead);
 

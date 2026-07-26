@@ -15,6 +15,7 @@ import { scheduleVersionSchedulingTask } from "../scheduledTasks/versionScheduli
 import { scheduleTaskReminderTask } from "../scheduledTasks/taskReminderTask";
 import { startRecurringTaskGeneration } from "../scheduledTasks/generateRecurringTasks";
 import { refreshMissingEmbeddings } from "../scheduledTasks/contextEmbeddingRefresh";
+import { cronTasksRouter } from "../api/workspaces/tasks/route";
 
 // Load environment variables
 dotenv.config();
@@ -298,6 +299,8 @@ app.use("/api/backup", backupRouter);
 app.use("/api/search", searchRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/stats", statsRouter);
+
+app.use("/api/cron", cronTasksRouter);
 
 // Root health check - Render sends HEAD / for health checks
 const rootHealth = (req: any, res: any) => {
