@@ -106,11 +106,21 @@ async function handleGetChatSessions(req: any, res: any) {
       });
     }
 
-    // Get chat sessions
+    // Only filter by projectId if the project actually exists
+    // (frontend may pass documentId as projectId, which is not a real project)
+    let validProjectId: string | undefined;
+    if (projectId) {
+      const project = await prisma.project.findUnique({
+        where: { id: projectId, user_id: userId },
+        select: { id: true },
+      });
+      if (project) validProjectId = projectId;
+    }
+
     const sessions = await prisma.aIChatSession.findMany({
       where: {
         user_id: userId,
-        project_id: projectId || undefined,
+        project_id: validProjectId,
         is_active: true,
       },
       orderBy: {
