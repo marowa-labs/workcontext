@@ -1,7 +1,9 @@
 import { ProjectSettingsService } from "../../services/projectSettingsService";
 import { EditorService } from "../../services/editorService";
 import { ProjectServiceEnhanced } from "../../services/projectServiceEnhanced";
+import { ContextEmbeddingService } from "../../services/contextEmbeddingService";
 import { prisma } from "../../lib/prisma";
+import logger from "../../monitoring/logger";
 // Get all projects for a user
 export async function GET(request: Request & { user?: any }) {
   return handleGET(request);
@@ -847,6 +849,103 @@ async function handleGET_PLAGIARISM_REPORTS(
   } catch (error: any) {
     console.error("Error fetching project plagiarism reports:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+// Get semantically related items for a project
+export async function GET_RELATED(
+  request: Request & { user?: any },
+  projectId: string,
+) {
+  return handleGET_RELATED(request, projectId);
+}
+
+async function handleGET_RELATED(
+  request: Request & { user?: any },
+  projectId: string,
+) {
+  try {
+    const userId = request.user?.id;
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "User ID is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    let searchParams: URLSearchParams;
+    try {
+      const url = new URL(request.url);
+      searchParams = url.searchParams;
+    } catch {
+      searchParams = new URLSearchParams();
+    }
+
+    const workspaceId = searchParams.get("workspaceId");
+    const limit = parseInt(searchParams.get("limit") || "8", 10);
+
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        OR: [
+          { user_id: userId },
+          { collaborators: { some: { user_id: userId } } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        workspace_id: true,
+        user_id: true,
+      },
+    });
+
+    if (!project) {
+      return new Response(
+        JSON.stringify({ error: "Project not found or access denied" }),
+        { status: 404, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    const queryText = `${project.title} ${project.description || ""}`;
+    const related = await ContextEmbeddingService.similaritySearch({
+      workspaceId: workspaceId || project.workspace_id,
+      ownerId: project.user_id,
+      entityTypes: ["project", "task"],
+      query: queryText,
+      k: limit + 5,
+      threshold: 0.1,
+    });
+
+    const items = related
+      .filter(
+        (r: any) =>
+          !(r.entity_type === "project" && r.entity_id === projectId),
+      )
+      .slice(0, limit)
+      .map((r: any) => ({
+        id: r.entity_id,
+        type: r.entity_type,
+        title: r.title || "(untitled)",
+        subtitle:
+          r.entity_type === "task" ? "Related task" : "Related project",
+        relevanceScore: Math.round(r.similarity * 100) / 100,
+      }));
+
+    return new Response(JSON.stringify({ items }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (error: any) {
+    logger.error("Related items error:", error);
+    return new Response(JSON.stringify({ error: "Failed to fetch related items" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

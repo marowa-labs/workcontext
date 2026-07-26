@@ -607,12 +607,10 @@ export function AIChatPanel({
   // Build context string for AI message
   const buildContextString = (): string => {
     const parts: string[] = [];
-    if (includeDocument && editor && editor.state && editor.state.doc) {
-      const docText = editor.state.doc.textContent;
-      if (docText) {
-        parts.push(`Current Document:\n${docText.substring(0, 10000)}`);
-      }
-    }
+    // Document content is NOT appended here — it's sent via
+    // metadata.liveDocumentContent and injected as projectContext
+    // by the backend. Appending it to the user message makes the AI
+    // treat it as if the user typed it, overriding conversational intent.
     if (contextItems.length > 0) {
       parts.push(
         `Additional Context:\n${contextItems.map((item, i) => `${i + 1}. ${item}`).join("\n")}`,

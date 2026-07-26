@@ -9,6 +9,7 @@ import {
   DELETE,
   GET_AI_EDIT_HISTORY,
   GET_CITATIONS,
+  GET_RELATED,
   GET_DOCUMENT_VERSIONS,
   GET_SETTINGS,
   PUT_SETTINGS,
@@ -502,6 +503,29 @@ router.get("/:id/citations", async (req, res) => {
 
   try {
     const response = await GET_CITATIONS(mockRequest as any, req.params.id);
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Internal server error" });
+  }
+});
+
+// Get semantically related items for a project
+router.get("/:id/related", async (req, res) => {
+  const host = req.headers.host || "localhost:3001";
+  const originalUrl = req.originalUrl || req.url;
+  const fullUrl = `http://${host}${originalUrl}`;
+
+  const mockRequest = {
+    url: fullUrl,
+    user: (req as any).user,
+    params: {
+      id: req.params.id,
+    },
+  };
+
+  try {
+    const response = await GET_RELATED(mockRequest as any, req.params.id);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error: any) {
