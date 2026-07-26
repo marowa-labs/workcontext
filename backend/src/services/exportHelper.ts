@@ -423,67 +423,92 @@ export async function generateDocx(
   return Packer.toBuffer(doc);
 }
 
+function pickFont(run: TextRun): string {
+  if (run.bold && run.italic) return "Helvetica-BoldOblique";
+  if (run.bold) return "Helvetica-Bold";
+  if (run.italic) return "Helvetica-Oblique";
+  return "Helvetica";
+}
+
 export function generatePdf(
   title: string,
   blocks: ContentBlock[],
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 72 });
+      const doc = new PDFDocument({
+        margin: 72,
+        size: "A4",
+        bufferPages: true,
+      });
       const chunks: Buffer[] = [];
       doc.on("data", (chunk: Buffer) => chunks.push(chunk));
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
+      // Title
       doc.fontSize(24).font("Helvetica-Bold").text(title, { align: "center" });
       doc.moveDown(2);
-      for (const block of blocks) {
-        if (block.type === "table" && block.tableRows) {
-          const startX = doc.page.margins.left;
-          const tableWidth =
-            doc.page.width - doc.page.margins.left - doc.page.margins.right;
-          const rowHeight = 20;
-          const numCols = block.tableRows[0]?.cells.length;
-          const colWidth = tableWidth / numCols;
-          let tableY = doc.y;
 
+      for (const block of blocks) {
+        // ── Table ──
+        if (block.type === "table" && block.tableRows) {
+          const marginL = doc.page.margins.left;
+          const tableWidth =
+            doc.page.width - marginL - doc.page.margins.right;
+          const rowH = 20;
+          const numCols = block.tableRows[0]?.cells.length || 1;
+          const colW = tableWidth / numCols;
+          const startY = doc.y;
+
+          // Check if table fits; if not, new page
+          const tableH = block.tableRows.length * rowH;
+          if (startY + tableH > doc.page.height - doc.page.margins.bottom) {
+            doc.addPage();
+          }
+
+          let curY = Math.max(startY, doc.y);
           for (const row of block.tableRows) {
             for (let c = 0; c < row.cells.length; c++) {
-              const cellX = startX + c * colWidth;
-              doc.rect(cellX, tableY, colWidth, rowHeight).stroke("#CCCCCC");
+              const cellX = marginL + c * colW;
+              doc.rect(cellX, curY, colW, rowH).stroke("#CCCCCC");
               const cellText = row.cells[c].map((r) => r.text).join("");
               if (cellText) {
                 doc
-                  .fontSize(12)
+                  .fontSize(10)
                   .font("Helvetica")
-                  .text(cellText, cellX + 4, tableY + 4, {
-                    width: colWidth - 8,
-                    height: rowHeight - 8,
+                  .text(cellText, cellX + 4, curY + 4, {
+                    width: colW - 8,
+                    height: rowH - 8,
                     ellipsis: true,
                   });
               }
             }
-            tableY += rowHeight;
+            curY += rowH;
           }
-          doc.y = tableY + 10;
+          doc.y = curY + 10;
           continue;
         }
 
+        // ── Image placeholder ──
         if (block.type === "image") {
           doc
-            .fontSize(12)
+            .fontSize(11)
             .font("Helvetica-Oblique")
-            .text(`[Image: ${block.imageAlt || "image"}]`, { align: "center" });
+            .text(`[Image: ${block.imageAlt || "image"}]`, {
+              align: "center",
+            });
           doc.moveDown(1);
           continue;
         }
 
+        // ── Columns (render as sequential blocks) ──
         if (block.type === "columns" && block.columnBlocks) {
           for (const colBlocks of block.columnBlocks) {
             for (const colBlock of colBlocks) {
-              const text = colBlock.runs.map((r) => r.text).join("");
-              if (text.trim()) {
-                doc.fontSize(12).font("Helvetica").text(text);
+              const t = colBlock.runs.map((r) => r.text).join("");
+              if (t.trim()) {
+                doc.fontSize(11).font("Helvetica").text(t, { indent: 10 });
               }
             }
           }
@@ -491,61 +516,65 @@ export function generatePdf(
           continue;
         }
 
+        // ── Heading ──
         if (block.type === "heading" && block.level) {
-          const size = Math.max(14, 20 - (block.level - 1) * 2);
+          // Ensure heading doesn't orphan at bottom of page
+          if (doc.y > doc.page.height - doc.page.margins.bottom - 60) {
+            doc.addPage();
+          }
+          const size = Math.max(14, 22 - block.level * 2);
           doc.fontSize(size).font("Helvetica-Bold");
           doc.text(block.runs.map((r) => r.text).join(""), {
-            continued: false,
+            lineGap: 4,
           });
           doc.moveDown(0.5);
-        } else if (block.type === "codeBlock") {
-          doc.fontSize(12).font("Courier");
-          for (const run of block.runs) doc.text(run.text);
-          doc.moveDown(0.5);
-        } else if (block.type === "listItem") {
-          const text = block.runs.map((r) => r.text).join("");
-          doc.fontSize(12).font("Helvetica");
-          doc.list([text], { bulletRadius: 2, textIndent: 10 });
-        } else {
-          const text = block.runs.map((r) => r.text).join("");
-          if (!text.trim()) {
-            doc.moveDown(0.3);
-            continue;
-          }
-
-          const hasFormatting = block.runs.some(
-            (r) => r.bold || r.italic || r.underline || r.strikethrough,
-          );
-          if (!hasFormatting) {
-            doc.fontSize(12).font("Helvetica");
-            if (block.type === "blockquote") doc.text(text, { indent: 30 });
-            else doc.text(text);
-          } else {
-            doc.fontSize(12);
-            let posY = doc.y;
-            let posX = doc.page.margins.left;
-            const maxWidth = doc.page.width - doc.page.margins.right;
-            for (const run of block.runs) {
-              const font = run.bold
-                ? run.italic
-                  ? "Helvetica-BoldOblique"
-                  : "Helvetica-Bold"
-                : run.italic
-                  ? "Helvetica-Oblique"
-                  : "Helvetica";
-              doc.font(font);
-              const textWidth = doc.widthOfString(run.text);
-              if (posX + textWidth > maxWidth) {
-                posX = doc.page.margins.left;
-                posY += 14;
-              }
-              doc.text(run.text, posX, posY, { lineBreak: false });
-              posX += textWidth;
-            }
-            doc.y = posY + 18;
-          }
-          doc.moveDown(0.3);
+          continue;
         }
+
+        // ── Code block ──
+        if (block.type === "codeBlock") {
+          doc.fontSize(10).font("Courier");
+          for (const run of block.runs) {
+            doc.text(run.text, { indent: 10 });
+          }
+          doc.moveDown(0.5);
+          continue;
+        }
+
+        // ── Everything else (paragraph, blockquote, listItem) ──
+        const text = block.runs.map((r) => r.text).join("");
+        if (!text.trim()) {
+          doc.moveDown(0.3);
+          continue;
+        }
+
+        const hasFormatting = block.runs.some(
+          (r) => r.bold || r.italic || r.underline || r.strikethrough,
+        );
+
+        if (!hasFormatting || block.type === "blockquote") {
+          doc.fontSize(11).font("Helvetica");
+          if (block.type === "blockquote") {
+            doc.text(text, { indent: 30, lineGap: 2 });
+          } else {
+            doc.text(text, { lineGap: 2, align: "justify" });
+          }
+        } else {
+          // Rich-text paragraph: use continued:true so PDFKit handles
+          // wrapping and keeps its internal cursor in sync.
+          doc.fontSize(11);
+          for (let i = 0; i < block.runs.length; i++) {
+            const run = block.runs[i];
+            const isLast = i === block.runs.length - 1;
+            doc.font(pickFont(run));
+            doc.text(run.text, {
+              continued: !isLast,
+              lineGap: 2,
+              align: "justify",
+            });
+          }
+        }
+        doc.moveDown(0.3);
       }
 
       doc.end();
