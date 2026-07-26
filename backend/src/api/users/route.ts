@@ -207,12 +207,33 @@ export async function GET(request: Request) {
           await adminClient.auth.admin.getUserById(user.id);
         const supabaseEmail = supabaseUser?.user?.email;
         if (supabaseEmail && supabaseEmail !== prismaUser.email) {
+          const oldEmail = prismaUser.email;
           const synced = await prisma.user.update({
             where: { id: user.id },
             data: { email: supabaseEmail, updated_at: new Date() },
             select: { email: true },
           });
           prismaUser.email = synced.email;
+
+          const userAgent = request.headers.get("user-agent") || "Unknown";
+          const ipAddress =
+            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+            "Unknown";
+          try {
+            await prisma.auditLog.create({
+              data: {
+                user_id: user.id,
+                action: "EMAIL_CHANGED",
+                resource: "USER_ACCOUNT",
+                resource_id: user.id,
+                ip_address: ipAddress,
+                device_info: userAgent,
+                payload: { old_email: oldEmail, new_email: supabaseEmail },
+              },
+            });
+          } catch (auditError) {
+            logger.error("Failed to log email change to audit log:", auditError);
+          }
         }
       }
     } catch (syncError) {
@@ -657,6 +678,26 @@ export async function changePasswordPOST(request: Request) {
           headers: { "Content-Type": "application/json" },
         },
       );
+    }
+
+    // Log password change to audit log
+    const userAgent = request.headers.get("user-agent") || "Unknown";
+    const ipAddress =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "Unknown";
+    try {
+      await prisma.auditLog.create({
+        data: {
+          user_id: user.id,
+          action: "PASSWORD_CHANGED",
+          resource: "USER_ACCOUNT",
+          resource_id: user.id,
+          ip_address: ipAddress,
+          device_info: userAgent,
+        },
+      });
+    } catch (auditError) {
+      logger.error("Failed to log password change to audit log:", auditError);
     }
 
     // Send password changed notification (don't await - don't block response)

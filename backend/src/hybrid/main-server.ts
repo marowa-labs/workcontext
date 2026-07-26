@@ -2314,11 +2314,15 @@ app.use("/api/privacy", authMiddleware);
 import privacySettingsRouter from "../api/privacy/route";
 // Import sessions router
 import sessionsRouter from "../api/sessions-route";
+// Import security log router
+import securityLogRouter from "../api/security-log/route";
 
 // Mount privacy settings router
 app.use("/api/privacy", authMiddleware, privacySettingsRouter);
 // Mount sessions router
 app.use("/api/sessions", sessionsRouter);
+// Mount security log router
+app.use("/api/security-log", authMiddleware, securityLogRouter);
 
 // Register AI routes
 app.use("/api/ai", aiRouter);

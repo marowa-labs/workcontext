@@ -85,6 +85,13 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       path: "account",
     },
 
+    {
+      id: "security-log",
+      label: "Security Log",
+      icon: Shield,
+      path: "security-log",
+    },
+
     /* {
       id: "notifications",
       label: "Notifications",
