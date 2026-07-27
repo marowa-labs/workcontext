@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AIChatPanel } from "../../../../components/ai-chat/AIChat";
 import { Button } from "../../../../components/ui/button";
-import { X, FileText, ChevronLeft, ChevronRight, Plus, Link2 } from "lucide-react";
+import { X, FileText, ChevronLeft, ChevronRight, Link2 } from "lucide-react";
 import { cn } from "../../../../lib/utils";
 import ProjectService from "../../../../lib/utils/projectService";
 import { useUser } from "../../../../lib/utils/useUser";
@@ -15,7 +15,6 @@ import {
   SidebarPanel,
 } from "../../../../components/editor/main-editor";
 import { EditorSidebar } from "../../../../components/editor/EditorSidebar";
-import { NewProjectModal } from "../../../../components/dashboard/NewProjectModal"; // Import modal
 import { ShareProjectDialog } from "../../../../components/dashboard/ShareProjectDialog";
 import { ProjectJoinDialog } from "../../../../components/dashboard/ProjectJoinDialog";
 import { LanguageCheckPanel } from "../../../../components/editor/SidebarRight/LanguageCheckPanel";
@@ -59,11 +58,9 @@ export default function EditorPage() {
   const [viewMode] = useState<"write">("write");
 
   // Modal State
-  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [isPendingJoin, setIsPendingJoin] = useState(false);
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   // Resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(300);
@@ -490,15 +487,6 @@ export default function EditorPage() {
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-1">
                     My Projects
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 bg-blue-600 hover:bg-blue-700"
-                    onClick={() => setIsNewProjectModalOpen(true)}
-                    title="New Document"
-                  >
-                    <Plus className="h-4 w-4 text-white" />
-                  </Button>
                 </div>
                 <DocumentsPanel
                   projects={projects}
@@ -580,71 +568,7 @@ export default function EditorPage() {
         </div>
       )}
 
-      {/* New Project Modal */}
-      <NewProjectModal
-        isOpen={isNewProjectModalOpen}
-        onClose={() => setIsNewProjectModalOpen(false)}
-        isCreating={isCreatingProject}
-        onConfirm={async (prompt, outlineType, workspaceId) => {
-          try {
-            setIsCreatingProject(true);
 
-            // Determine initial content based on outline type
-            let initialContent = "";
-            if (outlineType === "standard") {
-              initialContent = `<h1>${prompt || "Untitled Document"}</h1>
-<h2>Overview</h2>
-<p>Describe the purpose and scope...</p>
-<h2>Key Points</h2>
-<p>Main ideas and objectives...</p>
-<h2>Action Items</h2>
-<p>Tasks and next steps...</p>
-<h2>Notes</h2>
-<p>Additional information...</p>`;
-            } else if (outlineType === "smart") {
-              // Mock smart generation for now - ideally call AIService here
-              initialContent = `<h1>${prompt || "Untitled Document"}</h1>
-<p><em>AI Generated Outline based on: "${prompt}"</em></p>
-<h2>1. Summary</h2>
-<p>...</p>
-<h2>2. Details</h2>
-<p>...</p>
-<h2>3. Next Steps</h2>
-<p>...</p>`;
-            } else {
-              // Empty/No headings
-              initialContent = prompt ? `<h1>${prompt}</h1><p></p>` : "";
-            }
-
-            // Create project — include workspace_id if selected
-            const newProject = await ProjectService.createProject({
-              userId,
-              title: prompt || "Untitled Document",
-              content: initialContent,
-              ...(workspaceId ? { workspace_id: workspaceId } : {}),
-            });
-
-            // Refresh and switch
-            await fetchUserProjects();
-            switchProject(newProject);
-            setIsNewProjectModalOpen(false);
-
-            toast({
-              title: "Project Created",
-              description: `Started new document: ${prompt || "Untitled"}`,
-            });
-          } catch (err: any) {
-            console.error("Error creating project:", err);
-            toast({
-              title: "Error",
-              description: "Failed to create project.",
-              variant: "destructive",
-            });
-          } finally {
-            setIsCreatingProject(false);
-          }
-        }}
-      />
 
       {/* Left Panel Toggle Button */}
       {!leftPanel && (
