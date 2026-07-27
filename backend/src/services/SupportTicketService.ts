@@ -206,7 +206,6 @@ export class SupportTicketService {
 
       const subjectEmojis: Record<string, string> = {
         technical: "🔧",
-        billing: "💳",
         feature: "✨",
         bug: "🐛",
         other: "❓",
@@ -299,7 +298,6 @@ export class SupportTicketService {
   private static formatSubject(subject: string): string {
     const subjectMap: Record<string, string> = {
       technical: "Technical Issue",
-      billing: "Billing Question",
       feature: "Feature Request",
       bug: "Bug Report",
       other: "Other",

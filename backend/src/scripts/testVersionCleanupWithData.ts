@@ -38,17 +38,6 @@ async function setupTestData() {
       },
     });
 
-    // Create subscription
-    await prisma.subscription.upsert({
-      where: { user_id: user.id },
-      update: {},
-      create: {
-        user_id: user.id,
-        plan: user.plan,
-        status: "active",
-      },
-    });
-
     // Create a test project
     const project = await prisma.project.upsert({
       where: { id: `test-project-${user.id}` },

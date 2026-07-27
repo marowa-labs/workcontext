@@ -11,8 +11,6 @@ import searchRouter from "./search-route";
 import chatRouter from "./chat-route";
 import actionsRouter from "./actions/route";
 import pdfChatRouter from "./pdf-chat-route";
-import pinnedCommentsRouter from "./pinned-comments-route";
-
 const router: ExpressRouter = Router();
 
 // Process AI request (improve writing, fix grammar, etc.)
@@ -932,9 +930,6 @@ router.use("/chat", chatRouter);
 
 // Mount PDF chat routes
 router.use("/pdf-chat", pdfChatRouter);
-
-// Mount pinned comments routes
-router.use("/pinned-comments", pinnedCommentsRouter);
 
 // ==================== BYOK (Bring Your Own Key) Endpoints ====================
 

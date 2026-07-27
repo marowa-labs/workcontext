@@ -65,7 +65,7 @@ export async function POST_CLEANUP(request: Request & { user?: any }) {
     }
 
     const body = await request.json();
-    const { oldExports, oldDrafts, oldBackups, oldVersions } = body;
+    const { oldExports, oldDrafts, oldVersions } = body;
 
     let freedSpace = 0;
     const cleanupActions: string[] = [];
@@ -87,17 +87,6 @@ export async function POST_CLEANUP(request: Request & { user?: any }) {
       const draftCleanupResult = await StorageService.cleanupOldDrafts(userId);
       freedSpace += draftCleanupResult.freedSpace;
       cleanupActions.push(`Cleaned up ${draftCleanupResult.count} old drafts`);
-    }
-
-    // Clean up old backups
-    if (oldBackups) {
-      logger.info("Cleaning up old backups for user", { userId });
-      const backupCleanupResult =
-        await StorageService.cleanupOldBackups(userId);
-      freedSpace += backupCleanupResult.freedSpace;
-      cleanupActions.push(
-        `Cleaned up ${backupCleanupResult.count} old backups`,
-      );
     }
 
     // Clean up old document versions

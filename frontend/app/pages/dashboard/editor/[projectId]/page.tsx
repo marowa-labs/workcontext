@@ -21,7 +21,6 @@ import { ProjectJoinDialog } from "../../../../components/dashboard/ProjectJoinD
 import { LanguageCheckPanel } from "../../../../components/editor/SidebarRight/LanguageCheckPanel";
 import { DocumentOutlinePanel } from "../../../../components/editor/SidebarLeft/DocumentOutlinePanel";
 import { ConceptMapPanel } from "../../../../components/editor/SidebarLeft/ConceptMapPanel";
-import { TeamChat } from "../../../../components/dashboard/team/TeamChat";
 import { RelatedItems } from "../../../../components/related/RelatedItems";
 
 // Define panel types
@@ -31,7 +30,7 @@ export type LeftPanelType =
   | "language"
   | "concept-map"
   | null;
-export type RightPanelType = "ai-chat" | "team-chat" | "related" | null;
+export type RightPanelType = "ai-chat" | "related" | null;
 
 interface Project {
   id: string;
@@ -412,7 +411,6 @@ export default function EditorPage() {
     "my-documents",
     "outline",
     "concept-map",
-    "team-chat", // Added for Team Projects
   ];
 
   const activeAllowedPanels = isTeamProject
@@ -440,9 +438,6 @@ export default function EditorPage() {
             setRightPanel("ai-chat");
           }
 
-          if (id === "team-chat") {
-            setRightPanel("team-chat");
-          }
         }}
       />
 
@@ -736,7 +731,6 @@ export default function EditorPage() {
           <div className="flex h-12 items-center justify-between border-b border-gray-200 px-4">
             <h3 className="text-sm font-semibold text-gray-900">
               {rightPanel === "ai-chat" && "AI Assistant"}
-              {rightPanel === "team-chat" && "Team Chat"}
               {rightPanel === "related" && "Related Items"}
             </h3>
             <Button
@@ -768,12 +762,6 @@ export default function EditorPage() {
                   },
                 }}
                 onSendPrompt={aiPrompt}
-              />
-            )}
-            {rightPanel === "team-chat" && (
-              <TeamChat
-                projectId={documentId}
-                onClose={() => setRightPanel(null)}
               />
             )}
             {rightPanel === "related" && (

@@ -179,28 +179,7 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       }),
     );
 
-    // 6. Notes (title / content — content is @db.Text, no case-insensitive mode)
-    queries.push(
-      prisma.note.findMany({
-        where: {
-          user_id: userId,
-          OR: [
-            { title: searchFilter("title") },
-            { content: textFilter("content") },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          content: true,
-          project_id: true,
-          created_at: true,
-        },
-        take: limit,
-      }),
-    );
-
-    // 7. PDF Documents (filename)
+    // 6. PDF Documents (filename)
     queries.push(
       prisma.pdfDocument.findMany({
         where: {

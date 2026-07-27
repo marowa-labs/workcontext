@@ -17,10 +17,7 @@ export interface ActualUserAccount {
   affiliate_ref: string | null;
   created_at: string;
   updated_at: string;
-  subscription?: {
-    plan: string;
-    status: string;
-  };
+
 }
 
 export interface UpdateAccountData {

@@ -40,9 +40,7 @@ const NotificationsPage: React.FC = () => {
   // Get priority level for notification
   const getPriority = (type: string): "high" | "medium" | "low" => {
     const highPriorityTypes = [
-      "payment_failed",
       "security_alert",
-      "subscription_expiring",
       "ai_limit",
       "document_deadline",
     ];
@@ -53,8 +51,6 @@ const NotificationsPage: React.FC = () => {
       "new_collaborator",
       "permission_change",
       "plagiarism_complete",
-      "payment_success",
-      "subscription_renewed",
       "new_feature",
       "writing_streak",
       "goal_achieved",
@@ -85,11 +81,6 @@ const NotificationsPage: React.FC = () => {
       case "ai_limit":
       case "new_feature":
         return <Zap className="h-4 w-4" />;
-      case "payment_success":
-      case "payment_failed":
-      case "subscription_renewed":
-      case "subscription_expiring":
-        return <CreditCard className="h-4 w-4" />;
       case "security_alert":
         return <AlertCircle className="h-4 w-4" />;
       case "writing_streak":

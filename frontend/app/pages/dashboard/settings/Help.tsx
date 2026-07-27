@@ -17,8 +17,6 @@ import {
 import { useRouter } from "next/navigation";
 import apiClient from "../../../lib/utils/apiClient";
 import feedbackService from "../../../lib/utils/feedbackService";
-import WaitlistService from "../../../lib/utils/waitlistService";
-
 interface HelpArticle {
   id: string;
   title: string;
@@ -289,40 +287,12 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
   };
 
   const handleVote = async (featureId: string) => {
-    if (votedFeatures.includes(featureId)) {
-      // User has already voted
-      return;
-    }
-
-    try {
-      // Call the waitlist service to vote for the feature
-      const result = await WaitlistService.voteForFeature(featureId);
-
-      if (result.success) {
-        // Update the voted features list
-        setVotedFeatures([...votedFeatures, featureId]);
-
-        // Update the vote count
-        setFeatureVotes({
-          ...featureVotes,
-          [featureId]: result.votes,
-        });
-      } else {
-        toast({
-          title: "Vote Submission Failed",
-          description:
-            result.message || "Failed to submit vote. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error voting for feature:", error);
-      toast({
-        title: "Vote Submission Failed",
-        description: "Failed to submit vote. Please try again.",
-        variant: "destructive",
-      });
-    }
+    if (votedFeatures.includes(featureId)) return;
+    setVotedFeatures([...votedFeatures, featureId]);
+    setFeatureVotes({
+      ...featureVotes,
+      [featureId]: (featureVotes[featureId] || 0) + 1,
+    });
   };
 
   const handleCreateFeatureRequest = async () => {

@@ -1,5 +1,4 @@
 import { AuthService } from "../../services/hybridAuthService";
-import { SubscriptionService } from "../../services/subscriptionService";
 import { EmailService } from "../../services/emailService";
 import { SessionService } from "../../services/sessionService";
 import { SecurityNotificationService } from "../../services/securityNotificationService";
@@ -186,68 +185,6 @@ export async function POST(req: Request, res: Response) {
       plan: selected_plan || "free",
     });
 
-    // Create subscription if a plan was selected
-    let subscriptionCreated = false;
-    if (selected_plan) {
-      try {
-        const subscription = await SubscriptionService.syncSubscription({
-          userId: supabaseUser.id,
-          planId: selected_plan,
-          status: "active",
-          currentPeriodEnd:
-            selected_plan !== "free"
-              ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-day trial
-              : undefined,
-        });
-        logger.info("Subscription created/updated:", subscription);
-        subscriptionCreated = true;
-      } catch (subscriptionError) {
-        logger.error("Error creating subscription:", subscriptionError);
-        // If subscription creation fails, we should not proceed with the signup flow
-        // Delete the Supabase Auth user and database user since we couldn't create the subscription
-        try {
-          const adminClient = await getSupabaseAdminClient();
-          if (adminClient) {
-            await adminClient.auth.admin.deleteUser(supabaseUser.id);
-            logger.info(
-              "Cleaned up Supabase Auth user after subscription failure",
-              {
-                userId: supabaseUser.id,
-              },
-            );
-          }
-          // Also delete the database user (delete related records first to avoid FK constraint)
-          const { prisma } = await import("../../lib/prisma");
-          // Delete subscription first if it exists
-          await prisma.subscription.deleteMany({
-            where: { user_id: supabaseUser.id },
-          });
-          // Delete OTPCode if it exists
-          await prisma.oTPCode.deleteMany({
-            where: { user_id: supabaseUser.id },
-          });
-          await prisma.user.delete({
-            where: { id: supabaseUser.id },
-          });
-          logger.info("Cleaned up database user after subscription failure", {
-            userId: supabaseUser.id,
-          });
-        } catch (deleteError) {
-          logger.error("Failed to cleanup user after subscription error", {
-            error:
-              deleteError instanceof Error
-                ? deleteError.message
-                : String(deleteError),
-            userId: supabaseUser.id,
-          });
-        }
-        return res.status(500).json({
-          success: false,
-          message: "Failed to create subscription. Please try again.",
-        });
-      }
-    }
-
     // Check if we have a valid database user before proceeding
     if (!dbUser) {
       // If we don't have a valid database user, clean up the Supabase Auth user
@@ -407,46 +344,6 @@ export async function POST_COMPLETE_SIGNUP(req: Request, res: Response) {
     } catch (dbError: any) {
       logger.error("Failed to update user in database:", dbError);
       // Don't fail the whole request if database update fails, as Supabase Auth update succeeded
-    }
-
-    // Create subscription if a plan was selected
-    let subscriptionCreated = false;
-    if (selectedPlan) {
-      try {
-        const { SubscriptionService } =
-          await import("../../services/subscriptionService");
-
-        const subscription = await SubscriptionService.syncSubscription({
-          userId: userId,
-          planId: selectedPlan,
-          status: "active",
-          currentPeriodEnd:
-            selectedPlan !== "free"
-              ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-day trial
-              : undefined,
-        });
-
-        logger.info("Subscription created/updated:", subscription);
-        subscriptionCreated = true;
-      } catch (subscriptionError: any) {
-        logger.error("Error creating subscription:", subscriptionError);
-        // If subscription creation fails, return an error
-        return res.status(500).json({
-          success: false,
-          message: "Failed to create subscription. Please try again.",
-        });
-      }
-    } else {
-      // If no plan was selected, consider it successful (free plan)
-      subscriptionCreated = true;
-    }
-
-    // If we couldn't create a subscription, return an error
-    if (selectedPlan && !subscriptionCreated) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to create subscription. Please try again.",
-      });
     }
 
     // Get user details to send welcome email
@@ -738,22 +635,6 @@ export async function POST_OAUTH_SIGNUP(req: Request, res: Response) {
         email: dbUser.email,
       });
 
-      // Create subscription record
-      try {
-        const subscription = await SubscriptionService.syncSubscription({
-          userId: id,
-          planId: defaultPlan,
-          status: "active",
-          currentPeriodEnd: undefined, // No expiration for free plan
-        });
-        logger.info("Subscription created for OAuth user:", {
-          userId: id,
-          plan: defaultPlan,
-        });
-      } catch (subscriptionError: any) {
-        logger.error("Error creating subscription:", subscriptionError);
-        // Don't fail signup if subscription creation fails
-      }
     }
 
     // OAuth users (e.g. Google) already have a verified email from the

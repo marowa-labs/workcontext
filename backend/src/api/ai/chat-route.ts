@@ -3,7 +3,6 @@ import { AIService } from "../../services/aiService";
 import logger from "../../monitoring/logger";
 import { authenticateExpressRequest } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
-import { SubscriptionService } from "../../services/subscriptionService";
 import { createNotification } from "../../services/notificationService";
 import { ContextEmbeddingService } from "../../services/contextEmbeddingService";
 
@@ -248,30 +247,6 @@ async function handlePostChatMessage(req: any, res: any) {
       });
     }
 
-    // Check if user can send chat messages based on their subscription
-    const canPerform = await SubscriptionService.canPerformAction(
-      userId,
-      "ai_chat_message",
-    );
-    if (!canPerform.allowed) {
-      // Send notification about limit reached
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Chat Limit Reached",
-        "You've reached your AI chat message limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          canPerform.reason ||
-          "You've reached your AI chat message limit. Upgrade for more.",
-        limitReached: true,
-      });
-    }
-
     // Save user message
     const userMessage = await prisma.aIChatMessage.create({
       data: {
@@ -401,30 +376,6 @@ async function handlePostChatMessageStream(req: any, res: any) {
       return res.status(404).json({
         success: false,
         message: "Chat session not found",
-      });
-    }
-
-    // Check if user can send chat messages based on their subscription
-    const canPerform = await SubscriptionService.canPerformAction(
-      userId,
-      "ai_chat_message",
-    );
-    if (!canPerform.allowed) {
-      // Send notification about limit reached
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Chat Limit Reached",
-        "You've reached your AI chat message limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          canPerform.reason ||
-          "You've reached your AI chat message limit. Upgrade for more.",
-        limitReached: true,
       });
     }
 

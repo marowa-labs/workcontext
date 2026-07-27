@@ -85,7 +85,6 @@ import {
   CalloutBlock,
   CoverPageExtension,
   QuoteBlockExtension,
-  PricingTableExtension, // Add this import
   SidebarBlockExtension, // Add this import
   CaptionExtension, // Add this import
   ImagePlaceholderExtension, // Add this import
@@ -583,7 +582,6 @@ export const MainEditor = forwardRef<
           CalloutBlock,
           CoverPageExtension,
           QuoteBlockExtension,
-          PricingTableExtension,
           SidebarBlockExtension,
           CaptionExtension,
           ImagePlaceholderExtension,

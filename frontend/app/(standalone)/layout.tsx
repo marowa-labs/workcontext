@@ -2,7 +2,6 @@
 
 import { AuthProvider } from "../contexts/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
-import { BillingProvider } from "../contexts/BillingContext";
 
 export default function StandaloneLayout({
   children,
@@ -11,11 +10,9 @@ export default function StandaloneLayout({
 }) {
   return (
     <AuthProvider>
-      <BillingProvider>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
-      </BillingProvider>
+      <ThemeProvider>
+        {children}
+      </ThemeProvider>
     </AuthProvider>
   );
 }

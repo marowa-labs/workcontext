@@ -240,21 +240,9 @@ export async function GET(request: Request) {
       logger.error("Failed to sync email from Supabase:", syncError);
     }
 
-    // Get user subscription info
-    const subscription = await prisma.subscription.findUnique({
-      where: { user_id: user.id },
-      select: {
-        plan: true,
-        status: true,
-      },
-    });
-
     return new Response(
       JSON.stringify({
-        user: {
-          ...prismaUser,
-          subscription: subscription || null,
-        },
+        user: prismaUser,
       }),
       {
         status: 200,

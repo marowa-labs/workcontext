@@ -13,7 +13,6 @@ import logger from "../monitoring/logger";
 async function backfill() {
   let projectCount = 0;
   let taskCount = 0;
-  let noteCount = 0;
 
   // Projects
   const projects = await prisma.project.findMany({
@@ -48,17 +47,7 @@ async function backfill() {
   }
   logger.info(`Backfilled ${taskCount} tasks`);
 
-  // Notes
-  const notes = await prisma.note.findMany({
-    select: { id: true, user_id: true, project_id: true, title: true, content: true },
-  });
-  for (const note of notes) {
-    await ContextEmbeddingService.upsertForNote(note as any);
-    noteCount++;
-  }
-  logger.info(`Backfilled ${noteCount} notes`);
-
-  logger.info("Backfill complete", { projectCount, taskCount, noteCount });
+  logger.info("Backfill complete", { projectCount, taskCount });
 }
 
 backfill()

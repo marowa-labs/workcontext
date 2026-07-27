@@ -19,10 +19,6 @@ export type NotificationType =
   | "ai_limit"
   | "new_feature"
   | "weekly_summary"
-  | "payment_success"
-  | "payment_failed"
-  | "subscription_renewed"
-  | "subscription_expiring"
   | "security_alert"
   | "new_feature_announcement"
   | "product_tip"
@@ -34,7 +30,6 @@ export type NotificationType =
   | "goal_achieved"
   | "ai_suggestion"
   | "citation_reminder"
-  | "backup_available"
   | "collaborator_request"
   | "document_version"
   | "research_update"
@@ -79,14 +74,6 @@ export type NotificationType =
   | "document_exported"
   // XP notification types
   | "xp_earned"
-  // Billing notification types
-  | "subscription_created"
-  | "subscription_updated"
-  | "subscription_cancelled"
-  | "subscription_resumed"
-  | "subscription_expired"
-  | "payment_refunded"
-  | "invoice_available"
   // Task specific notification types
   | "task_overdue"
   | "task_due_soon"
@@ -148,19 +135,8 @@ const notificationTypeToSubscriptionFeature: Record<
   ai_limit: "ai_features_ai_limit",
   ai_suggestion: "ai_features_new_features",
 
-  // Account/Billing notifications - available to all users
-  payment_success: null,
-  payment_failed: null,
-  subscription_renewed: null,
-  subscription_expiring: null,
+  // Account notifications - available to all users
   security_alert: null,
-  subscription_created: null,
-  subscription_updated: null,
-  subscription_cancelled: null,
-  subscription_resumed: null,
-  subscription_expired: null,
-  payment_refunded: null,
-  invoice_available: null,
 
   // Product update notifications - available to all users
   new_feature: null,
@@ -176,12 +152,11 @@ const notificationTypeToSubscriptionFeature: Record<
   goal_achieved: null,
   xp_earned: null, // XP notifications - available to all users
 
-  // Research notifications - require research features
-  citation_reminder: null, // Available to all users
-  research_update: "research_updates_enabled",
+  // Research notifications
+  citation_reminder: null,
+  research_update: null,
 
   // Document management notifications - available to all users
-  backup_available: null,
   document_version: null,
   document_exported: null,
   template_update: null,
@@ -237,136 +212,7 @@ async function canUserReceiveNotification(
     // Get the required feature for this notification type
     const requiredFeature = notificationTypeToSubscriptionFeature[type];
 
-    // If no feature is required, user can receive the notification
-    if (!requiredFeature) {
-      return true;
-    }
-
-    // Get user's subscription
-    const subscription = await prisma.subscription.findUnique({
-      where: { user_id: userId },
-    });
-
-    const planId = subscription?.plan || "free";
-
-    // For each required feature, check if the user's plan includes it
-    // This performs granular checking by using the actual plan definitions from subscriptionService
-
-    // Import plan definitions
-    const { plans } = await import("./subscriptionService");
-
-    // Get the plan details
-    const planDetails = plans[planId as keyof typeof plans];
-
-    // If we can't find the plan details, fall back to basic check
-    if (!planDetails) {
-      // Fallback to the original simplified logic
-      switch (requiredFeature) {
-        // Collaboration features
-        case "collaboration_real_time":
-        case "collaboration_new_collaborator":
-        case "collaboration_permission_changes":
-        case "collaboration_comments_resolved":
-          // These features require at least Student plan
-          return planId === "student" || planId === "researcher";
-
-        // Research features
-        case "research_updates_enabled":
-          // Research updates require at least Student plan
-          return planId === "student" || planId === "researcher";
-
-        // Collaboration request features
-        case "collaboration_request_collaborator_request":
-          // Collaboration requests require at least Student plan
-          return planId === "student" || planId === "researcher";
-
-        // AI features are available in all plans but with limits
-        case "ai_features_plagiarism_complete":
-        case "ai_features_ai_limit":
-          return true;
-
-        // Default case - if we don't know the feature, allow the notification
-        default:
-          return true;
-      }
-    }
-
-    // Check if the specific feature is enabled for this plan
-    // Map notification types to plan features
-    const featureMap: Record<string, string> = {
-      collaboration_real_time: "collaboration.realTime",
-      collaboration_new_collaborator: "collaboration.newCollaborator",
-      collaboration_permission_changes: "collaboration.permissionChanges",
-      collaboration_comments_resolved: "collaboration.commentsResolved",
-      research_updates_enabled: "research.updates",
-      collaboration_request_collaborator_request:
-        "collaboration.requestCollaborator",
-      ai_features_plagiarism_complete: "ai.plagiarismComplete",
-      ai_features_ai_limit: "ai.limit",
-    };
-
-    // Get the feature path for this notification type
-    const featurePath = featureMap[requiredFeature];
-
-    // If we have a direct mapping, check if the feature is available
-    if (featurePath) {
-      // Navigate through the plan features object
-      const pathParts = featurePath.split(".");
-      let current: any = planDetails.features;
-
-      for (const part of pathParts) {
-        if (
-          current &&
-          typeof current === "object" &&
-          current.hasOwnProperty(part)
-        ) {
-          current = current[part];
-        } else {
-          current = undefined;
-          break;
-        }
-      }
-
-      // If we found the feature and it's not zero (which means disabled/limited)
-      if (current !== undefined && current !== 0) {
-        return true;
-      }
-
-      // If the feature is explicitly set to 0, it's disabled
-      if (current === 0) {
-        return false;
-      }
-    }
-
-    // Check for feature categories
-    const featureCategory = requiredFeature.split("_")[0]; // e.g., "collaboration" from "collaboration_real_time"
-
-    // Check if this category is available based on plan tier
-    switch (featureCategory) {
-      case "collaboration":
-        // Collaboration features require at least Student plan
-        return (
-          planId === "student" ||
-          planId === "researcher" ||
-          planId === "onetime"
-        );
-
-      case "research":
-        // Research features require at least Student plan
-        return (
-          planId === "student" ||
-          planId === "researcher" ||
-          planId === "onetime"
-        );
-
-      case "ai":
-        // AI features are available in all plans but with different limits
-        return true;
-
-      default:
-        // For unknown categories, allow the notification
-        return true;
-    }
+    return true;
   } catch (error) {
     console.error("Error checking subscription for notification:", error);
     // If there's an error, we'll allow the notification to avoid blocking important messages
@@ -579,10 +425,6 @@ export async function getUserNotifications(
           "real_time_edit",
           "plagiarism_complete",
           "ai_limit",
-          "payment_failed",
-          "subscription_expiring",
-          "subscription_cancelled",
-          "subscription_expired",
           "security_alert",
           "document_deadline",
           "ai_suggestion",
@@ -596,24 +438,16 @@ export async function getUserNotifications(
           "document_exported",
           "writing_streak",
           "goal_achieved",
-          "invoice_available",
         ],
         medium: [
           "new_feature",
           "weekly_summary",
-          "payment_success",
-          "subscription_renewed",
           "new_feature_announcement",
           "product_tip",
           "research_update",
           "template_update",
           "collaboration_session_started",
           "collaboration_session_ended",
-          "subscription_created",
-          "subscription_updated",
-          "subscription_resumed",
-          "payment_refunded",
-          "backup_available",
           "document_version",
           "template_created",
           "template_updated",
@@ -761,7 +595,7 @@ function shouldSendNotification(
   type: NotificationType,
 ): boolean {
   // Map notification types to settings fields
-  const typeToSettingMap: Record<string, string> = {
+  const typeToSettingMap: Record<string, string | null> = {
     comment: "project_activity_comments",
     mention: "project_activity_mentions",
     document_change: "project_activity_changes",
@@ -774,11 +608,7 @@ function shouldSendNotification(
     ai_limit: "ai_features_ai_limit",
     new_feature: "product_updates_new_features",
     weekly_summary: "product_updates_weekly_summary",
-    payment_success: "account_billing_payment_success",
-    payment_failed: "account_billing_payment_failed",
-    subscription_renewed: "account_billing_subscription_renewed",
-    subscription_expiring: "account_billing_subscription_expiring",
-    security_alert: "account_billing_security_alerts",
+    security_alert: null,
     new_feature_announcement: "product_updates_new_features",
     product_tip: "product_updates_tips",
     newsletter: "product_updates_newsletter",
@@ -786,12 +616,12 @@ function shouldSendNotification(
     document_deadline: "writing_progress_document_deadline",
     writing_streak: "writing_progress_writing_streak",
     goal_achieved: "writing_progress_goal_achieved",
-    ai_suggestion: "research_updates_ai_suggestion",
-    citation_reminder: "research_updates_citation_reminder",
-    backup_available: "document_management_backup_available",
+    ai_suggestion: null,
+    citation_reminder: null,
+
     collaborator_request: "collaboration_request_collaborator_request",
     document_version: "document_management_document_version",
-    research_update: "research_updates_research_update",
+    research_update: null,
     template_update: "document_management_template_update",
     collaboration_invite: "collaboration_request_collaborator_request",
     collaboration_invite_accepted: "collaboration_new_collaborator",
@@ -828,14 +658,6 @@ function shouldSendNotification(
     template_preview_generated: "document_management_template_update",
     template_preview_updated: "document_management_template_update",
     template_preview_deleted: "document_management_template_update",
-    // Billing notification types
-    subscription_created: "account_billing_subscription_renewed",
-    subscription_updated: "account_billing_subscription_renewed",
-    subscription_cancelled: "account_billing_subscription_expiring",
-    subscription_resumed: "account_billing_subscription_renewed",
-    subscription_expired: "account_billing_subscription_expiring",
-    payment_refunded: "account_billing_payment_success",
-    invoice_available: "account_billing_payment_success",
     // Task notification types
     task_assigned: "project_activity_changes",
     task_status_changed: "project_activity_changes",
@@ -1015,204 +837,4 @@ export async function updateUserNotificationSettings(
   );
 }
 
-// Create billing notification
-export async function createBillingNotification(
-  userId: string,
-  type: NotificationType,
-  title: string,
-  message: string,
-  data?: NotificationData,
-) {
-  try {
-    // Create the notification using the main notification function
-    const notification = await createNotification(
-      userId,
-      type,
-      title,
-      message,
-      data,
-    );
 
-    // If notification was created successfully, return it
-    if (notification) {
-      console.log(`Billing notification created for user ${userId}: ${type}`);
-      return notification;
-    }
-
-    return null;
-  } catch (error) {
-    console.error("Error creating billing notification:", error);
-    throw error;
-  }
-}
-
-// Send subscription created notification
-export async function sendSubscriptionCreatedNotification(
-  userId: string,
-  planName: string,
-  amount: number,
-  billingPeriod: string,
-) {
-  const title = "Subscription Created";
-  const message = `Your ${planName} subscription has been successfully created. You will be charged $${amount.toFixed(2)} ${billingPeriod === "year" ? "annually" : "monthly"}.`;
-
-  return await createBillingNotification(
-    userId,
-    "subscription_created",
-    title,
-    message,
-    { planName, amount, billingPeriod },
-  );
-}
-
-// Send subscription updated notification
-export async function sendSubscriptionUpdatedNotification(
-  userId: string,
-  oldPlanName: string,
-  newPlanName: string,
-  amount: number,
-) {
-  const title = "Subscription Updated";
-  const message = `Your subscription has been updated from ${oldPlanName} to ${newPlanName}. You will be charged $${amount.toFixed(2)} for the remainder of your billing cycle.`;
-
-  return await createBillingNotification(
-    userId,
-    "subscription_updated",
-    title,
-    message,
-    { oldPlanName, newPlanName, amount },
-  );
-}
-
-// Send subscription cancelled notification
-export async function sendSubscriptionCancelledNotification(
-  userId: string,
-  planName: string,
-  endDate: string,
-) {
-  const title = "Subscription Cancelled";
-  const message = `Your ${planName} subscription has been cancelled. You will retain access until ${new Date(endDate).toLocaleDateString()}.`;
-
-  return await createBillingNotification(
-    userId,
-    "subscription_cancelled",
-    title,
-    message,
-    { planName, endDate },
-  );
-}
-
-// Send subscription renewed notification
-export async function sendSubscriptionRenewedNotification(
-  userId: string,
-  planName: string,
-  amount: number,
-  nextBillingDate: string,
-) {
-  const title = "Subscription Renewed";
-  const message = `Your ${planName} subscription has been successfully renewed. You have been charged $${amount.toFixed(2)}. Your next billing date is ${new Date(nextBillingDate).toLocaleDateString()}.`;
-
-  return await createBillingNotification(
-    userId,
-    "subscription_renewed",
-    title,
-    message,
-    { planName, amount, nextBillingDate },
-  );
-}
-
-// Send subscription expiring notification
-export async function sendSubscriptionExpiringNotification(
-  userId: string,
-  planName: string,
-  expirationDate: string,
-  amount: number,
-) {
-  const title = "Subscription Expiring Soon";
-  const message = `Your ${planName} subscription is expiring on ${new Date(expirationDate).toLocaleDateString()}. You will be charged $${amount.toFixed(2)} to renew your subscription.`;
-
-  return await createBillingNotification(
-    userId,
-    "subscription_expiring",
-    title,
-    message,
-    { planName, expirationDate, amount },
-  );
-}
-
-// Send payment success notification
-export async function sendPaymentSuccessNotification(
-  userId: string,
-  amount: number,
-  planName: string,
-  transactionId: string,
-) {
-  const title = "Payment Successful";
-  const message = `Your payment of $${amount.toFixed(2)} for ${planName} has been processed successfully. Transaction ID: ${transactionId}`;
-
-  return await createBillingNotification(
-    userId,
-    "payment_success",
-    title,
-    message,
-    { amount, planName, transactionId },
-  );
-}
-
-// Send payment failed notification
-export async function sendPaymentFailedNotification(
-  userId: string,
-  amount: number,
-  planName: string,
-  errorMessage: string,
-) {
-  const title = "Payment Failed";
-  const message = `Your payment of $${amount.toFixed(2)} for ${planName} has failed. Error: ${errorMessage}. Please update your payment method.`;
-
-  return await createBillingNotification(
-    userId,
-    "payment_failed",
-    title,
-    message,
-    { amount, planName, errorMessage },
-  );
-}
-
-// Send payment refunded notification
-export async function sendPaymentRefundedNotification(
-  userId: string,
-  amount: number,
-  planName: string,
-  transactionId: string,
-) {
-  const title = "Payment Refunded";
-  const message = `Your payment of $${amount.toFixed(2)} for ${planName} has been refunded. Transaction ID: ${transactionId}. The refund should appear in your account within 5-10 business days.`;
-
-  return await createBillingNotification(
-    userId,
-    "payment_refunded",
-    title,
-    message,
-    { amount, planName, transactionId },
-  );
-}
-
-// Send invoice available notification
-export async function sendInvoiceAvailableNotification(
-  userId: string,
-  invoiceId: string,
-  amount: number,
-  dueDate: string,
-  downloadUrl: string,
-) {
-  const title = "Invoice Available";
-  const message = `Your invoice #${invoiceId} for $${amount.toFixed(2)} is now available. Due date: ${new Date(dueDate).toLocaleDateString()}.`;
-
-  return await createBillingNotification(
-    userId,
-    "invoice_available",
-    title,
-    message,
-    { invoiceId, amount, dueDate, downloadUrl },
-  );
-}

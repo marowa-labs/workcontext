@@ -22,7 +22,6 @@ import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Link from "@tiptap/extension-link";
 import { CalloutBlockExtension } from "../extensions/CalloutBlockExtension";
 import { QuoteBlockExtension } from "../extensions/QuoteBlockExtension";
-import { PricingTableExtension } from "../extensions/PricingTableExtension";
 import { VisualElementExtension } from "../extensions/VisualElementExtension";
 import { AuthorBlockExtension } from "../extensions/AuthorBlockExtension";
 import { AuthorExtension } from "../extensions/AuthorExtension";
@@ -52,7 +51,6 @@ const tipTapExtensions = [
   Link,
   CalloutBlockExtension,
   QuoteBlockExtension,
-  PricingTableExtension,
   VisualElementExtension,
   AuthorBlockExtension,
   AuthorExtension,

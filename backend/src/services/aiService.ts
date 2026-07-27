@@ -8,7 +8,6 @@ import { createNotification } from "./notificationService";
 import { aiPerformanceMonitor } from "../monitoring/aiPerformance";
 import { SearchService } from "./searchService";
 import { BYOKService } from "./byokService";
-import { SubscriptionService, plans } from "./subscriptionService";
 import { AIPerformanceMetric, AIUsage } from "@prisma/client";
 
 // OpenRouter client (lazy initialized) - keyed by API key
@@ -1314,15 +1313,6 @@ Provide a helpful response.`;
       metadataDetails: metadata,
     });
 
-    // Check if user can perform this action
-    const canPerform = await SubscriptionService.canPerformAction(
-      userId,
-      "ai_chat_message",
-    );
-    if (!canPerform.allowed) {
-      throw new Error(canPerform.reason || "AI chat message limit reached");
-    }
-
     // Track AI usage
     await this.trackAIUsage(userId, "chat_message");
 
@@ -1331,12 +1321,6 @@ Provide a helpful response.`;
       where: { id: sessionId },
       include: { project: true },
     });
-
-    // Get user's subscription plan
-    const subscription = await prisma.subscription.findUnique({
-      where: { user_id: userId },
-    });
-    const planId = subscription?.plan || "free";
 
     // Get user's preferred model and AI preferences
     const user: any = await prisma.user.findUnique({
@@ -2082,24 +2066,8 @@ ${formattedResults}
       metadataDetails: metadata, // Log metadata details for debugging
     });
 
-    // Check if user can perform this action
-    const canPerform = await SubscriptionService.canPerformAction(
-      userId,
-      "ai_chat_message",
-    );
-    if (!canPerform.allowed) {
-      throw new Error(canPerform.reason || "AI chat message limit reached");
-    }
-
     // Track AI usage
     await this.trackAIUsage(userId, "chat_message");
-
-    // Get the appropriate model for the user based on optimization
-    // Get user's subscription plan
-    const subscription = await prisma.subscription.findUnique({
-      where: { user_id: userId },
-    });
-    const planId = subscription?.plan || "free";
 
     // Get user's preferred model and AI preferences
     const user: any = await prisma.user.findUnique({
@@ -2896,14 +2864,6 @@ ${formattedResults}
       if (!isAutomatic) {
         await this.trackAIUsage(userId, "autocomplete");
       }
-
-      // Get user's subscription to determine model
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
-
-      const planId = subscription?.plan || "free";
-      const plan = plans[planId as keyof typeof plans];
 
       // Determine model — use user's preferred model, or fall back to any available model
       const userRecord: any = await prisma.user.findUnique({

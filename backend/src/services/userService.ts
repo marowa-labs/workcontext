@@ -30,35 +30,6 @@ export class UserService {
     }
   }
 
-  // Get user's subscription info
-  static async getUserSubscription(userId: string) {
-    try {
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
-
-      // If no subscription found, return default free plan
-      if (!subscription) {
-        return {
-          user_id: userId,
-          plan: "free",
-          status: "active",
-          created_at: new Date().toISOString(),
-        };
-      }
-
-      return subscription;
-    } catch (error) {
-      // Return default free plan on error
-      return {
-        user_id: userId,
-        plan: "free",
-        status: "active",
-        created_at: new Date().toISOString(),
-      };
-    }
-  }
-
   // Get user's AI usage
   static async getUserAIUsage(userId: string) {
     try {

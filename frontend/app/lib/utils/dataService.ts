@@ -12,13 +12,6 @@ interface ExportOptions {
   };
 }
 
-interface BackupSettings {
-  enabled: boolean;
-  frequency: string;
-  destination: string;
-  lastBackup: string | null;
-}
-
 interface StorageInfo {
   used: number;
   limit: number;
@@ -290,66 +283,6 @@ class DataService {
     } catch (error) {
       console.error("Error converting to CSV:", error);
       return "Error generating CSV export";
-    }
-  }
-
-  // Get backup settings
-  static async getBackupSettings(): Promise<BackupSettings> {
-    try {
-      const response = await apiClient.get("/api/backup/schedule");
-      // Fix: Check the correct response structure
-      if (response && response.success) {
-        // The backend returns it in `schedule`, map it to `backupSettings` for frontend code compatibility or just return it.
-        // Looking at DataService struct, it expects: { enabled, frequency, destination, lastBackup }
-        // The backend `schedule` has: { enabled, frequency, time, retention_count, destination }
-        // `lastBackup` might not be in `schedule`.
-        return response.schedule || response.backupSettings;
-      } else {
-        throw new Error(
-          (response && response.message) || "Failed to fetch backup settings",
-        );
-      }
-    } catch (error: any) {
-      console.error("Error fetching backup settings:", error);
-      throw error;
-    }
-  }
-
-  // Update backup settings
-  static async updateBackupSettings(settings: Partial<BackupSettings>) {
-    try {
-      const response = await apiClient.put("/api/backup/schedule", settings);
-      // Fix: Check the correct response structure
-      if (response && response.success) {
-        return response;
-      } else {
-        throw new Error(
-          (response && response.message) || "Failed to update backup settings",
-        );
-      }
-    } catch (error: any) {
-      console.error("Error updating backup settings:", error);
-      throw error;
-    }
-  }
-
-  // Trigger manual backup
-  static async triggerBackup(options?: { destination?: string }) {
-    try {
-      const response = await apiClient.post("/api/backup", {
-        destination: options?.destination || "WorkContext",
-      });
-      // Fix: Check the correct response structure
-      if (response && response.success) {
-        return response;
-      } else {
-        throw new Error(
-          (response && response.message) || "Failed to trigger backup",
-        );
-      }
-    } catch (error: any) {
-      console.error("Error triggering backup:", error);
-      throw error;
     }
   }
 

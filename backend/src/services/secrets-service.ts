@@ -240,53 +240,6 @@ export class SecretsService {
     return await this.getSecret("GOOGLE_API_KEY");
   }
 
-  // Get LemonSqueezy configuration
-  static async getLemonSqueezyConfig(): Promise<{
-    storeId: string | null;
-    webhookSecret: string | null;
-    studentProProductId: string | null;
-    studentProVariantId: string | null;
-    researcherProductId: string | null;
-    researcherVariantId: string | null;
-    onetimeProductId: string | null;
-    onetimeVariantId: string | null;
-    institutionalProductId: string | null;
-    institutionalVariantId: string | null;
-  }> {
-    const config = {
-      storeId: await this.getSecret("LEMONSQUEEZY_STORE_ID"),
-      webhookSecret: await this.getSecret("LEMONSQUEEZY_WEBHOOK_SECRET"),
-      studentProProductId: await this.getSecret(
-        "LEMONSQUEEZY_STUDENT_PRO_PRODUCT_ID",
-      ),
-      studentProVariantId: await this.getSecret(
-        "LEMONSQUEEZY_STUDENT_PRO_VARIANT_ID",
-      ),
-      researcherProductId: await this.getSecret(
-        "LEMONSQUEEZY_RESEARCHER_PRODUCT_ID",
-      ),
-      researcherVariantId: await this.getSecret(
-        "LEMONSQUEEZY_RESEARCHER_VARIANT_ID",
-      ),
-      onetimeProductId: await this.getSecret("LEMONSQUEEZY_ONETIME_PRODUCT_ID"),
-      onetimeVariantId: await this.getSecret("LEMONSQUEEZY_ONETIME_VARIANT_ID"),
-      institutionalProductId: await this.getSecret(
-        "LEMONSQUEEZY_INSTITUTIONAL_PRODUCT_ID",
-      ),
-      institutionalVariantId: await this.getSecret(
-        "LEMONSQUEEZY_INSTITUTIONAL_VARIANT_ID",
-      ),
-    };
-
-    if (!config.storeId || !config.webhookSecret) {
-      logger.error(
-        "LemonSqueezy configuration not fully set - billing features will fail",
-      );
-    }
-
-    return config;
-  }
-
   // Get token encryption key
   static async getTokenEncryptionKey(): Promise<string> {
     return (await this.getSecret("TOKEN_ENCRYPTION_KEY")) || "";
@@ -295,19 +248,6 @@ export class SecretsService {
   // Get base URL
   static async getBaseUrl(): Promise<string> {
     return (await this.getSecret("BASE_URL")) || "http://localhost:3001";
-  }
-
-  // Get LemonSqueezy configuration values
-  static async getLemonsqueezyApiKey(): Promise<string | null> {
-    return this.getSecret("LEMONSQUEEZY_API_KEY");
-  }
-
-  static async getLemonsqueezyStoreId(): Promise<string | null> {
-    return this.getSecret("LEMONSQUEEZY_STORE_ID");
-  }
-
-  static async getLemonsqueezyWebhookSecret(): Promise<string | null> {
-    return this.getSecret("LEMONSQUEEZY_WEBHOOK_SECRET");
   }
 
   // Get Supabase configuration values

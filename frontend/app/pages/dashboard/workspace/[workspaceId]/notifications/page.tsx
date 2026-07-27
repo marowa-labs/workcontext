@@ -67,7 +67,7 @@ function getIcon(type: string) {
     ].includes(type)
   )
     return <Zap className={cls} />;
-  if (["security_alert", "payment_failed"].includes(type))
+  if (["security_alert"].includes(type))
     return <AlertCircle className={cls} />;
   return <Bell className={cls} />;
 }
@@ -104,7 +104,7 @@ function getIconBg(type: string) {
     ].includes(type)
   )
     return "bg-cyan-100 text-cyan-600";
-  if (["security_alert", "payment_failed"].includes(type))
+  if (["security_alert"].includes(type))
     return "bg-red-100 text-red-600";
   return "bg-slate-100 text-slate-500";
 }

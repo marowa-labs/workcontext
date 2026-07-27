@@ -7,11 +7,6 @@ interface Config {
     anonKey: string | null;
     serviceRoleKey: string | null;
   };
-  lemonsqueezy: {
-    apiKey: string | null;
-    storeId: string | null;
-    webhookSecret: string | null;
-  };
   app: {
     url: string;
     environment: string;
@@ -27,13 +22,6 @@ export const config: Config = {
     url: null,
     anonKey: null,
     serviceRoleKey: null,
-  },
-
-  // LemonSqueezy for payments
-  lemonsqueezy: {
-    apiKey: null,
-    storeId: null,
-    webhookSecret: null,
   },
 
   // Application settings
@@ -60,12 +48,6 @@ async function initializeConfig() {
   config.supabase.serviceRoleKey =
     await SecretsService.getSupabaseServiceRoleKey();
 
-  // LemonSqueezy for payments
-  config.lemonsqueezy.apiKey = await SecretsService.getLemonsqueezyApiKey();
-  config.lemonsqueezy.storeId = await SecretsService.getLemonsqueezyStoreId();
-  config.lemonsqueezy.webhookSecret =
-    await SecretsService.getLemonsqueezyWebhookSecret();
-
   // Application settings
   config.app.url =
     (await SecretsService.getAppUrl()) ||
@@ -77,16 +59,6 @@ async function initializeConfig() {
 
 // Initialize the configuration
 initializeConfig();
-
-console.log("Environment configuration loaded:");
-console.log("LemonSqueezy config:", {
-  hasApiKey: !!config.lemonsqueezy.apiKey,
-  hasStoreId: !!config.lemonsqueezy.storeId,
-  hasWebhookSecret: !!config.lemonsqueezy.webhookSecret,
-  apiKeyLength: config.lemonsqueezy.apiKey?.length,
-  storeId: config.lemonsqueezy.storeId,
-  webhookSecret: config.lemonsqueezy.webhookSecret ? "SET" : "NOT_SET",
-});
 
 // Validate required environment variables
 export async function validateEnv() {

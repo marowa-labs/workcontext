@@ -135,5 +135,8 @@
     "@tiptap/core": "^3.19.0",
     "@tiptap/extension-collaboration": "3.19.0",
     "@tiptap/extension-collaboration-cursor": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "lightningcss-win32-x64-msvc": "^1.33.0"
   }
 }

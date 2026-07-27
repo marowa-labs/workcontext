@@ -1,7 +1,6 @@
 import { prisma } from "../lib/prisma";
 import logger from "../monitoring/logger";
 import { SupabaseStorageService } from "./supabaseStorageService";
-import { SubscriptionService } from "./subscriptionService";
 import * as archiver from "archiver";
 import { SecretsService } from "./secrets-service";
 
@@ -64,15 +63,6 @@ interface StorageBreakdown {
         createdAt: string;
       }>;
     };
-    backups: {
-      size: number;
-      count: number;
-      details: Array<{
-        id: string;
-        size: number;
-        createdAt: string;
-      }>;
-    };
   };
 }
 
@@ -80,7 +70,6 @@ export class StorageService {
   // Get user's storage information using actual Supabase Storage usage
   static async getUserStorageInfo(userId: string): Promise<StorageInfo> {
     try {
-      // Get user's storage limit from subscription
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -302,59 +291,6 @@ export class StorageService {
       };
     } catch (error) {
       logger.error("Error cleaning up old drafts:", error);
-      return {
-        count: 0,
-        freedSpace: 0,
-      };
-    }
-  }
-
-  // Clean up old backups
-  static async cleanupOldBackups(userId: string): Promise<CleanupResult> {
-    try {
-      // Find old backups in the database (older than 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      const oldBackups = await prisma.backup.findMany({
-        where: {
-          user_id: userId,
-          created_at: {
-            lt: sevenDaysAgo,
-          },
-        },
-      });
-
-      let freedSpace = 0;
-
-      // Delete each backup file from Supabase Storage
-      for (const backup of oldBackups) {
-        if (backup.storage_path) {
-          const deleted = await SupabaseStorageService.deleteFile(
-            backup.storage_path,
-          );
-          if (deleted) {
-            freedSpace += (backup.size || 0) / (1024 * 1024 * 1024); // Convert to GB
-          }
-        }
-      }
-
-      // Delete records from database
-      await prisma.backup.deleteMany({
-        where: {
-          user_id: userId,
-          created_at: {
-            lt: sevenDaysAgo,
-          },
-        },
-      });
-
-      return {
-        count: oldBackups.length,
-        freedSpace,
-      };
-    } catch (error) {
-      logger.error("Error cleaning up old backups:", error);
       return {
         count: 0,
         freedSpace: 0,
@@ -705,20 +641,7 @@ export class StorageService {
       });
 
       // Get backups for details
-      const backups = await prisma.backup.findMany({
-        where: {
-          user_id: userId,
-        },
-        select: {
-          id: true,
-          size: true,
-          created_at: true,
-        },
-        orderBy: {
-          created_at: "desc",
-        },
-        take: 50,
-      });
+
 
       return {
         totalSize: storageBreakdown.totalSize,
@@ -775,19 +698,8 @@ export class StorageService {
               size: (exportItem.file_size || 0) / (1024 * 1024 * 1024), // Convert to GB
               createdAt: exportItem.created_at.toISOString(),
             })),
-          },
-          backups: {
-            size: storageBreakdown.files
-              .filter((file) => file.name.includes("backup"))
-              .reduce((sum, file) => sum + file.size / (1024 * 1024 * 1024), 0),
-            count: backups.length,
-            details: backups.map((backup: any) => ({
-              id: backup.id,
-              size: (backup.size || 0) / (1024 * 1024 * 1024), // Convert to GB
-              createdAt: backup.created_at.toISOString(),
-            })),
-          },
         },
+      },
       };
     } catch (error) {
       logger.error("Error getting detailed storage breakdown:", error);
@@ -801,12 +713,6 @@ export class StorageService {
       // Get user's current storage usage
       const storageInfo = await this.getUserStorageInfo(userId);
 
-      // Get user's subscription info
-      const subscription = await prisma.subscription.findUnique({
-        where: { user_id: userId },
-      });
-
-      const planId = subscription?.plan || "free";
       const storageLimit = storageInfo.limit;
       const usagePercentage = (storageInfo.used / storageLimit) * 100;
 
@@ -840,24 +746,21 @@ export class StorageService {
     }
   }
 
-  // Update user storage limit based on subscription
+  // Update user storage limit
   static async updateUserStorageLimit(userId: string): Promise<void> {
     try {
-      // Get user's current plan
-      const planInfo = await SubscriptionService.getUserPlanInfo(userId);
-      const newStorageLimit = planInfo.usage.storage.limit;
+      const defaultStorageLimit = 0.1;
 
-      // Update user's storage limit in database
       await prisma.user.update({
         where: { id: userId },
         data: {
-          storage_limit: newStorageLimit,
+          storage_limit: defaultStorageLimit,
         },
       });
 
       logger.info("Updated user storage limit", {
         userId,
-        newLimit: newStorageLimit,
+        newLimit: defaultStorageLimit,
       });
     } catch (error) {
       logger.error("Error updating user storage limit:", error);
@@ -879,7 +782,7 @@ export class StorageService {
       // Create a notification for the user using an existing notification type
       await createNotification(
         userId,
-        "backup_available", // Using backup_available as it's related to storage
+        "document_exported",
         "Storage Limit Approaching",
         `You are using ${usagePercentage.toFixed(1)}% of your storage limit (${usedStorage.toFixed(2)} GB / ${storageLimit} GB). Consider cleaning up old files or upgrading your plan.`,
         {

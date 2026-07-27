@@ -462,7 +462,7 @@ function FAQTeaser() {
     {
       question: "Do you offer phone support?",
       answer:
-        "Phone support is available for Researcher plan subscribers. All other users can reach us via email, and we're happy to schedule a call if needed.",
+        "We're happy to schedule a call with you. Reach us via email and we'll arrange a time to discuss your needs.",
     },
     {
       question: "Can you help with institutional partnerships?",

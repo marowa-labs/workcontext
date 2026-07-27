@@ -31,20 +31,6 @@ export interface NotificationSettings {
   ai_features_ai_limit: boolean;
   ai_features_new_features: boolean;
   ai_features_weekly_summary: boolean;
-  account_billing_enabled: boolean;
-  account_billing_payment_success: boolean;
-  account_billing_payment_failed: boolean;
-  account_billing_subscription_renewed: boolean;
-  account_billing_subscription_expiring: boolean;
-  account_billing_security_alerts: boolean;
-  // Additional billing notification settings
-  account_billing_subscription_created: boolean;
-  account_billing_subscription_updated: boolean;
-  account_billing_subscription_cancelled: boolean;
-  account_billing_subscription_resumed: boolean;
-  account_billing_subscription_expired: boolean;
-  account_billing_payment_refunded: boolean;
-  account_billing_invoice_available: boolean;
   product_updates_enabled: boolean;
   product_updates_new_features: boolean;
   product_updates_tips: boolean;
@@ -55,12 +41,7 @@ export interface NotificationSettings {
   writing_progress_document_deadline: boolean;
   writing_progress_writing_streak: boolean;
   writing_progress_goal_achieved: boolean;
-  research_updates_enabled: boolean;
-  research_updates_ai_suggestion: boolean;
-  research_updates_citation_reminder: boolean;
-  research_updates_research_update: boolean;
   document_management_enabled: boolean;
-  document_management_backup_available: boolean;
   document_management_template_update: boolean;
   document_management_document_version: boolean;
   collaboration_request_enabled: boolean;
@@ -110,11 +91,6 @@ type NotificationType =
   | "ai_limit"
   | "new_feature"
   | "weekly_summary"
-  | "payment_success"
-  | "payment_failed"
-  | "subscription_renewed"
-  | "subscription_expiring"
-  | "security_alert"
   | "new_feature_announcement"
   | "product_tip"
   | "newsletter"
@@ -125,7 +101,6 @@ type NotificationType =
   | "goal_achieved"
   | "ai_suggestion"
   | "citation_reminder"
-  | "backup_available"
   | "collaborator_request"
   | "document_version"
   | "research_update"
@@ -166,9 +141,6 @@ class NotificationService {
   private static reconnectDelay: number = 1000;
   private static isAuthenticated: boolean = false;
   private static isConnecting: boolean = false;
-
-  // User subscription plan
-  private static userPlan: string | null = null;
 
   // Connect to notification WebSocket server
   static async connectWebSocket() {
@@ -802,128 +774,8 @@ class NotificationService {
     }
   }
 
-  // Set user's subscription plan
-  static setUserPlan(plan: string) {
-    this.userPlan = plan;
-  }
-
-  // Check if user can receive a notification based on their subscription
-  static canUserReceiveNotification(type: NotificationType): boolean {
-    // If we don't know the user's plan, allow all notifications
-    if (!this.userPlan) {
-      return true;
-    }
-
-    // Define which notification types require which subscription features
-    const notificationRequirements: Record<NotificationType, string | null> = {
-      // Collaboration notifications - require collaboration features
-      comment: "collaboration",
-      mention: "collaboration",
-      document_change: "collaboration",
-      document_shared: "collaboration",
-      new_collaborator: "collaboration",
-      permission_change: "collaboration",
-      comment_resolved: "collaboration",
-      real_time_edit: "collaboration",
-      collaboration_invite: "collaboration",
-      collaboration_invite_accepted: "collaboration",
-      collaboration_invite_declined: "collaboration",
-      collaboration_removed: "collaboration",
-      collaboration_session_started: "collaboration",
-      collaboration_session_ended: "collaboration",
-      editor_activity: "collaboration",
-      comment_added: "collaboration",
-
-      // AI notifications - available to all users but with limits
-      plagiarism_complete: null,
-      ai_limit: null,
-      ai_suggestion: null,
-
-      // Account/Billing notifications - available to all users
-      payment_success: null,
-      payment_failed: null,
-      subscription_renewed: null,
-      subscription_expiring: null,
-      security_alert: null,
-
-      // Product update notifications - available to all users
-      new_feature: null,
-      weekly_summary: null,
-      new_feature_announcement: null,
-      product_tip: null,
-      newsletter: null,
-      special_offer: null,
-
-      // Writing progress notifications - available to all users
-      document_deadline: null,
-      writing_streak: null,
-      goal_achieved: null,
-
-      // Research notifications
-      citation_reminder: null, // Available to all users
-      research_update: "research",
-
-      // Document management notifications - available to all users
-      backup_available: null,
-      document_version: null,
-      document_exported: null,
-
-      // Workspace & editor notifications
-      workspace_activity: null,
-      editor_active: null,
-      document_edited: null,
-
-      // Task notifications - available to all users
-      task_assigned: null,
-      task_status_changed: null,
-      task_priority_changed: null,
-      task_deleted: null,
-      task_created: null,
-      task_completed: null,
-      task_overdue: null,
-      task_due_soon: null,
-
-      // Other notifications
-      collaborator_request: "collaboration",
-      template_update: null,
-    };
-
-    // Get the required feature for this notification type
-    const requiredFeature = notificationRequirements[type];
-
-    // If no feature is required, user can receive the notification
-    if (!requiredFeature) {
-      return true;
-    }
-
-    // Check if user's plan supports the required feature
-    switch (requiredFeature) {
-      case "collaboration":
-        // Collaboration features require at least Student plan
-        return this.userPlan === "student" || this.userPlan === "researcher";
-
-      case "research":
-        // Research features require at least Student plan
-        return this.userPlan === "student" || this.userPlan === "researcher";
-
-      // Default case - if we don't know the feature, allow the notification
-      default:
-        return true;
-    }
-  }
-
-  // Handle incoming notifications and filter based on subscription
+  // Handle incoming notifications
   private static handleNotification(notification: Notification) {
-    // Check if user can receive this notification based on their subscription
-    if (
-      !this.canUserReceiveNotification(notification.type as NotificationType)
-    ) {
-      console.log(
-        `User cannot receive ${notification.type} notification due to subscription limitations`,
-      );
-      return;
-    }
-
     // Emit notification event
     this.emit("notification", notification);
   }

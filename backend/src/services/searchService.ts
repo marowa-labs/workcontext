@@ -1,7 +1,6 @@
 import { multiAIService } from "./MultiAIService";
 import logger from "../monitoring/logger";
 import { prisma } from "../lib/prisma";
-import { SubscriptionService } from "./subscriptionService";
 import SecretsService from "./secrets-service";
 
 // Use node-fetch for HTTP requests
@@ -98,15 +97,6 @@ export class SearchService {
     maxResults: number = 10,
   ): Promise<SearchResult[]> {
     try {
-      // Check if user can perform web search based on their subscription
-      const canPerform = await SubscriptionService.canPerformAction(
-        userId,
-        "ai_web_search",
-      );
-      if (!canPerform.allowed) {
-        throw new Error(canPerform.reason || "Web search limit reached");
-      }
-
       // Track search usage
       await this.trackSearchUsage(userId, "web");
 
@@ -187,13 +177,6 @@ export class SearchService {
     offset: number = 0,
   ): Promise<any[]> {
     try {
-      // Check subscription
-      const canPerform = await SubscriptionService.canPerformAction(
-        userId,
-        "ai_web_search", // Reuse web search quota for now
-      );
-      if (!canPerform.allowed) return [];
-
       const serpApiKey = await SecretsService.getSerpApiKey();
       if (!serpApiKey) return [];
 
@@ -237,15 +220,6 @@ export class SearchService {
     sources: string[],
   ): Promise<DeepSearchResult[]> {
     try {
-      // Check if user can perform deep search based on their subscription
-      const canPerform = await SubscriptionService.canPerformAction(
-        userId,
-        "ai_deep_search",
-      );
-      if (!canPerform.allowed) {
-        throw new Error(canPerform.reason || "Deep search limit reached");
-      }
-
       // Track search usage
       await this.trackSearchUsage(userId, "deep");
 

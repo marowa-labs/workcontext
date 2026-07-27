@@ -24,22 +24,6 @@ export interface NotificationSettingsData {
   ai_features_new_features?: boolean;
   ai_features_weekly_summary?: boolean;
 
-  // Account & billing settings
-  account_billing_enabled?: boolean;
-  account_billing_payment_success?: boolean;
-  account_billing_payment_failed?: boolean;
-  account_billing_subscription_renewed?: boolean;
-  account_billing_subscription_expiring?: boolean;
-  account_billing_security_alerts?: boolean;
-  // Additional billing notification settings
-  account_billing_subscription_created?: boolean;
-  account_billing_subscription_updated?: boolean;
-  account_billing_subscription_cancelled?: boolean;
-  account_billing_subscription_resumed?: boolean;
-  account_billing_subscription_expired?: boolean;
-  account_billing_payment_refunded?: boolean;
-  account_billing_invoice_available?: boolean;
-
   // Product updates settings
   product_updates_enabled?: boolean;
   product_updates_new_features?: boolean;
@@ -53,15 +37,8 @@ export interface NotificationSettingsData {
   writing_progress_writing_streak?: boolean;
   writing_progress_goal_achieved?: boolean;
 
-  // Research updates settings
-  research_updates_enabled?: boolean;
-  research_updates_ai_suggestion?: boolean;
-  research_updates_citation_reminder?: boolean;
-  research_updates_research_update?: boolean;
-
   // Document management settings
   document_management_enabled?: boolean;
-  document_management_backup_available?: boolean;
   document_management_template_update?: boolean;
   document_management_document_version?: boolean;
 
@@ -115,22 +92,6 @@ const DEFAULT_SETTINGS: NotificationSettingsData = {
   ai_features_new_features: true,
   ai_features_weekly_summary: false,
 
-  // Account & billing settings
-  account_billing_enabled: true,
-  account_billing_payment_success: true,
-  account_billing_payment_failed: true,
-  account_billing_subscription_renewed: true,
-  account_billing_subscription_expiring: true,
-  account_billing_security_alerts: true,
-  // Additional billing notification settings
-  account_billing_subscription_created: true,
-  account_billing_subscription_updated: true,
-  account_billing_subscription_cancelled: true,
-  account_billing_subscription_resumed: true,
-  account_billing_subscription_expired: true,
-  account_billing_payment_refunded: true,
-  account_billing_invoice_available: true,
-
   // Product updates settings
   product_updates_enabled: true,
   product_updates_new_features: true,
@@ -144,15 +105,8 @@ const DEFAULT_SETTINGS: NotificationSettingsData = {
   writing_progress_writing_streak: true,
   writing_progress_goal_achieved: true,
 
-  // Research updates settings
-  research_updates_enabled: true,
-  research_updates_ai_suggestion: true,
-  research_updates_citation_reminder: true,
-  research_updates_research_update: true,
-
   // Document management settings
   document_management_enabled: true,
-  document_management_backup_available: true,
   document_management_template_update: true,
   document_management_document_version: true,
 
@@ -313,20 +267,6 @@ export class NotificationSettingsService {
       "ai_features_ai_limit",
       "ai_features_new_features",
       "ai_features_weekly_summary",
-      "account_billing_enabled",
-      "account_billing_payment_success",
-      "account_billing_payment_failed",
-      "account_billing_subscription_renewed",
-      "account_billing_subscription_expiring",
-      "account_billing_security_alerts",
-      // Additional billing notification settings
-      "account_billing_subscription_created",
-      "account_billing_subscription_updated",
-      "account_billing_subscription_cancelled",
-      "account_billing_subscription_resumed",
-      "account_billing_subscription_expired",
-      "account_billing_payment_refunded",
-      "account_billing_invoice_available",
       "product_updates_enabled",
       "product_updates_new_features",
       "product_updates_tips",
@@ -336,12 +276,7 @@ export class NotificationSettingsService {
       "writing_progress_document_deadline",
       "writing_progress_writing_streak",
       "writing_progress_goal_achieved",
-      "research_updates_enabled",
-      "research_updates_ai_suggestion",
-      "research_updates_citation_reminder",
-      "research_updates_research_update",
       "document_management_enabled",
-      "document_management_backup_available",
       "document_management_template_update",
       "document_management_document_version",
       "collaboration_request_enabled",
@@ -420,217 +355,4 @@ export class NotificationSettingsService {
     return timeRegex.test(time);
   }
 
-  // Get comprehensive billing notification settings
-  static async getBillingNotificationSettings(userId: string) {
-    try {
-      const settings = await this.getUserNotificationSettings(userId);
-
-      return {
-        enabled: settings.account_billing_enabled,
-        paymentSuccess: settings.account_billing_payment_success,
-        paymentFailed: settings.account_billing_payment_failed,
-        subscriptionRenewed: settings.account_billing_subscription_renewed,
-        subscriptionExpiring: settings.account_billing_subscription_expiring,
-        securityAlerts: settings.account_billing_security_alerts,
-        // Additional billing notification settings
-        subscriptionCreated: settings.account_billing_subscription_created,
-        subscriptionUpdated: settings.account_billing_subscription_updated,
-        subscriptionCancelled: settings.account_billing_subscription_cancelled,
-        subscriptionResumed: settings.account_billing_subscription_resumed,
-        subscriptionExpired: settings.account_billing_subscription_expired,
-        paymentRefunded: settings.account_billing_payment_refunded,
-        invoiceAvailable: settings.account_billing_invoice_available,
-      };
-    } catch (error) {
-      logger.error("Error getting billing notification settings", {
-        error,
-        userId,
-      });
-      throw new Error(
-        `Failed to get billing notification settings: ${(error as Error).message}`
-      );
-    }
-  }
-
-  // Update billing notification settings
-  static async updateBillingNotificationSettings(
-    userId: string,
-    billingSettings: {
-      enabled?: boolean;
-      paymentSuccess?: boolean;
-      paymentFailed?: boolean;
-      subscriptionRenewed?: boolean;
-      subscriptionExpiring?: boolean;
-      securityAlerts?: boolean;
-      // Additional billing notification settings
-      subscriptionCreated?: boolean;
-      subscriptionUpdated?: boolean;
-      subscriptionCancelled?: boolean;
-      subscriptionResumed?: boolean;
-      subscriptionExpired?: boolean;
-      paymentRefunded?: boolean;
-      invoiceAvailable?: boolean;
-    }
-  ) {
-    try {
-      logger.info("Updating billing notification settings", {
-        userId,
-        billingSettings,
-      });
-
-      // Prepare settings data for update
-      const settingsData: NotificationSettingsData = {};
-
-      if (billingSettings.enabled !== undefined) {
-        settingsData.account_billing_enabled = billingSettings.enabled;
-      }
-
-      if (billingSettings.paymentSuccess !== undefined) {
-        settingsData.account_billing_payment_success =
-          billingSettings.paymentSuccess;
-      }
-
-      if (billingSettings.paymentFailed !== undefined) {
-        settingsData.account_billing_payment_failed =
-          billingSettings.paymentFailed;
-      }
-
-      if (billingSettings.subscriptionRenewed !== undefined) {
-        settingsData.account_billing_subscription_renewed =
-          billingSettings.subscriptionRenewed;
-      }
-
-      if (billingSettings.subscriptionExpiring !== undefined) {
-        settingsData.account_billing_subscription_expiring =
-          billingSettings.subscriptionExpiring;
-      }
-
-      if (billingSettings.securityAlerts !== undefined) {
-        settingsData.account_billing_security_alerts =
-          billingSettings.securityAlerts;
-      }
-
-      // Additional billing notification settings
-      if (billingSettings.subscriptionCreated !== undefined) {
-        settingsData.account_billing_subscription_created =
-          billingSettings.subscriptionCreated;
-      }
-
-      if (billingSettings.subscriptionUpdated !== undefined) {
-        settingsData.account_billing_subscription_updated =
-          billingSettings.subscriptionUpdated;
-      }
-
-      if (billingSettings.subscriptionCancelled !== undefined) {
-        settingsData.account_billing_subscription_cancelled =
-          billingSettings.subscriptionCancelled;
-      }
-
-      if (billingSettings.subscriptionResumed !== undefined) {
-        settingsData.account_billing_subscription_resumed =
-          billingSettings.subscriptionResumed;
-      }
-
-      if (billingSettings.subscriptionExpired !== undefined) {
-        settingsData.account_billing_subscription_expired =
-          billingSettings.subscriptionExpired;
-      }
-
-      if (billingSettings.paymentRefunded !== undefined) {
-        settingsData.account_billing_payment_refunded =
-          billingSettings.paymentRefunded;
-      }
-
-      if (billingSettings.invoiceAvailable !== undefined) {
-        settingsData.account_billing_invoice_available =
-          billingSettings.invoiceAvailable;
-      }
-
-      // Update the settings
-      const settings = await this.updateUserNotificationSettings(
-        userId,
-        settingsData
-      );
-
-      logger.info("Billing notification settings updated successfully", {
-        userId,
-      });
-
-      return {
-        enabled: settings.account_billing_enabled,
-        paymentSuccess: settings.account_billing_payment_success,
-        paymentFailed: settings.account_billing_payment_failed,
-        subscriptionRenewed: settings.account_billing_subscription_renewed,
-        subscriptionExpiring: settings.account_billing_subscription_expiring,
-        securityAlerts: settings.account_billing_security_alerts,
-        // Additional billing notification settings
-        subscriptionCreated: settings.account_billing_subscription_created,
-        subscriptionUpdated: settings.account_billing_subscription_updated,
-        subscriptionCancelled: settings.account_billing_subscription_cancelled,
-        subscriptionResumed: settings.account_billing_subscription_resumed,
-        subscriptionExpired: settings.account_billing_subscription_expired,
-        paymentRefunded: settings.account_billing_payment_refunded,
-        invoiceAvailable: settings.account_billing_invoice_available,
-      };
-    } catch (error) {
-      logger.error("Error updating billing notification settings", {
-        error,
-        userId,
-        billingSettings,
-      });
-      throw new Error(
-        `Failed to update billing notification settings: ${(error as Error).message}`
-      );
-    }
-  }
-
-  // Enable all billing notifications
-  static async enableAllBillingNotifications(userId: string) {
-    try {
-      const settings = await this.updateBillingNotificationSettings(userId, {
-        enabled: true,
-        paymentSuccess: true,
-        paymentFailed: true,
-        subscriptionRenewed: true,
-        subscriptionExpiring: true,
-        securityAlerts: true,
-      });
-
-      logger.info("All billing notifications enabled for user", { userId });
-      return settings;
-    } catch (error) {
-      logger.error("Error enabling all billing notifications", {
-        error,
-        userId,
-      });
-      throw new Error(
-        `Failed to enable all billing notifications: ${(error as Error).message}`
-      );
-    }
-  }
-
-  // Disable all billing notifications
-  static async disableAllBillingNotifications(userId: string) {
-    try {
-      const settings = await this.updateBillingNotificationSettings(userId, {
-        enabled: false,
-        paymentSuccess: false,
-        paymentFailed: false,
-        subscriptionRenewed: false,
-        subscriptionExpiring: false,
-        securityAlerts: false,
-      });
-
-      logger.info("All billing notifications disabled for user", { userId });
-      return settings;
-    } catch (error) {
-      logger.error("Error disabling all billing notifications", {
-        error,
-        userId,
-      });
-      throw new Error(
-        `Failed to disable all billing notifications: ${(error as Error).message}`
-      );
-    }
-  }
 }

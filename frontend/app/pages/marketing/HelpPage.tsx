@@ -348,12 +348,6 @@ function DocumentationLinks() {
       icon: "💻",
     },
     {
-      title: "Billing & Plans",
-      description: "Understand our pricing plans and manage your subscription",
-      path: "/docs/billing",
-      icon: "💳",
-    },
-    {
       title: "Troubleshooting",
       description:
         "Solutions to common issues and problems you might encounter",

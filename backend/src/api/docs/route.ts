@@ -4,8 +4,6 @@ import path from "path";
 // Map of documentation paths to file locations
 const docPathMap: Record<string, string> = {
   // Frontend docs (would be in frontend/docs if it existed)
-  "how-to-use-plan-styling":
-    "../../../frontend/docs/how-to-use-plan-styling.md",
   "ui-ux-style-contrast":
     "../../../frontend/docs/ui-ux-style-contrast-implementation.md",
   "ui-ux-upgrade-styling":

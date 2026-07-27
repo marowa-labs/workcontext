@@ -39,10 +39,6 @@ const HIGH_PRIORITY_TYPES = [
   "real_time_edit",
   "plagiarism_complete",
   "ai_limit",
-  "payment_failed",
-  "subscription_expiring",
-  "subscription_cancelled",
-  "subscription_expired",
   "security_alert",
   "document_deadline",
   "ai_suggestion",
@@ -56,25 +52,17 @@ const HIGH_PRIORITY_TYPES = [
   "document_exported",
   "writing_streak",
   "goal_achieved",
-  "invoice_available",
 ];
 
 const MEDIUM_PRIORITY_TYPES = [
   "new_feature",
   "weekly_summary",
-  "payment_success",
-  "subscription_renewed",
   "new_feature_announcement",
   "product_tip",
   "research_update",
   "template_update",
   "collaboration_session_started",
   "collaboration_session_ended",
-  "subscription_created",
-  "subscription_updated",
-  "subscription_resumed",
-  "payment_refunded",
-  "backup_available",
   "document_version",
   "template_created",
   "template_updated",
@@ -356,7 +344,6 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       case "document_version":
       case "document_deadline":
       case "document_exported":
-      case "backup_available":
         return <FileText className="h-4 w-4" />;
       case "new_collaborator":
       case "permission_change":
@@ -375,18 +362,6 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       case "real_time_edit":
       case "editor_activity":
         return <Zap className="h-4 w-4" />;
-      case "payment_success":
-      case "payment_failed":
-      case "subscription_renewed":
-      case "subscription_expiring":
-      case "subscription_created":
-      case "subscription_updated":
-      case "subscription_cancelled":
-      case "subscription_resumed":
-      case "subscription_expired":
-      case "payment_refunded":
-      case "invoice_available":
-        return <CreditCard className="h-4 w-4" />;
       case "security_alert":
         return <AlertCircle className="h-4 w-4" />;
       case "writing_streak":
@@ -448,7 +423,6 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
         "document_version",
         "document_deadline",
         "document_exported",
-        "backup_available",
       ].includes(type)
     )
       return "bg-amber-100 text-amber-600";
@@ -477,22 +451,6 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       ].includes(type)
     )
       return "bg-cyan-100 text-cyan-600";
-    if (
-      [
-        "payment_success",
-        "payment_failed",
-        "subscription_renewed",
-        "subscription_expiring",
-        "subscription_created",
-        "subscription_updated",
-        "subscription_cancelled",
-        "subscription_resumed",
-        "subscription_expired",
-        "payment_refunded",
-        "invoice_available",
-      ].includes(type)
-    )
-      return "bg-green-100 text-green-600";
     if (["security_alert"].includes(type)) return "bg-red-100 text-red-600";
     return "bg-slate-100 text-slate-500";
   };
@@ -1171,9 +1129,6 @@ export function InboxPanel({
       case "new_collaborator":
       case "permission_change":
         return <Users className="h-4 w-4" />;
-      case "payment_success":
-      case "payment_failed":
-        return <CreditCard className="h-4 w-4" />;
       case "security_alert":
         return <AlertCircle className="h-4 w-4" />;
       default:

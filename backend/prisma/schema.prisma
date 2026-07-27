@@ -51,18 +51,16 @@ model User {
   affiliate_ref            String?
   created_at               DateTime                @default(now())
   updated_at               DateTime                @updatedAt
-  preferred_ai_model       String?                 // No default — must be explicitly set based on user's available provider models
+  preferred_ai_model       String?
 
-  // BYOK (Bring Your Own Key) Settings
   byok_enabled             Boolean?                @default(false)
-  byok_provider            String?                 // "google", "anthropic", "openai", "openrouter"
+  byok_provider            String?
   byok_google_key_encrypted String?                @db.Text
   byok_claude_key_encrypted String?                @db.Text
   byok_openai_key_encrypted String?                @db.Text
   byok_openrouter_key_encrypted String?            @db.Text
-  byok_key_version         Int?                    @default(1) // For key rotation tracking
+  byok_key_version         Int?                    @default(1)
 
-  // Cached provider models (fetched from provider APIs when key is saved)
   byok_google_models       Json?
   byok_claude_models       Json?
   byok_openai_models       Json?
@@ -70,7 +68,6 @@ model User {
 
   storage_used             Float?                  @default(0)
   storage_limit            Float?                  @default(5)
-  last_backup              DateTime?
   bio                      String?
   institution              String?
   location                 String?
@@ -86,8 +83,6 @@ model User {
   ai_history               AIHistory[]
   ai_performance_metrics   AIPerformanceMetric[]
   ai_usage                 AIUsage[]
-  backups                  Backup[]
-  backup_schedule          BackupSchedule?
   collaborators            CollaboratorPresence[]
   document_templates       DocumentTemplate[]
   document_versions        DocumentVersion[]
@@ -96,55 +91,43 @@ model User {
   editor_settings          EditorSettings?
   exports                  Export[]
   feedback_comments        FeedbackComment[]
-  invoices                 Invoice[]
   login_history            LoginHistory[]
   notifications            Notification[]
   notification_settings    NotificationSettings?
   otp_code                 OTPCode?
-  payment_methods          PaymentMethod[]
   projects                 Project[]
   push_notification_tokens PushNotificationToken[]
   recycled_items           RecycledItem[]
-  restores                 Restore[]
-  subscriptions            Subscription?
   support_tickets          SupportTicket[]
   task_trackings           TaskTracking[]
-  appearance_settings      UserAppearanceSettings?
   feedback_items           UserFeedback[]
   privacy_settings         UserPrivacySettings?
   sessions                 UserSession[]
-  search_alerts            SearchAlert[]
   audit_logs               AuditLog[]
-  waitlist_entries         WaitlistEntry[]
   pdf_documents            PdfDocument[]
-  notes                    Note[]
-  ai_actions               AIAction[] // AI-executed actions
-  pinned_comments            PinnedComment[]
+  ai_actions               AIAction[]
 
-  // Workspace Relations
   owned_workspaces           Workspace[]           @relation("WorkspaceOwner")
   workspace_memberships      WorkspaceMember[]
   sent_workspace_invitations WorkspaceInvitation[] @relation("WorkspaceInviter")
-  team_chat_messages         TeamChatMessage[]
   assigned_tasks             TaskAssignee[]        @relation("TaskAssignees")
   created_tasks              WorkspaceTask[]       @relation("TaskCreator")
   task_comments              TaskComment[]         @relation("UserTaskComments")
-  time_entries               TaskTimeEntry[] // Time tracking entries
+  time_entries               TaskTimeEntry[]
 }
 
 model Workspace {
   id            String                @id @default(uuid())
   name          String
   description   String?
-  icon          String? // URL or emoji
+  icon          String?
   created_at    DateTime              @default(now())
   updated_at    DateTime              @updatedAt
   owner_id      String
   owner         User                  @relation("WorkspaceOwner", fields: [owner_id], references: [id])
   projects      Project[]
   members       WorkspaceMember[]
-  invitations   WorkspaceInvitation[] // New: pending invitations
-  chat_messages TeamChatMessage[]
+  invitations   WorkspaceInvitation[]
   tasks         WorkspaceTask[]
   labels        WorkspaceLabel[]
   views         WorkspaceView[]
@@ -157,7 +140,7 @@ model WorkspaceView {
   id           String   @id @default(uuid())
   workspace_id String
   name         String
-  filters      Json // e.g., { priority: "high", labels: ["id1"], dateStatus: "overdue" }
+  filters      Json
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
@@ -170,7 +153,7 @@ model WorkspaceMember {
   id           String    @id @default(uuid())
   workspace_id String
   user_id      String
-  role         String    @default("viewer") // "admin", "editor", "viewer"
+  role         String    @default("viewer")
   joined_at    DateTime  @default(now())
   workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
   user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -184,9 +167,9 @@ model WorkspaceInvitation {
   id           String   @id @default(uuid())
   workspace_id String
   email        String
-  role         String   @default("viewer") // "admin", "editor", "viewer"
+  role         String   @default("viewer")
   token        String   @unique @default(uuid())
-  status       String   @default("pending") // "pending", "accepted", "declined", "expired"
+  status       String   @default("pending")
   expires_at   DateTime
   invited_by   String
   created_at   DateTime @default(now())
@@ -200,28 +183,6 @@ model WorkspaceInvitation {
   @@index([email])
   @@index([status])
   @@index([expires_at])
-}
-
-model Note {
-  id            String   @id @default(uuid())
-  user_id       String
-  project_id    String
-  category      String // "audio", "lit_review", "mind_map", "report", "flashcards", "quiz", "data_table", "infographic", "slide_deck", "manual"
-  title         String
-  content       String   @db.Text
-  preview_image String?
-  tags          Json?    @default("[]")
-  metadata      Json? // Category-specific data
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  user    User    @relation(fields: [user_id], references: [id])
-  project Project @relation(fields: [project_id], references: [id])
-
-  @@index([user_id])
-  @@index([project_id])
-  @@index([category])
-  @@index([created_at])
 }
 
 model PushNotificationToken {
@@ -263,10 +224,7 @@ model Project {
   user                User                   @relation(fields: [user_id], references: [id], map: "ProjectToUser")
   template            DocumentTemplate?      @relation(fields: [template_id], references: [id])
   version_schedules   VersionSchedule[]
-  generated_audio     GeneratedAudio?
-  notes               Note[]
-  chat_messages       TeamChatMessage[]
-  tasks               WorkspaceTask[] // Tasks linked to this project
+  tasks               WorkspaceTask[]
 
   @@index([user_id])
 }
@@ -289,7 +247,7 @@ model CollaboratorPresence {
   project_id     String
   user_id        String
   permission     String   @default("view")
-  join_method    String?  @default("workspace_member") // "workspace_member", "link_editor", "direct_invite"
+  join_method    String?  @default("workspace_member")
   last_active_at DateTime @default(now())
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
@@ -377,40 +335,21 @@ model AIUsage {
   total_cost_estimate    Float    @default(0)
   total_tokens_used      Int      @default(0)
 
-  // Per-capability usage counts
   grammar_check_count    Int      @default(0)
   summarization_count    Int      @default(0)
   document_qa_count      Int      @default(0)
   writing_project_count  Int      @default(0)
 
-  // Cost attribution: track BYOK vs system key usage
-  byok_request_count     Int      @default(0) // Requests using user's own API keys
-  system_request_count   Int      @default(0) // Requests using platform system keys
-  byok_cost_estimate     Float    @default(0) // Cost incurred via BYOK keys
-  system_cost_estimate   Float    @default(0) // Cost incurred via system keys
+  byok_request_count     Int      @default(0)
+  system_request_count   Int      @default(0)
+  byok_cost_estimate     Float    @default(0)
+  system_cost_estimate   Float    @default(0)
 
   user                   User     @relation(fields: [user_id], references: [id])
 
   @@unique([user_id, month, year])
   @@index([user_id])
   @@index([month, year])
-}
-
-model Subscription {
-  id                           String    @id @default(uuid())
-  user_id                      String    @unique
-  plan                         String    @default("free")
-  status                       String    @default("active")
-  lemonsqueezy_subscription_id String?
-  current_period_end           DateTime?
-  created_at                   DateTime  @default(now())
-  updated_at                   DateTime  @updatedAt
-  user                         User      @relation(fields: [user_id], references: [id], map: "SubscriptionToUser")
-
-  @@index([user_id])
-  @@index([plan])
-  @@index([status])
-  @@index([lemonsqueezy_subscription_id])
 }
 
 model OTPCode {
@@ -467,12 +406,6 @@ model NotificationSettings {
   ai_features_ai_limit                       Boolean  @default(false)
   ai_features_new_features                   Boolean  @default(true)
   ai_features_weekly_summary                 Boolean  @default(false)
-  account_billing_enabled                    Boolean  @default(true)
-  account_billing_payment_success            Boolean  @default(true)
-  account_billing_payment_failed             Boolean  @default(true)
-  account_billing_subscription_renewed       Boolean  @default(true)
-  account_billing_subscription_expiring      Boolean  @default(true)
-  account_billing_security_alerts            Boolean  @default(true)
   product_updates_enabled                    Boolean  @default(true)
   product_updates_new_features               Boolean  @default(true)
   product_updates_tips                       Boolean  @default(false)
@@ -504,13 +437,6 @@ model NotificationSettings {
   updated_at                                 DateTime @updatedAt
   sms_notifications_enabled                  Boolean  @default(false)
   sms_notifications_high_priority_only       Boolean  @default(true)
-  account_billing_invoice_available          Boolean  @default(true)
-  account_billing_payment_refunded           Boolean  @default(true)
-  account_billing_subscription_cancelled     Boolean  @default(true)
-  account_billing_subscription_created       Boolean  @default(true)
-  account_billing_subscription_expired       Boolean  @default(true)
-  account_billing_subscription_resumed       Boolean  @default(true)
-  account_billing_subscription_updated       Boolean  @default(true)
   user                                       User     @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
@@ -541,21 +467,6 @@ model IdempotencyRecord {
 
   @@index([status])
   @@index([expires_at])
-}
-
-model SubscriptionEventLog {
-  id                 String   @id @default(uuid())
-  event_type         String
-  user_id            String
-  status             String
-  metadata           String?
-  processing_time_ms Int?
-  created_at         DateTime @default(now())
-
-  @@index([event_type])
-  @@index([user_id])
-  @@index([status])
-  @@index([created_at])
 }
 
 model AlertLog {
@@ -633,43 +544,6 @@ model AIChatMessage {
   @@index([mode])
 }
 
-model PaymentMethod {
-  id          String   @id @default(uuid())
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  description String?
-  relevance   Int      @default(1)
-  title       String
-  userId      String?  @map("user_id")
-  user        User?    @relation(fields: [userId], references: [id])
-
-  @@index([title])
-  @@index([relevance])
-  @@index([created_at])
-}
-
-model TeamChatMessage {
-  id           String   @id @default(uuid())
-  workspace_id String?
-  project_id   String?
-  user_id      String
-  content      String
-  parent_id    String? // For threading
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-
-  workspace Workspace?        @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
-  project   Project?          @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  user      User              @relation(fields: [user_id], references: [id])
-  parent    TeamChatMessage?  @relation("Threads", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  replies   TeamChatMessage[] @relation("Threads")
-
-  @@index([workspace_id])
-  @@index([project_id])
-  @@index([parent_id])
-  @@index([created_at])
-}
-
 model WorkspaceTask {
   id           String    @id @default(uuid())
   workspace_id String
@@ -682,26 +556,23 @@ model WorkspaceTask {
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
 
-  // Recurrence fields
   is_recurring               Boolean   @default(false)
-  recurrence_pattern         String? // RRULE string or simple pattern
+  recurrence_pattern         String?
   recurrence_end_date        DateTime?
   recurrence_max_occurrences Int?
-  parent_recurring_task_id   String? // Links to parent if this is an instance
+  parent_recurring_task_id   String?
   is_recurrence_exception    Boolean   @default(false)
-  original_due_date          DateTime? // For tracking rescheduled instances
+  original_due_date          DateTime?
 
-  // Project linking - tasks can optionally belong to a research project
   project_id String?
   project    Project? @relation(fields: [project_id], references: [id], onDelete: SetNull)
 
-  // Time tracking
-  estimated_hours Float? // Estimated time to complete in hours
-  time_entries    TaskTimeEntry[] // Time tracking entries
+  estimated_hours Float?
+  time_entries    TaskTimeEntry[]
 
   workspace    Workspace          @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
   creator      User               @relation("TaskCreator", fields: [creator_id], references: [id])
-  assignees    TaskAssignee[] // Multiple assignees through junction table
+  assignees    TaskAssignee[]
   comments     TaskComment[]
   subtasks     WorkspaceSubtask[]
   labels       WorkspaceLabel[]   @relation("TaskLabels")
@@ -709,11 +580,9 @@ model WorkspaceTask {
   dependencies TaskDependency[]   @relation("TaskDependencies")
   blocked_by   TaskDependency[]   @relation("BlockedTasks")
 
-  // Self-relation for recurring task instances
   parent_task     WorkspaceTask?  @relation("RecurringTaskInstances", fields: [parent_recurring_task_id], references: [id], onDelete: Cascade)
   child_instances WorkspaceTask[] @relation("RecurringTaskInstances")
 
-  // Task Template fields
   is_template       Boolean   @default(false)
   template_name     String?
   template_category String?
@@ -732,8 +601,8 @@ model WorkspaceTask {
 
 model TaskDependency {
   id            String   @id @default(uuid())
-  task_id       String // The task that depends on another task
-  depends_on_id String // The task that is required (the "blocked by" task)
+  task_id       String
+  depends_on_id String
   type          String   @default("blocks")
   created_at    DateTime @default(now())
 
@@ -793,8 +662,8 @@ model WorkspaceCustomField {
   id           String    @id @default(uuid())
   workspace_id String
   name         String
-  type         String    @default("text") // "text", "number", "date", "dropdown"
-  options      Json?     // For dropdown types (array of strings)
+  type         String    @default("text")
+  options      Json?
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
 
@@ -827,7 +696,7 @@ model TaskTimeEntry {
   user_id     String
   start_time  DateTime
   end_time    DateTime?
-  duration    Int? // Duration in minutes, calculated when timer stops
+  duration    Int?
   description String?
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
@@ -867,48 +736,6 @@ model TaskComment {
   user User          @relation("UserTaskComments", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([task_id])
-  @@index([user_id])
-}
-
-model Invoice {
-  id              String    @id @default(uuid())
-  user_id         String
-  lemonsqueezy_id String?
-  amount          Float
-  currency        String    @default("USD")
-  status          String
-  description     String
-  issued_at       DateTime  @default(now())
-  due_at          DateTime?
-  paid_at         DateTime?
-  receipt_url     String?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  user            User      @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([status])
-  @@index([issued_at])
-}
-
-model UserAppearanceSettings {
-  id               String   @id @default(uuid())
-  user_id          String   @unique
-  theme            String   @default("light")
-  auto_dark_mode   Boolean  @default(false)
-  font_family      String   @default("Inter")
-  font_size        Int      @default(18)
-  line_height      Float    @default(1.75)
-  line_width       Int      @default(700)
-  accent_color     String   @default("blue")
-  sidebar_position String   @default("left")
-  density          String   @default("comfortable")
-  animations       Boolean  @default(true)
-  reduce_motion    Boolean  @default(false)
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  user             User     @relation(fields: [user_id], references: [id])
-
   @@index([user_id])
 }
 
@@ -1141,79 +968,6 @@ model FeedbackComment {
   @@index([created_at])
 }
 
-model Backup {
-  id             String    @id @default(uuid())
-  user_id        String
-  name           String
-  size           Float
-  status         String    @default("completed")
-  type           String    @default("manual")
-  storage_path   String
-  encryption_key String?
-  created_at     DateTime  @default(now())
-  completed_at   DateTime?
-  failed_at      DateTime?
-  error_message  String?
-  user           User      @relation(fields: [user_id], references: [id])
-  restores       Restore[]
-
-  @@index([user_id])
-  @@index([status])
-  @@index([type])
-  @@index([created_at])
-}
-
-model SearchAlert {
-  id                String   @id @default(uuid())
-  user_id           String
-  query             String
-  frequency         String   @default("weekly") // daily, weekly, monthly
-  is_active         Boolean  @default(true)
-  last_checked      DateTime @default(now())
-  new_matches_count Int      @default(0)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-  user              User     @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-}
-
-model Restore {
-  id            String    @id @default(uuid())
-  user_id       String
-  backup_id     String
-  status        String    @default("pending")
-  started_at    DateTime  @default(now())
-  completed_at  DateTime?
-  failed_at     DateTime?
-  error_message String?
-  backup        Backup    @relation(fields: [backup_id], references: [id])
-  user          User      @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([status])
-  @@index([started_at])
-}
-
-model BackupSchedule {
-  id              String    @id @default(uuid())
-  user_id         String    @unique
-  enabled         Boolean   @default(true)
-  frequency       String    @default("weekly")
-  time            String    @default("02:00")
-  retention_count Int       @default(7)
-  last_run        DateTime?
-  next_run        DateTime?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  destination     String    @default("WorkContext")
-  user            User      @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([enabled])
-  @@index([next_run])
-}
-
 model Export {
   id                   String   @id @default(uuid())
   user_id              String
@@ -1314,25 +1068,6 @@ model TaskTracking {
   @@index([created_at])
 }
 
-model WaitlistEntry {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  joined_waitlist DateTime  @default(now())
-  converted       Boolean   @default(false)
-  converted_at    DateTime?
-  priority        Int       @default(0)
-  notes           String?
-  user_id         String?
-  user            User?     @relation(fields: [user_id], references: [id])
-
-  @@index([email])
-  @@index([created_at])
-  @@index([priority])
-  @@index([converted])
-}
-
 model DemoRequest {
   id          String   @id @default(uuid())
   name        String
@@ -1395,50 +1130,33 @@ model DocumentTemplate {
   @@index([rating])
 }
 
-model GeneratedAudio {
-  id             String   @id @default(uuid())
-  project_id     String   @unique
-  audio_url      String? // If using ElevenLabs/Storage
-  script         Json? // The dialogue script
-  provider       String   @default("elevenlabs") // "elevenlabs" | "browser_tts"
-  status         String   @default("pending") // "pending", "processing", "completed", "failed"
-  title          String?
-  failure_reason String?
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-  project        Project  @relation(fields: [project_id], references: [id])
-
-  @@index([project_id])
-}
-
-// AI Action System - Track and manage AI-executed actions
 model AIAction {
   id              String    @id @default(uuid())
   user_id         String
-  action_type     String // "create_workspace", "create_project", "create_task", "edit_project", "delete_item", "invite_member", etc.
-  action_category String // "create", "read", "update", "delete", "manage"
-  status          String    @default("pending") // "pending", "confirmed", "executing", "completed", "failed", "cancelled"
-  user_intent     String // The original user message/request
-  parsed_params   Json? // AI-parsed parameters from the intent
-  target_entity   String? // "workspace", "project", "task", "user", etc.
-  target_id       String? // ID of the affected entity
+  action_type     String
+  action_category String
+  status          String    @default("pending")
+  user_intent     String
+  parsed_params   Json?
+  target_entity   String?
+  target_id       String?
   confirmation_required Boolean @default(true)
   confirmed_at    DateTime?
-  confirmed_by    String? // user_id who confirmed
+  confirmed_by    String?
   executed_at     DateTime?
   completed_at    DateTime?
   failed_at       DateTime?
   error_message   String?
-  result_data     Json? // Result of the action execution
-  rollback_data   Json? // Data needed to rollback the action
+  result_data     Json?
+  rollback_data   Json?
   is_rolled_back  Boolean   @default(false)
   rolled_back_at  DateTime?
-  execution_duration_ms Int? // Time taken to execute
-  ai_model_used   String? // Which AI model processed this action
+  execution_duration_ms Int?
+  ai_model_used   String?
   tokens_used     Int?
   cost_estimate   Float?
-  page_context    String? // Which page the user was on when making the request
-  session_id      String? // AI chat session ID
+  page_context    String?
+  session_id      String?
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   user            User      @relation(fields: [user_id], references: [id])
@@ -1450,22 +1168,4 @@ model AIAction {
   @@index([target_id])
   @@index([created_at])
   @@index([session_id])
-}
-
-model PinnedComment {
-  id         String   @id @default(uuid())
-  user_id    String
-  attachment_id String
-  selected_text  String   @db.Text
-  comment    String   @db.Text
-  position_x Float    @default(0)
-  position_y Float    @default(0)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id])
-  @@index([attachment_id])
-  @@index([user_id, attachment_id])
 }

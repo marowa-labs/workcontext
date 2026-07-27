@@ -92,13 +92,6 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       path: "security-log",
     },
 
-    /* {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      path: "notifications",
-    }, */
-
     { id: "ai", label: "AI Preferences", icon: Sparkles, path: "ai" },
     {
       id: "ai-api-key",
@@ -107,39 +100,18 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       path: "ai-api-key",
     },
 
-    /*{
-      id: "privacy",
-      label: "Privacy & Security",
-      icon: Lock,
-      path: "privacy",
-    }, */
-
     {
       id: "recycle-bin",
       label: "Recycle Bin",
       icon: Trash2,
       path: "recycle-bin",
     },
-
-    /* {
-      id: "data",
-      label: "Data & Export",
-      icon: Database,
-      path: "data",
-    }, */
     {
       id: "feedback",
       label: "Feedback",
       icon: MessageSquare,
       path: "feedback",
     },
-
-    /* {
-      id: "compliance",
-      label: "Compliance",
-      icon: Shield,
-      path: "compliance",
-    }, */
 
     {
       id: "help",

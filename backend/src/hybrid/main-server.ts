@@ -70,20 +70,16 @@ import { HocuspocusCollaborationServer } from "./websockets/hocuspocus-server";
 
 // Import routers
 import aiRouter from "../api/ai/route";
-import billingRouter from "../api/billing/route";
 import recycleBinRouter from "../api/recyclebin/route";
 import projectsRouter from "../api/projects/index";
 import feedbackRouter from "../api/feedback/index";
 import notificationsRouter from "../api/notifications/index";
 import authRouter from "../api/auth/index";
-import subscriptionRoutes from "../api/subscription/route";
-import teamChatRouter from "../api/team-chat/route";
 import docsRouter from "../api/docs/index";
 import templatesRouter from "../api/templates/index";
 import usersRouter from "../api/users/index";
 import dataRouter from "../api/data/index";
 import workspacesRouter from "../api/workspaces/index";
-import backupRouter from "../api/backup/index";
 import searchRouter from "../api/search/index";
 import analyticsRouter from "../api/analytics/route";
 import statsRouter from "../api/stats/route";
@@ -289,13 +285,10 @@ app.use("/api/recyclebin", recycleBinRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/auth", authRouter);
-app.use("/api/subscription", subscriptionRoutes);
-app.use("/api/team-chat", teamChatRouter);
 app.use("/api/docs", docsRouter);
 app.use("/api/templates", templatesRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/workspaces", workspacesRouter);
-app.use("/api/backup", backupRouter);
 app.use("/api/search", searchRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/stats", statsRouter);
@@ -359,89 +352,6 @@ app.get("/health", async (req, res) => {
 
     res.status(500).json(healthData);
     return healthData;
-  }
-});
-
-// Test endpoint to verify billing route functionality
-app.get("/api/test-billing-functionality", async (req, res) => {
-  try {
-    // Import the subscription service directly
-    const { SubscriptionService } =
-      await import("../services/subscriptionService");
-
-    // Use a known user ID to test
-    const testUserId = "1c3e6b81-cf15-4cf8-a9e3-043649c4010c";
-
-    // Call the getUserPlanInfo method directly
-    const subscriptionInfo =
-      await SubscriptionService.getUserPlanInfo(testUserId);
-
-    res.json({ success: true, subscriptionInfo });
-  } catch (error: any) {
-    logger.error("Error testing billing functionality:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Test endpoint to check subscription data
-app.get("/api/test-subscription", async (req, res) => {
-  try {
-    // Import Prisma client
-    const { prisma } = await import("../lib/prisma");
-
-    // Get all subscriptions from the database
-    const subscriptions = await prisma.subscription.findMany({
-      take: 10,
-    });
-
-    res.json({ success: true, subscriptions });
-  } catch (error: any) {
-    logger.error("Error fetching subscriptions:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Test endpoint to verify authentication and subscription fetching
-app.get("/api/test-auth-subscription", authMiddleware, async (req, res) => {
-  try {
-    const userId = (req as any).user?.id;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "User not authenticated",
-      });
-    }
-
-    logger.info("Test auth subscription request", { userId });
-
-    // Import the subscription service
-    const { SubscriptionService } =
-      await import("../services/subscriptionService");
-
-    // Try to fetch subscription info
-    const subscriptionInfo = await SubscriptionService.getUserPlanInfo(userId);
-
-    logger.info("Successfully fetched subscription info", { userId });
-
-    return res.json({
-      success: true,
-      message: "Authentication and subscription fetch successful",
-      userId,
-      subscriptionInfo,
-    });
-  } catch (error: any) {
-    logger.error("Test auth subscription failed", {
-      error: error.message,
-      stack: error.stack,
-      userId: (req as any).user?.id,
-    });
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-      error: nodeEnv === "development" ? error.message : undefined,
-    });
   }
 });
 
@@ -895,18 +805,11 @@ app.post("/api/auth/hybrid/signup", async (req, res) => {
       try {
         // Import Prisma and services
         const { prisma } = await import("../lib/prisma");
-        const { SubscriptionService } =
-          await import("../services/subscriptionService");
 
-        // Determine the correct storage limit based on the selected plan
-        let storageLimit = 0.1; // Default to 0.1GB (100MB) for free plan
-        if (selected_plan === "student") {
-          storageLimit = 5; // 5GB for student plan
-        } else if (selected_plan === "researcher") {
-          storageLimit = 100; // 100GB for researcher plan
-        }
+        // Determine the correct storage limit
+        let storageLimit = 0.1;
 
-        // Store additional user data in the Prisma database with correct storage limit
+        // Store additional user data in the Prisma database
         const prismaUser = await prisma.user.create({
           data: {
             id: data.user.id,
@@ -917,45 +820,13 @@ app.post("/api/auth/hybrid/signup", async (req, res) => {
             user_type: user_type || null,
             field_of_study: field_of_study || null,
             selected_plan: selected_plan || null,
-            storage_limit: storageLimit, // Set the correct storage limit based on plan
+            storage_limit: storageLimit,
           },
-        } as any); // Using 'as any' to bypass TypeScript error for now
+        } as any);
 
         logger.info("User data stored in Prisma database:", prismaUser);
-
-        // Create subscription if a plan was selected
-        if (selected_plan && selected_plan !== "free") {
-          try {
-            const subscription = await SubscriptionService.syncSubscription({
-              userId: data.user.id,
-              planId: selected_plan,
-              status: "active", // Default to active for new subscriptions
-              currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14-day trial
-            });
-            logger.info("Subscription created/updated:", subscription);
-          } catch (subscriptionError: any) {
-            logger.error("Error creating subscription:", subscriptionError);
-          }
-        } else if (selected_plan === "free" || !selected_plan) {
-          // Ensure free users have a subscription record
-          try {
-            const subscription = await SubscriptionService.syncSubscription({
-              userId: data.user.id,
-              planId: "free",
-              status: "active",
-              currentPeriodEnd: undefined,
-            });
-            logger.info("Free subscription created/updated:", subscription);
-          } catch (subscriptionError: any) {
-            logger.error(
-              "Error creating free subscription:",
-              subscriptionError,
-            );
-          }
-        }
       } catch (prismaError: any) {
         logger.error("Error storing user data in Prisma:", prismaError);
-        // Don't fail the signup if Prisma storage fails, but log the error
       }
 
       // Send OTP using our custom service
@@ -1026,8 +897,6 @@ app.post("/api/auth/hybrid/oauth-signup", async (req, res) => {
 
     // Import services
     const { prisma } = await import("../lib/prisma");
-    const { SubscriptionService } =
-      await import("../services/subscriptionService");
     const { OTPService } = await import("../services/otpService");
 
     // Check if user already exists in database
@@ -1071,22 +940,6 @@ app.post("/api/auth/hybrid/oauth-signup", async (req, res) => {
         email: prismaUser.email,
       });
 
-      // Create subscription record
-      try {
-        const subscription = await SubscriptionService.syncSubscription({
-          userId: id,
-          planId: defaultPlan,
-          status: "active",
-          currentPeriodEnd: undefined, // No expiration for free plan
-        });
-        logger.info("Subscription created for OAuth user:", {
-          userId: subscription.id,
-          plan: subscription.defaultPlan,
-        });
-      } catch (subscriptionError: any) {
-        logger.error("Error creating subscription:", subscriptionError);
-        // Don't fail signup if subscription creation fails
-      }
     }
 
     // Send OTP to email
@@ -1367,24 +1220,6 @@ app.post("/api/auth/signup-alt", async (req, res) => {
     );
     logger.info("Signup successful", { userId: result.user?.id });
 
-    // Create subscription record
-    try {
-      const { SubscriptionService } =
-        await import("../services/subscriptionService");
-      const subscription = await SubscriptionService.syncSubscription({
-        userId: result.user!.id,
-        planId: selectedPlan,
-        status: "active",
-        currentPeriodEnd:
-          selectedPlan !== "free"
-            ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-            : undefined, // 14-day trial for paid plans
-      });
-      logger.info("Subscription created/updated:", subscription);
-    } catch (subscriptionError: any) {
-      logger.error("Error creating subscription:", subscriptionError);
-    }
-
     res.json({ success: true, data: result });
   } catch (error: any) {
     logger.error("Signup failed", {
@@ -1493,152 +1328,6 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       email: req.body.email,
     });
     return res.status(400).json({ success: false, message: error.message });
-  }
-});
-
-// LemonSqueezy webhook endpoint
-app.post("/api/webhooks/lemonsqueezy", async (req, res) => {
-  try {
-    logger.info("LemonSqueezy webhook request received");
-
-    // Import the webhook handler
-    const webhookRouter = (await import("../api/webhooks/lemonsqueezy/route"))
-      .default;
-
-    // Call the webhook handler directly
-    return webhookRouter(req, res, () => {});
-  } catch (error: any) {
-    logger.error("LemonSqueezy webhook processing failed", {
-      error: error.message,
-    });
-    return res.status(500).json({ error: "Webhook processing failed" });
-  }
-});
-
-// LemonSqueezy webhook test endpoint (ONLY for development/testing)
-app.post("/api/webhooks/lemonsqueezy/test/:eventType", async (req, res) => {
-  try {
-    if (nodeEnv === "production") {
-      return res
-        .status(403)
-        .json({ error: "Test endpoint not available in production" });
-    }
-
-    logger.info("LemonSqueezy webhook TEST request received", {
-      eventType: req.params.eventType,
-      body: req.body,
-    });
-
-    // Import the test webhook handler
-    const testWebhookRouter = (
-      await import("../api/webhooks/lemonsqueezy/test-route")
-    ).default;
-
-    // Call the test webhook handler directly with type assertion to bypass type checking
-    const mockReq = {
-      ...req,
-      params: { eventType: req.params.eventType, body: req.body },
-    };
-    return testWebhookRouter(mockReq as any, res, () => {});
-  } catch (error: any) {
-    logger.error("LemonSqueezy webhook TEST processing failed", {
-      error: error.message,
-    });
-    return res.status(500).json({ error: "Webhook TEST processing failed" });
-  }
-});
-
-// Endpoint to handle post-checkout user creation
-app.post("/api/auth/create-user-post-checkout", async (req, res) => {
-  try {
-    logger.info("Post-checkout user creation request received");
-
-    const { email, fullName, phoneNumber, planId } = req.body;
-
-    // Validate required fields
-    if (!email || !fullName || !planId) {
-      return res.status(400).json({
-        success: false,
-        message: "Email, full name, and plan ID are required",
-      });
-    }
-
-    // Check if user already exists
-    const { prisma } = await import("../lib/prisma");
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "User with this email already exists",
-      });
-    }
-
-    // Import AuthService
-    const { AuthService } = await import("../services/hybridAuthService");
-
-    // Create user in Supabase Auth with a temporary password
-    // The user will set their own password via the password reset flow
-    const tempPassword = Math.random().toString(36).slice(-8) + "A1!";
-
-    const authResult = await AuthService.createUser({
-      email,
-      password: tempPassword, // Temporary password that will be replaced
-      fullName,
-      phoneNumber,
-      userType: "student", // Default to student
-      fieldOfStudy: "General", // Default field of study
-    });
-
-    if (!authResult.supabaseUser) {
-      throw new Error("Failed to create user in authentication system");
-    }
-
-    const userId = authResult.supabaseUser.id;
-
-    // Create subscription record
-    try {
-      const { SubscriptionService } =
-        await import("../services/subscriptionService");
-      const subscription = await SubscriptionService.syncSubscription({
-        userId,
-        planId,
-        status: "active",
-        currentPeriodEnd:
-          planId !== "free"
-            ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-day trial for paid plans
-            : undefined,
-      });
-      logger.info("Subscription created/updated:", subscription);
-    } catch (subscriptionError: any) {
-      logger.error("Error creating subscription:", subscriptionError);
-    }
-
-    // Send welcome email
-    try {
-      const { EmailService } = await import("../services/emailService");
-      await EmailService.sendWelcomeEmail(email, fullName);
-    } catch (emailError: any) {
-      logger.error("Error sending welcome email:", emailError);
-    }
-
-    return res.status(200).json({
-      success: true,
-      message:
-        "User created successfully. Please check your email to set your password.",
-      userId,
-    });
-  } catch (error: any) {
-    logger.error("Post-checkout user creation failed", {
-      error: error.message,
-      stack: error.stack,
-    });
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to create user",
-    });
   }
 });
 
@@ -2252,9 +1941,6 @@ app.post("/api/users/export", async (req, res) => {
       citations: await prisma.citation.findMany({
         where: { project: { user_id: userId } },
       }),
-      subscriptions: await prisma.subscription.findMany({
-        where: { user_id: userId },
-      }),
       aiUsage: await prisma.aIUsage.findMany({
         where: { user_id: userId },
       }),
@@ -2343,12 +2029,6 @@ app.use("/api/templates", templatesRouter);
 // API Routes
 app.use("/api/auth", authRouter);
 
-app.use("/api/billing", authMiddleware);
-app.use("/api/billing", billingRouter);
-
-app.use("/api/subscriptions", authMiddleware);
-app.use("/api/subscriptions", subscriptionRoutes);
-
 // Apply auth middleware to projects routes
 app.use("/api/projects", authMiddleware);
 app.use("/api/projects", projectsRouter);
@@ -2358,10 +2038,6 @@ app.use("/api/data", authMiddleware);
 
 // Mount the data router
 app.use("/api/data", dataRouter);
-
-// Apply auth middleware to billing routes and mount the router
-app.use("/api/billing", authMiddleware);
-app.use("/api/billing", billingRouter);
 
 // Apply auth middleware to user routes and mount the router
 app.use("/api/users", authMiddleware, usersRouter);
@@ -3324,21 +3000,11 @@ app.get("/api/test-auth-billing", async (req, res) => {
       },
     };
 
-    // Import the billing router
-    // REMOVED: const billingRouter = (await import("../api/billing/route")).default;
-
-    // Instead of trying to manually call the route handler, let's just directly call the service
-    const { SubscriptionService } =
-      await import("../services/subscriptionService");
-
-    // Call the service method directly
-    const subscriptionInfo = await SubscriptionService.getUserPlanInfo(userId);
-
     return res
       .status(200)
-      .json({ success: true, subscription: subscriptionInfo });
+      .json({ success: true });
   } catch (error: any) {
-    logger.error("Error testing authenticated billing request:", error);
+    logger.error("Error processing request:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -3947,26 +3613,6 @@ app.post("/_create/api/upload/", authMiddleware, async (req, res) => {
       });
     }
 
-    // Import required services
-    const { SubscriptionService } =
-      await import("../services/subscriptionService");
-
-    // Check if user can upload based on their subscription
-    const canUpload = await SubscriptionService.canPerformAction(
-      userId,
-      "collaboration_chat_upload",
-    );
-
-    if (!canUpload.allowed) {
-      return res.status(429).json({
-        success: false,
-        message: canUpload.reason || "Upload limit reached. Upgrade for more.",
-        limitReached: true,
-      });
-    }
-
-    // If we reach here, the user is authenticated and has permission
-    // but this endpoint is just for validation - actual upload happens elsewhere
     return res.status(200).json({
       success: true,
       message: "User authorized for uploads",
@@ -4149,21 +3795,9 @@ app.get("/api/test-exact-billing-flow", async (req, res) => {
       });
     }
 
-    console.log(
-      "Calling SubscriptionService.getUserPlanInfo with user ID:",
-      userId,
-    );
-
-    // Import and call the subscription service exactly as the billing route does
-    const { SubscriptionService } =
-      await import("../services/subscriptionService");
-    const subscriptionInfo = await SubscriptionService.getUserPlanInfo(userId);
-
-    console.log("Successfully got subscription info");
-
-    return res.json({ success: true, subscription: subscriptionInfo });
+    return res.json({ success: true });
   } catch (error: any) {
-    logger.error("Error testing exact billing route flow:", error);
+    logger.error("Error processing request:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });

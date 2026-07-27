@@ -158,23 +158,6 @@ export class ContextEmbeddingService {
     });
   }
 
-  static async upsertForNote(note: {
-    id: string;
-    user_id: string;
-    project_id: string;
-    title?: string | null;
-    content?: string | null;
-  }): Promise<void> {
-    await this.upsert({
-      ownerId: note.user_id,
-      workspaceId: null,
-      entityType: "note",
-      entityId: note.id,
-      title: note.title,
-      content: [note.title || "", note.content || ""].join("\n"),
-    });
-  }
-
   static async remove(
     entityType: EntityType,
     entityId: string,

@@ -10,10 +10,6 @@ interface AINotificationSettings {
   ai_features_ai_limit: boolean;
   ai_features_new_features: boolean;
   ai_features_weekly_summary: boolean;
-  research_updates_enabled: boolean;
-  research_updates_ai_suggestion: boolean;
-  research_updates_citation_reminder: boolean;
-  research_updates_research_update: boolean;
 }
 
 const AINotificationSettings: React.FC = () => {
@@ -23,10 +19,6 @@ const AINotificationSettings: React.FC = () => {
     ai_features_ai_limit: false,
     ai_features_new_features: true,
     ai_features_weekly_summary: false,
-    research_updates_enabled: true,
-    research_updates_ai_suggestion: true,
-    research_updates_citation_reminder: true,
-    research_updates_research_update: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,13 +40,6 @@ const AINotificationSettings: React.FC = () => {
           ai_features_new_features: fetchedSettings.ai_features_new_features,
           ai_features_weekly_summary:
             fetchedSettings.ai_features_weekly_summary,
-          research_updates_enabled: fetchedSettings.research_updates_enabled,
-          research_updates_ai_suggestion:
-            fetchedSettings.research_updates_ai_suggestion,
-          research_updates_citation_reminder:
-            fetchedSettings.research_updates_citation_reminder,
-          research_updates_research_update:
-            fetchedSettings.research_updates_research_update,
         });
         setLoading(false);
       } catch (err) {
@@ -206,91 +191,6 @@ const AINotificationSettings: React.FC = () => {
             </div>
           </div>
 
-          {/* Research Updates */}
-          <div>
-            <h3 className="text-lg font-medium text-black text-black mb-4">
-              Research Updates
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-black text-black">
-                    Enable Research Updates
-                  </p>
-                  <p className="text-sm text-black dark:text-black">
-                    Receive notifications about research-related AI suggestions
-                  </p>
-                </div>
-                <Toggle
-                  pressed={settings.research_updates_enabled}
-                  onPressedChange={() =>
-                    handleToggle("research_updates_enabled")
-                  }
-                  aria-label="Toggle research updates notifications"
-                />
-              </div>
-
-              {settings.research_updates_enabled && (
-                <>
-                  <div className="flex items-center justify-between pl-6">
-                    <div>
-                      <p className="font-medium text-black text-black">
-                        AI Suggestions
-                      </p>
-                      <p className="text-sm text-black dark:text-black">
-                        Get notified when AI has new suggestions for your
-                        research
-                      </p>
-                    </div>
-                    <Toggle
-                      pressed={settings.research_updates_ai_suggestion}
-                      onPressedChange={() =>
-                        handleToggle("research_updates_ai_suggestion")
-                      }
-                      aria-label="Toggle AI suggestion notifications"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pl-6">
-                    <div>
-                      <p className="font-medium text-black text-black">
-                        Citation Reminders
-                      </p>
-                      <p className="text-sm text-black dark:text-black">
-                        Get reminders to update or check citations
-                      </p>
-                    </div>
-                    <Toggle
-                      pressed={settings.research_updates_citation_reminder}
-                      onPressedChange={() =>
-                        handleToggle("research_updates_citation_reminder")
-                      }
-                      aria-label="Toggle citation reminder notifications"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pl-6">
-                    <div>
-                      <p className="font-medium text-black text-black">
-                        Research Updates
-                      </p>
-                      <p className="text-sm text-black dark:text-black">
-                        Get notified about research methodology or findings
-                        updates
-                      </p>
-                    </div>
-                    <Toggle
-                      pressed={settings.research_updates_research_update}
-                      onPressedChange={() =>
-                        handleToggle("research_updates_research_update")
-                      }
-                      aria-label="Toggle research update notifications"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>

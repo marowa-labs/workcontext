@@ -1,7 +1,6 @@
 import { Router, type Router as ExpressRouter } from "express";
 import logger from "../../monitoring/logger";
 import { authenticateExpressRequest } from "../../middleware/auth";
-import { SubscriptionService } from "../../services/subscriptionService";
 import { createNotification } from "../../services/notificationService";
 import {
   downloadAndExtractPdf,
@@ -48,29 +47,6 @@ router.post("/", authenticateExpressRequest, async (req: any, res: any) => {
       return res.status(400).json({
         success: false,
         message: "fileUrl and message are required",
-      });
-    }
-
-    // Check subscription limits
-    const canPerform = await SubscriptionService.canPerformAction(
-      userId,
-      "ai_chat_message",
-    );
-    if (!canPerform.allowed) {
-      await createNotification(
-        userId,
-        "ai_limit",
-        "AI Chat Limit Reached",
-        "You've reached your AI chat message limit for this month. Upgrade your plan for unlimited access.",
-        { limitReached: true },
-      );
-
-      return res.status(429).json({
-        success: false,
-        message:
-          canPerform.reason ||
-          "You've reached your AI chat message limit. Upgrade for more.",
-        limitReached: true,
       });
     }
 
@@ -203,21 +179,6 @@ router.post(
         return res.status(400).json({
           success: false,
           message: "fileUrl is required",
-        });
-      }
-
-      // Check subscription limits
-      const canPerform = await SubscriptionService.canPerformAction(
-        userId,
-        "ai_chat_message",
-      );
-      if (!canPerform.allowed) {
-        return res.status(429).json({
-          success: false,
-          message:
-            canPerform.reason ||
-            "You've reached your AI message limit. Upgrade for more.",
-          limitReached: true,
         });
       }
 

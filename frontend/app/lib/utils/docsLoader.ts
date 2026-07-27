@@ -37,7 +37,6 @@ export const loadDocContent = async (docPath: string): Promise<string> => {
 // Map of documentation paths to file locations
 export const docPathMap: Record<string, string> = {
   // Frontend docs
-  "how-to-use-plan-styling": "/frontend/docs/how-to-use-plan-styling.md",
   "ui-ux-style-contrast":
     "/frontend/docs/ui-ux-style-contrast-implementation.md",
   "ui-ux-upgrade-styling": "/frontend/docs/ui-ux-upgrade-styling-readme.md",

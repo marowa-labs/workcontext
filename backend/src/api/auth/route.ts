@@ -1,5 +1,4 @@
 import { prisma } from "../../lib/prisma";
-import { SubscriptionService } from "../../services/subscriptionService";
 import { AuthService } from "../../services/hybridAuthService";
 import logger from "../../monitoring/logger";
 
@@ -177,24 +176,6 @@ export async function POST(request: Request) {
         role: user_type || "user",
         plan: selected_plan || "free",
       });
-
-      // Create subscription if a plan was selected
-      if (selected_plan) {
-        try {
-          const subscription = await SubscriptionService.syncSubscription({
-            userId: supabaseUser.id,
-            planId: selected_plan,
-            status: "active",
-            currentPeriodEnd:
-              selected_plan !== "free"
-                ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-day trial
-                : undefined,
-          });
-          logger.info("Subscription created/updated:", subscription);
-        } catch (subscriptionError) {
-          logger.error("Error creating subscription:", subscriptionError);
-        }
-      }
 
       const userData = {
         id: supabaseUser.id,

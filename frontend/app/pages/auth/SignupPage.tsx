@@ -338,12 +338,6 @@ const SignupPage: React.FC = () => {
       setRedirectPath(redirect);
     }
 
-    // Check if this is a checkout flow
-    const checkout = searchParams.get("checkout");
-    if (checkout === "true") {
-      // This will be handled in the form submission
-    }
-
     // Check if this is a survey step
     const surveyParam = searchParams.get("survey");
     if (surveyParam === "1") {
@@ -782,16 +776,12 @@ const SignupPage: React.FC = () => {
       title={
         surveyStep
           ? "One Last Step - Tell Us About Yourself"
-          : selectedPlan
-            ? `Sign up for ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan`
-            : "Create your account"
+          : "Create your account"
       }
       subtitle={
         surveyStep
           ? "Help us understand how we can better serve you"
-          : selectedPlan
-            ? `Start your 14-day Free of the ${selectedPlan} plan`
-            : "Start writing better papers today"
+          : "Start writing better papers today"
       }
     >
       {/* Recaptcha container - invisible */}
@@ -1152,7 +1142,7 @@ const SignupPage: React.FC = () => {
         <p className="text-gray-600">
           Already have an account?{" "}
           <Link
-            href={selectedPlan ? `/login?plan=${selectedPlan}` : "/login"}
+            href="/login"
             className="text-blue-400 hover:text-blue-300 font-medium"
           >
             Sign in

@@ -1,7 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { Prisma } from "@prisma/client";
 import logger from "../monitoring/logger";
-import { SubscriptionService } from "./subscriptionService";
 import { createNotification } from "./notificationService";
 import { processFileContent } from "../utils/fileProcessor";
 import { ProjectServiceEnhanced } from "./projectServiceEnhanced";
@@ -619,13 +618,6 @@ export class EditorService {
     isSystemOperation: boolean = false,
   ) {
     try {
-      // Check if user can create more documents based on subscription
-      const canCreate = await this.checkDocumentLimit(userId);
-      if (!canCreate) {
-        throw new Error(
-          "Document limit reached for your subscription plan. Upgrade to create more documents.",
-        );
-      }
       // Only validate content if it's not already a valid Tiptap document
       let validatedContent = content;
       if (!this.isTiptapDocument(content)) {
@@ -1150,18 +1142,6 @@ export class EditorService {
     },
   ) {
     try {
-      // Check if user can create project
-      const canCreate = await SubscriptionService.canPerformAction(
-        userId,
-        "create_project",
-      );
-
-      if (!canCreate.allowed) {
-        throw new Error(
-          canCreate.reason || "You cannot create a project at this time.",
-        );
-      }
-
       // Process the file content through the file processor
       const { content: processedContent, wordCount: calculatedWordCount } =
         await processFileContent(fileData.content, fileData.fileType);
@@ -1268,65 +1248,9 @@ export class EditorService {
     });
   }
 
-  // Check if user can create more documents based on subscription
+  // Check if user can create more documents
   static async checkDocumentLimit(userId: string): Promise<boolean> {
-    try {
-      // Generate a cache key for this check
-      const cacheKey = `${userId}_document_limit`;
-      const cachedResult = versionCheckCache.get(cacheKey);
-
-      // Check if we have a fresh cached result
-      if (
-        cachedResult &&
-        Date.now() - cachedResult.timestamp < CACHE_DURATION
-      ) {
-        return cachedResult.shouldCreate;
-      }
-
-      // Get user's subscription
-      const subscriptionInfo =
-        await SubscriptionService.getUserPlanInfo(userId);
-      const subscription = subscriptionInfo.subscription;
-
-      // For free tier users, check document count
-      if (subscriptionInfo.plan.id === "free") {
-        const documentCount = await prisma.project.count({
-          where: { user_id: userId },
-        });
-
-        const canCreate = documentCount < 5; // Free tier limit
-        // Cache the result
-        versionCheckCache.set(cacheKey, {
-          timestamp: Date.now(),
-          shouldCreate: canCreate,
-        });
-
-        if (!canCreate) {
-          // Send notification to user about reaching limit
-          await createNotification(
-            userId,
-            "ai_limit",
-            "You've reached your document limit. Upgrade to create more documents.",
-            "/pricing",
-          );
-        }
-
-        return canCreate;
-      }
-
-      // For paid tiers, allow creation
-      // Cache the result
-      versionCheckCache.set(cacheKey, {
-        timestamp: Date.now(),
-        shouldCreate: true,
-      });
-
-      return true;
-    } catch (error) {
-      logger.error("Error checking document limit", { error, userId });
-      // Fail gracefully by allowing creation
-      return true;
-    }
+    return true;
   }
 
   // Get document statistics
