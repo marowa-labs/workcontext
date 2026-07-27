@@ -20,7 +20,7 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
             WorkContext{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Security
@@ -97,10 +97,10 @@ function SecurityPractices() {
     <section className="section-padding bg-white">
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Our Security Measures
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-700">
             We implement comprehensive security practices to protect your data
             and ensure privacy.
           </p>
@@ -110,20 +110,20 @@ function SecurityPractices() {
           {practices.map((practice, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg border border-white"
+              className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200"
             >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <practice.icon className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
                 {practice.title}
               </h3>
-              <p className="text-gray-200 mb-4">{practice.description}</p>
+              <p className="text-gray-700 mb-4">{practice.description}</p>
               <ul className="space-y-2">
                 {practice.details.map((detail, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <CheckCircle className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-200">{detail}</span>
+                    <span className="text-gray-700">{detail}</span>
                   </li>
                 ))}
               </ul>
@@ -164,10 +164,10 @@ function ComplianceCertifications() {
     <section className="section-padding bg-white">
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Compliance
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-700">
             We maintain the highest standards of security and compliance for
             your data.
           </p>
@@ -177,15 +177,15 @@ function ComplianceCertifications() {
           {certifications.map((cert, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white"
+              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-gray-200"
             >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <Shield className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
                 {cert.title}
               </h3>
-              <p className="text-gray-200">{cert.description}</p>
+              <p className="text-gray-600">{cert.description}</p>
             </div>
           ))}
         </div>
@@ -201,23 +201,23 @@ function IncidentResponse() {
       <div className="container-custom">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Security Incident Response
             </h2>
-            <p className="text-lg text-gray-200">
+            <p className="text-lg text-gray-700">
               Our approach to handling security incidents that could affect your
               data.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-lg border border-white">
+          <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900/50 mb-4">
                   <Zap className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Detection</h3>
-                <p className="text-gray-200">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Detection</h3>
+                <p className="text-gray-700">
                   We continuously monitor our systems for potential security
                   incidents using automated tools and manual reviews.
                 </p>
@@ -226,8 +226,8 @@ function IncidentResponse() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900/50 mb-4">
                   <Shield className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Response</h3>
-                <p className="text-gray-200">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Response</h3>
+                <p className="text-gray-700">
                   Our security team responds to incidents within 2 hours and
                   works to contain and remediate threats immediately.
                 </p>
@@ -236,10 +236,10 @@ function IncidentResponse() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900/50 mb-4">
                   <Eye className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
                   Communication
                 </h3>
-                <p className="text-gray-200">
+                <p className="text-gray-700">
                   We notify affected users and authorities as required by law
                   within 72 hours of confirming a data breach.
                 </p>
@@ -266,8 +266,8 @@ function ReportingSecurityIssues() {
             vulnerabilities.
           </p>
 
-          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 border border-white">
-            <p className="text-gray-200 mb-6">
+          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+            <p className="text-gray-800 mb-6">
               If you believe you've found a security vulnerability in our
               service, please contact our security team:
             </p>
@@ -286,7 +286,7 @@ function ReportingSecurityIssues() {
                 <Link href="/contact">Contact Form</Link>
               </Button>
             </div>
-            <p className="text-gray-200 text-sm mt-6">
+            <p className="text-gray-600 text-sm mt-6">
               We appreciate responsible disclosure and will acknowledge your
               contribution to our security.
             </p>

@@ -1,180 +1,271 @@
 ﻿"use client";
 
+import React from "react";
+import { Mail } from "lucide-react";
 import Link from "next/link";
-import { FileText, CheckCircle, AlertCircle, Shield, Scale, FileWarning, Gavel, RefreshCw, Mail } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import Layout from "../../components/Layout";
 
-const TermsPage = () => {
+function IntroHero() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Breadcrumb */}
-      <nav className="flex mb-6" aria-label="Breadcrumb">
-        <ol className="inline-flex items-center space-x-1 md:space-x-3">
-          <li className="inline-flex items-center">
-            <Link href="/docs" className="text-sm font-medium text-primary hover:underline">
-              Documentation
-            </Link>
-          </li>
-          <li aria-current="page">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              <span className="text-muted-foreground text-sm font-medium ml-1 md:ml-2">Terms of Service</span>
-            </div>
-          </li>
-        </ol>
-      </nav>
-
-      {/* Hero */}
-      <div className="bg-card border border-border rounded-2xl p-8 mb-12">
-        <div className="text-center">
-          <FileText className="h-12 w-12 text-primary mx-auto mb-4" />
-          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Terms of Service</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+    <section className="section-padding bg-[#121212] relative overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 z-0"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200&h=800&fit=crop')",
+        }}
+      ></div>
+      <div className="container-custom relative z-10">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
+            Terms of{" "}
+            <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              Service
+            </span>
+          </h1>
+          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
             Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+          </p>
+          <p className="text-gray-200 max-w-2xl mx-auto">
+            Please read these terms carefully before using WorkContext.
           </p>
         </div>
       </div>
+    </section>
+  );
+}
 
-      {/* Content */}
-      <div className="max-w-none">
-        {/* Section 1 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">1. Acceptance of Terms</h2>
-          <p className="text-muted-foreground mb-4">
+function TermsContent() {
+  const sections = [
+    {
+      title: "1. Acceptance of Terms",
+      content: (
+        <div className="space-y-4">
+          <p className="text-gray-700">
             By accessing or using WorkContext ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of the terms, you may not access the Service.
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-gray-700">
             These Terms apply to all visitors, users, and others who access or use the Service. By accessing or using the Service, you agree to be bound by these Terms.
           </p>
         </div>
-
-        {/* Section 2 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">2. Description of Service</h2>
-          <p className="text-muted-foreground mb-4">
+      ),
+    },
+    {
+      title: "2. Description of Service",
+      content: (
+        <div className="space-y-4">
+          <p className="text-gray-700">
             WorkContext is a context-aware productivity workspace for individuals and teams that provides tools for:
           </p>
-          <ul className="space-y-2 mb-4">
-            {[
-              "AI-powered writing assistance and chat",
-              "Task management with priorities, assignees, and due dates",
-              "Document editing with real-time collaboration",
-              "Multi-format export (PDF, DOCX, LaTeX, RTF, TXT)",
-              "Time tracking and progress monitoring",
-              "Team workspaces with role-based access",
-            ].map((item, i) => (
-              <li key={i} className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                <span className="text-muted-foreground">{item}</span>
-              </li>
-            ))}
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
+            <li>AI-powered writing assistance and chat</li>
+            <li>Task management with priorities, assignees, and due dates</li>
+            <li>Document editing with real-time collaboration</li>
+            <li>Multi-format export (PDF, DOCX, LaTeX, RTF, TXT)</li>
+            <li>Time tracking and progress monitoring</li>
+            <li>Team workspaces with role-based access</li>
           </ul>
         </div>
-
-        {/* Section 3 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">3. Account Terms</h2>
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">3.1 Account Registration</h3>
-              <p className="text-muted-foreground">
-                You must register for an account to access certain features of the Service. You agree to provide accurate, current, and complete information during registration.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">3.2 Account Security</h3>
-              <p className="text-muted-foreground">
-                You are responsible for maintaining the security of your account and password. You are fully responsible for all activities that occur under your account.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">3.3 Account Restrictions</h3>
-              <p className="text-muted-foreground">
-                You may not use the Service for any illegal or unauthorized purpose. You may not, in the use of the Service, violate any laws in your jurisdiction.
-              </p>
-            </div>
+      ),
+    },
+    {
+      title: "3. Account Terms",
+      content: (
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">3.1 Account Registration</h4>
+            <p className="text-gray-700">
+              You must register for an account to access certain features of the Service. You agree to provide accurate, current, and complete information during registration.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">3.2 Account Security</h4>
+            <p className="text-gray-700">
+              You are responsible for maintaining the security of your account and password. You are fully responsible for all activities that occur under your account.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">3.3 Account Restrictions</h4>
+            <p className="text-gray-700">
+              You may not use the Service for any illegal or unauthorized purpose. You may not, in the use of the Service, violate any laws in your jurisdiction.
+            </p>
           </div>
         </div>
-
-        {/* Section 4 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">4. Intellectual Property</h2>
-          <p className="text-muted-foreground mb-4">
+      ),
+    },
+    {
+      title: "4. Intellectual Property",
+      content: (
+        <div className="space-y-4">
+          <p className="text-gray-700">
             The Service and its original content, features, and functionality are and will remain the exclusive property of WorkContext and its licensors. The Service is protected by copyright, trademark, and other laws.
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-gray-700">
             Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of WorkContext.
           </p>
         </div>
-
-        {/* Section 5 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">5. Content Policy</h2>
-          <p className="text-muted-foreground mb-4">
+      ),
+    },
+    {
+      title: "5. Content Policy",
+      content: (
+        <div className="space-y-4">
+          <p className="text-gray-700">
             We respect the intellectual property rights of others. If you believe that any content on our Service infringes upon your copyrights, please contact us with a detailed notice of the alleged infringement.
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-gray-700">
             We reserve the right to remove any content that violates these Terms or applicable law, without prior notice.
           </p>
         </div>
-
-        {/* Section 6 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">6. Termination</h2>
-          <p className="text-muted-foreground mb-4">
+      ),
+    },
+    {
+      title: "6. Termination",
+      content: (
+        <div className="space-y-4">
+          <p className="text-gray-700">
             We may terminate or suspend your account immediately, without prior notice or liability, for any reason, including if you breach the Terms.
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-gray-700">
             Upon termination, your right to use the Service will immediately cease. If you wish to terminate your account, you may simply discontinue using the Service.
           </p>
         </div>
+      ),
+    },
+    {
+      title: "7. Limitation of Liability",
+      content: (
+        <p className="text-gray-700">
+          In no event shall WorkContext, its directors, employees, partners, agents, suppliers, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses.
+        </p>
+      ),
+    },
+    {
+      title: "8. Governing Law",
+      content: (
+        <p className="text-gray-700">
+          These Terms shall be governed and construed in accordance with the laws applicable in your jurisdiction, without regard to its conflict of law provisions.
+        </p>
+      ),
+    },
+    {
+      title: "9. Changes to Terms",
+      content: (
+        <p className="text-gray-700">
+          We reserve the right to modify these Terms at any time. We will notify you of any changes by posting the new Terms on this page and updating the "Last updated" date.
+        </p>
+      ),
+    },
+  ];
 
-        {/* Section 7 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">7. Limitation of Liability</h2>
-          <p className="text-muted-foreground">
-            In no event shall WorkContext, its directors, employees, partners, agents, suppliers, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses.
-          </p>
-        </div>
+  return (
+    <section className="section-padding bg-white">
+      <div className="container-custom">
+        <div className="max-w-4xl mx-auto">
+          <div className="prose max-w-none">
+            {sections.map((section, index) => (
+              <div key={index} className="mb-12">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  {section.title}
+                </h2>
+                <div className="space-y-4">{section.content}</div>
+              </div>
+            ))}
+          </div>
 
-        {/* Section 8 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">8. Governing Law</h2>
-          <p className="text-muted-foreground">
-            These Terms shall be governed and construed in accordance with the laws applicable in your jurisdiction, without regard to its conflict of law provisions.
-          </p>
-        </div>
-
-        {/* Section 9 */}
-        <div className="bg-card rounded-xl shadow-sm p-8 mb-8 border border-border">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">9. Changes to Terms</h2>
-          <p className="text-muted-foreground">
-            We reserve the right to modify these Terms at any time. We will notify you of any changes by posting the new Terms on this page and updating the "Last updated" date.
-          </p>
-        </div>
-
-        {/* Contact */}
-        <div className="bg-card border border-border rounded-2xl p-8 mt-12">
-          <div className="text-center max-w-2xl mx-auto">
-            <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2 text-foreground">Contact Us</h2>
-            <p className="text-muted-foreground mb-6">
-              If you have any questions about these Terms of Service, please contact us.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="mailto:legal@WorkContextai.com" className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 font-medium text-center">
-                Email Legal Team
-              </a>
-              <Link href="/docs" className="px-6 py-3 border border-border rounded-lg font-medium text-center text-foreground hover:bg-muted">
-                Back to Documentation
-              </Link>
+          {/* Contact */}
+          <div className="bg-white rounded-2xl p-8 border border-gray-200 mt-12">
+            <div className="text-center max-w-2xl mx-auto">
+              <Mail className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Contact Us</h2>
+              <p className="text-gray-600 mb-6">
+                If you have any questions about these Terms of Service, please contact us.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a
+                  href="mailto:legal@WorkContextai.com"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium text-center"
+                >
+                  Email Legal Team
+                </a>
+                <Link
+                  href="/docs"
+                  className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-center text-gray-700 hover:bg-gray-50"
+                >
+                  Back to Documentation
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
-};
+}
 
-export default TermsPage;
+function RelatedPolicies() {
+  const policies = [
+    {
+      title: "Privacy Policy",
+      description: "Learn how we collect, use, and protect your personal information.",
+      href: "/docs/privacy",
+    },
+    {
+      title: "Cookie Policy",
+      description: "Information about how we use cookies and similar technologies.",
+      href: "/legal/cookies",
+    },
+    {
+      title: "GDPR Compliance",
+      description: "Information about our compliance with the General Data Protection Regulation.",
+      href: "/legal/gdpr",
+    },
+  ];
+
+  return (
+    <section className="section-padding bg-white">
+      <div className="container-custom">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Related Policies
+          </h2>
+          <p className="text-gray-600">
+            Learn more about our commitment to privacy and security.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {policies.map((policy, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200"
+            >
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {policy.title}
+              </h3>
+              <p className="text-gray-600 mb-4">{policy.description}</p>
+              <Button
+                variant="outline"
+                className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                asChild
+              >
+                <Link href={policy.href}>Read More</Link>
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default function TermsPage() {
+  return (
+    <Layout>
+      <IntroHero />
+      <TermsContent />
+      <RelatedPolicies />
+    </Layout>
+  );
+}

@@ -32,89 +32,9 @@ interface DropdownItem {
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const [productOpen, setProductOpen] = useState(false);
-  const [resourcesOpen, setResourcesOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
-  // const [pricingOpen, setPricingOpen] = useState(false);
   const pathname = usePathname();
-
-  // Refs for timeout management
-  const productTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const resourcesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const solutionsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // const pricingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Define dropdown items with icons and descriptions based on footer navigation
-  const productItems: DropdownItem[] = [
-    {
-      name: "Features",
-      href: "/features",
-      icon: <Zap className="h-5 w-5" />,
-      description: "Explore all features of WorkContext",
-    },
-    {
-      name: "Integrations",
-      href: "/integrations",
-      icon: <Bot className="h-5 w-5" />,
-      description: "Connect with your favorite tools",
-    },
-    {
-      name: "What's New",
-      href: "/changelog",
-      icon: <Calendar className="h-5 w-5" />,
-      description: "See the latest updates and improvements",
-    },
-    {
-      name: "Roadmap",
-      href: "/roadmap",
-      icon: <BarChart3 className="h-5 w-5" />,
-      description: "Discover what's coming next",
-    },
-  ];
-
-  {
-    /* const pricingItems: DropdownItem[] = [
-    {
-      name: "Individual Plans",
-      href: "/pricing",
-      icon: <User className="h-5 w-5" />,
-      description: "Plans for individual productivity",
-    },
-    {
-      name: "Team & Business",
-      href: "/institutional",
-      icon: <Users className="h-5 w-5" />,
-      description: "Plans for teams and organizations",
-    },
-  ]; */
-  }
-
-  /* const resourcesItems: DropdownItem[] = [
-    {
-      name: "Blogs",
-      href: "/blogs",
-      icon: <BookOpen className="h-5 w-5" />,
-      description: "Read our latest articles and insights",
-    },
-    {
-      name: "Case Studies",
-      href: "/resources/case-studies",
-      icon: <BarChart3 className="h-5 w-5" />,
-      description: "See how others use WorkContextsuccessfully",
-    },
-    {
-      name: "Help Center",
-      href: "/help",
-      icon: <Lightbulb className="h-5 w-5" />,
-      description: "Get help with using WorkContext",
-    },
-    {
-      name: "Documentation",
-      href: "/docs",
-      icon: <FileText className="h-5 w-5" />,
-      description: "Comprehensive guides and API references",
-    },
-  ];*/
 
   const solutionsItems: DropdownItem[] = [
     {
@@ -268,87 +188,6 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* Product Dropdown - 2 columns
-            <div
-              className="relative"
-              onMouseEnter={() =>
-                handleMouseEnter(setProductOpen, productTimeoutRef)
-              }
-              onMouseLeave={() =>
-                handleMouseLeave(setProductOpen, productTimeoutRef)
-              }
-            >
-              <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
-                Product
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    productOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
-              {productOpen && (
-                <div
-                  className="fixed top-16 left-0 w-full bg-[#FAF9F6] border-t border-gray-300 shadow-2xl z-40 rounded-b-xl"
-                  onMouseEnter={() =>
-                    handleMouseEnter(setProductOpen, productTimeoutRef)
-                  }
-                  onMouseLeave={() =>
-                    handleMouseLeave(setProductOpen, productTimeoutRef)
-                  }
-                >
-                  <div className="container-custom py-8">
-                    <div className="flex gap-12">
-                      <div className="w-2/3 grid grid-cols-2 gap-6">
-                        {productItems.map((item, index) => (
-                          <Link
-                            key={index}
-                            href={item.href}
-                            className="group cursor-pointer flex flex-col p-2 rounded-lg hover:bg-gray-200/50 transition-colors"
-                            onClick={() => setProductOpen(false)}
-                          >
-                            <div className="flex items-center mb-2">
-                              <div className="flex items-center justify-center w-8 h-8 rounded-lg mr-3 text-purple-400 bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                                {item.icon}
-                              </div>
-                              <div className="font-semibold text-sm text-gray-700 group-hover:text-gray-900">
-                                {item.name}
-                              </div>
-                            </div>
-                            <div className="text-xs text-gray-400 pl-11 group-hover:text-gray-500">
-                              {item.description}
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-
-                      <div className="w-1/3 bg-gradient-to-br from-gray-900 to-[#0a0a0a] rounded-xl p-6 border border-gray-300 relative overflow-hidden group">
-                        <div className="relative z-10">
-                          <div className="bg-purple-500/20 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                            <Sparkles className="h-6 w-6 text-purple-400" />
-                          </div>
-                          <h3 className="text-lg font-bold text-white mb-2">
-                            What's New in V2.0
-                          </h3>
-                          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                            Check out our latest features including the new
-                            Graph View and enhanced PDF chat.
-                          </p>
-                          <Link
-                            href="/changelog"
-                            className="inline-flex items-center text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors"
-                          >
-                            View Changelog
-                            <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
-                          </Link>
-                        </div>
-                        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-colors"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>*/}
-
             <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
               <Link
                 href="/roadmap"
@@ -357,88 +196,6 @@ export default function Navigation() {
                 Roadmap
               </Link>
             </div>
-
-            {/*
-          
-            <div
-              className="relative"
-              onMouseEnter={() =>
-                handleMouseEnter(setResourcesOpen, resourcesTimeoutRef)
-              }
-              onMouseLeave={() =>
-                handleMouseLeave(setResourcesOpen, resourcesTimeoutRef)
-              }
-            >
-              <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
-                Resources
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    resourcesOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
-              {resourcesOpen && (
-                <div
-                  className="fixed top-16 left-0 w-full bg-[#FAF9F6] border-t border-gray-300 shadow-2xl z-40 rounded-b-xl"
-                  onMouseEnter={() =>
-                    handleMouseEnter(setResourcesOpen, resourcesTimeoutRef)
-                  }
-                  onMouseLeave={() =>
-                    handleMouseLeave(setResourcesOpen, resourcesTimeoutRef)
-                  }
-                >
-                  <div className="container-custom py-8">
-                    <div className="flex gap-12">
-                      <div className="w-2/3 grid grid-cols-2 gap-6">
-                        {resourcesItems.map((item, index) => (
-                          <Link
-                            key={index}
-                            href={item.href}
-                            className="group cursor-pointer flex flex-col p-2 rounded-lg hover:bg-gray-200/50 transition-colors"
-                            onClick={() => setResourcesOpen(false)}
-                          >
-                            <div className="flex items-center mb-2">
-                              <div className="flex items-center justify-center w-8 h-8 rounded-lg mr-3 text-green-400 bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                                {item.icon}
-                              </div>
-                              <div className="font-semibold text-sm text-gray-700 group-hover:text-gray-900">
-                                {item.name}
-                              </div>
-                            </div>
-                            <div className="text-xs text-gray-400 pl-11 group-hover:text-gray-500">
-                              {item.description}
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-
-                      <div className="w-1/3 bg-gradient-to-br from-gray-900 to-[#0a0a0a] rounded-xl p-6 border border-gray-300 relative overflow-hidden group">
-                        <div className="relative z-10">
-                          <div className="bg-green-500/20 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                            <BookOpen className="h-6 w-6 text-green-400" />
-                          </div>
-                          <h3 className="text-lg font-bold text-white mb-2">
-                            Student Success Guide
-                          </h3>
-                          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                            Master the art of academic writing with our
-                            comprehensive guides and tutorials.
-                          </p>
-                          <Link
-                            href="/blog"
-                            className="inline-flex items-center text-sm font-semibold text-green-400 hover:text-green-300 transition-colors"
-                          >
-                            Read Guides
-                            <ChevronDown className="ml-1 h-4 w-4 -rotate-90" />
-                          </Link>
-                        </div>
-                        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-green-500/10 rounded-full blur-3xl group-hover:bg-green-500/20 transition-colors"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-          </div> */}
 
             <div className="text-sm font-medium transition-colors duration-200 text-gray-700 flex items-center gap-1 cursor-pointer focus:outline-none">
               <Link
@@ -533,31 +290,6 @@ export default function Navigation() {
                 onClick={() => setIsOpen(false)}
               >
                 Changelog
-              </Link>
-
-              <Link
-                href="/institutional"
-                className={cn(
-                  "text-base font-medium transition-colors duration-200 px-2 py-1 text-gray-700 hover:text-gray-900",
-                  pathname === "/institutional"
-                    ? "text-white nav-link-active"
-                    : "text-gray-700",
-                )}
-                onClick={() => setIsOpen(false)}
-              >
-                Team & Institutional
-              </Link>
-              <Link
-                href="/help"
-                className={cn(
-                  "text-base font-medium transition-colors duration-200 px-2 py-1 text-gray-700 hover:text-gray-900",
-                  pathname === "/help"
-                    ? "text-white nav-link-active"
-                    : "text-gray-700",
-                )}
-                onClick={() => setIsOpen(false)}
-              >
-                Help
               </Link>
               <div className="flex flex-col space-y-2 pt-4 border-t border-gray-300">
                 <Button

@@ -18,7 +18,7 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
             Cookie{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Policy
@@ -46,7 +46,7 @@ function CookiePolicyContent() {
     {
       title: "What are cookies?",
       content: (
-        <p className="text-gray-200">
+        <p className="text-gray-700">
           Cookies are small data files that are placed on your computer or
           mobile device when you visit a website. Cookies are widely used by
           website owners to make their websites work, or to work more
@@ -58,8 +58,8 @@ function CookiePolicyContent() {
       title: "Why do we use cookies?",
       content: (
         <div className="space-y-4">
-          <p className="text-gray-200">We use cookies for several reasons:</p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-200">
+          <p className="text-gray-700">We use cookies for several reasons:</p>
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
             <li>To enable certain functions of our service</li>
             <li>To provide analytics and usage statistics</li>
             <li>To store your preferences and settings</li>
@@ -74,8 +74,8 @@ function CookiePolicyContent() {
       content: (
         <div className="space-y-6">
           <div>
-            <h4 className="font-semibold text-white mb-2">Essential Cookies</h4>
-            <p className="text-gray-200">
+            <h4 className="font-semibold text-gray-900 mb-2">Essential Cookies</h4>
+            <p className="text-gray-700">
               These cookies are strictly necessary to provide you with our
               service and cannot be disabled. They include cookies that help
               with authentication, maintaining your session, and ensuring the
@@ -83,28 +83,28 @@ function CookiePolicyContent() {
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-white mb-2">
+            <h4 className="font-semibold text-gray-900 mb-2">
               Performance Cookies
             </h4>
-            <p className="text-gray-200">
+            <p className="text-gray-700">
               These cookies help us understand how visitors interact with our
               service by collecting and reporting information anonymously. We
               use these cookies to improve how our service works.
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-white mb-2">
+            <h4 className="font-semibold text-gray-900 mb-2">
               Functionality Cookies
             </h4>
-            <p className="text-gray-200">
+            <p className="text-gray-700">
               These cookies enable our service to provide enhanced functionality
               and personalization. They may be set by us or by third party
               providers whose services we have added to our pages.
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-white mb-2">Targeting Cookies</h4>
-            <p className="text-gray-200">
+            <h4 className="font-semibold text-gray-900 mb-2">Targeting Cookies</h4>
+            <p className="text-gray-700">
               These cookies may be set through our site by our advertising
               partners. They may be used by those companies to build a profile
               of your interests and show you relevant advertisements on other
@@ -118,12 +118,12 @@ function CookiePolicyContent() {
       title: "Third-party cookies",
       content: (
         <div className="space-y-4">
-          <p className="text-gray-200">
+          <p className="text-gray-700">
             We work with third-party partners to provide analytics, security,
             and marketing services. These partners may place cookies on your
             device when you use our service:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-200">
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
             <li>
               <strong>Google Analytics:</strong> For understanding how users
               interact with our service
@@ -144,18 +144,18 @@ function CookiePolicyContent() {
       title: "Your cookie choices",
       content: (
         <div className="space-y-4">
-          <p className="text-gray-200">
+          <p className="text-gray-700">
             You have the right to decide whether to accept or reject cookies.
             You can:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-200">
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
             <li>Set your browser to block or alert you about cookies</li>
             <li>
               Use our cookie consent manager to customize your preferences
             </li>
             <li>Delete cookies from your browser</li>
           </ul>
-          <p className="mt-4 text-gray-200">
+          <p className="mt-4 text-gray-700">
             Note that blocking all cookies may affect your user experience and
             prevent you from using certain features of our service.
           </p>
@@ -165,7 +165,7 @@ function CookiePolicyContent() {
     {
       title: "Changes to this Cookie Policy",
       content: (
-        <p className="text-gray-200">
+        <p className="text-gray-700">
           We may update this Cookie Policy from time to time to reflect changes
           in our practices or for other operational, legal, or regulatory
           reasons. We will post the revised Cookie Policy on our website with
@@ -177,11 +177,11 @@ function CookiePolicyContent() {
       title: "Contact us",
       content: (
         <div className="space-y-4">
-          <p className="text-gray-200">
+          <p className="text-gray-700">
             If you have any questions about this Cookie Policy, please contact
             us:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-200">
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
             <li>By email: privacy@WorkContextai.com</li>
             <li>
               By visiting our{" "}
@@ -202,7 +202,7 @@ function CookiePolicyContent() {
           <div className="prose max-w-none">
             {sections.map((section, index) => (
               <div key={index} className="mb-12">
-                <h2 className="text-2xl font-bold text-white mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
                   {section.title}
                 </h2>
                 <div className="space-y-4">{section.content}</div>
@@ -241,10 +241,10 @@ function RelatedPolicies() {
     <section className="section-padding bg-white">
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Related Policies
           </h2>
-          <p className="text-gray-200">
+          <p className="text-gray-600">
             Learn more about our commitment to privacy and security.
           </p>
         </div>
@@ -253,15 +253,15 @@ function RelatedPolicies() {
           {policies.map((policy, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg border border-white"
+              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200"
             >
-              <h3 className="text-xl font-bold text-white mb-3">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
                 {policy.title}
               </h3>
-              <p className="text-gray-200 mb-4">{policy.description}</p>
+              <p className="text-gray-600 mb-4">{policy.description}</p>
               <Button
                 variant="outline"
-                className="bg-white border-white text-white hover:bg-white"
+                className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                 asChild
               >
                 <Link href={policy.href}>Read More</Link>
