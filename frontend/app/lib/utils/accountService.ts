@@ -13,7 +13,6 @@ export interface ActualUserAccount {
   user_type: string | null;
   field_of_study: string | null;
   selected_plan: string | null;
-  retention_period: number | null;
   affiliate_ref: string | null;
   created_at: string;
   updated_at: string;

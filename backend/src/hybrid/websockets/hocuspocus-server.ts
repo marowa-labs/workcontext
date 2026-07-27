@@ -105,9 +105,16 @@ export class HocuspocusCollaborationServer {
           if (!documentName.startsWith("project-")) return;
           const projectId = documentName.replace("project-", "");
 
-          let content = TiptapTransformer.fromYdoc(document, "prosemirror");
+          // Auto-detect the Yjs shared field name to stay in sync with the frontend,
+          // which dynamically selects one (e.g. "default" or "prosemirror").
+          const sharedField = HocuspocusCollaborationServer.detectYjsField(document);
+          if (!sharedField) {
+            logger.warn("[onStoreDocument] No shared Yjs field found, skipping save", { projectId });
+            return;
+          }
+          let content = TiptapTransformer.fromYdoc(document, sharedField);
           logger.info(
-            `[onStoreDocument] Project ${projectId}, content type: ${typeof content}, keys: ${typeof content === "object" ? Object.keys(content).join(",") : "N/A"}, content preview: ${JSON.stringify(content).substring(0, 200)}`,
+            `[onStoreDocument] Project ${projectId}, field: ${sharedField}, content type: ${typeof content}, keys: ${typeof content === "object" ? Object.keys(content).join(",") : "N/A"}, content preview: ${JSON.stringify(content).substring(0, 200)}`,
           );
 
           // Validate and prepare content to ensure compatibility with our editor
@@ -856,6 +863,25 @@ export class HocuspocusCollaborationServer {
         });
       },
     });
+  }
+
+  /**
+   * Detect the shared Yjs field name used by the frontend's Collaboration extension.
+   * Tries common field names in order and returns the first one that exists.
+   */
+  static detectYjsField(ydoc: any): string | null {
+    try {
+      const share = ydoc?.share;
+      if (!share || typeof share.keys !== "function") return null;
+      const keys = Array.from(share.keys());
+      const preferred = ["prosemirror", "default"];
+      for (const name of preferred) {
+        if (keys.includes(name)) return name;
+      }
+      return keys.length > 0 ? keys[0] : null;
+    } catch {
+      return null;
+    }
   }
 
   /**

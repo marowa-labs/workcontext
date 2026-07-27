@@ -139,7 +139,6 @@ export type User = {
   user_type?: string;
   field_of_study?: string;
   selected_plan?: string;
-  retention_period?: number;
   affiliate_ref?: string; // Add affiliate reference field
   created_at: string;
   updated_at: string;

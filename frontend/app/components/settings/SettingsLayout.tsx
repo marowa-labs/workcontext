@@ -10,7 +10,6 @@ import {
   Lock,
   Database,
   HelpCircle,
-  Trash2,
   Shield,
   MessageSquare,
   Key,
@@ -100,12 +99,6 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       path: "ai-api-key",
     },
 
-    {
-      id: "recycle-bin",
-      label: "Recycle Bin",
-      icon: Trash2,
-      path: "recycle-bin",
-    },
     {
       id: "feedback",
       label: "Feedback",

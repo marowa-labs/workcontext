@@ -9,7 +9,6 @@ import dotenv from "dotenv";
 import path from "path";
 import logger from "../monitoring/logger";
 import { metrics, metricsMiddleware } from "../monitoring/metrics";
-import { scheduleCleanupTask } from "../scheduledTasks/cleanupExpiredItems";
 import { scheduleVersionCleanupTask } from "../scheduledTasks/versionCleanupTask";
 import { scheduleVersionSchedulingTask } from "../scheduledTasks/versionSchedulingTask";
 import { scheduleTaskReminderTask } from "../scheduledTasks/taskReminderTask";
@@ -70,7 +69,6 @@ import { HocuspocusCollaborationServer } from "./websockets/hocuspocus-server";
 
 // Import routers
 import aiRouter from "../api/ai/route";
-import recycleBinRouter from "../api/recyclebin/route";
 import projectsRouter from "../api/projects/index";
 import feedbackRouter from "../api/feedback/index";
 import notificationsRouter from "../api/notifications/index";
@@ -157,7 +155,6 @@ initializePort();
 const authMiddleware = authenticateExpressRequest;
 
 // Start Scheduled Tasks
-scheduleCleanupTask();
 scheduleVersionCleanupTask();
 scheduleVersionSchedulingTask();
 scheduleTaskReminderTask();
@@ -281,7 +278,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // Register API routers
 app.use("/api/projects", projectsRouter);
 app.use("/api/ai", aiRouter);
-app.use("/api/recyclebin", recycleBinRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/auth", authRouter);
@@ -3579,12 +3575,6 @@ app.use(
   express.static(path.join(__dirname, "..", "..", "reports")),
 );
 
-// Apply auth middleware to recycle bin routes
-app.use("/api/recyclebin", authMiddleware);
-
-// Instead of individual recycle bin endpoints, mount the recycle bin router directly
-app.use("/api/recyclebin", recycleBinRouter);
-
 // General file upload endpoint
 app.post("/_create/api/upload/", authMiddleware, async (req, res) => {
   try {
@@ -3808,9 +3798,6 @@ const server = app.listen(Number(PORT), "0.0.0.0", async () => {
   logger.info(`WebSocket collaboration server running on port 9081`);
   logger.info(`WebSocket notification server running on port 8082`);
   metrics.setGauge("server_status", 1);
-
-  // Schedule the cleanup task for expired recycle bin items
-  scheduleCleanupTask();
 
   // Schedule the version cleanup task based on subscription plans
   scheduleVersionCleanupTask(); // Added import and function call
