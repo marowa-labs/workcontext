@@ -57,13 +57,10 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               "bg-white text-gray-600 dark:bg-white dark:text-gray-600",
               "focus:outline-none focus:ring-2 focus:ring-[#4F8CFF] focus:border-[#4F8CFF] focus:shadow-[0_0_12px_rgba(79,140,255,0.3)]",
               "placeholder:text-[#8B90A1]",
-              leftIcon && "pl-10",
-              (rightIcon ||
-                showPasswordToggle ||
-                success ||
-                error ||
-                loading) &&
-                "pr-10",
+              leftIcon ? "pl-10" : undefined,
+              rightIcon || showPasswordToggle || success || error || loading
+                ? "pr-10"
+                : undefined,
               error &&
                 "border-red-500 focus:ring-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgba(239,68,68,0.3)]",
               success &&
