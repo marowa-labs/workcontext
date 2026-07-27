@@ -943,7 +943,8 @@ export function AIChatDrawer({
       setSessions(loadedSessions);
 
       if (!loadedSessions.length) {
-        await createNewSession();
+        setCurrentSession(null);
+        setMessages([]);
       } else {
         // Find the most recent session (first in list since sorted by last_message_at desc)
         const mostRecent = loadedSessions[0];
@@ -998,7 +999,7 @@ export function AIChatDrawer({
     }
   };
 
-  const createNewSession = async () => {
+  const createNewSession = async (): Promise<string | null> => {
     try {
       const data = await apiClient.post("/api/ai/chat/session", {
         title: "New Chat",
@@ -1007,8 +1008,10 @@ export function AIChatDrawer({
       setMessages([]);
       setSessions((prev) => [data.session, ...prev]);
       setShowSessionsDropdown(false);
+      return data.session.id;
     } catch (error) {
       console.error("Failed to create session:", error);
+      return null;
     }
   };
 
@@ -1076,7 +1079,12 @@ export function AIChatDrawer({
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || loading || !currentSession) return;
+    if (!input.trim() || loading) return;
+    let sessionId = currentSession;
+    if (!sessionId) {
+      sessionId = await createNewSession();
+      if (!sessionId) return;
+    }
 
     const userMessageContent = input.trim();
     const tempUserMessage: Message = {
@@ -1093,14 +1101,14 @@ export function AIChatDrawer({
     try {
       // Auto-generate title if this is the first user message and session has default title
       // Note: messages.length is 0 here because setMessages hasn't updated state yet
-      const currentSessionData = sessions.find((s) => s.id === currentSession);
+      const currentSessionData = sessions.find((s) => s.id === sessionId);
       if (
         currentSessionData &&
         currentSessionData.title === "New Chat" &&
         messages.length === 0
       ) {
         const autoTitle = generateChatTitle(userMessageContent);
-        await updateSessionTitle(currentSession, autoTitle);
+        await updateSessionTitle(sessionId, autoTitle);
       }
 
       // First, try to process as an action using AI Action Service

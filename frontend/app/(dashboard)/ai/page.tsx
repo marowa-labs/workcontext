@@ -579,8 +579,8 @@ export default function AIPage() {
       setSessions(sessions);
 
       if (!sessions.length) {
-        // No existing sessions — start a fresh one
-        await createNewSession();
+        setCurrentSession(null);
+        setMessages([]);
       } else {
         // Try to restore the previously active session from localStorage
         const savedSessionId = localStorage.getItem("ai_current_session");
@@ -600,8 +600,8 @@ export default function AIPage() {
       }
     } catch (error) {
       console.error("Failed to load sessions:", error);
-      // If API is unavailable, just create a new session
-      await createNewSession();
+      setCurrentSession(null);
+      setMessages([]);
     }
   };
 
@@ -621,7 +621,7 @@ export default function AIPage() {
     }
   };
 
-  const createNewSession = async () => {
+  const createNewSession = async (): Promise<string | null> => {
     try {
       const data = await apiClient.post("/api/ai/chat/session", {
         title: "New Chat",
@@ -629,6 +629,7 @@ export default function AIPage() {
       setCurrentSession(data.session.id);
       setMessages([]);
       setSessions((prev) => [data.session, ...prev]);
+      return data.session.id;
     } catch (error) {
       console.error("Failed to create session:", error);
       const newSession = {
@@ -639,6 +640,7 @@ export default function AIPage() {
       setCurrentSession(newSession.id);
       setMessages([]);
       setSessions((prev) => [newSession, ...prev]);
+      return newSession.id;
     }
   };
 
@@ -702,16 +704,17 @@ export default function AIPage() {
     setInput("");
     setLoading(true);
 
-    try {
-      // Use the chat endpoint that saves messages to the database
-      if (!currentSession) {
-        throw new Error("No active session");
-      }
+    let sessionId = currentSession;
+    if (!sessionId) {
+      sessionId = await createNewSession();
+      if (!sessionId) return;
+    }
 
+    try {
       const response = await apiClient.post(
-        `/api/ai/chat/session/${currentSession}/messages`,
+        `/api/ai/chat/session/${sessionId}/messages`,
         {
-          sessionId: currentSession,
+          sessionId,
           content: userMessage.content,
           messageType: "text",
         },
@@ -744,18 +747,17 @@ export default function AIPage() {
 
       // Auto-update session title based on first message
       const currentMsgCount = messages.length + 1; // +1 for the user message just added
-      if (currentMsgCount <= 2 && currentSession) {
+      if (currentMsgCount <= 2 && sessionId) {
         const title =
           userMessage.content.length > 40
             ? userMessage.content.substring(0, 40).trim() + "..."
             : userMessage.content;
         // Update title in backend
         apiClient
-          .patch(`/api/ai/chat/session/${currentSession}`, { title })
+          .patch(`/api/ai/chat/session/${sessionId}`, { title })
           .then(() => {
-            // Update local state
             setSessions((prev) =>
-              prev.map((s) => (s.id === currentSession ? { ...s, title } : s)),
+              prev.map((s) => (s.id === sessionId ? { ...s, title } : s)),
             );
           })
           .catch(() => {

@@ -488,40 +488,20 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     const mediumPriority: typeof notifications = [];
     const lowPriority: typeof notifications = [];
 
-    if (filter === "all") {
-      // When showing all, categorize all notifications by their actual priority
-      notifications.forEach((notification) => {
-        const priority = getPriority(notification.type);
-        switch (priority) {
-          case "high":
-            highPriority.push(notification);
-            break;
-          case "medium":
-            mediumPriority.push(notification);
-            break;
-          case "low":
-            lowPriority.push(notification);
-            break;
-        }
-      });
-    } else {
-      // When filtered by priority, put all notifications in the array that matches the filter
-      // Since the backend already filters by priority, all notifications should match the filter
-      notifications.forEach((notification) => {
-        // Put notification in the array that matches the current filter
-        switch (filter) {
-          case "high":
-            highPriority.push(notification);
-            break;
-          case "medium":
-            mediumPriority.push(notification);
-            break;
-          case "low":
-            lowPriority.push(notification);
-            break;
-        }
-      });
-    }
+    notifications.forEach((notification) => {
+      const priority = getPriority(notification.type);
+      switch (priority) {
+        case "high":
+          highPriority.push(notification);
+          break;
+        case "medium":
+          mediumPriority.push(notification);
+          break;
+        case "low":
+          lowPriority.push(notification);
+          break;
+      }
+    });
 
     return { highPriority, mediumPriority, lowPriority };
   };
@@ -697,7 +677,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
             </div>
           ) : (
             <>
-              {highPriority.length > 0 && (
+              {(filter === "all" || filter === "high") && highPriority.length > 0 && (
                 <NotificationGroup
                   label={getPriorityLabel("high")}
                   notifications={highPriority}
@@ -706,7 +686,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                   onSnooze={snoozeNotification}
                 />
               )}
-              {mediumPriority.length > 0 && (
+              {(filter === "all" || filter === "medium") && mediumPriority.length > 0 && (
                 <NotificationGroup
                   label={getPriorityLabel("medium")}
                   notifications={mediumPriority}
@@ -715,7 +695,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                   onSnooze={snoozeNotification}
                 />
               )}
-              {lowPriority.length > 0 && (
+              {(filter === "all" || filter === "low") && lowPriority.length > 0 && (
                 <NotificationGroup
                   label={getPriorityLabel("low")}
                   notifications={lowPriority}

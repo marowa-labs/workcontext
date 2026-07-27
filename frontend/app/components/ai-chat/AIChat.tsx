@@ -906,15 +906,8 @@ export function AIChatPanel({
             setMessages([welcomeMessage]);
           }
         } else {
-          // Create a new session if none exists
-          const session = await AIService.createChatSession(
-            projectId,
-            "New Chat",
-          );
-          setSessionId(session.id);
-          setSessions([session]);
-
-          // Add welcome message
+          // No sessions exist — show welcome message without creating one.
+          // A session will be created on the first `sendMessage`.
           const cleanName = (name: string | undefined): string | null => {
             if (!name) return null;
             if (name.includes("@")) {
@@ -935,6 +928,7 @@ export function AIChatPanel({
             created_at: new Date().toISOString(),
           };
           setMessages([welcomeMessage]);
+          setSessionId(null);
         }
       } catch (error) {
         console.error("Error initializing chat:", error);
