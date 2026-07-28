@@ -228,6 +228,16 @@ async function handlePOST_REPLY(request: Request & { user?: any }) {
       // Broadcast is best-effort
     }
 
+    // Resolve user info for notifications
+    let replyUserName = "Someone";
+    try {
+      const replyUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { full_name: true },
+      });
+      if (replyUser?.full_name) replyUserName = replyUser.full_name;
+    } catch { /* best-effort */ }
+
     // Create notification for the parent comment author (if different user)
     try {
       const parent = await prisma.comment.findUnique({
@@ -235,16 +245,12 @@ async function handlePOST_REPLY(request: Request & { user?: any }) {
         select: { user_id: true },
       });
       if (parent && parent.user_id !== userId) {
-        const replyUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { full_name: true },
-        });
         await prisma.notification.create({
           data: {
             user_id: parent.user_id,
             type: "comment_reply",
             title: "New Reply",
-            message: `${replyUser?.full_name || "Someone"} replied to your comment`,
+            message: `${replyUserName} replied to your comment`,
             data: { commentId, replyId: reply.id, projectId: reply.project_id },
           },
         });
@@ -268,7 +274,7 @@ async function handlePOST_REPLY(request: Request & { user?: any }) {
               user_id: mentioned.id,
               type: "mention",
               title: "You were mentioned",
-              message: `${replyUser?.full_name || "Someone"} mentioned you in a comment`,
+              message: `${replyUserName} mentioned you in a comment`,
               data: { commentId, replyId: reply.id, projectId: reply.project_id },
             },
           });

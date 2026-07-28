@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "../ui/button";
-import { Wand2, FileText, Lightbulb, MessageSquare, MessageCircle } from "lucide-react";
+import { Wand2, FileText, MessageSquare, MessageCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface FloatingAIMenuProps {
@@ -122,11 +122,6 @@ export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
       icon: <FileText className="h-3.5 w-3.5" />,
       label: "Shorten",
       action: "shorten",
-    },
-    {
-      icon: <Lightbulb className="h-3.5 w-3.5" />,
-      label: "Expand",
-      action: "expand",
     },
     {
       icon: <MessageSquare className="h-3.5 w-3.5" />,

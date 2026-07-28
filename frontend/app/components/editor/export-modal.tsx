@@ -132,8 +132,6 @@ export function ExportModal({
   };
 
   const handleExport = async () => {
-    if (!editor) return;
-
     if (!projectId) {
       toast({
         title: "Error",

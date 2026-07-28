@@ -139,6 +139,27 @@ router.get("/:id/invite/:token", async (req, res) => {
   }
 });
 
+// Get a specific project by ID — public route (link sharing check inside)
+router.get("/:id", async (req, res) => {
+  const host = req.headers.host || "localhost:3001";
+  const originalUrl = req.originalUrl || req.url;
+  const fullUrl = `http://${host}${originalUrl}`;
+
+  const mockRequest = {
+    user: (req as any).user,
+    url: fullUrl,
+    params: { id: req.params.id },
+  };
+
+  try {
+    const response = await GET_BY_ID(mockRequest as any, req.params.id);
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Internal server error" });
+  }
+});
+
 // Protected routes (authentication required)
 router.use(authenticateExpressRequest);
 
@@ -335,41 +356,6 @@ router.get("/:id/permission", async (req, res) => {
       error: "Internal server error",
       message: error.message || "Failed to check project permission",
     });
-  }
-});
-
-// Get a specific project by ID - MOVED AFTER SPECIFIC ROUTES
-router.get("/:id", async (req, res) => {
-  // Construct a full URL for the get handler to allow access to query params
-  const host = req.headers.host || "localhost:3001";
-  const originalUrl = req.originalUrl || req.url;
-  const fullUrl = `http://${host}${originalUrl}`;
-
-  console.log("=== GET_BY_ID ROUTER DEBUG ===");
-  console.log("Original URL:", req.originalUrl);
-  console.log("Req URL:", req.url);
-  console.log("Constructed Full URL:", fullUrl);
-  console.log("Params:", req.params);
-  console.log(
-    "User in mockRequest:",
-    (req as any).user ? "Present" : "Missing",
-  );
-
-  // Mock request object to match the expected format
-  const mockRequest = {
-    user: (req as any).user,
-    url: fullUrl,
-    params: {
-      id: req.params.id,
-    },
-  };
-
-  try {
-    const response = await GET_BY_ID(mockRequest as any, req.params.id);
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message || "Internal server error" });
   }
 });
 
