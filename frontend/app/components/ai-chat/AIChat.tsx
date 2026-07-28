@@ -747,6 +747,7 @@ export function AIChatPanel({
               }
             }
           }
+        }
       }
 
       // Always strip editor markers from chat display
