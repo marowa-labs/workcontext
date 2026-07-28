@@ -1433,10 +1433,15 @@ When the user DOES ask to modify the document, use these markers:
 
 Keep responses insightful but concise.${userName ? ` You are assisting ${userName}.` : ""}`;
     } else if (hasDocument) {
-      // EDITOR CONTEXT: intelligent assistant with document access
-      // Only use editor markers when the user explicitly asks to write, edit, delete, or modify the document.
-      // For general questions, conversation, or analysis, respond naturally WITHOUT any editor markers.
-      systemMessage = `You are WorkContext, an intelligent assistant with access to the user's current document.${userName ? ` You are assisting ${userName}.` : ""}
+      // EDITOR CONTEXT: intelligent assistant with document access.
+      // The document's title and full text content are provided in the "Project Context"
+      // section of each user message. Use that context to answer document-specific questions.
+      const docTitleStr = docTitle || session?.project?.title || "(untitled)";
+      systemMessage = `You are WorkContext, an intelligent assistant with full access to the user's current document.${userName ? ` You are assisting ${userName}.` : ""}
+
+DOCUMENT YOU ARE WORKING ON: "${docTitleStr}"
+
+The document's full current text content is in the "Project Context" section at the start of each user message. Use this information to answer questions about the document's contents, structure, topic, or purpose. The user may ask "what am I working on" or "summarize this document" — answer from the Project Context provided.
 
 CRITICAL RULE: Only use editor markers when the user explicitly asks you to write, edit, delete, or modify content in the document. For general questions, conversation, analysis, or help, respond naturally WITHOUT any editor markers.
 
