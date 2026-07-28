@@ -118,6 +118,18 @@ export function updateContentNonDisruptively(
   }
 }
 
+// Recursively migrate deprecated node types to their current names.
+function migrateNodeTypes(node: any): any {
+  if (!node || typeof node !== "object") return node;
+  const result = Array.isArray(node) ? [] : { ...node };
+  if (result.type === "image") result.type = "resizableImage";
+  if (result.attrs?.style) delete result.attrs.style;
+  if (result.content && Array.isArray(result.content)) {
+    result.content = result.content.map(migrateNodeTypes);
+  }
+  return result;
+}
+
 // Enhanced content validation function with improved Tiptap document structure validation
 export function validateAndPrepareContent(content: any): any {
   // Handle null, undefined, or empty content
@@ -182,6 +194,9 @@ export function validateAndPrepareContent(content: any): any {
 
   // Handle object content
   if (typeof content === "object" && !Array.isArray(content)) {
+    // Migrate deprecated node types (e.g. "image" → "resizableImage")
+    content = migrateNodeTypes(content);
+
     // Check for valid Tiptap document structure
     if (content.type === "doc" && Array.isArray(content.content)) {
       // Process content to remove empty text nodes and invalid content
@@ -284,6 +299,11 @@ export function validateAndPrepareContent(content: any): any {
           let processedNode = node;
           if (node.type === "list-item") {
             processedNode = { ...node, type: "listItem" };
+          }
+
+          // Migrate old "image" to "resizableImage" (renamed extension)
+          if (node.type === "image") {
+            processedNode = { ...node, type: "resizableImage" };
           }
 
           // Handle visual-element nodes
