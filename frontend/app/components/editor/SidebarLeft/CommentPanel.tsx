@@ -19,6 +19,8 @@ import { Textarea } from "../../ui/textarea";
 import CollaborationService, {
   Comment,
 } from "../../../lib/utils/collaborationService";
+import { ProjectService } from "../../../lib/utils/projectService";
+import workspaceService from "../../../lib/utils/workspaceService";
 
 interface CommentPanelProps {
   projectId: string;
@@ -49,16 +51,57 @@ export function CommentPanel({
   const [mentionSearch, setMentionSearch] = useState("");
   const [showMentions, setShowMentions] = useState(false);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [mentionableUsers, setMentionableUsers] = useState<
+    { id: string; full_name: string; email: string }[]
+  >([]);
 
-  // Simulated team members (@mention suggestions)
-  const teamMembers = useMemo(() => ["Alice", "Bob", "Charlie", "Diana"], []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const project = await ProjectService.getProjectById(projectId);
+        const users: { id: string; full_name: string; email: string }[] = [];
+
+        if (project.user) {
+          users.push(project.user);
+        }
+        if (project.collaborators) {
+          for (const collab of project.collaborators) {
+            if (collab.user && !users.find((u) => u.id === collab.user.id)) {
+              users.push(collab.user);
+            }
+          }
+        }
+        if (project.workspace_id) {
+          try {
+            const members = await workspaceService.getWorkspaceMembers(
+              project.workspace_id,
+            );
+            for (const m of members) {
+              if (!users.find((u) => u.id === m.user.id)) {
+                users.push(m.user);
+              }
+            }
+          } catch {
+            // workspace member fetch failed, continue without
+          }
+        }
+
+        setMentionableUsers(users);
+      } catch {
+        // project fetch failed, will show no mentions
+      }
+    })();
+  }, [projectId]);
 
   const filteredMentions = useMemo(
     () =>
-      teamMembers.filter((m) =>
-        m.toLowerCase().includes(mentionSearch.toLowerCase()),
+      mentionableUsers.filter(
+        (u) =>
+          (u.full_name ?? u.email)
+            .toLowerCase()
+            .includes(mentionSearch.toLowerCase()),
       ),
-    [mentionSearch],
+    [mentionSearch, mentionableUsers],
   );
 
   const fetchComments = useCallback(async () => {
@@ -107,6 +150,7 @@ export function CommentPanel({
     const newVal = content.replace(/@(\w*)$/, `@${name} `);
     setter(newVal);
     setShowMentions(false);
+    setMentionIndex(0);
   };
 
   const handleSubmitComment = async () => {
@@ -295,7 +339,8 @@ export function CommentPanel({
               ) {
                 e.preventDefault();
                 insertMention(
-                  filteredMentions[mentionIndex],
+                  filteredMentions[mentionIndex].full_name ||
+                    filteredMentions[mentionIndex].email,
                   newContent,
                   setNewContent,
                 );
@@ -311,23 +356,29 @@ export function CommentPanel({
         {/* @mention popup */}
         {showMentions && filteredMentions.length > 0 && (
           <div className="absolute bottom-16 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-32 overflow-y-auto">
-            {filteredMentions.map((name, i) => (
-              <button
-                key={name}
-                className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 ${
-                  i === mentionIndex
-                    ? "bg-blue-50 text-blue-700"
-                    : "hover:bg-gray-50"
-                }`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  insertMention(name, newContent, setNewContent);
-                }}
-              >
-                <AtSign className="h-3 w-3" />
-                {name}
-              </button>
-            ))}
+            {filteredMentions.map((u, i) => {
+              const displayName = u.full_name || u.email;
+              return (
+                <button
+                  key={u.id}
+                  className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 ${
+                    i === mentionIndex
+                      ? "bg-blue-50 text-blue-700"
+                      : "hover:bg-gray-50"
+                  }`}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    insertMention(displayName, newContent, setNewContent);
+                  }}
+                >
+                  <AtSign className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{displayName}</span>
+                  <span className="text-xs text-gray-400 truncate ml-auto">
+                    {u.email}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
         <div className="flex justify-end">

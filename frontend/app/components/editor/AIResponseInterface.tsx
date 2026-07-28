@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Sparkles,
   RefreshCw,
@@ -12,7 +12,6 @@ import {
   X,
 } from "lucide-react";
 import { apiClient } from "../../lib/utils/apiClient";
-import ReactDiffViewer from "react-diff-viewer";
 
 interface AIResponseInterfaceProps {
   action: string;
@@ -27,6 +26,43 @@ interface AIResponseInterfaceProps {
   onAddSource?: (source: any) => void;
 }
 
+function cleanSuggestion(text: string): string {
+  let cleaned = text;
+
+  // Strip everything after a horizontal rule line (***, ---, ___)
+  cleaned = cleaned.replace(/\n\s*[*_\-]{3,}\s*\n[\s\S]*$/, "");
+  cleaned = cleaned.replace(/^[*_\-]{3,}\s*\n[\s\S]*$/, "");
+
+  // Strip leading labels like "**Here is a revised version:**"
+  cleaned = cleaned.replace(
+    /^(\*\*)?(Here is|Here's|Here is the)\s+(a|an|the)?\s*(?:revised|improved|simplified|expanded|paraphrased|shortened)\s+(?:version|text|passage|sentence|output)(\*\*)?:?\.?\s*\n+/i,
+    "",
+  );
+
+  // Strip generic "**Label:**" prefix on first line
+  cleaned = cleaned.replace(/^\*\*.*?\*\*:?\s*\n+/, "");
+
+  // Strip trailing "Why I made these changes:" / "Here's why:" / etc.
+  cleaned = cleaned.replace(
+    /\n\s*\*?(?:Why I (?:made|did) these changes?|Here'?s why|Key changes?|What I changed|Summary of changes):?\*?[\s\S]*$/i,
+    "",
+  );
+
+  // Strip trailing follow-up questions / sign-offs
+  cleaned = cleaned.replace(
+    /\n\s*(?:Does that|Let me know|Is this|Would you|Feel free|Hope this|Please let me know|I hope).*$/i,
+    "",
+  );
+
+  // Remove remaining markdown bold markers around the text
+  cleaned = cleaned.replace(/^\s*\*{2,}/, "").replace(/\*{2,}\s*$/, "");
+
+  // Remove leading/trailing whitespace
+  cleaned = cleaned.trim();
+
+  return cleaned;
+}
+
 const AIResponseInterface: React.FC<AIResponseInterfaceProps> = ({
   action,
   originalText,
@@ -39,12 +75,11 @@ const AIResponseInterface: React.FC<AIResponseInterfaceProps> = ({
   onAddCitation,
   onAddSource,
 }) => {
-  const [viewMode, setViewMode] = useState<"side-by-side" | "inline" | "clean">(
-    "side-by-side",
-  );
   const [feedbackGiven, setFeedbackGiven] = useState<boolean>(false);
   const [showFeedbackInput, setShowFeedbackInput] = useState<boolean>(false);
   const [feedbackText, setFeedbackText] = useState<string>("");
+
+  const cleanedSuggestion = useMemo(() => cleanSuggestion(suggestion), [suggestion]);
 
   const getActionTitle = () => {
     const titles: Record<string, string> = {
@@ -63,13 +98,11 @@ const AIResponseInterface: React.FC<AIResponseInterfaceProps> = ({
       compare_arguments: "Compared Arguments",
       custom_prompt: "Custom Request",
     };
-
     return titles[action] || "AI Suggestion";
   };
 
   const handleFeedback = async (positive: boolean) => {
     try {
-      // Send feedback to the backend
       await apiClient.post("/api/ai/feedback", {
         action,
         originalText,
@@ -77,14 +110,10 @@ const AIResponseInterface: React.FC<AIResponseInterfaceProps> = ({
         isHelpful: positive,
         feedback: "",
       });
-
       setFeedbackGiven(true);
-
-      // Show feedback input for additional comments
       setShowFeedbackInput(true);
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      // Still update UI even if submission fails
       setFeedbackGiven(true);
       setShowFeedbackInput(true);
     }
@@ -92,360 +121,131 @@ const AIResponseInterface: React.FC<AIResponseInterfaceProps> = ({
 
   const handleSubmitFeedbackText = async () => {
     try {
-      // Send additional feedback text to the backend
       await apiClient.post("/api/ai/feedback", {
         action,
         originalText,
         suggestion,
-        isHelpful: false, // This is additional feedback, not a rating
+        isHelpful: false,
         feedback: feedbackText,
       });
-
-      // Reset feedback input
       setFeedbackText("");
       setShowFeedbackInput(false);
     } catch (error) {
       console.error("Error submitting feedback text:", error);
-      // Still update UI even if submission fails
       setFeedbackText("");
       setShowFeedbackInput(false);
     }
   };
 
-  // Parse citations from suggestion if it's a citation generation response
-  const parseCitations = () => {
-    if (action !== "generate_citations") return null;
-
-    try {
-      // Try to parse as JSON if it's a structured response
-      const parsed = JSON.parse(suggestion);
-      return Array.isArray(parsed) ? parsed : [parsed];
-    } catch {
-      // If not JSON, treat as plain text
-      return null;
-    }
-  };
-
-  // Parse sources from suggestion if it's a source suggestion response
-  const parseSources = () => {
-    if (action !== "suggest_sources") return null;
-
-    try {
-      // Try to parse as JSON if it's a structured response
-      const parsed = JSON.parse(suggestion);
-      return Array.isArray(parsed) ? parsed : [parsed];
-    } catch {
-      // If not JSON, treat as plain text
-      return null;
-    }
-  };
-
-  const citations = parseCitations();
-  const sources = parseSources();
+  const displayText = cleanedSuggestion || suggestion;
 
   return (
-    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:max-w-5xl lg:max-w-6xl">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-white flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="p-1 bg-purple-100 rounded-lg">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-black">
-              {getActionTitle()} Suggestion
+        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-purple-600" />
+            <h3 className="text-lg font-semibold">
+              {getActionTitle()}
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-gray-100">
-            <X className="h-5 w-5 text-black" />
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4">
-          {viewMode === "side-by-side" && !citations && !sources && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-              {/* Original Text */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-black">
+        <div className="flex-1 overflow-auto p-5">
+          <div className="space-y-4">
+            {action === "generate_citations" ? (
+              <div className="text-sm text-gray-500">{displayText}</div>
+            ) : action === "suggest_sources" ? (
+              <div className="text-sm text-gray-500">{displayText}</div>
+            ) : (
+              <>
+                <div>
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
                     Original
                   </h4>
-                </div>
-                <div className="bg-gray-50 border border-white rounded-lg p-4 h-64 overflow-auto">
-                  <p className="text-black whitespace-pre-wrap">
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
                     {originalText}
-                  </p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Suggested Text */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-purple-700">
+                <div>
+                  <h4 className="text-xs font-medium text-purple-600 uppercase tracking-wider mb-1.5">
                     Suggestion
                   </h4>
-                </div>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 h-64 overflow-auto">
-                  <p className="text-black whitespace-pre-wrap">
-                    {suggestion}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {viewMode === "inline" && !citations && !sources && (
-            <div className="border border-white rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-black">Changes</h4>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 min-h-64">
-                <ReactDiffViewer
-                  oldValue={originalText}
-                  newValue={suggestion}
-                  splitView={false}
-                  disableWordDiff={false}
-                  hideLineNumbers={true}
-                  useDarkTheme={false}
-                  styles={{
-                    diffContainer: {
-                      pre: {
-                        lineHeight: "1.5",
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                      },
-                    },
-                    marker: {
-                      padding: "0 3px",
-                      borderRadius: "3px",
-                    },
-                    diffAdded: {
-                      backgroundColor: "#dcfce7",
-                      padding: "0 4px",
-                    },
-                    diffRemoved: {
-                      backgroundColor: "#fee2e2",
-                      padding: "0 4px",
-                    },
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {viewMode === "clean" && !citations && !sources && (
-            <div className="border border-white rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-black">
-                  Suggestion
-                </h4>
-              </div>
-              <div className="bg-white rounded-lg p-4 min-h-64">
-                <p className="text-black whitespace-pre-wrap">
-                  {suggestion}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Citations View */}
-          {citations && (
-            <div className="border border-white rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-medium text-black">
-                  Generated Citations
-                </h4>
-              </div>
-              <div className="space-y-4">
-                {citations.map((citation, index) => (
-                  <div
-                    key={index}
-                    className="border border-white rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h5 className="font-medium text-black">
-                          {citation.title}
-                        </h5>
-                        <p className="text-sm text-black">
-                          {citation.author} ({citation.year})
-                        </p>
-                        {citation.source && (
-                          <p className="text-sm text-black mt-1">
-                            {citation.source}
-                          </p>
-                        )}
-                      </div>
-                      {onAddCitation && (
-                        <button
-                          onClick={() => onAddCitation(citation)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                          Add Citation
-                        </button>
-                      )}
-                    </div>
-                    {citation.abstract && (
-                      <p className="text-sm text-black mt-2">
-                        {citation.abstract}
-                      </p>
-                    )}
+                  <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
+                    {displayText}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sources View */}
-          {sources && (
-            <div className="border border-white rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-medium text-black">
-                  Suggested Sources
-                </h4>
-              </div>
-              <div className="space-y-4">
-                {sources.map((source, index) => (
-                  <div
-                    key={index}
-                    className="border border-white rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h5 className="font-medium text-black">
-                          {source.title}
-                        </h5>
-                        <p className="text-sm text-black">
-                          {source.author} ({source.year})
-                        </p>
-                        {source.journal && (
-                          <p className="text-sm text-black mt-1">
-                            {source.journal}
-                          </p>
-                        )}
-                      </div>
-                      {onAddSource && (
-                        <button
-                          onClick={() => onAddSource(source)}
-                          className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
-                          Add Source
-                        </button>
-                      )}
-                    </div>
-                    {source.abstract && (
-                      <p className="text-sm text-black mt-2">
-                        {source.abstract}
-                      </p>
-                    )}
-                    {source.url && (
-                      <a
-                        href={source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline mt-1 inline-block">
-                        View Source
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* View Toggle */}
-          <div className="flex items-center justify-center mt-4 space-x-2">
-            <button
-              onClick={() => setViewMode("side-by-side")}
-              className={`px-3 py-1 text-sm rounded-lg ${
-                viewMode === "side-by-side"
-                  ? "bg-purple-100 text-purple-700"
-                  : "text-black hover:bg-gray-100"
-              }`}>
-              Side by Side
-            </button>
-            <button
-              onClick={() => setViewMode("inline")}
-              className={`px-3 py-1 text-sm rounded-lg ${
-                viewMode === "inline"
-                  ? "bg-purple-100 text-purple-700"
-                  : "text-black hover:bg-gray-100"
-              }`}>
-              Inline
-            </button>
-            <button
-              onClick={() => setViewMode("clean")}
-              className={`px-3 py-1 text-sm rounded-lg ${
-                viewMode === "clean"
-                  ? "bg-purple-100 text-purple-700"
-                  : "text-black hover:bg-gray-100"
-              }`}>
-              Clean
-            </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="p-4 border-t border-white bg-gray-50">
+        <div className="px-5 py-4 border-t bg-gray-50 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap gap-2">
               {action !== "generate_citations" &&
                 action !== "suggest_sources" && (
                   <>
                     <button
-                      onClick={() => onApply(suggestion)}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center space-x-2">
+                      onClick={() => onApply(displayText)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-1.5 text-sm font-medium"
+                    >
                       <CheckCircle className="h-4 w-4" />
-                      <span>Replace</span>
+                      Replace
                     </button>
                     <button
-                      onClick={() => onInsertBelow(suggestion)}
-                      className="px-4 py-2 border border-white rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                      onClick={() => onInsertBelow(displayText)}
+                      className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm"
+                    >
                       <FileText className="h-4 w-4" />
-                      <span>Insert Below</span>
+                      Insert Below
                     </button>
                   </>
                 )}
               <button
-                onClick={() => onCopy(suggestion)}
-                className="px-4 py-2 border border-white rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                onClick={() => onCopy(displayText)}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm"
+              >
                 <Copy className="h-4 w-4" />
-                <span>Copy</span>
+                Copy
               </button>
               <button
                 onClick={onRegenerate}
-                className="px-4 py-2 border border-white rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm"
+              >
                 <RefreshCw className="h-4 w-4" />
-                <span>Regenerate</span>
+                Regenerate
               </button>
             </div>
-
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-black hover:text-black">
+            <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">
               Dismiss
             </button>
           </div>
 
-          {/* Feedback Section */}
+          {/* Feedback */}
           {!feedbackGiven && (
-            <div className="mt-4 pt-4 border-t border-white">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-black">Was this helpful?</span>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleFeedback(true)}
-                    className="p-2 rounded-lg hover:bg-green-100 text-green-600"
-                    title="Helpful">
-                    <ThumbsUp className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleFeedback(false)}
-                    className="p-2 rounded-lg hover:bg-red-100 text-red-600"
-                    title="Not helpful">
-                    <ThumbsDown className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+            <div className="mt-3 pt-3 border-t flex items-center gap-3">
+              <span className="text-xs text-gray-500">Was this helpful?</span>
+              <button
+                onClick={() => handleFeedback(true)}
+                className="p-1.5 rounded hover:bg-green-100 text-green-600"
+                title="Helpful"
+              >
+                <ThumbsUp className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => handleFeedback(false)}
+                className="p-1.5 rounded hover:bg-red-100 text-red-600"
+                title="Not helpful"
+              >
+                <ThumbsDown className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
 
@@ -455,27 +255,29 @@ const AIResponseInterface: React.FC<AIResponseInterfaceProps> = ({
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 placeholder="Tell us more..."
-                className="w-full px-3 py-2 border border-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                rows={3}
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                rows={2}
               />
-              <div className="flex justify-end space-x-2 mt-2">
+              <div className="flex justify-end gap-2 mt-1.5">
                 <button
                   onClick={() => setShowFeedbackInput(false)}
-                  className="px-3 py-1 text-black hover:text-black">
+                  className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800"
+                >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmitFeedbackText}
-                  className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                  className="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
                   Submit
                 </button>
               </div>
             </div>
           )}
 
-          {feedbackGiven && (
-            <div className="mt-3 p-3 bg-green-50 rounded-lg text-green-700 text-sm">
-              Thanks for your feedback! This helps us improve.
+          {feedbackGiven && !showFeedbackInput && (
+            <div className="mt-3 text-xs text-green-600">
+              Thanks for your feedback!
             </div>
           )}
         </div>
