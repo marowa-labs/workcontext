@@ -26,14 +26,14 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Work Smarter with{" "}
             <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
               AI-Powered Productivity
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Boost your productivity with an AI chat assistant, smart task
             management, real-time document collaboration, and seamless export to
             multiple formats — all in one workspace built for individuals and
@@ -233,7 +233,7 @@ function ClosingCTA() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Boost Your Productivity?
           </h2>
-          <p className="text-lg text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg text-gray-600 mb-8 leading-relaxed">
             Join thousands of individuals and teams who are already working
             smarter with AI chat, task management, real-time collaboration, and
             seamless export — all in one powerful workspace.
@@ -250,7 +250,7 @@ function ClosingCTA() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white text-gray-200 hover:bg-white backdrop-blur-sm px-8 py-6 text-lg"
+              className="border-white text-gray-600 hover:bg-white backdrop-blur-sm px-8 py-6 text-lg"
             >
               <Link href="/docs/quickstart" className="flex items-center">
                 See How It Works
@@ -259,7 +259,7 @@ function ClosingCTA() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 text-gray-200 text-sm">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 text-gray-600 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-indigo-400" />
               <span>No credit card required</span>

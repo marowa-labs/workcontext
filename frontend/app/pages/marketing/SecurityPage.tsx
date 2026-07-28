@@ -27,11 +27,11 @@ function IntroHero() {
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Last updated: November 22, 2025
           </p>
 
-          <p className="text-gray-200 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto">
             We take the security of your data seriously. Learn about the
             measures we implement to protect your work and ensure privacy.
           </p>
@@ -216,7 +216,9 @@ function IncidentResponse() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900/50 mb-4">
                   <Zap className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Detection</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  Detection
+                </h3>
                 <p className="text-gray-700">
                   We continuously monitor our systems for potential security
                   incidents using automated tools and manual reviews.
@@ -226,7 +228,9 @@ function IncidentResponse() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900/50 mb-4">
                   <Shield className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Response</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  Response
+                </h3>
                 <p className="text-gray-700">
                   Our security team responds to incidents within 2 hours and
                   works to contain and remediate threats immediately.
@@ -261,7 +265,7 @@ function ReportingSecurityIssues() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Report a Security Issue
           </h2>
-          <p className="text-lg text-gray-200 mb-8">
+          <p className="text-lg text-gray-600 mb-8">
             Help us improve our security by responsibly disclosing
             vulnerabilities.
           </p>

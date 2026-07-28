@@ -39,13 +39,14 @@ function HelpHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
 
       <div className="absolute inset-0 bg-white/30"></div>
 
       {/* Background elements */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 text-gray-200xl">📚</div>
+        <div className="absolute top-20 left-10 text-gray-600xl">📚</div>
         <div className="absolute top-40 right-20 text-4xl">🔍</div>
         <div className="absolute bottom-40 left-1/4 text-5xl">💡</div>
         <div className="absolute bottom-20 right-10 text-3xl">🎯</div>
@@ -53,24 +54,24 @@ function HelpHero() {
 
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Academic Defensibility.{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Get Help.
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
             Get instant answers to your questions about our core functionalities
-            and make the most of WorkContext's academic defensibility tools
-            with our comprehensive help center.
+            and make the most of WorkContext's academic defensibility tools with
+            our comprehensive help center.
           </p>
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-8">
             <form onSubmit={handleSearch}>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-200" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-600" />
                 <Input
                   type="text"
                   placeholder="Search for help articles, features, or topics..."
@@ -81,7 +82,8 @@ function HelpHero() {
                 <Button
                   type="submit"
                   size="sm"
-                  className="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                  className="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                >
                   Search
                 </Button>
               </div>
@@ -132,7 +134,7 @@ function FeaturedArticles() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Core Functionality Guides
           </h2>
-          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Find exactly what you're looking for with our organized help topics
             focused on academic defensibility.
           </p>
@@ -143,7 +145,8 @@ function FeaturedArticles() {
             <Link
               href={article.path}
               key={index}
-              className="block border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              className="block border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
+            >
               <Card className="h-full bg-white border border-white">
                 <CardContent className="p-8">
                   <div className="flex items-center gap-3 mb-4">
@@ -159,16 +162,16 @@ function FeaturedArticles() {
                     {article.title}
                   </h3>
 
-                  <p className="text-gray-200 mb-4 leading-relaxed text-sm">
+                  <p className="text-gray-600 mb-4 leading-relaxed text-sm">
                     {article.description}
                   </p>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-200">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="h-4 w-4" />
                       {article.readTime}
                     </div>
-                    <ExternalLink className="h-4 w-4 text-gray-200 group-hover:text-blue-400 transition-colors" />
+                    <ExternalLink className="h-4 w-4 text-gray-600 group-hover:text-blue-400 transition-colors" />
                   </div>
                 </CardContent>
               </Card>
@@ -189,7 +192,7 @@ function CommunityFeedback() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Core Functionality Support
           </h2>
-          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Need help with our academic defensibility tools? Our community and
             support team are here to help.
           </p>
@@ -200,7 +203,8 @@ function CommunityFeedback() {
             href="https://discord.gg/2MMSdX3Uee"
             target="_blank"
             rel="noopener noreferrer"
-            className="block border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            className="block border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+          >
             <Card className="bg-white border border-white">
               <CardHeader className="text-center pb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-green-800 mb-4">
@@ -211,7 +215,7 @@ function CommunityFeedback() {
                 </h3>
               </CardHeader>
               <CardContent className="text-center px-8 pb-8">
-                <p className="text-gray-200 mb-6 leading-relaxed">
+                <p className="text-gray-600 mb-6 leading-relaxed">
                   Connect with fellow students and researchers. Share tips, ask
                   questions, and learn from the WorkContextcommunity.
                 </p>
@@ -219,7 +223,7 @@ function CommunityFeedback() {
                   Join Community Forum
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
-                <p className="text-sm text-gray-200 mt-3">
+                <p className="text-sm text-gray-600 mt-3">
                   5,000+ active members ready to help
                 </p>
               </CardContent>
@@ -228,7 +232,8 @@ function CommunityFeedback() {
 
           <Link
             href="/docs/contact-support"
-            className="block border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            className="block border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+          >
             <Card className="bg-white border border-white">
               <CardHeader className="text-center pb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 mb-4">
@@ -239,7 +244,7 @@ function CommunityFeedback() {
                 </h3>
               </CardHeader>
               <CardContent className="text-center px-8 pb-8">
-                <p className="text-gray-200 mb-6 leading-relaxed">
+                <p className="text-gray-600 mb-6 leading-relaxed">
                   Get personalized help from our support team. We're here 24/7
                   to ensure your academic success.
                 </p>
@@ -247,7 +252,7 @@ function CommunityFeedback() {
                   Send Support Request
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <p className="text-sm text-gray-200 mt-3">
+                <p className="text-sm text-gray-600 mt-3">
                   Average response time: 4 hours
                 </p>
               </CardContent>
@@ -274,7 +279,7 @@ function ClosingCTA() {
                 Academic Defensibility is Our Mission
               </h2>
 
-              <p className="text-lg text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
                 Every resource in our Help Center is designed with one goal:
                 helping you master academic defensibility with our core
                 functionalities. Keep exploring, keep learning, keep succeeding.
@@ -284,7 +289,8 @@ function ClosingCTA() {
                 <Link href="/docs">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow">
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow"
+                  >
                     Start Learning
                     <BookOpen className="ml-2 h-5 w-5" />
                   </Button>
@@ -293,14 +299,15 @@ function ClosingCTA() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="border-gray-500 text-gray-100 hover:bg-gray-500 hover:text-white px-8 py-6">
+                    className="border-gray-500 text-gray-100 hover:bg-gray-500 hover:text-white px-8 py-6"
+                  >
                     Get Started Free
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
               </div>
 
-              <p className="text-gray-200 text-sm mt-6">
+              <p className="text-gray-600 text-sm mt-6">
                 Knowledge is power. Make it yours.
               </p>
             </div>
@@ -329,8 +336,7 @@ function DocumentationLinks() {
     },
     {
       title: "Account Management",
-      description:
-        "Control all aspects of your WorkContextaccount settings",
+      description: "Control all aspects of your WorkContextaccount settings",
       path: "/docs/account",
       icon: "🔑",
     },
@@ -448,9 +454,9 @@ function DocumentationLinks() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Core Functionality Documentation
           </h2>
-          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
-            Dive deeper into WorkContext's academic defensibility tools with
-            our detailed documentation
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Dive deeper into WorkContext's academic defensibility tools with our
+            detailed documentation
           </p>
         </div>
 
@@ -459,14 +465,15 @@ function DocumentationLinks() {
             <Link
               key={index}
               href={docLink.path}
-              className="block group bg-white border border-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              className="block group bg-white border border-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
               <div className="flex items-start">
                 <span className="text-2xl mr-4">{docLink.icon}</span>
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
                     {docLink.title}
                   </h3>
-                  <p className="text-gray-200 text-sm">{docLink.description}</p>
+                  <p className="text-gray-600 text-sm">{docLink.description}</p>
                 </div>
               </div>
               <div className="flex items-center mt-4 text-blue-400 text-sm font-medium">
@@ -480,7 +487,8 @@ function DocumentationLinks() {
         <div className="text-center mt-12">
           <Link
             href="/docs"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium transition-colors">
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium transition-colors"
+          >
             Browse All Documentation
             <BookOpen className="ml-2 h-5 w-5" />
           </Link>

@@ -153,7 +153,7 @@ const MobileLandingPage = () => {
                 alt="WorkContextLogo"
                 className="h-8 w-auto"
               />
-              <span className="text-xl font-bold text-gray-200 text-gray-200">
+              <span className="text-xl font-bold text-gray-600 text-gray-600">
                 WorkContext
               </span>
             </Link>
@@ -161,7 +161,7 @@ const MobileLandingPage = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 rounded-md text-gray-200 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white"
+              className="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-white"
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -174,31 +174,31 @@ const MobileLandingPage = () => {
             <div className="hidden lg:flex items-center space-x-8">
               <Link
                 href="/"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                className="text-gray-600 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
               >
                 Home
               </Link>
               <Link
                 href="/features"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                className="text-gray-600 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
               >
                 Features
               </Link>
               <Link
                 href="/pricing"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                className="text-gray-600 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
               >
                 Pricing
               </Link>
               <Link
                 href="/contact"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                className="text-gray-600 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
               >
                 Contact
               </Link>
               <Link
                 href="/login"
-                className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                className="text-gray-600 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
               >
                 Log in
               </Link>
@@ -217,7 +217,7 @@ const MobileLandingPage = () => {
               <div className="flex flex-col space-y-4">
                 <Link
                   href="/mobile"
-                  className="text-gray-200 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                  className="text-gray-600 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Home
@@ -237,11 +237,11 @@ const MobileLandingPage = () => {
               Coming Soon
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-bold text-gray-200 text-gray-200 mb-6">
+            <h1 className="text-3xl md:text-5xl font-bold text-gray-600 text-gray-600 mb-6">
               WorkContextMobile App
             </h1>
 
-            <p className="text-xl text-gray-200 mb-10 dark:text-gray-200 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 mb-10 dark:text-gray-600 max-w-2xl mx-auto">
               The full power of WorkContext, now in your pocket. Ensure academic
               defensibility on the go with our five core functionalities: The
               Explainable Originality Map, Citation Confidence Auditor,
@@ -259,7 +259,7 @@ const MobileLandingPage = () => {
                       <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
-                    <div className="text-xs text-gray-200">WorkContext</div>
+                    <div className="text-xs text-gray-600">WorkContext</div>
                   </div>
                   <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-4 mb-4">
                     <div className="text-white font-bold text-lg">
@@ -296,10 +296,10 @@ const MobileLandingPage = () => {
           <div className="max-w-4xl mx-auto">
             {/* Key Message */}
             <div className="text-center mb-16">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-200 text-gray-200 mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-600 text-gray-600 mb-4">
                 Optimized for Larger Screens
               </h2>
-              <p className="text-lg text-gray-200 dark:text-gray-200 max-w-2xl mx-auto">
+              <p className="text-lg text-gray-600 dark:text-gray-600 max-w-2xl mx-auto">
                 WorkContextis designed to provide the best experience on laptops
                 and desktop computers. Our five core functionalities for
                 academic defensibility require the precision and space that
@@ -314,10 +314,10 @@ const MobileLandingPage = () => {
                   <Laptop className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-200 text-gray-200 mb-2">
+                  <h3 className="text-xl font-bold text-gray-600 text-gray-600 mb-2">
                     Why Desktop Works Best
                   </h3>
-                  <p className="text-gray-200 dark:text-gray-200">
+                  <p className="text-gray-600 dark:text-gray-600">
                     Our platform's five core functionalities—including The
                     Explainable Originality Map, Citation Confidence Auditor,
                     Submission-Safe Writing Mode, Defensibility Log, and
@@ -336,10 +336,10 @@ const MobileLandingPage = () => {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 text-purple-600 mb-4 dark:bg-purple-900/30 dark:text-purple-300">
                   <Smartphone className="h-8 w-8" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-200 text-gray-200 mb-2">
+                <h3 className="text-2xl font-bold text-gray-600 text-gray-600 mb-2">
                   Mobile Services Coming Soon
                 </h3>
-                <p className="text-gray-200 dark:text-gray-200 max-w-2xl mx-auto">
+                <p className="text-gray-600 dark:text-gray-600 max-w-2xl mx-auto">
                   We're actively developing native iOS and Android apps to bring
                   the full WorkContextexperience to your mobile devices.
                 </p>
@@ -351,11 +351,11 @@ const MobileLandingPage = () => {
                     <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3 dark:bg-blue-900/30 dark:text-blue-300">
                       <Zap className="h-5 w-5" />
                     </div>
-                    <h4 className="font-bold text-gray-200 text-gray-200">
+                    <h4 className="font-bold text-gray-600 text-gray-600">
                       Offline Mode
                     </h4>
                   </div>
-                  <p className="text-gray-200 dark:text-gray-200 text-sm">
+                  <p className="text-gray-600 dark:text-gray-600 text-sm">
                     Work on your documents with all five core functionalities
                     available offline and sync automatically when you're back
                     online.
@@ -367,11 +367,11 @@ const MobileLandingPage = () => {
                     <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-3 dark:bg-green-900/30 dark:text-green-300">
                       <Users className="h-5 w-5" />
                     </div>
-                    <h4 className="font-bold text-gray-200 text-gray-200">
+                    <h4 className="font-bold text-gray-600 text-gray-600">
                       Mobile Collaboration
                     </h4>
                   </div>
-                  <p className="text-gray-200 dark:text-gray-200 text-sm">
+                  <p className="text-gray-600 dark:text-gray-600 text-sm">
                     Real-time editing and commenting with your collaborators
                     while maintaining defensibility standards, right from your
                     phone or tablet.
@@ -381,7 +381,7 @@ const MobileLandingPage = () => {
 
               {/* Waitlist Section */}
               <div className="bg-white dark:bg-white rounded-xl p-6 border border-white border-white">
-                <h4 className="text-lg font-bold text-gray-200 text-gray-200 mb-4">
+                <h4 className="text-lg font-bold text-gray-600 text-gray-600 mb-4">
                   Be the First to Know
                 </h4>
 
@@ -407,7 +407,7 @@ const MobileLandingPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="flex-1 px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-white border-white text-gray-200"
+                    className="flex-1 px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-white border-white text-gray-600"
                     disabled={isSubmitting}
                   />
                   <button
@@ -431,7 +431,7 @@ const MobileLandingPage = () => {
                   </button>
                 </form>
 
-                <p className="text-sm text-gray-200 dark:text-gray-200 mt-3">
+                <p className="text-sm text-gray-600 dark:text-gray-600 mt-3">
                   Join 2,156 others on the waitlist for early access
                 </p>
               </div>
@@ -440,10 +440,10 @@ const MobileLandingPage = () => {
             {/* Feature Voting */}
             <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-2xl p-8 border border-indigo-100 border-white-800">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-200 text-gray-200 mb-2">
+                <h3 className="text-2xl font-bold text-gray-600 text-gray-600 mb-2">
                   Help Us Prioritize Features
                 </h3>
-                <p className="text-gray-200 dark:text-gray-200">
+                <p className="text-gray-600 dark:text-gray-600">
                   Vote for the mobile features you'd like to see first
                 </p>
               </div>
@@ -464,10 +464,10 @@ const MobileLandingPage = () => {
                           )}
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-200 text-gray-200">
+                          <h4 className="font-bold text-gray-600 text-gray-600">
                             {feature.name}
                           </h4>
-                          <p className="text-gray-200 dark:text-gray-200 text-sm">
+                          <p className="text-gray-600 dark:text-gray-600 text-sm">
                             {feature.votes} votes
                           </p>
                         </div>
@@ -507,10 +507,10 @@ const MobileLandingPage = () => {
         <div className="container-custom">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-200 text-gray-200 mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-600 text-gray-600 mb-4">
                 About WorkContext
               </h2>
-              <p className="text-lg text-gray-200 dark:text-gray-200 max-w-2xl mx-auto">
+              <p className="text-lg text-gray-600 dark:text-gray-600 max-w-2xl mx-auto">
                 Your entire academic workflow, unified in one powerful platform
               </p>
             </div>
@@ -532,10 +532,10 @@ const MobileLandingPage = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-200 text-gray-200 mb-2">
+                <h3 className="text-xl font-bold text-gray-600 text-gray-600 mb-2">
                   Submission-Safe Writing Mode
                 </h3>
-                <p className="text-gray-200 dark:text-gray-200">
+                <p className="text-gray-600 dark:text-gray-600">
                   Get intelligent suggestions to improve your writing while
                   ensuring AI-written content detection and humanizing
                   capabilities.
@@ -558,10 +558,10 @@ const MobileLandingPage = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-200 text-gray-200 mb-2">
+                <h3 className="text-xl font-bold text-gray-600 text-gray-600 mb-2">
                   Citation Confidence Auditor
                 </h3>
-                <p className="text-gray-200 dark:text-gray-200">
+                <p className="text-gray-600 dark:text-gray-600">
                   Automatically validate and format citations with confidence in
                   their accuracy and proper attribution.
                 </p>
@@ -583,10 +583,10 @@ const MobileLandingPage = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-200 text-gray-200 mb-2">
+                <h3 className="text-xl font-bold text-gray-600 text-gray-600 mb-2">
                   The Explainable Originality Map
                 </h3>
-                <p className="text-gray-200 dark:text-gray-200">
+                <p className="text-gray-600 dark:text-gray-600">
                   Scan your work against billions of sources to ensure
                   originality and academic defensibility with explainable
                   results.
@@ -598,7 +598,7 @@ const MobileLandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white text-gray-200 py-12">
+      <footer className="bg-white text-gray-600 py-12">
         <div className="container-custom">
           <div className="max-w-4xl mx-auto">
             <div className="text-center">
@@ -616,7 +616,7 @@ const MobileLandingPage = () => {
                 </span>
               </Link>
 
-              <p className="text-gray-200 mb-6 max-w-xl mx-auto">
+              <p className="text-gray-600 mb-6 max-w-xl mx-auto">
                 Your entire academic workflow, unified. Write smarter, cite
                 faster, and check originality in one beautiful workspace built
                 for students and researchers.

@@ -46,7 +46,7 @@ function ContactHero() {
 
       {/* Background elements */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 text-gray-200xl">💬</div>
+        <div className="absolute top-20 left-10 text-gray-600xl">💬</div>
         <div className="absolute top-40 right-20 text-4xl">📧</div>
         <div className="absolute bottom-40 left-1/4 text-5xl">🤝</div>
         <div className="absolute bottom-20 right-10 text-3xl">🌍</div>
@@ -54,14 +54,14 @@ function ContactHero() {
 
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             We're Here to Help with Academic Defensibility —{" "}
             <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
               Anytime, Anywhere
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
             Have a question about our core functionalities? Need support with
             The Explainable Originality Map, Citation Confidence Auditor,
             Submission-Safe Writing Mode, Defensibility Log, or One-Click
@@ -113,7 +113,7 @@ function QuickContactOptions() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Quick Contact Options
           </h2>
-          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Choose the option that best matches your academic defensibility
             needs for faster, more targeted assistance.
           </p>
@@ -136,7 +136,7 @@ function QuickContactOptions() {
                   {type.title}
                 </h3>
 
-                <p className="text-gray-200 mb-6 leading-relaxed">
+                <p className="text-gray-600 mb-6 leading-relaxed">
                   {type.description}
                 </p>
 
@@ -151,7 +151,7 @@ function QuickContactOptions() {
                   <Mail className="ml-2 h-4 w-4" />
                 </Button>
 
-                <p className="text-sm text-gray-200 mt-3">{type.contact}</p>
+                <p className="text-sm text-gray-600 mt-3">{type.contact}</p>
               </CardContent>
             </Card>
           ))}
@@ -224,7 +224,7 @@ function ContactForm() {
             Message Sent Successfully!
           </h3>
 
-          <p className="text-gray-200 mb-6 leading-relaxed">
+          <p className="text-gray-600 mb-6 leading-relaxed">
             Thank you for reaching out. We've received your message and will get
             back to you within 24 hours. In the meantime, feel free to explore
             our Help Center for quick answers.
@@ -256,7 +256,7 @@ function ContactForm() {
         <h3 className="text-2xl font-bold text-white mb-2">
           Academic Defensibility Support
         </h3>
-        <p className="text-gray-200">
+        <p className="text-gray-600">
           Fill out the form below and we'll get back to you within 24 hours.
         </p>
       </CardHeader>
@@ -273,7 +273,7 @@ function ContactForm() {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-200 mb-2"
+                className="block text-sm font-medium text-gray-600 mb-2"
               >
                 Full Name *
               </label>
@@ -292,7 +292,7 @@ function ContactForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-200 mb-2"
+                className="block text-sm font-medium text-gray-600 mb-2"
               >
                 Email Address *
               </label>
@@ -312,7 +312,7 @@ function ContactForm() {
           <div>
             <label
               htmlFor="subject"
-              className="block text-sm font-medium text-gray-200 mb-2"
+              className="block text-sm font-medium text-gray-600 mb-2"
             >
               Subject *
             </label>
@@ -356,7 +356,7 @@ function ContactForm() {
           <div>
             <label
               htmlFor="message"
-              className="block text-sm font-medium text-gray-200 mb-2"
+              className="block text-sm font-medium text-gray-600 mb-2"
             >
               Message *
             </label>
@@ -401,7 +401,7 @@ function AlternativeContactInfo() {
         <CardContent className="p-6">
           <Mail className="h-8 w-8 text-blue-400 mx-auto mb-4" />
           <h3 className="font-semibold text-white mb-2">Email</h3>
-          <p className="text-sm text-gray-200">hello@WorkContextai.com</p>
+          <p className="text-sm text-gray-600">hello@WorkContextai.com</p>
         </CardContent>
       </Card>
 
@@ -409,7 +409,7 @@ function AlternativeContactInfo() {
         <CardContent className="p-6">
           <MapPin className="h-8 w-8 text-green-400 mx-auto mb-4" />
           <h3 className="font-semibold text-white mb-2">Address</h3>
-          <p className="text-sm text-gray-200">
+          <p className="text-sm text-gray-600">
             San Francisco, CA
             <br />
             United States
@@ -421,7 +421,7 @@ function AlternativeContactInfo() {
         <CardContent className="p-6">
           <Globe className="h-8 w-8 text-purple-400 mx-auto mb-4" />
           <h3 className="font-semibold text-white mb-2">Global</h3>
-          <p className="text-sm text-gray-200">
+          <p className="text-sm text-gray-600">
             Serving students
             <br />
             worldwide 24/7
@@ -434,10 +434,10 @@ function AlternativeContactInfo() {
           <div className="flex justify-center space-x-3 mb-4">
             <Twitter className="h-6 w-6 text-blue-400" />
             <Linkedin className="h-6 w-6 text-blue-500" />
-            <Github className="h-6 w-6 text-gray-200" />
+            <Github className="h-6 w-6 text-gray-600" />
           </div>
           <h3 className="font-semibold text-white mb-2">Social</h3>
-          <p className="text-sm text-gray-200">Follow us for updates</p>
+          <p className="text-sm text-gray-600">Follow us for updates</p>
         </CardContent>
       </Card>
     </div>
@@ -489,14 +489,14 @@ function FAQTeaser() {
                   {faq.question}
                 </h4>
                 {openFAQ === index ? (
-                  <ChevronUp className="h-5 w-5 text-gray-200" />
+                  <ChevronUp className="h-5 w-5 text-gray-600" />
                 ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-200" />
+                  <ChevronDown className="h-5 w-5 text-gray-600" />
                 )}
               </button>
               {openFAQ === index && (
                 <div className="px-6 pb-6">
-                  <p className="text-gray-200 leading-relaxed">{faq.answer}</p>
+                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
                 </div>
               )}
             </CardContent>
@@ -528,13 +528,13 @@ function GlobalPresence() {
           <h3 className="text-xl font-bold text-white mb-2">
             Serving Students Globally
           </h3>
-          <p className="text-gray-200">
+          <p className="text-gray-600">
             Join thousands of students across 15+ countries who trust
             WorkContext
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-200">
+        <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-600">
           {[
             "🇺🇸 United States",
             "🇬🇧 United Kingdom",
@@ -579,7 +579,7 @@ function ClosingCTA() {
           Don't Let Questions Hold You Back
         </h2>
 
-        <p className="text-lg text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
           Whether you're just curious about our five core functionalities for
           academic defensibility or ready to transform your academic workflow,
           we're here to help you succeed.

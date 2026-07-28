@@ -26,14 +26,14 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Academic Defensibility Integrations for Your{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Research Workflow
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Connect WorkContextwith your favorite tools and services to create a
             unified academic environment that enhances your research
             defensibility, writing integrity, and collaboration processes.
@@ -97,7 +97,7 @@ function FeatureDetail({
           {title}
         </h3>
 
-        <p className="text-lg text-gray-200 mb-6 leading-relaxed">
+        <p className="text-lg text-gray-600 mb-6 leading-relaxed">
           {description}
         </p>
 
@@ -105,7 +105,7 @@ function FeatureDetail({
           {features.map((feature, index) => (
             <li key={index} className="flex items-start gap-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-gray-200">{feature}</span>
+              <span className="text-gray-600">{feature}</span>
             </li>
           ))}
         </ul>
@@ -243,7 +243,7 @@ function IntegrationCategories() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Academic Defensibility Integration Ecosystem
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Connect with the tools you already use to enhance your academic
             defensibility workflow.
           </p>
@@ -258,12 +258,12 @@ function IntegrationCategories() {
               <h3 className="text-xl font-bold text-white mb-2">
                 {category.title}
               </h3>
-              <p className="text-gray-200 text-sm mb-4">{category.count}</p>
+              <p className="text-gray-600 text-sm mb-4">{category.count}</p>
               <ul className="space-y-2">
                 {category.integrations.map((integration, idx) => (
                   <li key={idx} className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-200 text-sm">{integration}</span>
+                    <span className="text-gray-600 text-sm">{integration}</span>
                   </li>
                 ))}
               </ul>
@@ -291,7 +291,7 @@ function ClosingCTA() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Enhance Academic Defensibility?
           </h2>
-          <p className="text-lg text-gray-200 mb-8">
+          <p className="text-lg text-gray-600 mb-8">
             Join thousands of academics who have enhanced their defensibility
             workflow with our integrations.
           </p>

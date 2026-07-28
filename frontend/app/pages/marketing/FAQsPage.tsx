@@ -27,14 +27,14 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Academic Defensibility{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Questions
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Find answers to common questions about our core academic
             defensibility tools. If you can't find what you're looking for, our
             support team is here to help.
@@ -85,14 +85,14 @@ function FAQItem({ question, answer }: FAQItemProps) {
       >
         <h3 className="text-lg font-semibold text-white">{question}</h3>
         {isOpen ? (
-          <ChevronUp className="h-5 w-5 text-gray-200" />
+          <ChevronUp className="h-5 w-5 text-gray-600" />
         ) : (
-          <ChevronDown className="h-5 w-5 text-gray-200" />
+          <ChevronDown className="h-5 w-5 text-gray-600" />
         )}
       </button>
       {isOpen && (
         <div className="p-6 pt-0 bg-white">
-          <p className="text-gray-200">{answer}</p>
+          <p className="text-gray-600">{answer}</p>
         </div>
       )}
     </div>
@@ -194,7 +194,7 @@ function FAQCategories() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Core Functionality Questions
             </h2>
-            <p className="text-lg text-gray-200">
+            <p className="text-lg text-gray-600">
               Browse our FAQ categories focused on academic defensibility tools
               to find the information you need.
             </p>
@@ -254,7 +254,7 @@ function ContactSupport() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Academic Defensibility Support
             </h2>
-            <p className="text-lg text-gray-200">
+            <p className="text-lg text-gray-600">
               Our support team is here to assist you with any questions about
               our core defensibility tools.
             </p>
@@ -272,7 +272,7 @@ function ContactSupport() {
                 <h3 className="text-xl font-bold text-white mb-3">
                   {option.title}
                 </h3>
-                <p className="text-gray-200 mb-4">{option.description}</p>
+                <p className="text-gray-600 mb-4">{option.description}</p>
                 {option.title === "Schedule a Meeting" ? (
                   <a
                     href="https://calendly.com/audacityimpact/30min"
@@ -325,7 +325,7 @@ function ClosingCTA() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Master Academic Defensibility?
           </h2>
-          <p className="text-lg text-gray-200 mb-8">
+          <p className="text-lg text-gray-600 mb-8">
             Join thousands of academics who are already mastering academic
             defensibility with our core tools.
           </p>

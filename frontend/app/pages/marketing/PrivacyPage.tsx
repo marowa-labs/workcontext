@@ -24,11 +24,17 @@ function IntroHero() {
               Policy
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-            Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
+            Last updated:{" "}
+            {new Date().toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
           </p>
-          <p className="text-gray-200 max-w-2xl mx-auto">
-            We are committed to protecting your privacy and being transparent about how we handle your data.
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            We are committed to protecting your privacy and being transparent
+            about how we handle your data.
           </p>
         </div>
       </div>
@@ -45,9 +51,14 @@ function PrivacyContent() {
           <div className="flex items-start gap-4">
             <User className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Personal Information</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Personal Information
+              </h4>
               <p className="text-gray-700">
-                When you register for an account, we collect information such as your name, email address, and your role. This information is used to personalize your experience and provide personalized features.
+                When you register for an account, we collect information such as
+                your name, email address, and your role. This information is
+                used to personalize your experience and provide personalized
+                features.
               </p>
             </div>
           </div>
@@ -56,16 +67,24 @@ function PrivacyContent() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Usage Data</h4>
               <p className="text-gray-700">
-                We collect information about how you interact with our Service, including features used, time spent on the platform, and documents created. This data helps us improve our Service and develop new productivity tools.
+                We collect information about how you interact with our Service,
+                including features used, time spent on the platform, and
+                documents created. This data helps us improve our Service and
+                develop new productivity tools.
               </p>
             </div>
           </div>
           <div className="flex items-start gap-4">
             <Eye className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Document Content</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Document Content
+              </h4>
               <p className="text-gray-700">
-                We process the content of your documents to provide features such as AI writing assistance, task management, and document collaboration. Your documents are encrypted and securely stored with strict access controls.
+                We process the content of your documents to provide features
+                such as AI writing assistance, task management, and document
+                collaboration. Your documents are encrypted and securely stored
+                with strict access controls.
               </p>
             </div>
           </div>
@@ -93,23 +112,32 @@ function PrivacyContent() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Encryption</h4>
               <p className="text-gray-700">
-                All data is encrypted in transit using industry-standard TLS protocols and at rest using AES-256 encryption. Document content is additionally encrypted with user-specific keys.
+                All data is encrypted in transit using industry-standard TLS
+                protocols and at rest using AES-256 encryption. Document content
+                is additionally encrypted with user-specific keys.
               </p>
             </div>
           </div>
           <div className="flex items-start gap-4">
             <Shield className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Access Controls</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Access Controls
+              </h4>
               <p className="text-gray-700">
-                Access to your data is strictly limited to authorized personnel who require it for legitimate business purposes. All access is logged and regularly audited.
+                Access to your data is strictly limited to authorized personnel
+                who require it for legitimate business purposes. All access is
+                logged and regularly audited.
               </p>
             </div>
           </div>
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">Data Retention</h4>
             <p className="text-gray-700">
-              We retain your information for as long as your account is active or as needed to provide services. You may delete your account at any time, which will remove your personal information within 30 days.
+              We retain your information for as long as your account is active
+              or as needed to provide services. You may delete your account at
+              any time, which will remove your personal information within 30
+              days.
             </p>
           </div>
         </div>
@@ -120,7 +148,9 @@ function PrivacyContent() {
       content: (
         <div className="space-y-4">
           <p className="text-gray-700">
-            We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:
+            We do not sell, trade, or rent your personal information to third
+            parties. We may share your information only in the following
+            circumstances:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-700">
             <li>With your consent</li>
@@ -129,7 +159,8 @@ function PrivacyContent() {
             <li>With service providers who assist in operating our Service</li>
           </ul>
           <p className="text-gray-700">
-            Our service providers are contractually obligated to protect your information and may only use it for the purposes we specify.
+            Our service providers are contractually obligated to protect your
+            information and may only use it for the purposes we specify.
           </p>
         </div>
       ),
@@ -139,20 +170,35 @@ function PrivacyContent() {
       content: (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="border border-gray-200 rounded-lg p-5">
-            <h4 className="font-semibold text-gray-900 mb-2">Access and Update</h4>
-            <p className="text-gray-600 text-sm">You can access and update your personal information through your account settings.</p>
+            <h4 className="font-semibold text-gray-900 mb-2">
+              Access and Update
+            </h4>
+            <p className="text-gray-600 text-sm">
+              You can access and update your personal information through your
+              account settings.
+            </p>
           </div>
           <div className="border border-gray-200 rounded-lg p-5">
-            <h4 className="font-semibold text-gray-900 mb-2">Data Portability</h4>
-            <p className="text-gray-600 text-sm">You can export your documents and data in standard formats at any time.</p>
+            <h4 className="font-semibold text-gray-900 mb-2">
+              Data Portability
+            </h4>
+            <p className="text-gray-600 text-sm">
+              You can export your documents and data in standard formats at any
+              time.
+            </p>
           </div>
           <div className="border border-gray-200 rounded-lg p-5">
             <h4 className="font-semibold text-gray-900 mb-2">Deletion</h4>
-            <p className="text-gray-600 text-sm">You can delete your account and all associated data through your account settings.</p>
+            <p className="text-gray-600 text-sm">
+              You can delete your account and all associated data through your
+              account settings.
+            </p>
           </div>
           <div className="border border-gray-200 rounded-lg p-5">
             <h4 className="font-semibold text-gray-900 mb-2">Opt-Out</h4>
-            <p className="text-gray-600 text-sm">You can opt out of marketing communications at any time.</p>
+            <p className="text-gray-600 text-sm">
+              You can opt out of marketing communications at any time.
+            </p>
           </div>
         </div>
       ),
@@ -161,7 +207,10 @@ function PrivacyContent() {
       title: "6. Children\u2019s Privacy",
       content: (
         <p className="text-gray-700">
-          Our Service is not intended for use by children under the age of 13. We do not knowingly collect personal information from children under 13. If we become aware that we have collected personal information from a child under 13, we will take steps to delete such information.
+          Our Service is not intended for use by children under the age of 13.
+          We do not knowingly collect personal information from children under
+          13. If we become aware that we have collected personal information
+          from a child under 13, we will take steps to delete such information.
         </p>
       ),
     },
@@ -169,7 +218,10 @@ function PrivacyContent() {
       title: "7. Changes to This Privacy Policy",
       content: (
         <p className="text-gray-700">
-          We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
+          We may update our Privacy Policy from time to time. We will notify you
+          of any changes by posting the new Privacy Policy on this page and
+          updating the "Last updated" date. You are advised to review this
+          Privacy Policy periodically for any changes.
         </p>
       ),
     },
@@ -194,9 +246,12 @@ function PrivacyContent() {
           <div className="bg-white rounded-2xl p-8 border border-gray-200 mt-12">
             <div className="text-center max-w-2xl mx-auto">
               <Mail className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Contact Us About Privacy</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Contact Us About Privacy
+              </h2>
               <p className="text-gray-600 mb-6">
-                If you have any questions about this Privacy Policy or our data practices, please contact our privacy team.
+                If you have any questions about this Privacy Policy or our data
+                practices, please contact our privacy team.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a
@@ -229,12 +284,14 @@ function RelatedPolicies() {
     },
     {
       title: "Cookie Policy",
-      description: "Information about how we use cookies and similar technologies.",
+      description:
+        "Information about how we use cookies and similar technologies.",
       href: "/legal/cookies",
     },
     {
       title: "GDPR Compliance",
-      description: "Information about our compliance with the General Data Protection Regulation.",
+      description:
+        "Information about our compliance with the General Data Protection Regulation.",
       href: "/legal/gdpr",
     },
   ];

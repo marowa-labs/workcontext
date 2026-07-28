@@ -34,17 +34,18 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Academic Defensibility Partnership with{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               WorkContext
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Collaborate with us to enhance academic defensibility for students,
             researchers, and institutions worldwide.
           </p>
@@ -53,14 +54,16 @@ function IntroHero() {
             <Button
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 btn-glow px-8 py-6"
-              onClick={handlePartnerInquiry}>
+              onClick={handlePartnerInquiry}
+            >
               Become a Partner
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="px-8 py-6 border border-white text-white hover:bg-white"
-              asChild>
+              asChild
+            >
               <Link href="/company/about">Learn About Us</Link>
             </Button>
           </div>
@@ -118,7 +121,7 @@ function PartnershipTypes() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Partnership Opportunities
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             We offer various partnership models to suit different organizational
             needs.
           </p>
@@ -128,19 +131,20 @@ function PartnershipTypes() {
           {partnershipTypes.map((type, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg border border-white">
+              className="bg-white rounded-2xl p-8 shadow-lg border border-white"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <type.icon className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
                 {type.title}
               </h3>
-              <p className="text-gray-200 mb-6">{type.description}</p>
+              <p className="text-gray-600 mb-6">{type.description}</p>
               <ul className="space-y-3">
                 {type.benefits.map((benefit, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-200">{benefit}</span>
+                    <span className="text-gray-600">{benefit}</span>
                   </li>
                 ))}
               </ul>
@@ -188,7 +192,7 @@ function PartnerBenefits() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Why Partner for Academic Defensibility?
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Our partners benefit from our growth and success in the academic
             defensibility market.
           </p>
@@ -198,14 +202,15 @@ function PartnerBenefits() {
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white">
+              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <benefit.icon className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
                 {benefit.title}
               </h3>
-              <p className="text-gray-200">{benefit.description}</p>
+              <p className="text-gray-600">{benefit.description}</p>
             </div>
           ))}
         </div>
@@ -240,7 +245,7 @@ function SuccessStories() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Academic Defensibility Success Stories
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Hear from organizations that have enhanced academic defensibility
             with us.
           </p>
@@ -250,7 +255,8 @@ function SuccessStories() {
           {stories.map((story, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg border border-white">
+              className="bg-white rounded-2xl p-8 shadow-lg border border-white"
+            >
               <div className="flex items-center gap-4 mb-6">
                 <img
                   src={story.logo}
@@ -261,14 +267,14 @@ function SuccessStories() {
                   <h3 className="text-xl font-bold text-white">{story.name}</h3>
                 </div>
               </div>
-              <blockquote className="text-gray-200 italic mb-6">
+              <blockquote className="text-gray-600 italic mb-6">
                 "{story.quote}"
               </blockquote>
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-blue-400">
                   {story.impact}
                 </span>
-                <ArrowRight className="h-5 w-5 text-gray-200" />
+                <ArrowRight className="h-5 w-5 text-gray-600" />
               </div>
             </div>
           ))}
@@ -295,7 +301,8 @@ function PartnerInquiryForm() {
   return (
     <section
       id="partner-inquiry"
-      className="section-padding bg-[#121212] relative">
+      className="section-padding bg-[#121212] relative"
+    >
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 to-indigo-900/30"></div>
       <div className="container-custom relative z-10">
         <div className="max-w-4xl mx-auto">
@@ -303,7 +310,7 @@ function PartnerInquiryForm() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Start an Academic Defensibility Partnership
             </h2>
-            <p className="text-lg text-gray-200">
+            <p className="text-lg text-gray-600">
               Tell us about your organization and defensibility partnership
               interests.
             </p>
@@ -315,7 +322,8 @@ function PartnerInquiryForm() {
                 <div>
                   <label
                     htmlFor="organization"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Organization Name
                   </label>
                   <input
@@ -330,7 +338,8 @@ function PartnerInquiryForm() {
                 <div>
                   <label
                     htmlFor="website"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Website
                   </label>
                   <input
@@ -348,7 +357,8 @@ function PartnerInquiryForm() {
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Contact Name
                   </label>
                   <input
@@ -363,7 +373,8 @@ function PartnerInquiryForm() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Email Address
                   </label>
                   <input
@@ -380,9 +391,10 @@ function PartnerInquiryForm() {
               <div>
                 <label
                   htmlFor="partnershipType"
-                  className="block text-sm font-medium text-gray-200 mb-2">
+                  className="block text-sm font-medium text-gray-600 mb-2"
+                >
                   Partnership Type
-                  <span className="text-gray-200 font-normal ml-1">
+                  <span className="text-gray-600 font-normal ml-1">
                     (Select all that apply)
                   </span>
                 </label>
@@ -403,7 +415,8 @@ function PartnerInquiryForm() {
                       />
                       <label
                         htmlFor={`type-${type}`}
-                        className="ml-2 text-gray-200">
+                        className="ml-2 text-gray-600"
+                      >
                         {type}
                       </label>
                     </div>
@@ -414,7 +427,8 @@ function PartnerInquiryForm() {
               <div>
                 <label
                   htmlFor="message"
-                  className="block text-sm font-medium text-gray-200 mb-2">
+                  className="block text-sm font-medium text-gray-600 mb-2"
+                >
                   How can we partner?
                 </label>
                 <textarea
@@ -423,14 +437,16 @@ function PartnerInquiryForm() {
                   rows={4}
                   required
                   className="w-full px-4 py-3 bg-white border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
-                  placeholder="Tell us about your organization and partnership interests..."></textarea>
+                  placeholder="Tell us about your organization and partnership interests..."
+                ></textarea>
               </div>
 
               <div className="pt-4">
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-glow px-8 py-6">
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-glow px-8 py-6"
+                >
                   Submit Partnership Inquiry
                 </Button>
               </div>

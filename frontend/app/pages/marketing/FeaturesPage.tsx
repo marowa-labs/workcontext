@@ -40,7 +40,7 @@ function IntroHero() {
 
       {/* Productivity illustrations background */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 text-gray-200xl">📋</div>
+        <div className="absolute top-20 left-10 text-gray-600xl">📋</div>
         <div className="absolute top-40 right-20 text-4xl">💡</div>
         <div className="absolute bottom-40 left-1/4 text-5xl">🚀</div>
         <div className="absolute bottom-20 right-10 text-3xl">⚡</div>
@@ -48,14 +48,14 @@ function IntroHero() {
 
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Everything You Need for{" "}
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Productive Work
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Transform how you work with our integrated features that boost
             productivity, enhance collaboration, and streamline your workflow.
           </p>
@@ -119,7 +119,7 @@ function FeatureDetail({
           {title}
         </h3>
 
-        <p className="text-lg text-gray-200 mb-6 leading-relaxed">
+        <p className="text-lg text-gray-600 mb-6 leading-relaxed">
           {description}
         </p>
 
@@ -127,7 +127,7 @@ function FeatureDetail({
           {benefits.map((benefit, index) => (
             <li key={index} className="flex items-start gap-3">
               <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-gray-200">{benefit}</span>
+              <span className="text-gray-600">{benefit}</span>
             </li>
           ))}
         </ul>

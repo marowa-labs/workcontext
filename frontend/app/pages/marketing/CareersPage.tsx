@@ -23,17 +23,18 @@ function IntroHero() {
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?w=1200&h=800&fit=crop')",
-        }}></div>
+        }}
+      ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Build the Future of{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Academic Innovation
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Join a passionate team dedicated to transforming how students and
             researchers write, collaborate, and discover knowledge.
           </p>
@@ -47,14 +48,16 @@ function IntroHero() {
                 if (element) {
                   element.scrollIntoView({ behavior: "smooth" });
                 }
-              }}>
+              }}
+            >
               View Open Positions
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="px-8 py-6 border border-white text-white hover:bg-white"
-              asChild>
+              asChild
+            >
               <Link href="/company/about">Learn About Us</Link>
             </Button>
           </div>
@@ -100,7 +103,7 @@ function CompanyCulture() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Our Culture
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             We foster an environment where innovation thrives and individuals
             grow.
           </p>
@@ -110,14 +113,15 @@ function CompanyCulture() {
           {cultureItems.map((item, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white">
+              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <item.icon className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
                 {item.title}
               </h3>
-              <p className="text-gray-200">{item.description}</p>
+              <p className="text-gray-600">{item.description}</p>
             </div>
           ))}
         </div>
@@ -161,7 +165,7 @@ function Benefits() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Why You'll Love Working Here
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             We invest in our team's success and well-being.
           </p>
         </div>
@@ -170,14 +174,15 @@ function Benefits() {
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg border border-white">
+              className="bg-white rounded-2xl p-8 shadow-lg border border-white"
+            >
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white mb-6">
                 <benefit.icon className="h-6 w-6 text-blue-400" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
                 {benefit.title}
               </h3>
-              <p className="text-gray-200">{benefit.description}</p>
+              <p className="text-gray-600">{benefit.description}</p>
             </div>
           ))}
         </div>
@@ -230,7 +235,7 @@ function OpenPositions() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Open Positions
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Join us in building tools that empower the next generation of
             researchers and scholars.
           </p>
@@ -240,7 +245,8 @@ function OpenPositions() {
           {positions.map((position, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow border border-white">
+              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow border border-white"
+            >
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <h3 className="text-xl font-bold text-white">
                   {position.title}
@@ -258,10 +264,11 @@ function OpenPositions() {
                   </span>
                 </div>
               </div>
-              <p className="text-gray-200 mb-6">{position.description}</p>
+              <p className="text-gray-600 mb-6">{position.description}</p>
               <Button
                 variant="outline"
-                className="border border-white text-white hover:bg-white">
+                className="border border-white text-white hover:bg-white"
+              >
                 Apply Now
               </Button>
             </div>
@@ -282,7 +289,7 @@ function ClosingCTA() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Make an Impact?
           </h2>
-          <p className="text-lg text-gray-200 mb-8">
+          <p className="text-lg text-gray-600 mb-8">
             Join our team and help shape the future of academic innovation.
           </p>
           <Button
@@ -294,7 +301,8 @@ function ClosingCTA() {
               if (element) {
                 element.scrollIntoView({ behavior: "smooth" });
               }
-            }}>
+            }}
+          >
             View All Positions
           </Button>
         </div>

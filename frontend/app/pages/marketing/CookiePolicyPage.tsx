@@ -25,11 +25,11 @@ function IntroHero() {
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Last updated: November 22, 2025
           </p>
 
-          <p className="text-gray-200 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto">
             This Cookie Policy explains how WorkContext("we", "us", or "our")
             uses cookies and similar technologies to recognize you when you
             visit our website and application.
@@ -74,7 +74,9 @@ function CookiePolicyContent() {
       content: (
         <div className="space-y-6">
           <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Essential Cookies</h4>
+            <h4 className="font-semibold text-gray-900 mb-2">
+              Essential Cookies
+            </h4>
             <p className="text-gray-700">
               These cookies are strictly necessary to provide you with our
               service and cannot be disabled. They include cookies that help
@@ -103,7 +105,9 @@ function CookiePolicyContent() {
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Targeting Cookies</h4>
+            <h4 className="font-semibold text-gray-900 mb-2">
+              Targeting Cookies
+            </h4>
             <p className="text-gray-700">
               These cookies may be set through our site by our advertising
               partners. They may be used by those companies to build a profile

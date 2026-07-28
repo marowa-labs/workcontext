@@ -28,11 +28,12 @@ function AboutHero() {
           backgroundImage:
             "url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&h=800&fit=crop')",
           zIndex: 0,
-        }}></div>
+        }}
+      ></div>
 
       {/* Background elements */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 text-gray-200xl">🎓</div>
+        <div className="absolute top-20 left-10 text-gray-600xl">🎓</div>
         <div className="absolute top-40 right-20 text-4xl">📚</div>
         <div className="absolute bottom-40 left-1/4 text-5xl">✨</div>
         <div className="absolute bottom-20 right-10 text-3xl">🚀</div>
@@ -40,7 +41,7 @@ function AboutHero() {
 
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Academic Excellence.{" "}
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Defensible Writing.
@@ -48,7 +49,7 @@ function AboutHero() {
             Empowered by AI.
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
             We believe every academic deserves tools that ensure their work is
             original, properly cited, and defensible. That's why we built
             WorkContext- to provide the five core functionalities needed for
@@ -72,7 +73,7 @@ function OurStory() {
             Our Story
           </h2>
 
-          <div className="prose prose-lg mx-auto text-gray-200 leading-relaxed space-y-6">
+          <div className="prose prose-lg mx-auto text-gray-600 leading-relaxed space-y-6">
             <p>
               It started with a critical need in academic writing. Our founders
               recognized that students and researchers lacked comprehensive
@@ -92,8 +93,8 @@ function OurStory() {
             </p>
 
             <p>
-              That vision became WorkContext. We've spent years perfecting
-              five core functionalities: The Explainable Originality Map for
+              That vision became WorkContext. We've spent years perfecting five
+              core functionalities: The Explainable Originality Map for
               comprehensive plagiarism detection, Citation Confidence Auditor
               for validating references, Submission-Safe Writing Mode with AI
               detection and humanizing suggestions, Defensibility Log for
@@ -129,13 +130,13 @@ function OurMission() {
             Our Mission
           </h2>
 
-          <p className="text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed font-medium">
+          <p className="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed font-medium">
             To democratize academic defensibility by making world-class writing
             integrity tools accessible to every student, regardless of their
             background or budget.
           </p>
 
-          <p className="text-lg text-gray-200 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
             We believe that great ideas deserve defensible expression. By
             providing comprehensive tools for originality mapping, citation
             validation, AI detection, authorship verification, and publication
@@ -185,7 +186,7 @@ function ImpactStats() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Our Impact by Numbers
           </h2>
-          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Every day, we help students around the world achieve their academic
             goals and express their ideas with confidence.
           </p>
@@ -195,7 +196,8 @@ function ImpactStats() {
           {stats.map((stat, index) => (
             <Card
               key={index}
-              className="text-center border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white">
+              className="text-center border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white"
+            >
               <CardContent className="p-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 mb-6">
                   <stat.icon className="h-8 w-8 text-white" />
@@ -203,10 +205,10 @@ function ImpactStats() {
                 <h3 className="text-3xl font-bold text-white mb-2">
                   {stat.number}
                 </h3>
-                <p className="text-lg font-semibold text-gray-200 mb-2">
+                <p className="text-lg font-semibold text-gray-600 mb-2">
                   {stat.label}
                 </p>
-                <p className="text-gray-200 text-sm">{stat.description}</p>
+                <p className="text-gray-600 text-sm">{stat.description}</p>
               </CardContent>
             </Card>
           ))}
@@ -246,7 +248,7 @@ function OurValues() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Our Values Guide Everything We Do
           </h2>
-          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             These principles shape every feature we build, every decision we
             make, and every interaction we have with our community.
           </p>
@@ -256,7 +258,8 @@ function OurValues() {
           {values.map((value, index) => (
             <Card
               key={index}
-              className="border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white">
+              className="border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white"
+            >
               <CardContent className="p-8 text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 mb-6">
                   <value.icon className="h-8 w-8 text-white" />
@@ -264,7 +267,7 @@ function OurValues() {
                 <h3 className="text-xl font-semibold text-white mb-4">
                   {value.title}
                 </h3>
-                <p className="text-gray-200 leading-relaxed">
+                <p className="text-gray-600 leading-relaxed">
                   {value.description}
                 </p>
               </CardContent>
@@ -308,7 +311,7 @@ function MeetTheTeam() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Meet the Team
           </h2>
-          <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             We're a diverse group of educators, researchers, and technologists
             united by a common goal: helping students succeed.
           </p>
@@ -326,7 +329,8 @@ function MeetTheTeam() {
                 style={{
                   backgroundImage:
                     "url('https://image2url.com/images/1765104273035-d55b2896-44f3-4dc4-9407-8cb97e496b15.jpeg')",
-                }}></div>
+                }}
+              ></div>
               {/* Overlay to ensure text is readable on top of background image */}
               <div className="absolute inset-0 bg-white bg-opacity-30 rounded-lg"></div>
               {/* Text content positioned over the background image */}
@@ -347,7 +351,8 @@ function MeetTheTeam() {
                 style={{
                   backgroundImage:
                     "url('https://image2url.com/images/1765103864786-401e7862-6e8d-430f-bb22-f7ae623a379c.jpeg')",
-                }}></div>
+                }}
+              ></div>
               {/* Overlay to ensure text is readable on top of background image */}
               <div className="absolute inset-0 bg-white bg-opacity-30 rounded-lg"></div>
               {/* Text content positioned over the background image */}
@@ -364,7 +369,7 @@ function MeetTheTeam() {
 
           {/* Original Founders Description */}
           <div className="mt-8 text-center">
-            <p className="text-lg text-gray-200 max-w-2xl mx-auto px-4">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto px-4">
               Dr. Craig Marowa and Dr. Zviko Musembwa founded WorkContextto
               democratize access to quality academic tools for students of all
               academic levels.
@@ -376,7 +381,8 @@ function MeetTheTeam() {
           {teamMembers.map((member, index) => (
             <Card
               key={index}
-              className="border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white">
+              className="border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white"
+            >
               <CardContent className="p-8 text-center">
                 <img
                   src={member.imageUrl}
@@ -387,7 +393,7 @@ function MeetTheTeam() {
                   {member.name}
                 </h3>
                 <p className="text-blue-400 font-medium mb-4">{member.role}</p>
-                <p className="text-gray-200 text-sm leading-relaxed">
+                <p className="text-gray-600 text-sm leading-relaxed">
                   {member.bio}
                 </p>
               </CardContent>
@@ -418,7 +424,7 @@ function ClosingCTA() {
               We're Just Getting Started
             </h2>
 
-            <p className="text-lg text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
               Every day, we're working to make academic writing more accessible,
               collaborative, and effective. Join us on this journey to transform
               education technology.
@@ -428,7 +434,8 @@ function ClosingCTA() {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 font-semibold px-8 py-6 btn-glow"
-                onClick={handleGetStarted}>
+                onClick={handleGetStarted}
+              >
                 Start Your Journey
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -441,12 +448,13 @@ function ClosingCTA() {
                     "https://calendly.com/audacityimpact/30min",
                     "_blank",
                   )
-                }>
+                }
+              >
                 Schedule a Demo
               </Button>
             </div>
 
-            <p className="text-gray-200 text-sm mt-6">
+            <p className="text-gray-600 text-sm mt-6">
               Join our community of learners, researchers, and innovators
             </p>
             <div className="mt-4">
@@ -454,7 +462,8 @@ function ClosingCTA() {
                 href="https://discord.gg/2MMSdX3Uee"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-white/50 text-white rounded-lg hover:bg-white/50 transition-colors border border-white">
+                className="inline-flex items-center px-4 py-2 bg-white/50 text-white rounded-lg hover:bg-white/50 transition-colors border border-white"
+              >
                 <Users className="h-4 w-4 mr-2" />
                 Join Our Discord Community
               </a>

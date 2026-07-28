@@ -26,14 +26,14 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Academic Defensibility Success Stories with{" "}
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               WorkContext
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Discover how students, researchers, and academic institutions are
             enhancing academic defensibility and achieving better outcomes with
             our core tools.
@@ -97,13 +97,13 @@ function CaseStudyCard({
 
         <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
 
-        <p className="text-gray-200 mb-4">{excerpt}</p>
+        <p className="text-gray-600 mb-4">{excerpt}</p>
 
         <div className="space-y-2 mb-6">
           {results.map((result, index) => (
             <div key={index} className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-400" />
-              <span className="text-sm text-gray-200">{result}</span>
+              <span className="text-sm text-gray-600">{result}</span>
             </div>
           ))}
         </div>
@@ -174,7 +174,7 @@ function CaseStudiesGrid() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Academic Defensibility Case Studies
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Real results from real users demonstrating academic defensibility
             across various institutions and research fields.
           </p>
@@ -206,7 +206,7 @@ function ClosingCTA() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Enhance Your Academic Defensibility?
           </h2>
-          <p className="text-lg text-gray-200 mb-8">
+          <p className="text-lg text-gray-600 mb-8">
             Join thousands of academics who are already enhancing their
             defensibility outcomes with WorkContext.
           </p>

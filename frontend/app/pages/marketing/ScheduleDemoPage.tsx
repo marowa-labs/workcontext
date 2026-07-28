@@ -30,17 +30,18 @@ function IntroHero() {
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=800&fit=crop')",
-          }}></div>
+          }}
+        ></div>
         <div className="container-custom relative z-10">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
               Master Academic Defensibility with a{" "}
               <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Personalized Demo
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
               Experience how WorkContext's core defensibility tools can
               transform your academic workflow. Schedule a 30-minute
               personalized demo with our academic defensibility experts.
@@ -55,13 +56,15 @@ function IntroHero() {
                     "https://calendly.com/audacityimpact/30min",
                     "_blank",
                   )
-                }>
+                }
+              >
                 Schedule Your Demo
               </Button>
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6"
-                asChild>
+                asChild
+              >
                 <Link href="/features">Explore Features</Link>
               </Button>
             </div>
@@ -105,7 +108,7 @@ function DemoBenefits() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Why Schedule a Demo?
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             A personalized demo is the best way to understand how WorkContext
             AIcan benefit your specific academic workflow.
           </p>
@@ -115,14 +118,15 @@ function DemoBenefits() {
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white">
+              className="bg-white rounded-2xl p-6 shadow-lg text-center border border-white"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-6">
                 <benefit.icon className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
                 {benefit.title}
               </h3>
-              <p className="text-gray-200">{benefit.description}</p>
+              <p className="text-gray-600">{benefit.description}</p>
             </div>
           ))}
         </div>
@@ -167,7 +171,7 @@ function DemoFeatures() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Core Defensibility Tools Demo
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Our 30-minute demo covers the academic defensibility tools that
             matter most to researchers and academics.
           </p>
@@ -177,14 +181,15 @@ function DemoFeatures() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg border border-white">
+              className="bg-white rounded-2xl p-8 shadow-lg border border-white"
+            >
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900/50 mb-6">
                 <feature.icon className="h-6 w-6 text-blue-400" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
                 {feature.title}
               </h3>
-              <p className="text-gray-200">{feature.description}</p>
+              <p className="text-gray-600">{feature.description}</p>
             </div>
           ))}
         </div>
@@ -309,7 +314,7 @@ function ScheduleForm() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Schedule Your Personalized Demo
             </h2>
-            <p className="text-lg text-gray-200">
+            <p className="text-lg text-gray-600">
               Fill out the form below and we'll contact you to schedule your
               30-minute demo.
             </p>
@@ -321,7 +326,8 @@ function ScheduleForm() {
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Full Name *
                   </label>
                   <input
@@ -338,7 +344,8 @@ function ScheduleForm() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Work Email *
                   </label>
                   <input
@@ -358,7 +365,8 @@ function ScheduleForm() {
                 <div>
                   <label
                     htmlFor="institution"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Institution *
                   </label>
                   <input
@@ -375,7 +383,8 @@ function ScheduleForm() {
                 <div>
                   <label
                     htmlFor="role"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Role
                   </label>
                   <select
@@ -383,7 +392,8 @@ function ScheduleForm() {
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-white">
+                    className="w-full px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-white"
+                  >
                     <option value="" className="bg-white">
                       Select your role
                     </option>
@@ -410,7 +420,8 @@ function ScheduleForm() {
                 <div>
                   <label
                     htmlFor="date"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Preferred Date *
                   </label>
                   <input
@@ -426,7 +437,8 @@ function ScheduleForm() {
                 <div>
                   <label
                     htmlFor="time"
-                    className="block text-sm font-medium text-gray-200 mb-2">
+                    className="block text-sm font-medium text-gray-600 mb-2"
+                  >
                     Preferred Time *
                   </label>
                   <select
@@ -435,7 +447,8 @@ function ScheduleForm() {
                     value={formData.time}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-white">
+                    className="w-full px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-white"
+                  >
                     <option value="" className="bg-white">
                       Select a time
                     </option>
@@ -455,7 +468,8 @@ function ScheduleForm() {
               <div>
                 <label
                   htmlFor="message"
-                  className="block text-sm font-medium text-gray-200 mb-2">
+                  className="block text-sm font-medium text-gray-600 mb-2"
+                >
                   What would you like to focus on during the demo?
                 </label>
                 <textarea
@@ -465,7 +479,8 @@ function ScheduleForm() {
                   onChange={handleChange}
                   rows={4}
                   className="w-full px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-white"
-                  placeholder="Let us know what features or workflows are most important to you..."></textarea>
+                  placeholder="Let us know what features or workflows are most important to you..."
+                ></textarea>
               </div>
 
               <div className="pt-4">
@@ -473,7 +488,8 @@ function ScheduleForm() {
                   type="submit"
                   size="lg"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-glow px-8 py-6">
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-glow px-8 py-6"
+                >
                   {isLoading ? "Scheduling..." : "Schedule Demo"}
                 </Button>
               </div>
@@ -516,7 +532,7 @@ function ContactInfo() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Academic Defensibility Experts
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Reach out to us through any of these channels and our academic
             defensibility experts will help you schedule a demo.
           </p>
@@ -535,14 +551,15 @@ function ContactInfo() {
                     window.location.href = "tel:+918790813536";
                   }, 3000);
                 }}
-                className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 text-center hover:bg-white/50 transition-colors duration-300 cursor-pointer w-full border border-white">
+                className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 text-center hover:bg-white/50 transition-colors duration-300 cursor-pointer w-full border border-white"
+              >
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-900/50 mb-6">
                   <method.icon className="h-8 w-8 text-blue-400" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">
                   {method.title}
                 </h3>
-                <p className="text-gray-200">{method.description}</p>
+                <p className="text-gray-600">{method.description}</p>
               </button>
             ) : (
               <a
@@ -551,14 +568,15 @@ function ContactInfo() {
                 className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 text-center hover:bg-white/50 transition-colors duration-300 border border-white"
                 {...(method.action.startsWith("http")
                   ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}>
+                  : {})}
+              >
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-900/50 mb-6">
                   <method.icon className="h-8 w-8 text-blue-400" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">
                   {method.title}
                 </h3>
-                <p className="text-gray-200">{method.description}</p>
+                <p className="text-gray-600">{method.description}</p>
               </a>
             ),
           )}

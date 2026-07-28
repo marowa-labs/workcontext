@@ -27,11 +27,11 @@ function IntroHero() {
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Last updated: November 22, 2025
           </p>
 
-          <p className="text-gray-200 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto">
             WorkContextis committed to protecting your privacy and complying
             with the General Data Protection Regulation (GDPR).
           </p>
@@ -51,8 +51,10 @@ function GDPRContent() {
           <div className="flex items-start gap-4">
             <User className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Right to Access</h4>
-               <p className="text-gray-700">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Right to Access
+              </h4>
+              <p className="text-gray-700">
                 You have the right to request copies of your personal data that
                 we hold.
               </p>
@@ -61,10 +63,10 @@ function GDPRContent() {
           <div className="flex items-start gap-4">
             <Database className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                 Right to Rectification
-               </h4>
-               <p className="text-gray-700">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Right to Rectification
+              </h4>
+              <p className="text-gray-700">
                 You have the right to request that we correct any information
                 you believe is inaccurate.
               </p>
@@ -73,10 +75,10 @@ function GDPRContent() {
           <div className="flex items-start gap-4">
             <Lock className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                 Right to Erasure
-               </h4>
-               <p className="text-gray-700">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Right to Erasure
+              </h4>
+              <p className="text-gray-700">
                 You have the right to request that we erase your personal data,
                 under certain conditions.
               </p>
@@ -85,10 +87,10 @@ function GDPRContent() {
           <div className="flex items-start gap-4">
             <Shield className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                 Right to Restrict Processing
-               </h4>
-               <p className="text-gray-700">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Right to Restrict Processing
+              </h4>
+              <p className="text-gray-700">
                 You have the right to request that we restrict the processing of
                 your personal data, under certain conditions.
               </p>
@@ -97,10 +99,10 @@ function GDPRContent() {
           <div className="flex items-start gap-4">
             <FileText className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                 Right to Data Portability
-               </h4>
-               <p className="text-gray-700">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Right to Data Portability
+              </h4>
+              <p className="text-gray-700">
                 You have the right to request that we transfer the data that we
                 have collected to another organization, or directly to you,
                 under certain conditions.
@@ -110,8 +112,10 @@ function GDPRContent() {
           <div className="flex items-start gap-4">
             <Mail className="h-6 w-6 text-blue-400 mt-1 flex-shrink-0" />
             <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Right to Object</h4>
-               <p className="text-gray-700">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Right to Object
+              </h4>
+              <p className="text-gray-700">
                 You have the right to object to our processing of your personal
                 data, under certain conditions.
               </p>
@@ -125,9 +129,9 @@ function GDPRContent() {
       content: (
         <div className="space-y-4">
           <p className="text-gray-700">
-             We process your personal data in the following lawful ways:
-           </p>
-           <ul className="list-disc pl-6 space-y-2 text-gray-700">
+            We process your personal data in the following lawful ways:
+          </p>
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
             <li>
               <strong>Consent:</strong> We have your explicit consent to process
               your data for specific purposes
@@ -161,9 +165,9 @@ function GDPRContent() {
       content: (
         <div className="space-y-4">
           <p className="text-gray-700">
-             We collect the following categories of personal data:
-           </p>
-           <ul className="list-disc pl-6 space-y-2 text-gray-700">
+            We collect the following categories of personal data:
+          </p>
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
             <li>
               <strong>Identity Data:</strong> Name, username, profile picture
             </li>
@@ -227,7 +231,7 @@ function GDPRContent() {
       title: "International Data Transfers",
       content: (
         <p className="text-gray-700">
-           We may transfer your personal data outside of the European Economic
+          We may transfer your personal data outside of the European Economic
           Area (EEA). Whenever we do so, we ensure a similar degree of
           protection by using appropriate safeguards.
         </p>
@@ -241,8 +245,8 @@ function GDPRContent() {
             We implement appropriate technical and organizational measures to
             protect your personal data:
           </p>
-           <ul className="list-disc pl-6 space-y-2 text-gray-700">
-             <li>Encryption of data in transit and at rest</li>
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
+            <li>Encryption of data in transit and at rest</li>
             <li>Regular security assessments and penetration testing</li>
             <li>Access controls and authentication measures</li>
             <li>Employee training on data protection</li>
@@ -259,8 +263,8 @@ function GDPRContent() {
             You can contact our Data Protection Officer with any questions about
             this policy or your rights:
           </p>
-           <ul className="list-disc pl-6 space-y-2 text-gray-700">
-             <li>By email: dpo@WorkContextai.com</li>
+          <ul className="list-disc pl-6 space-y-2 text-gray-700">
+            <li>By email: dpo@WorkContextai.com</li>
             <li>
               By post: Data Protection Officer, WorkContext, 123 Privacy Street,
               San Francisco, CA 94107

@@ -32,11 +32,11 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-200xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
             Export Your Work, Your Way
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
             Export your documents to any format you need — PDF, DOCX, LaTeX,
             RTF, and TXT. Professional formatting, unlimited templates, and
             seamless backup & sync for individuals and teams.
@@ -235,7 +235,7 @@ function ClosingCTA() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Export Your Work?
           </h2>
-          <p className="text-lg text-gray-200 mb-8 leading-relaxed">
+          <p className="text-lg text-gray-600 mb-8 leading-relaxed">
             Join thousands of professionals and teams who rely on our export
             tools for flawless, professional document formatting.
           </p>
@@ -251,7 +251,7 @@ function ClosingCTA() {
               asChild
               size="lg"
               variant="outline"
-              className="text-gray-200 hover:bg-gray-600 backdrop-blur-sm px-8 py-6 text-lg"
+              className="text-gray-600 hover:bg-gray-600 backdrop-blur-sm px-8 py-6 text-lg"
             >
               <Link href="/docs/quickstart" className="flex items-center">
                 See How It Works
@@ -260,7 +260,7 @@ function ClosingCTA() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 text-gray-200 text-sm">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 text-gray-600 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-teal-400" />
               <span>No credit card required</span>

@@ -39,7 +39,8 @@ const TaskTemplateCards: React.FC<TaskTemplateCardsProps> = ({
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="animate-pulse bg-gray-100 dark:bg-gray-800 h-32 rounded-xl"></div>
+            className="animate-pulse bg-gray-100 dark:bg-gray-800 h-32 rounded-xl"
+          ></div>
         ))}
       </div>
     );
@@ -65,7 +66,8 @@ const TaskTemplateCards: React.FC<TaskTemplateCardsProps> = ({
         <div
           key={template.id}
           onClick={() => onSelect(template)}
-          className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg hover:border-blue-500 dark:hover:border-blue-500 transition-all cursor-pointer relative overflow-hidden">
+          className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg hover:border-blue-500 dark:hover:border-blue-500 transition-all cursor-pointer relative overflow-hidden"
+        >
           {/* Category Badge */}
           <div className="flex items-center justify-between mb-3">
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
@@ -83,7 +85,7 @@ const TaskTemplateCards: React.FC<TaskTemplateCardsProps> = ({
             />
           </div>
 
-          <h3 className="font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+          <h3 className="font-semibold text-gray-800 dark:text-gray-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
             {template.template_name || template.title}
           </h3>
 

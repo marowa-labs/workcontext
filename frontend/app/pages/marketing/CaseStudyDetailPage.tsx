@@ -196,7 +196,7 @@ function FeatureDetail({
           {title}
         </h3>
 
-        <p className="text-lg text-gray-200 mb-6 leading-relaxed">
+        <p className="text-lg text-gray-600 mb-6 leading-relaxed">
           {description}
         </p>
       </div>
@@ -227,7 +227,7 @@ function ResultsSection({ results }: { results: any[] }) {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Measurable Results
           </h2>
-          <p className="text-lg text-gray-200">
+          <p className="text-lg text-gray-600">
             Quantifiable improvements achieved through the implementation of
             WorkContext
           </p>
@@ -248,7 +248,7 @@ function ResultsSection({ results }: { results: any[] }) {
               <h4 className="text-lg font-semibold text-white mb-3">
                 {result.metric}
               </h4>
-              <p className="text-gray-200">{result.description}</p>
+              <p className="text-gray-600">{result.description}</p>
             </div>
           ))}
         </div>
@@ -272,7 +272,7 @@ function TestimonialSection({ testimonial }: { testimonial: any }) {
               <div className="font-bold text-white text-lg">
                 {testimonial.author}
               </div>
-              <div className="text-gray-200">{testimonial.title}</div>
+              <div className="text-gray-600">{testimonial.title}</div>
             </div>
           </div>
         </div>
@@ -298,7 +298,7 @@ function DetailedResults({ results }: { results: string[] }) {
                     <div className="w-2 h-2 rounded-full bg-green-400"></div>
                   </div>
                 </div>
-                <p className="text-gray-200">{result}</p>
+                <p className="text-gray-600">{result}</p>
               </div>
             ))}
           </div>
@@ -341,7 +341,7 @@ function HeaderSection({ caseStudy }: { caseStudy: any }) {
             {caseStudy.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-6 text-gray-200 mb-8">
+          <div className="flex flex-wrap items-center gap-6 text-gray-600 mb-8">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span>{caseStudy.author}</span>
@@ -356,7 +356,7 @@ function HeaderSection({ caseStudy }: { caseStudy: any }) {
             </div>
           </div>
 
-          <p className="text-xl text-gray-200 mb-8 leading-relaxed">
+          <p className="text-xl text-gray-600 mb-8 leading-relaxed">
             {caseStudy.overview}
           </p>
 
@@ -439,7 +439,7 @@ export default function CaseStudyDetailPage() {
               <h1 className="text-3xl font-bold text-white mb-4">
                 Case Study Not Found
               </h1>
-              <p className="text-gray-200 mb-8">
+              <p className="text-gray-600 mb-8">
                 The requested case study could not be found.
               </p>
               <Button asChild>
@@ -486,7 +486,7 @@ export default function CaseStudyDetailPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
               Ready to Enhance Your Academic Defensibility?
             </h2>
-            <p className="text-lg text-gray-200 mb-8">
+            <p className="text-lg text-gray-600 mb-8">
               Join thousands of academic institutions and researchers who are
               enhancing their defensibility outcomes with WorkContext.
             </p>
