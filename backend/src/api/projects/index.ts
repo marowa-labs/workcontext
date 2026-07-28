@@ -711,6 +711,7 @@ router.get("/:id/version-schedules", async (req, res) => {
         OR: [
           { user_id: userId },
           { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
         ],
       },
     });
@@ -783,6 +784,7 @@ router.post("/:id/version-schedules", async (req, res) => {
         OR: [
           { user_id: userId },
           { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
         ],
       },
     });
@@ -866,6 +868,7 @@ router.put("/:id/version-schedules/:scheduleId", async (req, res) => {
         OR: [
           { user_id: userId },
           { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
         ],
       },
     });
@@ -904,6 +907,7 @@ router.put("/:id/version-schedules/:scheduleId", async (req, res) => {
           OR: [
             { user_id: userId },
             { collaborators: { some: { user_id: userId } } },
+            { workspace: { members: { some: { user_id: userId } } } },
           ],
         },
       },
@@ -993,6 +997,7 @@ router.delete("/:id/version-schedules/:scheduleId", async (req, res) => {
         OR: [
           { user_id: userId },
           { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
         ],
       },
     });
@@ -1013,6 +1018,7 @@ router.delete("/:id/version-schedules/:scheduleId", async (req, res) => {
           OR: [
             { user_id: userId },
             { collaborators: { some: { user_id: userId } } },
+            { workspace: { members: { some: { user_id: userId } } } },
           ],
         },
       },

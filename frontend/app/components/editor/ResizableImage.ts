@@ -66,14 +66,14 @@ export const ResizableImage = Image.extend({
   addCommands() {
     return {
       setImage:
-        (options: { src: string; alt?: string; width?: string; align?: "left" | "center" | "right"; float?: "left" | "right" }) =>
+        (options: { src: string; alt?: string; width?: number; align?: "left" | "center" | "right"; float?: "left" | "right" }) =>
         ({ commands }) =>
           commands.insertContent({
             type: this.name,
             attrs: {
               src: options.src,
               alt: options.alt || null,
-              width: options.width || null,
+              width: options.width != null ? String(options.width) : null,
               align: options.align || null,
               float: options.float || null,
             },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -30,6 +30,12 @@ import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
 import workspaceService from "../../../lib/utils/workspaceService";
 import { useToast } from "../../../hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "../../../components/ui/dropdown-menu";
 
 const ACCESS_LABELS = {
   public: { label: "Public", color: "text-green-600 bg-green-100" },
@@ -114,8 +120,6 @@ export default function SpacesLibraryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
-  const [dropdownOpen, setDropdownOpen] = useState(null);
-  const dropdownRef = useRef(null);
   const [renamingSpace, setRenamingSpace] = useState(null);
   const [newSpaceName, setNewSpaceName] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -192,16 +196,6 @@ export default function SpacesLibraryPage() {
     loadWorkspaces();
     return () => { isMounted = false; };
   }, [user]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   if (userLoading) {
     return (
@@ -626,63 +620,38 @@ export default function SpacesLibraryPage() {
                   </div>
 
                   {/* Contextual Actions */}
-                  <div className="w-10 relative" ref={dropdownOpen === space.id ? dropdownRef : null}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDropdownOpen(dropdownOpen === space.id ? null : space.id);
-                      }}
-                      className="p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                    {dropdownOpen === space.id && (
-                      <div className="absolute right-0 top-8 z-50 w-56 bg-popover border border-border rounded-lg shadow-lg py-1">
-                        <button
-                          onClick={() => handleRenameSpace(space)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted"
-                        >
+                  <div className="w-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem onClick={() => handleRenameSpace(space)}>
                           <Edit3 className="w-4 h-4" /> Rename
-                        </button>
-                        <button
-                          onClick={() => { setDropdownOpen(null); handleDuplicateSpace(space); }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted"
-                        >
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicateSpace(space)}>
                           <Copy className="w-4 h-4" /> Duplicate
-                        </button>
-                        <button
-                          onClick={() => { setDropdownOpen(null); handleLinkToProjects(space); }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted"
-                        >
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleLinkToProjects(space)}>
                           <ExternalLink className="w-4 h-4" /> Link to Projects
-                        </button>
-                        <button
-                          onClick={() => { setDropdownOpen(null); handleSyncNotebook(space); }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted"
-                        >
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSyncNotebook(space)}>
                           <BookOpen className="w-4 h-4" /> Sync with Notebook
-                        </button>
-                        <button
-                          onClick={() => { setDropdownOpen(null); toast({ title: "Transfer Ownership", description: "Ownership transfer coming soon." }); }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted"
-                        >
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => toast({ title: "Transfer Ownership", description: "Ownership transfer coming soon." })}>
                           <HeartHandshake className="w-4 h-4" /> Transfer Ownership
-                        </button>
+                        </DropdownMenuItem>
                         <hr className="my-1 border-border" />
-                        <button
-                          onClick={() => handleArchiveSpace(space)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-amber-600 hover:bg-muted"
-                        >
+                        <DropdownMenuItem onClick={() => handleArchiveSpace(space)} className="text-amber-600">
                           <Archive className="w-4 h-4" /> Archive
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSpace(space)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-muted"
-                        >
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteSpace(space)} className="text-red-600">
                           <Trash2 className="w-4 h-4" /> Delete
-                        </button>
-                      </div>
-                    )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
