@@ -35,7 +35,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { DocumentHeader } from "./document-header";
 import { EditorToolbar } from "./editor-toolbar";
 import { BottomBar } from "./bottom-bar";
-import { ColumnExtension, ColumnItemExtension } from "./ColumnExtension";
+
 import {
   FootnoteExtension,
   FootnoteContentExtension,
@@ -548,8 +548,6 @@ export const MainEditor = forwardRef<
             lowlight,
           }),
           CharacterCount,
-          ColumnExtension,
-          ColumnItemExtension,
           FootnoteExtension,
           FootnoteContentExtension,
           AIAutocompleteExtension.configure({

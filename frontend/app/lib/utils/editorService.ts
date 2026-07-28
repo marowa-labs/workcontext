@@ -321,11 +321,6 @@ export function validateAndPrepareContent(content: any): any {
             processedNode = { ...node };
           }
 
-          // Handle column nodes
-          if (node.type === "columns" || node.type === "columnItem") {
-            processedNode = { ...node };
-          }
-
           // Handle visual-element nodes
           if (node.type === "visual-element") {
             processedNode = { ...node };

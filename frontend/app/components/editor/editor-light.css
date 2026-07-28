@@ -272,28 +272,6 @@
   color: #0f172a;
 }
 
-/* Columns layout */
-.light-editor .ProseMirror .columns {
-  display: grid;
-  gap: 1.5rem;
-  margin: 1.5rem 0;
-}
-
-.light-editor .ProseMirror .columns[data-columns="2"] {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.light-editor .ProseMirror .columns[data-columns="3"] {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.light-editor .ProseMirror .column-item {
-  background: #f8fafc;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-}
-
 /* Citation styles */
 .light-editor .ProseMirror .citation {
   color: #3b82f6;

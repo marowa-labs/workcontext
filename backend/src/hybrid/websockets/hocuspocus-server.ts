@@ -873,7 +873,7 @@ export class HocuspocusCollaborationServer {
     try {
       const share = ydoc?.share;
       if (!share || typeof share.keys !== "function") return null;
-      const keys = Array.from(share.keys());
+      const keys = Array.from(share.keys()) as string[];
       const preferred = ["prosemirror", "default"];
       for (const name of preferred) {
         if (keys.includes(name)) return name;

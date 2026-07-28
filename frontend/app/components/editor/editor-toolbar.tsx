@@ -28,7 +28,6 @@ import {
   Minus,
   Link,
   ImageIcon,
-  Columns,
   Layout,
   ChevronDown,
   Undo,
@@ -200,7 +199,7 @@ export function EditorToolbar({
       editor
         .chain()
         .focus()
-        .insertContent({ type: "math", attrs: { latex: input } })
+        .setMath(input)
         .run();
       return;
     }
@@ -223,7 +222,7 @@ export function EditorToolbar({
         editor
           .chain()
           .focus()
-          .insertContent({ type: "math", attrs: { latex: cleanLatex } })
+          .setMath(cleanLatex)
           .run();
       }
     } catch (error) {
@@ -589,52 +588,6 @@ export function EditorToolbar({
           <Code className="h-4 w-4" />
         </Toggle>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Toggle
-              size="sm"
-              className="h-8 w-8"
-              disabled={!userCanEdit}
-              title="Column Layout"
-            >
-              <Columns className="h-4 w-4" />
-            </Toggle>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48 bg-white border border-gray-200 p-1 shadow-xl">
-            <div className="px-2 py-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-gray-100 mb-1">
-              Layout Options
-            </div>
-            <DropdownMenuItem
-              onClick={() => editor.chain().focus().unsetColumns().run()}
-              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md"
-            >
-              <Layout className="h-4 w-4" />
-              <span>Normal Layout</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => editor.chain().focus().setColumns(2).run()}
-              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md"
-            >
-              <div className="flex gap-0.5">
-                <div className="w-2 h-4 border border-slate-400 rounded-sm"></div>
-                <div className="w-2 h-4 border border-slate-400 rounded-sm"></div>
-              </div>
-              <span>2 Columns</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => editor.chain().focus().setColumns(3).run()}
-              className="flex items-center gap-2 p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer rounded-md"
-            >
-              <div className="flex gap-0.5">
-                <div className="w-1.5 h-4 border border-slate-400 rounded-sm"></div>
-                <div className="w-1.5 h-4 border border-slate-400 rounded-sm"></div>
-                <div className="w-1.5 h-4 border border-slate-400 rounded-sm"></div>
-              </div>
-              <span>3 Columns</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <Toggle
           size="sm"
           pressed={editor.isActive("blockquote")}
@@ -805,10 +758,7 @@ export function EditorToolbar({
                             editor
                               .chain()
                               .focus()
-                              .insertContent({
-                                type: "math",
-                                attrs: { latex: eq.latex },
-                              })
+                              .setMath(eq.latex)
                               .run()
                           }
                           className="flex flex-col items-start p-3 gap-1 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 rounded-none focus:bg-blue-50 outline-none"

@@ -274,28 +274,6 @@
   color: #f5f5f5;
 }
 
-/* Columns layout */
-.dark-editor .ProseMirror .columns {
-  display: grid;
-  gap: 1.5rem;
-  margin: 1.5rem 0;
-}
-
-.dark-editor .ProseMirror .columns[data-columns="2"] {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.dark-editor .ProseMirror .columns[data-columns="3"] {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.dark-editor .ProseMirror .column-item {
-  background: #2d2d2d;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #404040;
-}
-
 /* Citation styles */
 .dark-editor .ProseMirror .citation {
   color: #60a5fa;

@@ -893,6 +893,7 @@ async function handleGET_RELATED(
         OR: [
           { user_id: userId },
           { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
         ],
       },
       select: {

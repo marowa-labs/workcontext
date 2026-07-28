@@ -2,6 +2,14 @@ import { Node, mergeAttributes, nodeInputRule } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import React, { useEffect, useRef, useState } from "react";
 
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    mathExtension: {
+      setMath: (latex: string) => ReturnType;
+    };
+  }
+}
+
 const MathComponent = ({ node, updateAttributes, selected }: any) => {
   const containerRef = useRef<HTMLSpanElement>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -100,6 +108,17 @@ export const MathExtension = Node.create({
 
   addNodeView() {
     return ReactNodeViewRenderer(MathComponent);
+  },
+
+  addCommands() {
+    return {
+      setMath:
+        (latex: string) =>
+        ({ commands }: { commands: any }) =>
+          commands.insertContent(`$${latex}$`, {
+            applyInputRules: true,
+          }),
+    };
   },
 
   addInputRules() {

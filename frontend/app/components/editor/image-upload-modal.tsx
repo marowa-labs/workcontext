@@ -147,7 +147,7 @@ export function ImageUploadModal({
 
   const insertImage = (url: string, alt: string) => {
     if (editor && url) {
-      editor.chain().focus().setImage({ src: url, alt, width: null, align: null, float: null }).run();
+      editor.chain().focus().setImage({ src: url, alt, width: undefined, align: undefined, float: undefined }).run();
       onOpenChange(false);
       resetState();
     }

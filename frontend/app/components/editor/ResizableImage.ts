@@ -12,11 +12,11 @@ declare module "@tiptap/core" {
       setImage: (options: {
         src: string
         alt?: string
-        width?: string
+        width?: number
         align?: "left" | "center" | "right"
         float?: "left" | "right"
       }) => ReturnType
-      setImageWidth: (width: string) => ReturnType
+      setImageWidth: (width: string | null) => ReturnType
       setImageAlign: (align: "left" | "center" | "right") => ReturnType
       setImageFloat: (float: "left" | "right" | null) => ReturnType
     }
@@ -66,7 +66,7 @@ export const ResizableImage = Image.extend({
   addCommands() {
     return {
       setImage:
-        (options) =>
+        (options: { src: string; alt?: string; width?: string; align?: "left" | "center" | "right"; float?: "left" | "right" }) =>
         ({ commands }) =>
           commands.insertContent({
             type: this.name,
@@ -77,7 +77,7 @@ export const ResizableImage = Image.extend({
               align: options.align || null,
               float: options.float || null,
             },
-          }),
+          } as any),
       setImageWidth:
         (width) =>
         ({ commands }) =>
