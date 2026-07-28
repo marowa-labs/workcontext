@@ -780,7 +780,10 @@ router.post("/:id/version-schedules", async (req, res) => {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        user_id: userId,
+        OR: [
+          { user_id: userId },
+          { collaborators: { some: { user_id: userId } } },
+        ],
       },
     });
 
@@ -898,7 +901,10 @@ router.put("/:id/version-schedules/:scheduleId", async (req, res) => {
         id: scheduleId,
         project_id: projectId,
         project: {
-          user_id: userId,
+          OR: [
+            { user_id: userId },
+            { collaborators: { some: { user_id: userId } } },
+          ],
         },
       },
     });
@@ -1004,7 +1010,10 @@ router.delete("/:id/version-schedules/:scheduleId", async (req, res) => {
         id: scheduleId,
         project_id: projectId,
         project: {
-          user_id: userId,
+          OR: [
+            { user_id: userId },
+            { collaborators: { some: { user_id: userId } } },
+          ],
         },
       },
     });

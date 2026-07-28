@@ -732,6 +732,140 @@ app.post(
   },
 );
 
+// Collaboration image upload endpoint
+// Handles file uploads, URL imports, and base64 data for the editor's image-upload-modal.
+const collaborationUpload = multer({
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+    ];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Unsupported file type. Allowed: images."));
+    }
+  },
+});
+
+app.post(
+  "/api/collaboration/upload",
+  (req, res, next) => {
+    const contentType = req.headers["content-type"] || "";
+    if (contentType.includes("multipart/form-data")) {
+      collaborationUpload.single("file")(req, res, next);
+    } else {
+      next();
+    }
+  },
+  async (req: any, res) => {
+    try {
+      const authHeader = req.headers.authorization || "";
+      const token = authHeader.toLowerCase().startsWith("bearer ")
+        ? authHeader.substring(7).trim()
+        : null;
+
+      let userId = "anonymous";
+      if (token) {
+        try {
+          const supabaseClient = await supabase;
+          const { data } = await supabaseClient.auth.getUser(token);
+          if (data?.user?.id) {
+            userId = data.user.id;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // File upload
+      if (req.file) {
+        const { url, filePath } = await SupabaseStorageService.uploadFile(
+          req.file.buffer,
+          req.file.originalname,
+          req.file.mimetype,
+          userId,
+        );
+        return res.status(200).json({
+          success: true,
+          fileUrl: url,
+          url,
+          filePath,
+        });
+      }
+
+      // URL import
+      const body = req.body || {};
+      if (body.url) {
+        const imageResp = await fetch(body.url);
+        if (!imageResp.ok) {
+          return res.status(400).json({ success: false, message: "Failed to fetch image from URL" });
+        }
+        const buffer = Buffer.from(await imageResp.arrayBuffer());
+        const contentType = imageResp.headers.get("content-type") || "image/png";
+        const fileName = `url-${Date.now()}.png`;
+        const { url, filePath } = await SupabaseStorageService.uploadFile(
+          buffer,
+          fileName,
+          contentType,
+          userId,
+        );
+        return res.status(200).json({
+          success: true,
+          url,
+          filePath,
+        });
+      }
+
+      // Base64 upload
+      if (body.base64) {
+        const matches = body.base64.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) {
+          return res.status(400).json({ success: false, message: "Invalid base64 data" });
+        }
+        const mimeType = matches[1];
+        const buffer = Buffer.from(matches[2], "base64");
+        const ext = mimeType.split("/")[1] || "png";
+        const fileName = `base64-${Date.now()}.${ext}`;
+        const { url, filePath } = await SupabaseStorageService.uploadFile(
+          buffer,
+          fileName,
+          mimeType,
+          userId,
+        );
+        return res.status(200).json({
+          success: true,
+          url,
+          filePath,
+        });
+      }
+
+      return res.status(400).json({ success: false, message: "No file, URL, or base64 data provided" });
+    } catch (error: any) {
+      logger.error("Collaboration upload failed:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to upload",
+      });
+    }
+  },
+);
+
+// Collaboration image-download tracking endpoint
+app.post("/api/collaboration/image-download", async (req: any, res) => {
+  try {
+    const { imageUrl, source } = req.body || {};
+    logger.info("Image download tracked", { imageUrl, source });
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Authentication endpoints
 app.post("/api/auth/hybrid/signup", async (req, res) => {
   try {
