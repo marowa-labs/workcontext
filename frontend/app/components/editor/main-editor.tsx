@@ -113,6 +113,8 @@ export type SidebarPanel =
   | "outline"
   | "concept-map"
   | "related"
+  | "collaboration-log"
+  | "comments"
   | null;
 
 // Interfaces for component props and state

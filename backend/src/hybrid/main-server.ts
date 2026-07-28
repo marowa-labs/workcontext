@@ -2120,10 +2120,12 @@ app.post("/api/notifications/test", async (req, res) => {
 });
 
 // Apply auth middleware to editor routes
-app.use("/api/editor", authMiddleware);
+ app.use("/api/editor", authMiddleware);
+ app.use("/api/collaboration", authMiddleware);
+ app.use("/api/comments", authMiddleware);
 
-// Apply auth middleware to privacy routes
-app.use("/api/privacy", authMiddleware);
+ // Apply auth middleware to privacy routes
+ app.use("/api/privacy", authMiddleware);
 
 // Import privacy settings router
 import privacySettingsRouter from "../api/privacy/route";
@@ -3208,6 +3210,106 @@ app.get("/api/editor/comments", async (req, res) => {
     return res.status(response.status).json(data);
   } catch (error: any) {
     logger.error("Get comments failed", { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ── Collaboration Log & Comments ──────────────────────────────────────
+
+app.post("/api/collaboration/log", async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+    const { POST_LOG } = await import("../api/collaboration/route");
+    const body = req.body;
+    const mockReq = { json: async () => body, user: { id: userId } };
+    const response = await POST_LOG(mockReq as any);
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    logger.error("Collaboration log error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/collaboration/log", async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+    const { GET_LOG } = await import("../api/collaboration/route");
+    const url = new URL(`${process.env.BACKEND_URL || "http://localhost:3001"}${req.originalUrl}`);
+    const mockReq = { url: url.toString(), user: { id: userId } };
+    const response = await GET_LOG(mockReq as any);
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    logger.error("Collaboration log fetch error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/comments", async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+    const { POST_COMMENT } = await import("../api/collaboration/route");
+    const body = req.body;
+    const mockReq = { json: async () => body, user: { id: userId } };
+    const response = await POST_COMMENT(mockReq as any);
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    logger.error("Create comment error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/comments", async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+    const { GET_COMMENTS } = await import("../api/collaboration/route");
+    const url = new URL(`${process.env.BACKEND_URL || "http://localhost:3001"}${req.originalUrl}`);
+    const mockReq = { url: url.toString(), user: { id: userId } };
+    const response = await GET_COMMENTS(mockReq as any);
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    logger.error("Get comments error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/comments/:id/replies", async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+    const { POST_REPLY } = await import("../api/collaboration/route");
+    const body = req.body;
+    const url = new URL(`${process.env.BACKEND_URL || "http://localhost:3001"}${req.originalUrl}`);
+    const mockReq = { url: url.toString(), json: async () => body, user: { id: userId } };
+    const response = await POST_REPLY(mockReq as any);
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    logger.error("Add reply error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.patch("/api/comments/:id", async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+    const { PATCH_COMMENT } = await import("../api/collaboration/route");
+    const body = req.body;
+    const url = new URL(`${process.env.BACKEND_URL || "http://localhost:3001"}${req.originalUrl}`);
+    const mockReq = { url: url.toString(), json: async () => body, user: { id: userId } };
+    const response = await PATCH_COMMENT(mockReq as any);
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    logger.error("Update comment error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });

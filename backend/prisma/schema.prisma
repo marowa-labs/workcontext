@@ -112,6 +112,8 @@ model User {
   created_tasks              WorkspaceTask[]       @relation("TaskCreator")
   task_comments              TaskComment[]         @relation("UserTaskComments")
   time_entries               TaskTimeEntry[]
+  collaboration_logs         CollaborationLog[]
+  comments                   Comment[]
 }
 
 model Workspace {
@@ -213,7 +215,9 @@ model Project {
   workspace_id        String?
   workspace           Workspace?             @relation(fields: [workspace_id], references: [id])
   ai_chat_sessions    AIChatSession[]
-  collaborators       CollaboratorPresence[]
+   collaborators       CollaboratorPresence[]
+  collaboration_logs  CollaborationLog[]
+  comments            Comment[]
   share_settings      DocumentShareSettings?
   document_versions   DocumentVersion[]
   editor_activities   EditorActivity[]
@@ -1146,4 +1150,44 @@ model AIAction {
   @@index([target_id])
   @@index([created_at])
   @@index([session_id])
+}
+
+model CollaborationLog {
+  id            String   @id @default(uuid())
+  sessionId     String
+  userId        String
+  eventType     String   // "joined" | "left" | "edited" | "locked" | "unlocked" | "commented"
+  targetSection String?
+  timestamp     DateTime @default(now())
+  metadata      Json?
+  projectId     String
+  user          User     @relation(fields: [userId], references: [id])
+  project       Project  @relation(fields: [projectId], references: [id])
+
+  @@index([sessionId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+model Comment {
+  id               String    @id @default(uuid())
+  project_id       String
+  section_id       String?
+  user_id          String
+  content          String
+  parent_comment_id String?
+  is_resolved      Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  user             User      @relation(fields: [user_id], references: [id])
+  project          Project   @relation(fields: [project_id], references: [id])
+  parent_comment   Comment?  @relation("CommentReplies", fields: [parent_comment_id], references: [id])
+  replies          Comment[] @relation("CommentReplies")
+
+  @@index([project_id])
+  @@index([section_id])
+  @@index([user_id])
+  @@index([parent_comment_id])
 }

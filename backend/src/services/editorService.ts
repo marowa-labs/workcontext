@@ -939,15 +939,14 @@ export class EditorService {
           project_id: projectId,
           user_id: userId,
           content: content,
-          position: position,
+          section_id: position?.sectionId || null,
         },
         include: {
           user: {
             select: {
               id: true,
-              name: true,
+              full_name: true,
               email: true,
-              avatar_url: true,
             },
           },
         },
@@ -992,9 +991,8 @@ export class EditorService {
           user: {
             select: {
               id: true,
-              name: true,
+              full_name: true,
               email: true,
-              avatar_url: true,
             },
           },
         },
@@ -1675,5 +1673,102 @@ export class EditorService {
       logger.error("Error fetching document versions:", error);
       throw error;
     }
+  }
+
+  // ── Collaboration Log ─────────────────────────────────────────────────
+
+  static async logCollaborationEvent(data: {
+    sessionId: string;
+    userId: string;
+    eventType: string;
+    projectId: string;
+    targetSection?: string;
+    metadata?: any;
+  }) {
+    return prisma.collaborationLog.create({
+      data: {
+        sessionId: data.sessionId,
+        userId: data.userId,
+        eventType: data.eventType,
+        projectId: data.projectId,
+        targetSection: data.targetSection || null,
+        metadata: data.metadata || {},
+      },
+      include: {
+        user: { select: { id: true, full_name: true, email: true } },
+      },
+    });
+  }
+
+  static async getCollaborationLog(
+    projectId: string,
+    options: { limit?: number; offset?: number } = {},
+  ) {
+    const { limit = 50, offset = 0 } = options;
+    const [items, total] = await Promise.all([
+      prisma.collaborationLog.findMany({
+        where: { projectId },
+        include: {
+          user: { select: { id: true, full_name: true, email: true } },
+        },
+        orderBy: { timestamp: "desc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.collaborationLog.count({ where: { projectId } }),
+    ]);
+    return { items, total };
+  }
+
+  // ── Comments ──────────────────────────────────────────────────────────
+
+  static async addReply(
+    commentId: string,
+    userId: string,
+    content: string,
+  ) {
+    const parent = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!parent) throw new Error("Parent comment not found");
+
+    return prisma.comment.create({
+      data: {
+        project_id: parent.project_id,
+        user_id: userId,
+        content,
+        parent_comment_id: commentId,
+      },
+      include: {
+        user: { select: { id: true, full_name: true, email: true } },
+      },
+    });
+  }
+
+  static async updateComment(
+    commentId: string,
+    userId: string,
+    data: { content?: string; is_resolved?: boolean },
+  ) {
+    const existing = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!existing) throw new Error("Comment not found");
+    if (existing.user_id !== userId && data.content)
+      throw new Error("Only the author can edit comment content");
+
+    return prisma.comment.update({
+      where: { id: commentId },
+      data,
+      include: {
+        user: { select: { id: true, full_name: true, email: true } },
+        replies: {
+          include: {
+            user: { select: { id: true, full_name: true, email: true } },
+          },
+          orderBy: { created_at: "asc" },
+        },
+      },
+    });
   }
 }

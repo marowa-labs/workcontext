@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AIChatPanel } from "../../../../components/ai-chat/AIChat";
 import { Button } from "../../../../components/ui/button";
-import { X, FileText, ChevronLeft, ChevronRight, Link2 } from "lucide-react";
+import { X, FileText, ChevronLeft, ChevronRight, Link2, MessageSquare } from "lucide-react";
 import { cn } from "../../../../lib/utils";
 import ProjectService from "../../../../lib/utils/projectService";
 import { useUser } from "../../../../lib/utils/useUser";
@@ -21,6 +21,8 @@ import { LanguageCheckPanel } from "../../../../components/editor/SidebarRight/L
 import { DocumentOutlinePanel } from "../../../../components/editor/SidebarLeft/DocumentOutlinePanel";
 import { ConceptMapPanel } from "../../../../components/editor/SidebarLeft/ConceptMapPanel";
 import { RelatedItems } from "../../../../components/related/RelatedItems";
+import { CollaborationLogPanel } from "../../../../components/editor/SidebarLeft/CollaborationLogPanel";
+import { CommentPanel } from "../../../../components/editor/SidebarLeft/CommentPanel";
 
 // Define panel types
 export type LeftPanelType =
@@ -28,8 +30,9 @@ export type LeftPanelType =
   | "outline"
   | "language"
   | "concept-map"
+  | "collaboration-log"
   | null;
-export type RightPanelType = "ai-chat" | "related" | null;
+export type RightPanelType = "ai-chat" | "related" | "comments" | null;
 
 interface Project {
   id: string;
@@ -277,8 +280,8 @@ export default function EditorPage() {
   };
 
   const handleMainEditorPanelToggle = (panel: SidebarPanel) => {
-    const rightPanels: string[] = ["ai-chat"];
-    const leftPanels: string[] = ["language"];
+    const rightPanels: string[] = ["ai-chat", "related", "comments"];
+    const leftPanels: string[] = ["language", "collaboration-log"];
 
     if (panel === null) {
       setRightPanel(null);
@@ -408,6 +411,8 @@ export default function EditorPage() {
     "my-documents",
     "outline",
     "concept-map",
+    "collaboration-log",
+    "comments",
   ];
 
   const activeAllowedPanels = isTeamProject
@@ -429,6 +434,8 @@ export default function EditorPage() {
             setLeftPanel("language");
           } else if (id === "concept-map") {
             setLeftPanel("concept-map");
+          } else if (id === "collaboration-log") {
+            setLeftPanel("collaboration-log");
           }
 
           if (id === "writing") {
@@ -538,6 +545,12 @@ export default function EditorPage() {
                 onChatNode={handleChatNode}
               />
             )}
+            {leftPanel === "collaboration-log" && (
+              <CollaborationLogPanel
+                projectId={documentId}
+                onClose={() => setLeftPanel(null)}
+              />
+            )}
             {leftPanel === "outline" && (
               <div className="h-full overflow-x-hidden">
                 <DocumentOutlinePanel
@@ -633,6 +646,15 @@ export default function EditorPage() {
             >
               <Link2 className="h-4 w-4 text-gray-600" />
             </button>
+            {isTeamProject && (
+              <button
+                onClick={() => toggleRightPanel("comments")}
+                className="bg-white border border-gray-200 rounded-l-md p-1.5 hover:bg-gray-50 shadow-sm"
+                title="Comments"
+              >
+                <MessageSquare className="h-4 w-4 text-gray-600" />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -656,6 +678,7 @@ export default function EditorPage() {
             <h3 className="text-sm font-semibold text-gray-900">
               {rightPanel === "ai-chat" && "AI Assistant"}
               {rightPanel === "related" && "Related Items"}
+              {rightPanel === "comments" && "Comments"}
             </h3>
             <Button
               variant="ghost"
@@ -692,6 +715,12 @@ export default function EditorPage() {
               <RelatedItems
                 projectId={documentId}
                 workspaceId={project?.workspace_id}
+              />
+            )}
+            {rightPanel === "comments" && (
+              <CommentPanel
+                projectId={documentId}
+                onClose={() => setRightPanel(null)}
               />
             )}
           </div>
