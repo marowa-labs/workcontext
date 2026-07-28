@@ -101,8 +101,15 @@
 }
 
 /* Dark editor lists */
-.dark-editor .ProseMirror ul,
+.dark-editor .ProseMirror ul {
+  list-style: disc;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
 .dark-editor .ProseMirror ol {
+  list-style: decimal;
   margin-top: 0;
   margin-bottom: 1.25rem;
   padding-left: 1.5rem;
@@ -318,6 +325,42 @@
 /* Selected cell */
 .dark-editor .ProseMirror .selectedCell {
   background: rgba(59, 130, 246, 0.15);
+}
+
+/* Image alignment and float */
+.dark-editor .ProseMirror img[data-align="left"] {
+  display: block;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.dark-editor .ProseMirror img[data-align="center"] {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dark-editor .ProseMirror img[data-align="right"] {
+  display: block;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.dark-editor .ProseMirror img[data-float="left"] {
+  float: left;
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.dark-editor .ProseMirror img[data-float="right"] {
+  float: right;
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.dark-editor .ProseMirror img[width] {
+  width: attr(data-width);
+  height: auto;
 }
 
 /* Image Shadows */

@@ -684,6 +684,96 @@ export function EditorToolbar({
           <ImageIcon className="h-4 w-4" />
         </Toggle>
 
+        <Popover>
+          <PopoverTrigger asChild>
+            <Toggle
+              size="sm"
+              className="h-8 w-8"
+              disabled={!editor?.isActive("resizableImage")}
+              title="Image Options"
+            >
+              <Layout className="h-4 w-4" />
+            </Toggle>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-3" align="start">
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Image Options</p>
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">Alignment</p>
+                <div className="flex gap-1">
+                  <Toggle
+                    size="sm"
+                    pressed={editor?.getAttributes("resizableImage")?.align === "left"}
+                    onPressedChange={() => editor?.chain().focus().setImageAlign("left").run()}
+                    title="Align Left"
+                  >
+                    <AlignLeft className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    size="sm"
+                    pressed={editor?.getAttributes("resizableImage")?.align === "center"}
+                    onPressedChange={() => editor?.chain().focus().setImageAlign("center").run()}
+                    title="Align Center"
+                  >
+                    <AlignCenter className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    size="sm"
+                    pressed={editor?.getAttributes("resizableImage")?.align === "right"}
+                    onPressedChange={() => editor?.chain().focus().setImageAlign("right").run()}
+                    title="Align Right"
+                  >
+                    <AlignRight className="h-3.5 w-3.5" />
+                  </Toggle>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">Text Wrap</p>
+                <div className="flex gap-1">
+                  <Toggle
+                    size="sm"
+                    pressed={!editor?.getAttributes("resizableImage")?.float}
+                    onPressedChange={() => editor?.chain().focus().setImageFloat(null).run()}
+                    title="No wrap (block)"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    size="sm"
+                    pressed={editor?.getAttributes("resizableImage")?.float === "left"}
+                    onPressedChange={() => editor?.chain().focus().setImageFloat("left").run()}
+                    title="Float Left"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    size="sm"
+                    pressed={editor?.getAttributes("resizableImage")?.float === "right"}
+                    onPressedChange={() => editor?.chain().focus().setImageFloat("right").run()}
+                    title="Float Right"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Toggle>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-gray-500 whitespace-nowrap">Width</p>
+                <Input
+                  type="number"
+                  placeholder="auto"
+                  className="h-7 text-xs"
+                  value={editor?.getAttributes("resizableImage")?.width || ""}
+                  onChange={(e) => {
+                    const w = e.target.value;
+                    editor?.chain().focus().setImageWidth(w ? `${w}px` : null).run()
+                  }}
+                />
+                <span className="text-xs text-gray-400">px</span>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Toggle

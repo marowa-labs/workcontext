@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -15,15 +15,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
-import {
-  ImageIcon,
-  Upload,
-  Link,
-  Grid,
-  Check,
-  Search,
-  Loader2,
-} from "lucide-react";
+import { ImageIcon, Upload, Link, Grid, Check, Loader2 } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import useUpload from "../../lib/utils/useUpload";
 import { supabase } from "../../lib/supabase/client";
@@ -33,14 +25,6 @@ interface ImageUploadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editor: Editor | null;
-}
-
-interface UnsplashImage {
-  id: string;
-  url: string;
-  thumb: string;
-  alt: string;
-  author: string;
 }
 
 interface UserImage {
@@ -67,23 +51,10 @@ export function ImageUploadModal({
   const [loadingUserImages, setLoadingUserImages] = useState(false);
   const { toast } = useToast();
 
-  // Unsplash search states
-  const [onlineImageQuery, setOnlineImageQuery] = useState("");
-  const [onlineImages, setOnlineImages] = useState<UnsplashImage[]>([]);
-  const [onlineImageLoading, setOnlineImageLoading] = useState(false);
-  const [onlineImageError, setOnlineImageError] = useState<string | null>(null);
-  const [selectedOnlineImage, setSelectedOnlineImage] = useState<string | null>(
-    null,
-  );
-
-  const [upload, { loading: uploadLoading, searchUnsplashImages }] =
-    useUpload() as [
-      (input: any) => Promise<any>,
-      {
-        loading: boolean;
-        searchUnsplashImages: (query: string, page?: number) => Promise<any>;
-      },
-    ];
+  const [upload, { loading: uploadLoading }] = useUpload() as [
+    (input: any) => Promise<any>,
+    { loading: boolean },
+  ];
 
   // Fetch user images from Supabase storage
   const fetchUserImages = useCallback(async () => {
@@ -176,7 +147,7 @@ export function ImageUploadModal({
 
   const insertImage = (url: string, alt: string) => {
     if (editor && url) {
-      editor.chain().focus().setImage({ src: url, alt }).run();
+      editor.chain().focus().setImage({ src: url, alt, width: null, align: null, float: null }).run();
       onOpenChange(false);
       resetState();
     }
@@ -188,10 +159,6 @@ export function ImageUploadModal({
     setSelectedGalleryImage(null);
     setUploadedFile(null);
     setPreviewUrl(null);
-    setOnlineImageQuery("");
-    setOnlineImages([]);
-    setSelectedOnlineImage(null);
-    setOnlineImageError(null);
   };
 
   const handleInsert = async () => {
@@ -203,33 +170,6 @@ export function ImageUploadModal({
         console.error("Error inserting gallery image:", error);
         // Fallback to placeholder if there's an error
         insertImage(selectedGalleryImage, "Gallery image");
-      }
-    } else if (selectedOnlineImage) {
-      // Handle Unsplash image selection
-      const image = onlineImages.find((img) => img.id === selectedOnlineImage);
-      if (image) {
-        try {
-          // Upload the Unsplash image to our servers
-          const result = await upload({
-            url: image.url,
-            source: "unsplash",
-          });
-
-          if (result?.url) {
-            insertImage(result.url, image.alt || "Unsplash image");
-            // Refresh user images after uploading a new one
-            fetchUserImages();
-          } else {
-            throw new Error("Failed to upload image");
-          }
-        } catch (error) {
-          console.error("Error uploading image:", error);
-          toast({
-            title: "Upload Failed",
-            description: "Failed to upload image. Please try again.",
-            variant: "destructive",
-          });
-        }
       }
     } else if (previewUrl && uploadedFile) {
       // Handle file upload
@@ -270,52 +210,6 @@ export function ImageUploadModal({
     }
   };
 
-  // Ref for debouncing search
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleOnlineImageSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim()) {
-        setOnlineImages([]);
-        return;
-      }
-
-      try {
-        setOnlineImageLoading(true);
-        setOnlineImageError(null);
-
-        const results = await searchUnsplashImages(query);
-        setOnlineImages(results.results);
-      } catch (error) {
-        setOnlineImageError("Failed to search images. Please try again.");
-      } finally {
-        setOnlineImageLoading(false);
-      }
-    },
-    [searchUnsplashImages],
-  );
-
-  // Auto-search as user types with debounce
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    if (onlineImageQuery.trim()) {
-      searchTimeoutRef.current = setTimeout(() => {
-        handleOnlineImageSearch(onlineImageQuery);
-      }, 500); // 500ms debounce delay
-    } else {
-      setOnlineImages([]);
-    }
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [onlineImageQuery, handleOnlineImageSearch]);
-
   // Clean up object URLs on unmount
   useMemo(() => {
     return () => {
@@ -342,13 +236,12 @@ export function ImageUploadModal({
             Insert Image
           </DialogTitle>
           <DialogDescription>
-            Upload an image, enter a URL, search online images, or choose from
-            the gallery
+            Upload an image, enter a URL, or choose from the gallery
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="upload" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upload" className="flex items-center gap-1">
               <Upload className="h-4 w-4" />
               Upload
@@ -356,10 +249,6 @@ export function ImageUploadModal({
             <TabsTrigger value="url" className="flex items-center gap-1">
               <Link className="h-4 w-4" />
               URL
-            </TabsTrigger>
-            <TabsTrigger value="online" className="flex items-center gap-1">
-              <Search className="h-4 w-4" />
-              Online
             </TabsTrigger>
             <TabsTrigger value="gallery" className="flex items-center gap-1">
               <Grid className="h-4 w-4" />
@@ -473,118 +362,6 @@ export function ImageUploadModal({
               )}
             </TabsContent>
 
-            <TabsContent value="online" className="py-4 h-full flex flex-col">
-              <div className="flex flex-col h-full">
-                <div className="flex-shrink-0 mb-4">
-                  <div className="flex space-x-2">
-                    <Input
-                      type="text"
-                      value={onlineImageQuery}
-                      onChange={(e) => setOnlineImageQuery(e.target.value)}
-                      placeholder="Search for images..."
-                    />
-                    <Button
-                      className="bg-blue-500 hover:bg-blue-600 transition-colors cursor-pointer"
-                      onClick={() => handleOnlineImageSearch(onlineImageQuery)}
-                      disabled={onlineImageLoading || !onlineImageQuery.trim()}
-                    >
-                      {onlineImageLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Search"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                {onlineImageError && (
-                  <div className="flex-shrink-0 mb-4 p-3 bg-destructive/10 text-destructive rounded-lg">
-                    {onlineImageError}
-                  </div>
-                )}
-
-                <div className="flex-1 min-h-0">
-                  {onlineImageLoading ? (
-                    <div className="h-full flex items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  ) : onlineImages.length > 0 ? (
-                    <div className="h-full overflow-y-auto">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-4">
-                        {onlineImages.map((image) => (
-                          <div
-                            key={image.id}
-                            className={`border rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer relative ${
-                              selectedOnlineImage === image.id
-                                ? "ring-2 ring-primary border-primary"
-                                : "border-border"
-                            }`}
-                            onClick={() => {
-                              setSelectedOnlineImage(image.id);
-                            }}
-                          >
-                            <div className="aspect-square overflow-hidden relative">
-                              <img
-                                src={image.thumb || image.url}
-                                alt={image.alt}
-                                className="w-full h-full object-cover absolute inset-0"
-                              />
-                            </div>
-                            {selectedOnlineImage === image.id && (
-                              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                <Check className="h-6 w-6 text-primary" />
-                              </div>
-                            )}
-                            <div className="p-2">
-                              <p className="text-xs text-muted-foreground truncate">
-                                {image.alt}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                by {image.author}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-muted-foreground">
-                      {onlineImageQuery ? (
-                        <div className="text-center">
-                          <Search className="h-12 w-12 mx-auto mb-4" />
-                          <p className="font-medium">
-                            No images found for "{onlineImageQuery}"
-                          </p>
-                          <p className="text-sm mt-1">
-                            Try a different search term
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex items-center">
-                          <Search className="h-12 w-12 mr-4" />
-                          <div>
-                            <p className="font-medium">
-                              Search for images on Unsplash
-                            </p>
-                            <p className="text-sm mt-1">
-                              Enter a keyword above to find relevant images
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-shrink-0 pt-4 border-t border-border mt-4">
-                  <p className="text-xs text-muted-foreground">
-                    Note: These images are sourced from Unsplash. By inserting
-                    an image, you agree to Unsplash's licensing terms.
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-
             <TabsContent value="gallery" className="py-4 h-full flex flex-col">
               <ScrollArea className="flex-1 min-h-0 h-full">
                 <div className="h-full overflow-y-auto">
@@ -653,12 +430,8 @@ export function ImageUploadModal({
             className="rounded-lg bg-blue-500 hover:bg-blue-600 transition-colors cursor-pointer"
             onClick={handleInsert}
             disabled={
-              (!selectedGalleryImage &&
-                !selectedOnlineImage &&
-                !previewUrl &&
-                !imageUrl) ||
-              uploadLoading ||
-              onlineImageLoading
+              (!selectedGalleryImage && !previewUrl && !imageUrl) ||
+              uploadLoading
             }
           >
             {uploadLoading ? (
