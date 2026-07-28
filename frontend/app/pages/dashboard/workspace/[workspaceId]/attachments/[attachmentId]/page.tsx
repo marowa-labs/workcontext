@@ -23,7 +23,6 @@ import {
   Send,
   Lightbulb,
   MessageSquare,
-  Pin,
   Eraser,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -113,58 +112,7 @@ export default function AttachmentAnnotationPage() {
     y: number;
   }>({ visible: false, x: 0, y: 0 });
 
-  // Ref to capture selected text at the moment user clicks "Pin Comment"
-  // (avoids losing the text if selection is cleared before save)
-  const capturedTextRef = useRef<string>("");
 
-  // Pinned comments state
-  const [pinnedComments, setPinnedComments] = useState<
-    Array<{
-      id: string;
-      text: string;
-      comment: string;
-      x: number;
-      y: number;
-      created_at: string;
-    }>
-  >([]);
-  const [pinnedCommentsLoaded, setPinnedCommentsLoaded] = useState(false);
-
-  // Fetch pinned comments from API on mount
-  useEffect(() => {
-    if (!attachmentId) return;
-
-    const fetchComments = async () => {
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData?.session?.access_token;
-        if (!token) return;
-
-        const res = await fetch(`/api/ai/pinned-comments/${attachmentId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.comments) {
-            setPinnedComments(data.comments);
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to fetch pinned comments", err);
-      } finally {
-        setPinnedCommentsLoaded(true);
-      }
-    };
-
-    fetchComments();
-  }, [attachmentId]);
-  const [showCommentInput, setShowCommentInput] = useState(false);
-  const [commentText, setCommentText] = useState("");
-  const [pendingPinPosition, setPendingPinPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
   const selectionPopupRef = useRef<HTMLDivElement>(null);
 
   const [activeColor, setActiveColor] = useState(ANNOTATION_COLORS[0]);
@@ -479,81 +427,7 @@ export default function AttachmentAnnotationPage() {
     }, 100);
   };
 
-  // "Pin Comment" — show inline comment input near selection
-  const handlePinComment = () => {
-    if (!selectedText) return;
-    // Capture the selected text in a ref so it survives selection loss
-    capturedTextRef.current = selectedText;
-    setPendingPinPosition({
-      x: selectionPopup.x,
-      y: selectionPopup.y + 40,
-    });
-    setShowCommentInput(true);
-    setSelectionPopup({ visible: false, x: 0, y: 0 });
-  };
 
-  // Save pinned comment to database
-  const handleSaveComment = async () => {
-    if (!commentText.trim() || !pendingPinPosition || !attachmentId) return;
-
-    // Use captured text from ref (set when user clicked "Pin Comment")
-    const textToSave = capturedTextRef.current || selectedText;
-    if (!textToSave || !textToSave.trim()) {
-      console.warn("No selected text for pinned comment");
-      return;
-    }
-
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) return;
-
-      const payload = {
-        attachmentId,
-        selectedText: textToSave.trim(),
-        comment: commentText.trim(),
-        positionX: pendingPinPosition.x,
-        positionY: pendingPinPosition.y,
-      };
-
-      const res = await fetch("/api/ai/pinned-comments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.warn("Failed to save pinned comment:", res.status, errorData);
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success && data.comment) {
-        setPinnedComments((prev) => [...prev, data.comment]);
-      }
-    } catch (err) {
-      console.warn("Failed to save pinned comment", err);
-    }
-
-    setCommentText("");
-    setShowCommentInput(false);
-    setPendingPinPosition(null);
-    setSelectedText("");
-    capturedTextRef.current = "";
-  };
-
-  // Cancel pinned comment
-  const handleCancelComment = () => {
-    setCommentText("");
-    setShowCommentInput(false);
-    setPendingPinPosition(null);
-    setSelectedText("");
-    capturedTextRef.current = "";
-  };
 
   // Handle sending AI message
   const handleSendAIMessage = async () => {
@@ -1316,15 +1190,7 @@ export default function AttachmentAnnotationPage() {
               <Sparkles className="w-3.5 h-3.5" />
               Ask AI
             </button>
-            <div className="w-px h-5 bg-gray-200" />
-            <button
-              onClick={handlePinComment}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-              title="Pin a comment on this selection"
-            >
-              <Pin className="w-3.5 h-3.5" />
-              Pin Comment
-            </button>
+
           </div>
           {/* Arrow pointing down */}
           <div className="flex justify-center -mt-px">
@@ -1333,114 +1199,7 @@ export default function AttachmentAnnotationPage() {
         </div>
       )}
 
-      {/* ── Pinned Comment Input Popup ─────────────────────────────────────── */}
-      {showCommentInput && pendingPinPosition && (
-        <div
-          className="fixed z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
-          style={{
-            left: `${Math.min(pendingPinPosition.x, window.innerWidth - 280)}px`,
-            top: `${Math.max(pendingPinPosition.y, 10)}px`,
-            transform: "translateX(-50%)",
-          }}
-        >
-          <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-3 w-64">
-            {selectedText && (
-              <div className="mb-2 px-2 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-[10px] text-yellow-700 font-medium mb-0.5">
-                  Selected text:
-                </p>
-                <p className="text-xs text-yellow-800 line-clamp-2 italic">
-                  &ldquo;{selectedText}&rdquo;
-                </p>
-              </div>
-            )}
-            <textarea
-              autoFocus
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSaveComment();
-                }
-                if (e.key === "Escape") {
-                  handleCancelComment();
-                }
-              }}
-              placeholder="Write your comment..."
-              rows={2}
-              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-            <div className="flex justify-end gap-1.5 mt-2">
-              <button
-                onClick={handleCancelComment}
-                className="px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveComment}
-                disabled={!commentText.trim()}
-                className="px-2.5 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg transition-colors"
-              >
-                Save Pin
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ── Pinned Comments Display ────────────────────────────────────────── */}
-      {pinnedComments.map((pin) => (
-        <div
-          key={pin.id}
-          className="fixed z-40 animate-in fade-in duration-300"
-          style={{
-            left: `${Math.min(pin.x, window.innerWidth - 220)}px`,
-            top: `${Math.max(pin.y, 10)}px`,
-            transform: "translateX(-50%)",
-          }}
-        >
-          <div className="bg-white rounded-lg shadow-lg border border-blue-200 p-2.5 w-52">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Pin className="w-3 h-3 text-blue-500" />
-              <span className="text-[10px] text-gray-400">
-                {format(new Date(pin.created_at), "HH:mm")}
-              </span>
-              <button
-                onClick={async () => {
-                  // Optimistically remove from UI
-                  setPinnedComments((prev) =>
-                    prev.filter((p) => p.id !== pin.id),
-                  );
-                  // Delete from database
-                  try {
-                    const { data: sessionData } =
-                      await supabase.auth.getSession();
-                    const token = sessionData?.session?.access_token;
-                    if (!token) return;
-                    await fetch(`/api/ai/pinned-comments/${pin.id}`, {
-                      method: "DELETE",
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
-                  } catch (err) {
-                    console.warn("Failed to delete pinned comment", err);
-                  }
-                }}
-                className="ml-auto p-0.5 text-gray-400 hover:text-red-500 rounded"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="px-2 py-1 bg-yellow-50 border border-yellow-100 rounded mb-1.5">
-              <p className="text-[10px] text-yellow-700 line-clamp-1 italic">
-                &ldquo;{pin.text}&rdquo;
-              </p>
-            </div>
-            <p className="text-xs text-gray-700">{pin.comment}</p>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

@@ -704,8 +704,9 @@ export function AIChatPanel({
       // Editor manipulation only happens when Agent Mode is enabled.
       // When Agent Mode is OFF, the AI only responds in chat without touching the document.
       // When Agent Mode is ON, the AI can write, edit, delete, and replace content in the editor.
+      // The AI must use [INSERT_INTO_EDITOR], [DELETE_IN_EDITOR], or [REPLACE_IN_EDITOR]
+      // markers to modify the document. Without markers, the response stays in chat only.
       if (agentModeEnabled && editor) {
-        const aiResponse = result.aiMessage?.content || result.content || "";
 
         // Handle [INSERT_INTO_EDITOR] - Insert new content at cursor
         const insertMatches = aiResponse.matchAll(
@@ -746,27 +747,6 @@ export function AIChatPanel({
               }
             }
           }
-        }
-
-        // Agent Mode: If the AI response has NO editor markers, treat the entire
-        // response as content to insert into the editor at cursor position.
-        // This handles cases where the AI just writes content directly without
-        // using the [INSERT_INTO_EDITOR] markers.
-        const hasEditorMarkers =
-          aiResponse.includes("[INSERT_INTO_EDITOR]") ||
-          aiResponse.includes("[DELETE_IN_EDITOR]") ||
-          aiResponse.includes("[REPLACE_IN_EDITOR]");
-
-        if (!hasEditorMarkers && aiResponse.trim()) {
-          // Strip any markdown formatting for cleaner insertion
-          const cleanContent = stripEditorMarkers(aiResponse.trim());
-          if (cleanContent) {
-            const contentToInsert = formatContentForTiptap(cleanContent);
-            if (contentToInsert) {
-              editor.chain().focus().insertContent(contentToInsert).run();
-            }
-          }
-        }
       }
 
       // Always strip editor markers from chat display
