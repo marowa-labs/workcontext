@@ -35,10 +35,10 @@ export function ShareProjectDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
 
-  // Generate the share link - use standalone route for public access
+  // Generate the share link
   const shareLink =
     typeof window !== "undefined"
-      ? `${window.location.origin}/standalone/editor/${project?.id}`
+      ? `${window.location.origin}/editor/${project?.id}`
       : "";
 
   const handleToggleSharing = async (enabled: boolean) => {

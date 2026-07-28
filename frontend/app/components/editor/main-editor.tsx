@@ -68,6 +68,7 @@ import GrammarCheckingExtension from "./GrammarCheckingExtension";
 import Collaboration from "@tiptap/extension-collaboration";
 import { SafeCollaborationCursor } from "../../lib/utils/safeCollaborationCursor";
 import { useCollaboration } from "../../hooks/use-collaboration"; // Import new hook
+import CollaborationService from "../../lib/utils/collaborationService";
 import { prosemirrorJSONToYXmlFragment } from "y-prosemirror";
 
 // Import template styling utilities
@@ -323,6 +324,15 @@ export const MainEditor = forwardRef<
     const [saveStatus, setSaveStatus] = useState<
       "saved" | "saving" | "unsaved"
     >("saved");
+
+    // Collaboration logging
+    const sessionIdRef = useRef<string>(
+      typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
+    const collabLogDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const viewedRef = useRef(false);
 
     // Smart Features - Phase 3
     const [workspaceId, setWorkspaceId] = useState<string | undefined>();
@@ -748,6 +758,49 @@ export const MainEditor = forwardRef<
         debouncedSave.flush();
       };
     }, [editor, documentId, documentTitle, provider, isCollaborative]);
+
+    // Collaboration event logging
+    useEffect(() => {
+      if (!editor || !documentId || !isCollaborative) return;
+
+      const logCollabEvent = async (eventType: string, targetSection?: string) => {
+        try {
+          await CollaborationService.logEvent({
+            sessionId: sessionIdRef.current,
+            eventType,
+            projectId: documentId,
+            targetSection,
+          });
+        } catch {
+          // Best-effort logging
+        }
+      };
+
+      // Log "view" event on first load
+      if (!viewedRef.current) {
+        viewedRef.current = true;
+        logCollabEvent("view");
+      }
+
+      // Debounced "edit" logging
+      const handleUpdate = () => {
+        if (collabLogDebounceRef.current) {
+          clearTimeout(collabLogDebounceRef.current);
+        }
+        collabLogDebounceRef.current = setTimeout(() => {
+          logCollabEvent("edit");
+        }, 5000);
+      };
+
+      editor.on("update", handleUpdate);
+
+      return () => {
+        editor.off("update", handleUpdate);
+        if (collabLogDebounceRef.current) {
+          clearTimeout(collabLogDebounceRef.current);
+        }
+      };
+    }, [editor, documentId, isCollaborative]);
 
     // Manual save handler - DISABLED as per requirement "avoid manual save totally"
     const handleManualSave = async () => {
