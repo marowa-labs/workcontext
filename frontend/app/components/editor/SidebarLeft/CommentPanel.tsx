@@ -52,7 +52,7 @@ export function CommentPanel({
   const [showMentions, setShowMentions] = useState(false);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [mentionableUsers, setMentionableUsers] = useState<
-    { id: string; full_name: string; email: string }[]
+    { id: string; full_name: string | null; email: string }[]
   >([]);
 
   useEffect(() => {
