@@ -554,6 +554,9 @@ export const MainEditor = forwardRef<
           FootnoteContentExtension,
           AIAutocompleteExtension.configure({
             isEnabled: true,
+            onSuggestion: (suggestion: { text: string; position: number }) => {
+              setAutocompleteSuggestion(suggestion);
+            },
           }),
 
           SpellCheckExtension.configure({

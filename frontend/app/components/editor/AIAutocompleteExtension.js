@@ -24,9 +24,9 @@ const state = {
   sessionStartTime: Date.now(),
 };
 
-const TRIGGER_COOLDOWN = 5000; // 5 seconds between triggers (reduced from 10)
-const ACTIVE_TYPING_TIMEOUT = 3000; // 3 seconds
-const SESSION_TIMEOUT = 6 * 60 * 1000; // 6 minutes
+const TRIGGER_COOLDOWN = 3000;
+const ACTIVE_TYPING_TIMEOUT = 2000;
+const SESSION_TIMEOUT = 6 * 60 * 1000;
 
 // Get AI usage info with caching
 async function getAIUsage() {
@@ -141,7 +141,7 @@ function shouldTriggerAutocomplete(
   }
 
   // Don't trigger if text is too short
-  if (textContext.trim().length < 10) {
+  if (textContext.trim().length < 5) {
     return false;
   }
 
@@ -152,17 +152,13 @@ function shouldTriggerAutocomplete(
     // Trigger after space or newline (word boundary)
     if ([" ", "\n", "\t"].includes(lastChar)) {
       const trimmed = textContext.trim();
-      if (trimmed.length < 10) {
+      if (trimmed.length < 5) {
         return false;
       }
     }
     // Trigger after sentence-ending punctuation
     else if ([".", "!", "?"].includes(lastChar)) {
       // Good trigger point
-    }
-    // Don't trigger in the middle of a word
-    else if (/[a-zA-Z]/.test(lastChar)) {
-      return false;
     }
   }
 
@@ -180,12 +176,12 @@ export const AIAutocompleteExtension = Extension.create({
 
   addOptions() {
     return {
-      debounceTime: 3000, // Increased debounce time to 3 seconds
-      minLength: 20, // Increased minimum characters to trigger
-      maxLength: 500, // Increased maximum characters to send to AI for better context
+      debounceTime: 1200,
+      minLength: 15,
+      maxLength: 500,
       suggestionClass: "ai-autocomplete-suggestion",
-      onLimitReached: () => {}, // Callback when limit is reached
-      isEnabled: true, // Add isEnabled option to control the extension
+      onLimitReached: () => {},
+      isEnabled: true,
     };
   },
 
@@ -199,6 +195,7 @@ export const AIAutocompleteExtension = Extension.create({
 
   addProseMirrorPlugins() {
     const { editor } = this;
+    const extensionOptions = this.options;
     let debounceTimer = null;
 
     const plugin = new Plugin({
@@ -281,17 +278,6 @@ export const AIAutocompleteExtension = Extension.create({
       view() {
         return {
           update: (view, prevState) => {
-            // Check if the extension is enabled
-            if (!this.options?.isEnabled) {
-              // Clear any existing suggestions if extension is disabled
-              if (editor.storage.aiAutocomplete.isActive) {
-                editor.storage.aiAutocomplete.suggestion = null;
-                editor.storage.aiAutocomplete.isActive = false;
-                editor.storage.aiAutocomplete.position = null;
-              }
-              return;
-            }
-
             // Reset session start time on editor focus or initialization
             if (!prevState || prevState !== view.state) {
               state.sessionStartTime = Date.now();
@@ -325,7 +311,7 @@ export const AIAutocompleteExtension = Extension.create({
                 if (!$from) return;
 
                 const textBefore = editorState.doc.textBetween(
-                  Math.max(0, from - (this.options?.maxLength || 500)),
+                  Math.max(0, from - (extensionOptions.maxLength || 500)),
                   from,
                   "",
                 );
@@ -342,20 +328,10 @@ export const AIAutocompleteExtension = Extension.create({
                   return;
                 }
 
-                // Get research context if available
-                let context = null;
-                if (this.options?.getResearchContext) {
-                  try {
-                    context = await this.options.getResearchContext();
-                  } catch (err) {
-                    console.warn("Failed to get research context:", err);
-                  }
-                }
-
                 // Add request to queue instead of processing directly
                 addToRequestQueue({
                   textBefore,
-                  context, // Pass context to the queue
+                  context: null,
                   position: $from.pos,
                   onSuggestion: (result) => {
                     // Update editor storage with suggestion
@@ -368,13 +344,21 @@ export const AIAutocompleteExtension = Extension.create({
                     editor.view.dispatch(
                       editor.state.tr.setMeta("aiAutocomplete", true),
                     );
+
+                    // Notify React state via custom option callback
+                    if (extensionOptions.onSuggestion) {
+                      extensionOptions.onSuggestion({
+                        text: result.suggestion,
+                        position: result.position,
+                      });
+                    }
                   },
-                  onLimitReached: this.options?.onLimitReached,
+                  onLimitReached: extensionOptions.onLimitReached,
                 });
               } catch (error) {
                 console.error("AI Autocomplete error:", error);
               }
-            }, this.options?.debounceTime || 1500); // Reduced to 1.5s for Jenni-like feel
+            }, extensionOptions.debounceTime || 1000);
           },
         };
       },
