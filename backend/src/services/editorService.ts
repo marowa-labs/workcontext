@@ -925,6 +925,7 @@ export class EditorService {
           OR: [
             { user_id: userId },
             { collaborators: { some: { user_id: userId } } },
+            { workspace: { members: { some: { user_id: userId } } } },
           ],
         },
       });
@@ -974,6 +975,7 @@ export class EditorService {
           OR: [
             { user_id: userId },
             { collaborators: { some: { user_id: userId } } },
+            { workspace: { members: { some: { user_id: userId } } } },
           ],
         },
       });
@@ -1685,6 +1687,19 @@ export class EditorService {
     targetSection?: string;
     metadata?: any;
   }) {
+    // Check access
+    const project = await prisma.project.findFirst({
+      where: {
+        id: data.projectId,
+        OR: [
+          { user_id: data.userId },
+          { collaborators: { some: { user_id: data.userId } } },
+          { workspace: { members: { some: { user_id: data.userId } } } },
+        ],
+      },
+    });
+    if (!project) throw new Error("Project not found or unauthorized");
+
     return prisma.collaborationLog.create({
       data: {
         sessionId: data.sessionId,
@@ -1702,8 +1717,22 @@ export class EditorService {
 
   static async getCollaborationLog(
     projectId: string,
+    userId: string,
     options: { limit?: number; offset?: number } = {},
   ) {
+    // Check access
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        OR: [
+          { user_id: userId },
+          { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
+        ],
+      },
+    });
+    if (!project) throw new Error("Project not found or unauthorized");
+
     const { limit = 50, offset = 0 } = options;
     const [items, total] = await Promise.all([
       prisma.collaborationLog.findMany({

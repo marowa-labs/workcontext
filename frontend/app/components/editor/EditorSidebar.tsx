@@ -11,6 +11,7 @@ import {
   Wand2,
   MessageSquare,
   Network,
+  Clock,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
@@ -76,6 +77,12 @@ export function EditorSidebar({
       label: "Team Chat",
       icon: MessageSquare,
       description: "Collaborate with your team",
+    },
+    {
+      id: "collaboration-log",
+      label: "Collaboration Log",
+      icon: Clock,
+      description: "View collaboration activity",
     },
   ].filter((item) => allowedPanels.includes(item.id));
 

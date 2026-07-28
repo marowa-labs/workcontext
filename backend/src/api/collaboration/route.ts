@@ -78,7 +78,7 @@ async function handleGET_LOG(request: Request & { user?: any }) {
       );
     }
 
-    const result = await EditorService.getCollaborationLog(projectId, {
+    const result = await EditorService.getCollaborationLog(projectId, request.user?.id, {
       limit,
       offset,
     });
