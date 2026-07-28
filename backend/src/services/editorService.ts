@@ -1761,6 +1761,19 @@ export class EditorService {
     });
     if (!parent) throw new Error("Parent comment not found");
 
+    // Check access
+    const project = await prisma.project.findFirst({
+      where: {
+        id: parent.project_id,
+        OR: [
+          { user_id: userId },
+          { collaborators: { some: { user_id: userId } } },
+          { workspace: { members: { some: { user_id: userId } } } },
+        ],
+      },
+    });
+    if (!project) throw new Error("Project not found or unauthorized");
+
     return prisma.comment.create({
       data: {
         project_id: parent.project_id,
@@ -1785,6 +1798,21 @@ export class EditorService {
     if (!existing) throw new Error("Comment not found");
     if (existing.user_id !== userId && data.content)
       throw new Error("Only the author can edit comment content");
+
+    // Check project access for non-author changes (resolve)
+    if (existing.user_id !== userId) {
+      const project = await prisma.project.findFirst({
+        where: {
+          id: existing.project_id,
+          OR: [
+            { user_id: userId },
+            { collaborators: { some: { user_id: userId } } },
+            { workspace: { members: { some: { user_id: userId } } } },
+          ],
+        },
+      });
+      if (!project) throw new Error("Project not found or unauthorized");
+    }
 
     return prisma.comment.update({
       where: { id: commentId },

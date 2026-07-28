@@ -1065,14 +1065,72 @@ export const MainEditor = forwardRef<
 
     // Handler for AI actions
     const handleAIAction = useCallback(
-      (action: string, text: string) => {
-        console.log("AI Action:", action, text);
-        toast({
-          title: "AI Action",
-          description: `${action} applied to selected text`,
-        });
+      async (action: string, text: string) => {
+        if (!editor || !text.trim()) return;
+
+        const actionMap: Record<string, { action: string; prompt: string }> = {
+          improve: {
+            action: "improve_writing",
+            prompt: "Improve the following text. Enhance clarity, tone, and style while preserving the original meaning",
+          },
+          shorten: {
+            action: "simplify",
+            prompt: "Shorten and simplify the following text. Keep only the essential points",
+          },
+          expand: {
+            action: "expand",
+            prompt: "Expand on the following text. Add more detail, examples, and depth",
+          },
+          ask: {
+            action: "custom_prompt",
+            prompt: text,
+          },
+        };
+
+        const config = actionMap[action];
+        if (!config) return;
+
+        try {
+          if (action === "ask") {
+            setAiResponseData({
+              action: "custom_prompt",
+              originalText: text,
+              suggestion: "Opening AI chat...",
+            });
+            return;
+          }
+
+          const result = await AIService.processAIRequest(
+            config.action,
+            `${config.prompt}:\n\n"${text}"`,
+            null,
+            { tone: "academic" },
+          );
+
+          if (result?.suggestion) {
+            setAiResponseData({
+              action: config.action,
+              originalText: text,
+              suggestion: result.suggestion,
+            });
+          } else {
+            toast({
+              title: "AI Action Failed",
+              description: "No suggestion was returned. Please try again.",
+              variant: "destructive",
+            });
+          }
+        } catch (error: any) {
+          console.error("AI Action error:", error);
+          toast({
+            title: "AI Action Failed",
+            description:
+              error?.message || "Failed to process AI action. Check your API keys in Settings.",
+            variant: "destructive",
+          });
+        }
       },
-      [toast],
+      [editor, toast],
     );
 
     // Handler for restoring document version
@@ -1366,23 +1424,38 @@ export const MainEditor = forwardRef<
             onClose={() => setShowAIResponse(false)}
             onApply={(text) => {
               if (editorRef.current) {
-                editorRef.current.commands.setContent(text);
+                const { from, to } = editorRef.current.state.selection;
+                if (!editorRef.current.state.selection.empty) {
+                  editorRef.current
+                    .chain()
+                    .focus()
+                    .deleteSelection()
+                    .insertContent(text)
+                    .run();
+                } else {
+                  editorRef.current.commands.insertContent(text);
+                }
                 setShowAIResponse(false);
+                setAiResponseData(null);
               }
             }}
             onInsertBelow={(text) => {
               if (editorRef.current) {
-                // Insert the text after the current content
-                const content = editorRef.current.getHTML();
-                editorRef.current.commands.setContent(
-                  content + "<p></p>" + text,
-                );
+                const { from } = editorRef.current.state.selection;
+                editorRef.current
+                  .chain()
+                  .focus()
+                  .setTextSelection(from)
+                  .insertContentAt(from, `<p></p>${text}`)
+                  .run();
                 setShowAIResponse(false);
+                setAiResponseData(null);
               }
             }}
             onCopy={(text) => {
               navigator.clipboard.writeText(text);
               setShowAIResponse(false);
+              setAiResponseData(null);
             }}
             onRegenerate={() => {
               // Implement regeneration logic here

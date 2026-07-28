@@ -203,7 +203,8 @@ export async function POST_REPLY(request: Request) {
 async function handlePOST_REPLY(request: Request & { user?: any }) {
   try {
     const url = new URL(request.url);
-    const commentId = url.pathname.split("/").pop();
+    const segments = url.pathname.split("/");
+    const commentId = segments[segments.length - 2];
     const body = (await request.json()) as { content: string };
     const userId = request.user?.id;
 
