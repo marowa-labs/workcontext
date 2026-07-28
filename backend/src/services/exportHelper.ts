@@ -177,6 +177,7 @@ function extractBlockFromNode(node: any): ContentBlock | null {
 
     case "image":
     case "image-placeholder":
+    case "resizableImage":
       return {
         type: "image",
         runs: [],
@@ -361,6 +362,8 @@ function extractRunsFromContent(content: any[]): TextRun[] {
       runs.push({ text: node.attrs?.label || "[citation]" });
     } else if (node.type === "ai-tag") {
       runs.push({ text: "" });
+    } else if (Array.isArray(node.content)) {
+      runs.push(...extractRunsFromContent(node.content));
     }
   }
   return runs;

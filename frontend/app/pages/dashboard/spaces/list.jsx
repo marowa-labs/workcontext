@@ -271,7 +271,6 @@ export default function SpacesLibraryPage() {
   const handleRenameSpace = (space) => {
     setRenamingSpace(space);
     setNewSpaceName(space.name || space.title || "");
-    setDropdownOpen(null);
   };
 
   const handleRenameSpaceConfirm = async () => {
@@ -317,7 +316,6 @@ export default function SpacesLibraryPage() {
     } catch {
       toast({ title: "Error", description: "Failed to duplicate space.", variant: "destructive" });
     }
-    setDropdownOpen(null);
   };
 
   const handleToggleFavorite = async (space) => {
@@ -331,7 +329,6 @@ export default function SpacesLibraryPage() {
       title: newFav ? "Added to favorites" : "Removed from favorites",
       description: `"${space.name || space.title}" has been ${newFav ? "added to" : "removed from"} your favorites.`,
     });
-    setDropdownOpen(null);
   };
 
   const handleArchiveSpace = async (space) => {
@@ -344,7 +341,6 @@ export default function SpacesLibraryPage() {
         toast({ title: "Error", description: "Failed to archive space.", variant: "destructive" });
       }
     }
-    setDropdownOpen(null);
   };
 
   const handleDeleteSpace = async (space) => {
@@ -357,7 +353,6 @@ export default function SpacesLibraryPage() {
         toast({ title: "Error", description: "Failed to delete space.", variant: "destructive" });
       }
     }
-    setDropdownOpen(null);
   };
 
   const handleCreateSpace = async () => {
