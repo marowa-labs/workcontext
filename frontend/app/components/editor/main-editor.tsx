@@ -1121,6 +1121,29 @@ export const MainEditor = forwardRef<
       async (action: string, text: string) => {
         if (!editor || !text.trim()) return;
 
+        if (action === "comment") {
+          try {
+            await CollaborationService.createComment({
+              projectId: documentId,
+              content: text,
+            });
+            toast({
+              title: "Comment Added",
+              description: "Your comment has been created. Open the Comments panel to view it.",
+            });
+            if (propToggleRightPanel) {
+              propToggleRightPanel("comments");
+            }
+          } catch (err: any) {
+            toast({
+              title: "Failed to Add Comment",
+              description: err?.message || "Could not create comment.",
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+
         const actionMap: Record<string, { action: string; prompt: string }> = {
           improve: {
             action: "improve_writing",
@@ -1134,25 +1157,12 @@ export const MainEditor = forwardRef<
             action: "expand",
             prompt: "Expand on the following text. Add more detail, examples, and depth",
           },
-          ask: {
-            action: "custom_prompt",
-            prompt: text,
-          },
         };
 
         const config = actionMap[action];
         if (!config) return;
 
         try {
-          if (action === "ask") {
-            setAiResponseData({
-              action: "custom_prompt",
-              originalText: text,
-              suggestion: "Opening AI chat...",
-            });
-            return;
-          }
-
           const result = await AIService.processAIRequest(
             config.action,
             `${config.prompt}:\n\n"${text}"`,
@@ -1183,7 +1193,7 @@ export const MainEditor = forwardRef<
           });
         }
       },
-      [editor, toast],
+      [editor, documentId, toast, propToggleRightPanel],
     );
 
     // Handler for restoring document version

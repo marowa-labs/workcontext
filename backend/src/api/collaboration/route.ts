@@ -108,8 +108,9 @@ async function handlePOST_COMMENT(request: Request & { user?: any }) {
       projectId: string;
       content: string;
       sectionId?: string;
+      contextText?: string;
     };
-    const { projectId, content, sectionId } = body;
+    const { projectId, content, sectionId, contextText } = body;
     const userId = request.user?.id;
 
     if (!projectId || !content || !userId) {
@@ -121,6 +122,7 @@ async function handlePOST_COMMENT(request: Request & { user?: any }) {
 
     const comment = await EditorService.addComment(projectId, userId, content, {
       sectionId,
+      contextText,
     });
 
     try {
@@ -224,6 +226,56 @@ async function handlePOST_REPLY(request: Request & { user?: any }) {
       });
     } catch (e) {
       // Broadcast is best-effort
+    }
+
+    // Create notification for the parent comment author (if different user)
+    try {
+      const parent = await prisma.comment.findUnique({
+        where: { id: commentId },
+        select: { user_id: true },
+      });
+      if (parent && parent.user_id !== userId) {
+        const replyUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { full_name: true },
+        });
+        await prisma.notification.create({
+          data: {
+            user_id: parent.user_id,
+            type: "comment_reply",
+            title: "New Reply",
+            message: `${replyUser?.full_name || "Someone"} replied to your comment`,
+            data: { commentId, replyId: reply.id, projectId: reply.project_id },
+          },
+        });
+      }
+    } catch (e) {
+      // Best-effort notification
+    }
+
+    // Create notifications for @mentions in the reply
+    try {
+      const mentionRegex = /@(\S+)/g;
+      let match;
+      while ((match = mentionRegex.exec(body.content)) !== null) {
+        const mentioned = await prisma.user.findFirst({
+          where: { full_name: { contains: match[1], mode: "insensitive" } },
+          select: { id: true, full_name: true },
+        });
+        if (mentioned && mentioned.id !== userId) {
+          await prisma.notification.create({
+            data: {
+              user_id: mentioned.id,
+              type: "mention",
+              title: "You were mentioned",
+              message: `${replyUser?.full_name || "Someone"} mentioned you in a comment`,
+              data: { commentId, replyId: reply.id, projectId: reply.project_id },
+            },
+          });
+        }
+      }
+    } catch (e) {
+      // Best-effort mention notifications
     }
 
     return new Response(JSON.stringify({ success: true, reply }), {

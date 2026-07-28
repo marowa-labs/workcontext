@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   MessageSquare,
   Send,
@@ -9,7 +9,10 @@ import {
   XCircle,
   Loader2,
   User,
-  Plus,
+  AtSign,
+  Quote,
+  Filter,
+  Clock,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Textarea } from "../../ui/textarea";
@@ -20,13 +23,20 @@ import CollaborationService, {
 interface CommentPanelProps {
   projectId: string;
   sectionId?: string;
+  contextText?: string;
   onClose?: () => void;
+  editor?: any;
 }
+
+type CommentStatus = "active" | "resolved" | "closed";
+type StatusFilter = "all" | "active" | "resolved" | "closed";
 
 export function CommentPanel({
   projectId,
   sectionId,
+  contextText: initialContextText,
   onClose,
+  editor,
 }: CommentPanelProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,6 +45,21 @@ export function CommentPanel({
   const [submitting, setSubmitting] = useState(false);
   const [replyStates, setReplyStates] = useState<Record<string, string>>({});
   const [submittingReply, setSubmittingReply] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [mentionSearch, setMentionSearch] = useState("");
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionIndex, setMentionIndex] = useState(0);
+
+  // Simulated team members (@mention suggestions)
+  const teamMembers = useMemo(() => ["Alice", "Bob", "Charlie", "Diana"], []);
+
+  const filteredMentions = useMemo(
+    () =>
+      teamMembers.filter((m) =>
+        m.toLowerCase().includes(mentionSearch.toLowerCase()),
+      ),
+    [mentionSearch],
+  );
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
@@ -52,6 +77,37 @@ export function CommentPanel({
   useEffect(() => {
     fetchComments();
   }, [fetchComments]);
+
+  const filteredComments = useMemo(() => {
+    if (statusFilter === "all") return comments;
+    return comments.filter((c) => {
+      if (statusFilter === "active") return c.status === "active" || !c.status;
+      return c.status === statusFilter;
+    });
+  }, [comments, statusFilter]);
+
+  // Detect @mentions in text and show suggestion popup
+  const handleContentChange = (value: string, setter: (v: string) => void) => {
+    setter(value);
+    const match = value.match(/@(\w*)$/);
+    if (match) {
+      setMentionSearch(match[1]);
+      setShowMentions(true);
+      setMentionIndex(0);
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const insertMention = (
+    name: string,
+    content: string,
+    setter: (v: string) => void,
+  ) => {
+    const newVal = content.replace(/@(\w*)$/, `@${name} `);
+    setter(newVal);
+    setShowMentions(false);
+  };
 
   const handleSubmitComment = async () => {
     if (!newContent.trim() || submitting) return;
@@ -86,15 +142,37 @@ export function CommentPanel({
     }
   };
 
-  const handleResolve = async (commentId: string, isResolved: boolean) => {
+  const handleStatusChange = async (
+    commentId: string,
+    newStatus: CommentStatus,
+  ) => {
     try {
       await CollaborationService.updateComment(commentId, {
-        is_resolved: !isResolved,
+        status: newStatus,
+        is_resolved: newStatus === "resolved" || newStatus === "closed",
       });
       await fetchComments();
     } catch (err: any) {
-      setError(err.message || "Failed to update comment");
+      setError(err.message || "Failed to update comment status");
     }
+  };
+
+  const handleContextClick = (contextText: string) => {
+    if (!editor) return;
+    const doc = editor.state.doc;
+    let found = false;
+    doc.descendants((node: any, pos: number) => {
+      if (found) return false;
+      if (node.isText && node.text?.includes(contextText)) {
+        editor.commands.setTextSelection({
+          from: pos,
+          to: pos + contextText.length,
+        });
+        editor.commands.scrollIntoView();
+        found = true;
+        return false;
+      }
+    });
   };
 
   const formatTime = (timestamp: string) => {
@@ -110,6 +188,42 @@ export function CommentPanel({
     return date.toLocaleDateString();
   };
 
+  const statusBadge = (status?: string) => {
+    switch (status) {
+      case "resolved":
+        return (
+          <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
+            Resolved
+          </span>
+        );
+      case "closed":
+        return (
+          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+            Closed
+          </span>
+        );
+      default:
+        return (
+          <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+            Active
+          </span>
+        );
+    }
+  };
+
+  const renderContentWithMentions = (content: string) => {
+    const parts = content.split(/(@\w+)/g);
+    return parts.map((part, i) =>
+      part.startsWith("@") ? (
+        <span key={i} className="text-blue-600 font-medium">
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    );
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -122,32 +236,100 @@ export function CommentPanel({
             </span>
           )}
         </div>
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={onClose}
+        <div className="flex items-center gap-1">
+          <Filter className="h-3.5 w-3.5 text-gray-400" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+            className="text-xs border border-gray-200 rounded px-1 py-0.5 bg-white text-gray-600"
           >
-            <span className="text-lg leading-none">&times;</span>
-          </Button>
-        )}
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onClose}
+            >
+              <span className="text-lg leading-none">&times;</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* New comment input */}
-      <div className="px-4 py-3 border-b border-gray-100">
+      <div className="px-4 py-3 border-b border-gray-100 relative">
+        {initialContextText && (
+          <div className="mb-2 text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 flex items-start gap-1">
+            <Quote className="h-3 w-3 mt-0.5 flex-shrink-0" />
+            <span className="italic line-clamp-2">{initialContextText}</span>
+          </div>
+        )}
         <Textarea
-          placeholder="Add a comment..."
+          placeholder="Add a comment... Use @ to mention someone"
           value={newContent}
-          onChange={(e) => setNewContent(e.target.value)}
+          onChange={(e) => handleContentChange(e.target.value, setNewContent)}
           className="min-h-[60px] text-sm resize-none mb-2"
           onKeyDown={(e) => {
+            if (showMentions) {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setMentionIndex((i) =>
+                  Math.min(i + 1, filteredMentions.length - 1),
+                );
+                return;
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setMentionIndex((i) => Math.max(i - 1, 0));
+                return;
+              }
+              if (
+                e.key === "Enter" &&
+                filteredMentions[mentionIndex] &&
+                !e.shiftKey
+              ) {
+                e.preventDefault();
+                insertMention(
+                  filteredMentions[mentionIndex],
+                  newContent,
+                  setNewContent,
+                );
+                return;
+              }
+            }
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               handleSubmitComment();
             }
           }}
         />
+        {/* @mention popup */}
+        {showMentions && filteredMentions.length > 0 && (
+          <div className="absolute bottom-16 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-32 overflow-y-auto">
+            {filteredMentions.map((name, i) => (
+              <button
+                key={name}
+                className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 ${
+                  i === mentionIndex
+                    ? "bg-blue-50 text-blue-700"
+                    : "hover:bg-gray-50"
+                }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  insertMention(name, newContent, setNewContent);
+                }}
+              >
+                <AtSign className="h-3 w-3" />
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex justify-end">
           <Button
             size="sm"
@@ -178,23 +360,30 @@ export function CommentPanel({
           </div>
         )}
 
-        {!loading && !error && comments.length === 0 && (
+        {!loading && !error && filteredComments.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 text-gray-400">
             <MessageSquare className="h-8 w-8 mb-2" />
             <p className="text-sm">No comments yet</p>
           </div>
         )}
 
-        {comments.length > 0 && (
+        {filteredComments.length > 0 && (
           <div className="divide-y divide-gray-50">
-            {comments.map((comment) => (
-              <div key={comment.id} className="px-4 py-3">
+            {filteredComments.map((comment) => (
+              <div
+                key={comment.id}
+                className={`px-4 py-3 ${
+                  comment.status === "closed"
+                    ? "opacity-60"
+                    : ""
+                }`}
+              >
                 <div className="flex items-start gap-3">
                   <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                     <User className="h-4 w-4 text-gray-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-gray-900 truncate">
                           {comment.user?.full_name ||
@@ -205,24 +394,50 @@ export function CommentPanel({
                           {formatTime(comment.created_at)}
                         </span>
                       </div>
-                      <button
-                        onClick={() =>
-                          handleResolve(comment.id, comment.is_resolved)
-                        }
-                        className={`p-1 rounded transition-colors ${
-                          comment.is_resolved
-                            ? "text-green-500 hover:text-green-600"
-                            : "text-gray-400 hover:text-gray-600"
-                        }`}
-                        title={comment.is_resolved ? "Resolved" : "Mark resolved"}
-                      >
-                        {comment.is_resolved ? (
-                          <CheckCircle className="h-4 w-4" />
-                        ) : (
-                          <XCircle className="h-4 w-4" />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {statusBadge(comment.status)}
+                        <div className="relative group">
+                          <button className="p-1 rounded hover:bg-gray-100">
+                            <Clock className="h-3 w-3 text-gray-400" />
+                          </button>
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 hidden group-hover:block min-w-[120px]">
+                            {["active", "resolved", "closed"].map((s) => (
+                              <button
+                                key={s}
+                                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 ${
+                                  (comment.status || "active") === s
+                                    ? "text-blue-600 font-medium"
+                                    : "text-gray-600"
+                                }`}
+                                onClick={() =>
+                                  handleStatusChange(
+                                    comment.id,
+                                    s as CommentStatus,
+                                  )
+                                }
+                              >
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Context text (anchored selection) */}
+                    {comment.context_text && (
+                      <button
+                        onClick={() => handleContextClick(comment.context_text!)}
+                        className="mt-1 w-full text-left text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 flex items-start gap-1 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                        title="Click to jump to this text in the editor"
+                      >
+                        <Quote className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <span className="italic line-clamp-2">
+                          {comment.context_text}
+                        </span>
+                      </button>
+                    )}
+
                     <p
                       className={`text-sm mt-1 ${
                         comment.is_resolved
@@ -230,14 +445,17 @@ export function CommentPanel({
                           : "text-gray-700"
                       }`}
                     >
-                      {comment.content}
+                      {renderContentWithMentions(comment.content)}
                     </p>
 
                     {/* Replies */}
                     {comment.replies && comment.replies.length > 0 && (
                       <div className="mt-3 ml-4 space-y-2 border-l-2 border-gray-100 pl-3">
                         {comment.replies.map((reply) => (
-                          <div key={reply.id} className="flex items-start gap-2">
+                          <div
+                            key={reply.id}
+                            className="flex items-start gap-2"
+                          >
                             <div className="w-5 h-5 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
                               <User className="h-3 w-3 text-gray-400" />
                             </div>
@@ -253,7 +471,7 @@ export function CommentPanel({
                                 </span>
                               </div>
                               <p className="text-xs text-gray-600 mt-0.5">
-                                {reply.content}
+                                {renderContentWithMentions(reply.content)}
                               </p>
                             </div>
                           </div>
@@ -264,19 +482,27 @@ export function CommentPanel({
                     {/* Reply input */}
                     <div className="mt-2">
                       {replyStates[comment.id] !== undefined ? (
-                        <div className="flex items-start gap-2">
+                        <div className="flex items-start gap-2 relative">
                           <Textarea
-                            placeholder="Write a reply..."
+                            placeholder="Write a reply... Use @ to mention someone"
                             value={replyStates[comment.id] || ""}
                             onChange={(e) =>
-                              setReplyStates((prev) => ({
-                                ...prev,
-                                [comment.id]: e.target.value,
-                              }))
+                              handleContentChange(
+                                e.target.value,
+                                (v: string) =>
+                                  setReplyStates((prev) => ({
+                                    ...prev,
+                                    [comment.id]: v,
+                                  })),
+                              )
                             }
                             className="min-h-[40px] text-xs resize-none"
                             onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
+                              if (
+                                e.key === "Enter" &&
+                                !e.shiftKey &&
+                                !showMentions
+                              ) {
                                 e.preventDefault();
                                 handleSubmitReply(comment.id);
                               }

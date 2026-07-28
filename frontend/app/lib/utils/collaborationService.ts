@@ -15,10 +15,12 @@ export interface Comment {
   id: string;
   project_id: string;
   section_id: string | null;
+  context_text?: string | null;
   user_id: string;
   content: string;
   parent_comment_id: string | null;
   is_resolved: boolean;
+  status?: string;
   created_at: string;
   updated_at: string;
   user: { id: string; full_name: string | null; email: string };
@@ -49,6 +51,7 @@ const CollaborationService = {
     projectId: string;
     content: string;
     sectionId?: string;
+    contextText?: string;
   }) {
     const res = await apiClient.post("/api/comments", data);
     return res;
@@ -70,7 +73,7 @@ const CollaborationService = {
 
   async updateComment(
     commentId: string,
-    data: { content?: string; is_resolved?: boolean },
+    data: { content?: string; is_resolved?: boolean; status?: string },
   ) {
     const res = await apiClient.patch(`/api/comments/${commentId}`, data);
     return res;

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "../ui/button";
-import { Wand2, FileText, Lightbulb, MessageSquare } from "lucide-react";
+import { Wand2, FileText, Lightbulb, MessageSquare, MessageCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface FloatingAIMenuProps {
@@ -14,9 +14,11 @@ interface FloatingAIMenuProps {
 export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const menuRef = useRef<HTMLDivElement>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updatePosition = useCallback(() => {
-    if (!editor || !editor.state) return;
+    if (!editor || !editor.state || editor.isDestroyed) return;
     const { from, to, empty } = editor.state.selection;
 
     if (empty) {
@@ -25,26 +27,42 @@ export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
     }
 
     try {
-      const start = editor.view.coordsAtPos(from);
-      const end = editor.view.coordsAtPos(to);
+      const editorView = (editor as any).view;
+      if (!editorView || !editorView.dom) {
+        setIsVisible(false);
+        return;
+      }
 
-      // Get the editor container rect for proper positioning
-      const editorContainer =
-        editor.view.dom.parentElement?.getBoundingClientRect();
-      if (!editorContainer) return;
+      const start = editorView.coordsAtPos(from);
+      const end = editorView.coordsAtPos(to);
+      if (!start || !end) {
+        setIsVisible(false);
+        return;
+      }
 
-      // Calculate position relative to the viewport
-      // Position the menu slightly above the selection and center it
-      const top = start.top - 45; // Position slightly above the selection relative to viewport
-      const left = (start.left + end.right) / 2; // Center of the selection relative to viewport
+      const editorContainer = editorView.dom.parentElement;
+      if (!editorContainer) {
+        setIsVisible(false);
+        return;
+      }
+
+      // Check if editor DOM is still connected
+      try {
+        editorContainer.getBoundingClientRect();
+      } catch {
+        setIsVisible(false);
+        return;
+      }
+
+      const top = start.top - 45;
+      const left = (start.left + end.right) / 2;
 
       setPosition({
         top: Math.max(0, top),
         left: Math.max(0, left),
       });
       setIsVisible(true);
-    } catch (error) {
-      console.warn("Failed to calculate floating menu position:", error);
+    } catch {
       setIsVisible(false);
     }
   }, [editor]);
@@ -53,13 +71,28 @@ export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
     if (!editor) return;
 
     editor.on("selectionUpdate", updatePosition);
-    editor.on("blur", () => setIsVisible(false));
+
+    // Delayed hide on blur so button clicks register
+    editor.on("blur", () => {
+      hideTimeoutRef.current = setTimeout(() => {
+        setIsVisible(false);
+      }, 200);
+    });
 
     return () => {
       editor.off("selectionUpdate", updatePosition);
       editor.off("blur", () => setIsVisible(false));
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
   }, [editor, updatePosition]);
+
+  // Cancel hide when mouse re-enters the menu
+  const handleMouseEnter = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+  };
 
   const getSelectedText = () => {
     if (!editor || !editor.state || !editor.state.doc) return "";
@@ -69,6 +102,11 @@ export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
 
   const handleAction = (action: string) => {
     const selectedText = getSelectedText();
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    setIsVisible(false);
     onAction(action, selectedText);
   };
 
@@ -95,19 +133,24 @@ export function FloatingAIMenu({ editor, onAction }: FloatingAIMenuProps) {
       label: "Ask AI",
       action: "ask",
     },
+    {
+      icon: <MessageCircle className="h-3.5 w-3.5" />,
+      label: "Comment",
+      action: "comment",
+    },
   ];
 
   return (
     <div
+      ref={menuRef}
+      onMouseEnter={handleMouseEnter}
       className={cn(
-        // Added solid white background with some opacity and better shadow
-        "absolute z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white/90 dark:bg-white/90 backdrop-blur-sm p-1 shadow-lg",
+        "absolute z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white dark:bg-white backdrop-blur-sm p-1 shadow-lg",
         "animate-in fade-in-0 zoom-in-95 duration-200",
       )}
       style={{
         top: position.top,
         left: position.left,
-        // Fix: Use transform to properly center the menu
         transform: "translateX(-50%)",
       }}
     >

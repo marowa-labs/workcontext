@@ -721,6 +721,7 @@ export default function EditorPage() {
               <CommentPanel
                 projectId={documentId}
                 onClose={() => setRightPanel(null)}
+                editor={editorInstance}
               />
             )}
           </div>

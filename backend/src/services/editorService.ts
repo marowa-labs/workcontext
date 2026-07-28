@@ -941,6 +941,7 @@ export class EditorService {
           user_id: userId,
           content: content,
           section_id: position?.sectionId || null,
+          context_text: position?.contextText || null,
         },
         include: {
           user: {
