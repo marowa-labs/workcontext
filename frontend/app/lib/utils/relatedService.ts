@@ -1,6 +1,8 @@
 // Client service for the unified "Related Items" endpoint.
 // Surfaces semantically related workspace items (projects, tasks) for a project.
 
+import { supabase } from "../supabase/client";
+
 export interface RelatedItem {
   id: string;
   type: "project" | "task" | "note";
@@ -18,8 +20,14 @@ export async function getRelatedItems(
   if (workspaceId) params.set("workspaceId", workspaceId);
   params.set("limit", String(limit));
 
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+
   const res = await fetch(
     `/api/projects/${encodeURIComponent(projectId)}/related?${params.toString()}`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    },
   );
   if (!res.ok) {
     throw new Error("Failed to load related items");

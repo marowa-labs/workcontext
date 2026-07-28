@@ -276,7 +276,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Register API routers
-app.use("/api/projects", projectsRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/notifications", notificationsRouter);
