@@ -487,16 +487,6 @@ export default function ProjectCards({
                               <Copy className="mr-3 h-4 w-4" />
                               Duplicate
                             </button>
-                            <button
-                              onClick={() =>
-                                onProjectAction &&
-                                onProjectAction("export", project)
-                              }
-                              className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-muted"
-                            >
-                              <Download className="mr-3 h-4 w-4" />
-                              Export
-                            </button>
                             <div className="border-t border-border my-1"></div>
                             <button
                               onClick={() =>
@@ -595,15 +585,6 @@ export default function ProjectCards({
                     >
                       <Copy className="mr-3 h-4 w-4" />
                       Duplicate
-                    </button>
-                    <button
-                      onClick={() =>
-                        onProjectAction && onProjectAction("export", project)
-                      }
-                      className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-muted"
-                    >
-                      <Download className="mr-3 h-4 w-4" />
-                      Export
                     </button>
                     <div className="border-t border-border my-1"></div>
                     <button
