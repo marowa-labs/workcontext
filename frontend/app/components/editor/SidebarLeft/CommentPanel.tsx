@@ -59,7 +59,7 @@ export function CommentPanel({
     (async () => {
       try {
         const project = await ProjectService.getProjectById(projectId);
-        const users: { id: string; full_name: string; email: string }[] = [];
+        const users: { id: string; full_name: string | null; email: string }[] = [];
 
         if (project.user) {
           users.push(project.user);
