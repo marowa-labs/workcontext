@@ -767,8 +767,8 @@ export default function AIPage() {
         {
           onConfirmationRequired: (action, confirm, cancel) => {
             setPendingAction(action);
-            window.__aiPageConfirm = confirm;
-            window.__aiPageCancel = cancel;
+            (window as any).__aiPageConfirm = confirm;
+            (window as any).__aiPageCancel = cancel;
           },
           onResult: (result) => {
             const assistantMessage: Message = {
