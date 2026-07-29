@@ -781,24 +781,22 @@ export default function AIPage() {
 
             // Handle navigation
             if (result.suggestedActions && result.suggestedActions.length > 0) {
-              handleAINavigation(
-                {
-                  message: result.message,
-                  data: result.data,
-                  actionType: result.actionType,
-                },
-                (page, params) => {
-                  if (page === "editor" && params?.projectId) {
-                    router.push(`/editor/${params.projectId}`);
-                  } else if (page === "workspace" && params?.workspaceId) {
-                    router.push(`/workspace/${params.workspaceId}`);
-                  } else if (page === "tasks") {
-                    router.push("/tasks");
-                  } else if (page === "workspaces") {
-                    router.push("/workspaces");
-                  }
-                },
-              );
+              const nav = handleAINavigation({
+                message: result.message,
+                data: result.data,
+                actionType: result.actionType,
+              });
+              if (nav) {
+                if (nav.page === "editor" && nav.params?.projectId) {
+                  router.push(`/editor/${nav.params.projectId}`);
+                } else if (nav.page === "workspace" && nav.params?.workspaceId) {
+                  router.push(`/workspace/${nav.params.workspaceId}`);
+                } else if (nav.page === "tasks") {
+                  router.push("/tasks");
+                } else if (nav.page === "workspaces") {
+                  router.push("/workspaces");
+                }
+              }
             }
           },
           onError: (error) => {
