@@ -49,6 +49,29 @@ export class AIActionService {
     request: AIActionRequest,
   ): Promise<AIActionResponse> {
     try {
+      // Fetch user workspaces and projects for context
+      const [userWorkspaces, userProjects] = await Promise.all([
+        prisma.workspace.findMany({
+          where: {
+            OR: [
+              { owner_id: request.userId },
+              { members: { some: { user_id: request.userId } } },
+            ],
+          },
+          select: {
+            id: true,
+            name: true,
+            _count: { select: { projects: true, members: true } },
+          },
+        }),
+        prisma.project.findMany({
+          where: { user_id: request.userId, status: { not: "archived" } },
+          select: { id: true, title: true },
+          orderBy: { updated_at: "desc" },
+          take: 20,
+        }),
+      ]);
+
       const context: AIActionContext = {
         userId: request.userId,
         sessionId: request.sessionId,
@@ -60,6 +83,8 @@ export class AIActionService {
         currentWorkspaceId: request.currentWorkspaceId,
         currentProjectId: request.currentProjectId,
         userPreferences: request.userPreferences,
+        userWorkspaces,
+        userProjects,
       };
 
       // Step 1: Parse the intent
@@ -69,11 +94,12 @@ export class AIActionService {
         request.conversationHistory || [],
       );
 
-      // Step 2: If no intent detected OR intent is "chat" (general conversation), treat as general chat
+      // Step 2: If no intent detected OR intent is "chat", treat as general conversation
+      // Only fall back to isGeneralChat heuristic when the AI didn't return a specific action
       if (
         !intent ||
         intent.actionType === "chat" ||
-        AIIntentParser.isGeneralChat(request.message)
+        (intent.confidence < 0.5 && AIIntentParser.isGeneralChat(request.message))
       ) {
         return this.handleGeneralChat(request, context);
       }
@@ -304,6 +330,11 @@ export class AIActionService {
         "Edit the document",
         "Create tasks for this project",
         "Summarize the document",
+      ],
+      analyze_workspace: [
+        "Create a new project in this workspace",
+        "Show tasks in this workspace",
+        "Invite members to this workspace",
       ],
     };
 

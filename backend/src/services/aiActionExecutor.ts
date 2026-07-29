@@ -285,6 +285,8 @@ export class AIActionExecutor {
         return this.listTasks(parameters, context);
       case "get_project_details":
         return this.getProjectDetails(parameters, context);
+      case "analyze_workspace":
+        return this.analyzeWorkspace(parameters, context);
 
       // Navigation Actions (these return instructions for frontend)
       case "navigate_to_page":
@@ -560,9 +562,64 @@ export class AIActionExecutor {
     params: any,
     context: AIActionContext,
   ): Promise<ActionResult> {
+    // Try params.workspaceId (already resolved by resolveEntityReferences)
+    let workspaceId = params.workspaceId;
+
+    if (!workspaceId) {
+      // Check if resolveEntityReferences gave us a list of available workspaces
+      if (params.availableWorkspaces && params.availableWorkspaces.length > 0) {
+        return {
+          success: false,
+          error: "Multiple workspaces found",
+          message: `Which workspace should I create this task in? I can see you have:\n${params.availableWorkspaces.map((w: any) => `- ${w.name}`).join("\n")}`,
+          affectedEntities: params.availableWorkspaces.map((w: any) => ({
+            type: "workspace",
+            id: w.id,
+            name: w.name,
+          })),
+        };
+      }
+
+      // Last resort: query the database
+      const workspaces = await this.prisma.workspace.findMany({
+        where: {
+          OR: [
+            { owner_id: context.userId },
+            { members: { some: { user_id: context.userId } } },
+          ],
+        },
+        select: { id: true, name: true },
+      });
+
+      if (workspaces.length === 0) {
+        return {
+          success: false,
+          error: "No workspace found",
+          message:
+            "You don't have any workspaces yet. Create one first and I'll help you manage tasks in it!",
+          affectedEntities: [],
+        };
+      }
+
+      if (workspaces.length === 1) {
+        workspaceId = workspaces[0].id;
+      } else {
+        return {
+          success: false,
+          error: "Multiple workspaces found",
+          message: `Which workspace should I create this task in? I can see you have:\n${workspaces.map((w) => `- ${w.name}`).join("\n")}`,
+          affectedEntities: workspaces.map((w) => ({
+            type: "workspace",
+            id: w.id,
+            name: w.name,
+          })),
+        };
+      }
+    }
+
     const task = await this.prisma.workspaceTask.create({
       data: {
-        workspace_id: params.workspaceId,
+        workspace_id: workspaceId,
         creator_id: context.userId,
         title: params.title,
         description: params.description,
@@ -839,6 +896,42 @@ export class AIActionExecutor {
     params: any,
     context: AIActionContext,
   ): Promise<ActionResult> {
+    if (!params.workspaceId) {
+      const workspaces = await this.prisma.workspace.findMany({
+        where: {
+          OR: [
+            { owner_id: context.userId },
+            { members: { some: { user_id: context.userId } } },
+          ],
+        },
+        select: { id: true, name: true },
+      });
+
+      if (workspaces.length === 0) {
+        return {
+          success: true,
+          data: { tasks: [], count: 0 },
+          message: "You don't have any workspaces yet, so there are no tasks.",
+          affectedEntities: [],
+        };
+      }
+
+      if (workspaces.length === 1) {
+        params.workspaceId = workspaces[0].id;
+      } else {
+        return {
+          success: false,
+          error: "Multiple workspaces",
+          message: `Which workspace's tasks would you like to see?\n${workspaces.map((w) => `- ${w.name}`).join("\n")}`,
+          affectedEntities: workspaces.map((w) => ({
+            type: "workspace",
+            id: w.id,
+            name: w.name,
+          })),
+        };
+      }
+    }
+
     const where: any = { workspace_id: params.workspaceId };
 
     if (params.status) where.status = params.status;
@@ -1269,6 +1362,7 @@ Summary:`;
       delete_task: "delete this task",
       invite_workspace_member: "invite this member",
       edit_document: "edit this document",
+      analyze_workspace: "analyze this workspace",
     };
 
     return (
@@ -1276,6 +1370,162 @@ Summary:`;
       `proceed with ${intent.actionType.replace(/_/g, " ")}`
     );
   }
-}
 
-export default AIActionExecutor;
+  private static async analyzeWorkspace(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
+    const workspaceId = params.workspaceId;
+
+    if (!workspaceId) {
+      // No workspace specified — list all workspaces with stats
+      const workspaces = await this.prisma.workspace.findMany({
+        where: {
+          OR: [
+            { owner_id: context.userId },
+            { members: { some: { user_id: context.userId } } },
+          ],
+        },
+        include: {
+          _count: { select: { projects: true, members: true } },
+          projects: { select: { id: true, title: true, status: true } },
+          members: {
+            include: { user: { select: { id: true, full_name: true, email: true } } },
+          },
+        },
+      });
+
+      if (workspaces.length === 0) {
+        return {
+          success: true,
+          data: { workspaces: [], totalWorkspaces: 0 },
+          message: "You don't have any workspaces yet. Create one to get started!",
+          affectedEntities: [],
+        };
+      }
+
+      if (workspaces.length === 1) {
+        const ws = workspaces[0];
+        const taskCount = await this.prisma.workspaceTask.count({
+          where: { workspace_id: ws.id },
+        });
+        return {
+          success: true,
+          data: {
+            workspace: {
+              id: ws.id,
+              name: ws.name,
+              projectsCount: ws._count.projects,
+              tasksCount: taskCount,
+              membersCount: ws._count.members,
+            },
+            projects: ws.projects,
+            members: ws.members.map((m: any) => ({
+              id: m.user.id,
+              name: m.user.full_name,
+              email: m.user.email,
+              role: m.role,
+            })),
+          },
+          message: `**${ws.name}** — ${ws._count.projects} projects, ${taskCount} tasks, ${ws._count.members} members.`,
+          affectedEntities: [{ type: "workspace", id: ws.id, name: ws.name }],
+        };
+      }
+
+      return {
+        success: false,
+        error: "Multiple workspaces",
+        message: `Which workspace would you like me to analyze?\n${workspaces.map((w: any) => `- **${w.name}** (${w._count.projects} projects, ${w._count.members} members)`).join("\n")}`,
+        affectedEntities: workspaces.map((w: any) => ({
+          type: "workspace",
+          id: w.id,
+          name: w.name,
+        })),
+      };
+    }
+
+    // Analyze a specific workspace
+    const workspace = await this.prisma.workspace.findFirst({
+      where: {
+        id: workspaceId,
+        OR: [
+          { owner_id: context.userId },
+          { members: { some: { user_id: context.userId } } },
+        ],
+      },
+      include: {
+        projects: { select: { id: true, title: true, type: true, status: true } },
+        members: {
+          include: { user: { select: { id: true, full_name: true, email: true } } },
+        },
+      },
+    });
+
+    if (!workspace) {
+      return {
+        success: false,
+        error: "Workspace not found",
+        message: "I couldn't find that workspace.",
+        affectedEntities: [],
+      };
+    }
+
+    const tasks = await this.prisma.workspaceTask.findMany({
+      where: { workspace_id: workspace.id },
+      select: { id: true, title: true, status: true, priority: true },
+    });
+
+    const projects = workspace.projects;
+    const members = workspace.members;
+    const tasksCount = tasks.length;
+
+    return {
+      success: true,
+      message: `Here's your analysis for **${workspace.name}**:
+
+📊 **Overview**
+- ${projects.length} projects
+- ${tasksCount} tasks
+- ${members.length} members
+
+📁 **Projects**
+${projects.map((p: any) => `  - ${p.title} (${p.status || "draft"})`).join("\n")}
+
+👥 **Team**
+${members.map((m: any) => `  - ${m.user.full_name || m.user.email} (${m.role})`).join("\n")}
+
+✅ **Tasks**
+${tasks.map((t: any) => `  - ${t.title} [${t.status}]`).join("\n")}`,
+      data: {
+        workspace: {
+          id: workspace.id,
+          name: workspace.name,
+          projectsCount: projects.length,
+          tasksCount,
+          membersCount: members.length,
+        },
+        projects: projects.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          type: p.type,
+          status: p.status,
+        })),
+        tasks: tasks.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          priority: t.priority,
+        })),
+        members: members.map((m: any) => ({
+          id: m.user.id,
+          name: m.user.full_name,
+          email: m.user.email,
+          role: m.role,
+        })),
+      },
+      affectedEntities: [
+        { type: "workspace", id: workspace.id, name: workspace.name },
+      ],
+    };
+  }
+}

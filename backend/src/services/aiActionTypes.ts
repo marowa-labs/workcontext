@@ -37,6 +37,8 @@ export interface AIActionContext {
   currentWorkspaceId?: string;
   currentProjectId?: string;
   userPreferences?: Record<string, any>;
+  userWorkspaces?: Array<{ id: string; name: string; _count?: { projects: number; members: number } }>;
+  userProjects?: Array<{ id: string; title: string }>;
 }
 
 // Action Definition Interface
@@ -302,6 +304,16 @@ export const ACTION_DEFINITIONS: Record<string, Partial<ActionDefinition>> = {
     ],
     requiresConfirmation: false,
   },
+  "analyze_workspace": {
+    type: "analyze_workspace",
+    category: "read",
+    targetEntity: "workspace",
+    description: "Analyze or summarize a workspace's contents (projects, tasks, members)",
+    parameters: [
+      { name: "workspaceId", type: "string", required: false, description: "Workspace ID (omit to list all)" },
+    ],
+    requiresConfirmation: false,
+  },
 
   // Navigation Actions
   "navigate_to_page": {
@@ -443,5 +455,25 @@ export const INTENT_PATTERNS: Array<{
     pattern: /complete\s+(?:the\s+)?task\s+["']?([^"']+)["']?/i,
     actionType: "complete_task",
     extractParams: (match) => ({ taskName: match[1]?.trim() }),
+  },
+  {
+    pattern: /(?:analyze|summarize|analyse)\s+(?:my\s+)?(?:the\s+)?(?:workspace|dashboard)(?:\s+["']?([^"']+)["']?)?/i,
+    actionType: "analyze_workspace",
+    extractParams: (match) => {
+      if (match[1]?.trim()) {
+        return { workspaceName: match[1].trim() };
+      }
+      return {};
+    },
+  },
+  {
+    pattern: /what(?:\'s| is)\s+(?:in|inside)\s+(?:my\s+)?(?:the\s+)?(?:workspace|dashboard)(?:\s+["']?([^"']+)["']?)?/i,
+    actionType: "analyze_workspace",
+    extractParams: (match) => {
+      if (match[1]?.trim()) {
+        return { workspaceName: match[1].trim() };
+      }
+      return {};
+    },
   },
 ];

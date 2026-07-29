@@ -163,6 +163,18 @@ export class AIIntentParser {
       })
       .join("\n");
 
+    const workspaceContext =
+      context.userWorkspaces && context.userWorkspaces.length > 0
+        ? `\nYour Workspaces (${context.userWorkspaces.length}):
+${context.userWorkspaces.map((w: any) => `  - ${w.name} (${w._count?.projects || 0} projects, ${w._count?.members || 0} members)`).join("\n")}`
+        : "";
+
+    const projectContext =
+      context.userProjects && context.userProjects.length > 0
+        ? `\nYour Recent Projects (${context.userProjects.length}):
+${context.userProjects.map((p: any) => `  - ${p.title}`).join("\n")}`
+        : "";
+
     return `You are WorkContext - a helpful academic assistant. You can help with platform actions (creating workspaces, projects, tasks) AND engage in general conversation not always limited in this
     platform.
 
@@ -174,7 +186,7 @@ CURRENT CONTEXT:
 - Section: ${context.pageSection || "main"}
 - Entity ID: ${context.entityId || "none"}
 - Current Workspace: ${context.currentWorkspaceId || "none"}
-- Current Project: ${context.currentProjectId || "none"}
+- Current Project: ${context.currentProjectId || "none"}${workspaceContext}${projectContext}
 
 YOUR ROLE:
 1. You can CREATE, READ, UPDATE, DELETE platform items - workspaces, projects, tasks, documents
@@ -210,6 +222,7 @@ INSTRUCTIONS:
 4. Always respond conversationally like a helpful AI companion, not a robot
 5. When answering about location, be specific and descriptive
 6. It's OK to just chat! Not everything needs to be an action.
+7. Use the workspace and project lists above to answer context-aware questions (e.g. "what can I do?", "where am I?", "analyze my workspace")
 
 Respond ONLY with valid JSON.`;
   }
@@ -283,6 +296,26 @@ Respond ONLY with valid JSON.`;
       params.projectId = context.currentProjectId;
     }
 
+    // Auto-resolve workspace when user has only one
+    if (!params.workspaceId) {
+      const userWorkspaces = await prisma.workspace.findMany({
+        where: {
+          OR: [
+            { owner_id: context.userId },
+            { members: { some: { user_id: context.userId } } },
+          ],
+        },
+        select: { id: true, name: true },
+      });
+
+      if (userWorkspaces.length === 1) {
+        params.workspaceId = userWorkspaces[0].id;
+        params.resolvedWorkspaceName = userWorkspaces[0].name;
+      } else if (userWorkspaces.length > 1) {
+        params.availableWorkspaces = userWorkspaces;
+      }
+    }
+
     enhanced.parameters = params;
     return enhanced;
   }
@@ -304,7 +337,7 @@ Respond ONLY with valid JSON.`;
 
     // If message is short and doesn't contain action keywords, treat as general chat
     const actionKeywords =
-      /(create|delete|update|edit|add|remove|open|close|complete|assign|invite|archive|list|show|find|search|navigate|go to|make|build|start|launch|send|share|export|import|upload|download|rename|move|copy|merge|split|convert|transform|generate|write|draft|compose|submit|approve|reject|review|check|verify|validate|fix|repair|restore|reset|refresh|reload|revert|undo|redo|schedule|remind|notify|message|email|call|meet|join|leave|follow|unfollow|like|comment|rate|bookmark|tag|label|filter|sort|group|organize|manage|configure|setup|install|enable|disable|activate|deactivate|lock|unlock|publish|unpublish|hide|display|expand|collapse|minimize|maximize|zoom|scroll|click|select|deselect|drag|drop|resize|rotate|flip|undo|redo)/i;
+      /(create|delete|update|edit|add|remove|open|close|complete|assign|invite|archive|list|show|find|search|navigate|go to|make|build|start|launch|send|share|export|import|upload|download|rename|move|copy|merge|split|convert|transform|generate|write|draft|compose|submit|approve|reject|review|check|verify|validate|fix|repair|restore|reset|refresh|reload|revert|undo|redo|schedule|remind|notify|message|email|call|meet|join|leave|follow|unfollow|like|comment|rate|bookmark|tag|label|filter|sort|group|organize|manage|configure|setup|install|enable|disable|activate|deactivate|lock|unlock|publish|unpublish|hide|display|expand|collapse|minimize|maximize|zoom|scroll|click|select|deselect|drag|drop|resize|rotate|flip|undo|redo|analyze|analyse|summarize|summarise)/i;
     if (trimmed.length < 80 && !actionKeywords.test(trimmed)) {
       return true;
     }
