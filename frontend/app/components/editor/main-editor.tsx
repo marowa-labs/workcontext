@@ -178,6 +178,7 @@ export const MainEditor = forwardRef<
     allowedPanels?: SidebarPanel[];
     activeRightPanel?: SidebarPanel;
     onToggleRightPanel?: (panel: SidebarPanel) => void;
+    onAIAsk?: (text: string) => void;
     onEditorReady?: (editor: Editor) => void;
     onShare?: () => void;
   }
@@ -192,6 +193,7 @@ export const MainEditor = forwardRef<
       allowedPanels = ["ai-chat", "language", "team-chat"],
       activeRightPanel: propRightPanel,
       onToggleRightPanel: propToggleRightPanel,
+      onAIAsk,
       onEditorReady,
       onShare,
     },
@@ -1144,6 +1146,15 @@ export const MainEditor = forwardRef<
           return;
         }
 
+        if (action === "ask") {
+          if (onAIAsk) {
+            onAIAsk(text);
+          } else if (propToggleRightPanel) {
+            propToggleRightPanel("ai-chat");
+          }
+          return;
+        }
+
         const actionMap: Record<string, { action: string; prompt: string }> = {
           improve: {
             action: "improve_writing",
@@ -1193,7 +1204,7 @@ export const MainEditor = forwardRef<
           });
         }
       },
-      [editor, documentId, toast, propToggleRightPanel],
+      [editor, documentId, onAIAsk, propToggleRightPanel, toast],
     );
 
     // Handler for restoring document version

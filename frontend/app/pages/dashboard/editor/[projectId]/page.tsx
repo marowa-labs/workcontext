@@ -616,6 +616,7 @@ export default function EditorPage() {
               onEditorReady={(editor) => setEditorInstance(editor)}
               activeRightPanel={rightPanel}
               onToggleRightPanel={handleMainEditorPanelToggle}
+              onAIAsk={handleChatNode}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
