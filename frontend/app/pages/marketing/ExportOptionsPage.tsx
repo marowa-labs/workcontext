@@ -6,13 +6,15 @@ import {
   HardDrive,
   Cloud,
   CheckCircle,
+  FileSpreadsheet,
+  Image,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
 import Layout from "../../components/Layout";
 import { useRouter } from "next/navigation";
 
-// Intro Hero Section
 function IntroHero() {
   const router = useRouter();
 
@@ -22,7 +24,6 @@ function IntroHero() {
 
   return (
     <section className="section-padding bg-[#121212] relative overflow-hidden">
-      {/* Background Image Overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 z-0"
         style={{
@@ -32,14 +33,14 @@ function IntroHero() {
       ></div>
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
             Export Your Work, Your Way
           </h1>
 
           <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
-            Export your documents to any format you need — PDF, DOCX, LaTeX,
-            RTF, and TXT. Professional formatting, unlimited templates, and
-            seamless backup & sync for individuals and teams.
+            Export your documents to any format you need — PDF, DOCX, LaTeX, RTF,
+            TXT, XLSX, CSV, or PNG. Publish directly to Google Drive or OneDrive
+            with journal-ready templates and academic citation support.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -64,7 +65,6 @@ function IntroHero() {
   );
 }
 
-// Feature Detail Component
 interface FeatureDetailProps {
   icon: React.ElementType;
   title: string;
@@ -88,7 +88,6 @@ function FeatureDetail({
     <div
       className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
     >
-      {/* Content */}
       <div className={reverse ? "lg:col-start-2" : ""}>
         <div
           className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}
@@ -116,7 +115,6 @@ function FeatureDetail({
         </ul>
       </div>
 
-      {/* Image */}
       <div className={reverse ? "lg:col-start-1" : ""}>
         <div className="relative">
           <img
@@ -131,34 +129,33 @@ function FeatureDetail({
   );
 }
 
-// Features Presentation Flow
 function FeaturesPresentationFlow() {
   const features = [
     {
       icon: FileText,
-      title: "One-Click Format Conversion",
+      title: "Full Format Coverage",
       description:
-        "Export your documents to any format you need with one click — Word, PDF, LaTeX, RTF, and plain text.",
+        "Export to every major document format: PDF for print-ready publishing, DOCX for Microsoft Word compatibility, LaTeX for scientific publishing, RTF for rich text, and TXT for plain text — all from a single click.",
       benefits: [
-        "Export to Word, PDF, LaTeX, RTF, and plain text",
-        "Maintain formatting across all formats",
-        "Custom export templates for your workflow",
-        "One-click format conversion",
+        "PDF: print-ready documents with embedded fonts and images",
+        "DOCX: fully editable Microsoft Word files",
+        "LaTeX: scientific document format with journal templates",
+        "RTF and TXT: lightweight rich text and plain text formats",
       ],
       imageUrl:
         "https://image2url.com/images/1766035336823-26557e0e-2275-4c00-a32b-3ceaf5ded69e.png?w=800&h=600&fit=crop",
       color: "from-teal-600 to-teal-800",
     },
     {
-      icon: Cloud,
-      title: "Cloud & Integrations",
+      icon: FileSpreadsheet,
+      title: "Spreadsheet & Image Export",
       description:
-        "Back up, sync, and store your work seamlessly across cloud platforms and integrated tools.",
+        "Beyond documents: export data as XLSX spreadsheets or CSV for database compatibility. Export document pages as PNG images for presentations, thumbnails, or embedding.",
       benefits: [
-        "Automatic cloud backup and version history",
-        "Sync across devices and team workspaces",
-        "Connect with popular storage platforms",
-        "Restore previous versions with one click",
+        "XLSX: structured spreadsheet export with formatting",
+        "CSV: plain-text tabular data for databases and analysis",
+        "PNG: export document as high-resolution images",
+        "All formats maintain consistent styling and layout",
       ],
       imageUrl:
         "https://image2url.com/images/1766035320251-310899dc-370b-436c-a767-cc4dea99c875.png?w=800&h=600&fit=crop",
@@ -166,35 +163,50 @@ function FeaturesPresentationFlow() {
       reverse: true,
     },
     {
-      icon: HardDrive,
-      title: "Professional Formatting",
+      icon: Cloud,
+      title: "Cloud Storage Export",
       description:
-        "Apply beautiful templates and custom styles to make any document presentation-ready.",
+        "Save directly to your cloud accounts. Export to Google Drive or OneDrive with a single click — no manual download and re-upload needed.",
       benefits: [
-        "Rich template library for every use case",
-        "Custom styles, headers, and footers",
-        "Typography and spacing controls",
-        "Consistent branding across documents",
+        "Direct export to Google Drive",
+        "Direct export to Microsoft OneDrive",
+        "Cloud files stay organized in your existing folder structure",
+        "Perfect for team sharing and backup workflows",
       ],
       imageUrl:
         "https://image2url.com/images/1766036205468-a4df49e1-70f7-4c46-b0ea-7bedc8405f9f.png?w=800&h=600&fit=crop",
       color: "from-teal-600 to-teal-800",
     },
     {
-      icon: Download,
-      title: "Project Export",
+      icon: BookOpen,
+      title: "Academic & Journal Publishing",
       description:
-        "Export entire projects or batch-select documents for efficient bulk delivery.",
+        "Publish with confidence using journal-ready templates and professional citation support. Choose from IEEE, Nature, Science, and APA Journal formats with APA, MLA, or Chicago citation styles.",
       benefits: [
-        "Export entire projects with one click",
-        "Consistent formatting across all documents",
-        "Batch export multiple files at once",
-        "Structured folder and file organization",
+        "Journal templates: IEEE, Nature, Science, APA Journal",
+        "Citation styles: APA 7th, MLA 9th, Chicago 17th editions",
+        "Pre-export document audit: word count, heading structure, issues",
+        "Publication-ready formatting with cover page and table of contents",
       ],
       imageUrl:
         "https://image2url.com/images/1766035312459-98d7648e-94de-43de-8e51-c1d98680ce12.png?w=800&h=600&fit=crop",
       color: "from-teal-600 to-teal-800",
       reverse: true,
+    },
+    {
+      icon: Download,
+      title: "Project & Batch Export",
+      description:
+        "Export entire projects or batch-select multiple documents for efficient delivery. All exports go through a pre-flight audit that checks structure, word count, and potential issues.",
+      benefits: [
+        "Batch export multiple documents at once",
+        "Pre-export structural audit with issues summary",
+        "Consistent formatting across all exported documents",
+        "Custom metadata: author, institution, course, instructor, running head",
+      ],
+      imageUrl:
+        "https://image2url.com/images/1766041414714-d21fc2eb-7026-4d37-9bb7-2c564aed93ab.png?w=800&h=600&fit=crop",
+      color: "from-teal-600 to-teal-800",
     },
   ];
 
@@ -211,7 +223,6 @@ function FeaturesPresentationFlow() {
   );
 }
 
-// Closing CTA
 function ClosingCTA() {
   const router = useRouter();
 
@@ -221,7 +232,6 @@ function ClosingCTA() {
 
   return (
     <section className="section-padding relative overflow-hidden bg-[#121212]">
-      {/* Background with academic shapes */}
       <div className="absolute inset-0 bg-gradient-to-r from-teal-900/20 to-cyan-900/20 opacity-95"></div>
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-10 w-20 h-20 border-2 border-teal-500/30 rounded-full"></div>
@@ -245,7 +255,7 @@ function ClosingCTA() {
               className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold px-8 py-6 shadow-lg hover:shadow-teal-500/20 transition-all duration-300"
               onClick={handleGetStarted}
             >
-              Start Your Free
+              Start Your Free Trial
             </Button>
             <Button
               asChild
@@ -259,7 +269,6 @@ function ClosingCTA() {
             </Button>
           </div>
 
-          {/* Trust indicators */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 text-gray-600 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-teal-400" />

@@ -11,6 +11,13 @@ import {
   CheckCircle,
   ArrowRight,
   Zap,
+  PenTool,
+  Users,
+  Sparkles,
+  SpellCheck,
+  Sigma,
+  Code,
+  ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
@@ -19,7 +26,6 @@ import Layout from "../../components/Layout";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-// Intro Hero Section
 function IntroHero() {
   const router = useRouter();
 
@@ -29,7 +35,6 @@ function IntroHero() {
 
   return (
     <section className="section-padding bg-[#121212] relative overflow-hidden">
-      {/* Background image overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 z-0"
         style={{
@@ -37,8 +42,6 @@ function IntroHero() {
             "url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&h=800&fit=crop')",
         }}
       />
-
-      {/* Productivity illustrations background */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-10 text-gray-600xl">📋</div>
         <div className="absolute top-40 right-20 text-4xl">💡</div>
@@ -48,7 +51,7 @@ function IntroHero() {
 
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
             Everything You Need for{" "}
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Productive Work
@@ -83,7 +86,6 @@ function IntroHero() {
   );
 }
 
-// Feature Detail Component
 interface FeatureDetailProps {
   icon: React.ElementType;
   title: string;
@@ -107,7 +109,6 @@ function FeatureDetail({
     <div
       className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
     >
-      {/* Content */}
       <div className={reverse ? "lg:col-start-2" : ""}>
         <div
           className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}
@@ -133,7 +134,6 @@ function FeatureDetail({
         </ul>
       </div>
 
-      {/* Image */}
       <div className={reverse ? "lg:col-start-1" : ""}>
         <div className="relative">
           <img
@@ -148,34 +148,48 @@ function FeatureDetail({
   );
 }
 
-// Features Presentation Flow
 function FeaturesPresentationFlow() {
   const features = [
     {
       icon: Bot,
-      title: "AI Chat Assistant",
+      title: "AI Writing & Research Copilot",
       description:
-        "Get intelligent, context-aware help from our AI assistant. Ask questions, get suggestions, and let AI handle routine tasks while you focus on what matters.",
+        "Write smarter with a multi-model AI assistant that can improve your writing, fix grammar, simplify complex text, research topics, generate citations, and more — all within your document.",
       benefits: [
-        "Context-aware responses based on your workspace",
-        "Multi-model support (Gemini, OpenAI, OpenRouter)",
-        "BYOK encryption for API keys at rest",
-        "Task creation and management via chat",
+        "Multi-model support: Gemini 2.5 Flash, GPT OSS 120B, Nvidia Nemotron",
+        "Writing actions: improve, fix grammar, simplify, expand, academic tone, paraphrase, continue writing",
+        "Research tools: topic research, source suggestions, citation generation (APA/MLA/Chicago)",
+        "Bring Your Own Key (BYOK) — use your own API keys for any model",
       ],
       imageUrl:
         "https://image2url.com/images/1766035339540-bbbba493-1dcb-4604-8f70-23c6a9a878a2.png?w=800&h=600&fit=crop",
       color: "from-purple-600 to-purple-800",
     },
     {
-      icon: Search,
+      icon: Users,
+      title: "Real-Time Collaborative Editor",
+      description:
+        "Edit documents simultaneously with your team using our TipTap-based editor powered by Yjs CRDT and Hocuspocus WebSocket technology. See who's working where and what they're changing — instantly.",
+      benefits: [
+        "Real-time co-editing with collaborative cursor presence indicators",
+        "Rich formatting: headings, bold/italic/underline, tables, code blocks with syntax highlighting",
+        "LaTeX equation editor with built-in equation library and AI equation generation",
+        "Resizable images with alignment and text wrap, task lists, and document outline panel",
+      ],
+      imageUrl:
+        "https://image2url.com/images/1766035335298-270bb4d5-1753-46ef-b984-91b47e54df1f.png?w=800&h=600&fit=crop",
+      color: "from-blue-600 to-blue-800",
+    },
+    {
+      icon: PenTool,
       title: "Smart Task Management",
       description:
-        "Create, organize, and track tasks with priorities, assignees, due dates, and dependencies. Never miss a deadline again.",
+        "Organize your work with tasks, subtasks, priorities, assignees, and due dates. Visualize progress with Kanban boards and Gantt charts. Track time and manage dependencies between tasks.",
       benefits: [
-        "Task creation with priorities and due dates",
-        "Assignees and team collaboration",
-        "Subtasks with progress tracking",
-        "Dependencies and blocking relationships",
+        "Task creation with priorities, assignees, due dates, and labels",
+        "Subtasks with progress tracking and dependency relationships",
+        "Kanban board and Gantt chart timeline views",
+        "Time tracking with start/stop controls and activity feed",
       ],
       imageUrl:
         "https://image2url.com/images/1766041624051-57126843-7e86-487c-875c-682a621bbc6e.png?w=800&h=600&fit=crop",
@@ -183,30 +197,30 @@ function FeaturesPresentationFlow() {
       reverse: true,
     },
     {
-      icon: FileText,
-      title: "Document Editing & Collaboration",
+      icon: Download,
+      title: "Advanced Multi-Format Export",
       description:
-        "Edit documents in real-time with your team. See who's working where, leave comments, and track every change.",
+        "Export your documents to any format you need. From academic PDFs to editable Word docs, LaTeX for scientific publishing, spreadsheets, and cloud storage — your work, your way.",
       benefits: [
-        "Real-time collaborative editing with presence indicators",
-        "Threaded comments on any section",
-        "Full version history with one-click restore",
-        "Workspace & team management with role-based access",
+        "Export to PDF, DOCX, TXT, LaTeX, RTF, XLSX, CSV, and PNG",
+        "Export directly to Google Drive and OneDrive cloud storage",
+        "Journal-ready templates: IEEE, Nature, Science, APA Journal",
+        "Citation styles: APA, MLA, Chicago — with pre-export document auditing",
       ],
       imageUrl:
-        "https://image2url.com/images/1766035335298-270bb4d5-1753-46ef-b984-91b47e54df1f.png?w=800&h=600&fit=crop",
-      color: "from-blue-600 to-blue-800",
+        "https://image2url.com/images/1766041414714-d21fc2eb-7026-4d37-9bb7-2c564aed93ab.png?w=800&h=600&fit=crop",
+      color: "from-emerald-600 to-emerald-800",
     },
     {
-      icon: Shield,
-      title: "Time Tracking & Progress",
+      icon: SpellCheck,
+      title: "Grammar, Language & Spell Checking",
       description:
-        "Track time spent on tasks, monitor progress, and see activity feeds. Stay on top of your team's productivity.",
+        "Write with confidence using AI-powered grammar and language checking. Get real-time suggestions, rephrase options, and spell check — all integrated directly into the editor.",
       benefits: [
-        "Time tracking with start/stop controls",
-        "Progress monitoring with visual charts",
-        "Activity feed for team updates",
-        "Notifications for important events",
+        "AI grammar checking with debounced backend analysis",
+        "Language/style checking with structured JSON suggestions",
+        "Real-time spell checking via typo-js with suggestion popup",
+        "AI rephrase: generate multiple alternatives with confidence scores",
       ],
       imageUrl:
         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop",
@@ -214,19 +228,34 @@ function FeaturesPresentationFlow() {
       reverse: true,
     },
     {
-      icon: Download,
-      title: "Multi-Format Export",
+      icon: Sparkles,
+      title: "AI Autocomplete & Cortex Functions",
       description:
-        "Export your work to any format you need. From PDF to DOCX to LaTeX — your work, your way.",
+        "Stay in flow with inline AI text prediction that suggests completions as you type. Use Cortex AI functions to instantly summarize, rewrite academically, extract key points, or generate equations.",
       benefits: [
-        "Export to PDF, DOCX, LaTeX, RTF, and TXT",
-        "Custom formatting with templates",
-        "Batch export for entire projects",
-        "Version history and backup support",
+        "Inline AI autocomplete with ghost text — Tab to accept, Esc to dismiss",
+        "Smart Summarize: condense selected text into key points",
+        "Academic Rewrite: transform casual writing into formal academic style",
+        "AI Equation Generation: convert natural language descriptions into LaTeX",
       ],
       imageUrl:
-        "https://image2url.com/images/1766041414714-d21fc2eb-7026-4d37-9bb7-2c564aed93ab.png?w=800&h=600&fit=crop",
-      color: "from-emerald-600 to-emerald-800",
+        "https://image2url.com/images/1766035336823-26557e0e-2275-4c00-a32b-3ceaf5ded69e.png?w=800&h=600&fit=crop",
+      color: "from-indigo-600 to-indigo-800",
+    },
+    {
+      icon: Shield,
+      title: "Peer Review & Research Analysis",
+      description:
+        "Strengthen your work with AI-powered peer review simulation, claim defensibility checks, argument comparison, and deep research analysis — before anyone else sees it.",
+      benefits: [
+        "AI peer review simulation: harsh critique with categorized issues and score",
+        "Claim defensibility checking with structured analysis",
+        "Deep web search with source analysis and citation extraction",
+        "Research co-pilot modes: general, research, and autocomplete",
+      ],
+      imageUrl:
+        "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=800&fit=crop",
+      color: "from-red-600 to-red-800",
     },
   ];
 
