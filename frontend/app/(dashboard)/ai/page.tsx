@@ -28,7 +28,9 @@ import {
   getActionIcon,
   isDestructiveAction,
   getConfirmationButtonText,
+  handleAINavigation,
 } from "../../lib/utils/aiActionService";
+import aiActionService from "../../lib/utils/aiActionService";
 import apiClient from "../../lib/utils/apiClient";
 
 interface Message {
@@ -450,6 +452,47 @@ function ChatContent({
 }
 
 // ── Main Page Component ─────────────────────────────────────────────────────────
+function getPageContext(): {
+  name: string;
+  description: string;
+  route: string;
+  section: string;
+  entityId?: string;
+} {
+  if (typeof window === "undefined") {
+    return { name: "", description: "", route: "", section: "" };
+  }
+  const path = window.location.pathname;
+  // Extract workspaceId or projectId from the URL
+  const workspaceMatch = path.match(/\/workspace\/([^/]+)/);
+  const projectMatch = path.match(/\/editor\/([^/]+)/);
+
+  let name = "AI Chat";
+  let description = "AI Assistant page";
+  let section = "ai";
+  let entityId: string | undefined;
+
+  if (workspaceMatch) {
+    entityId = workspaceMatch[1];
+    name = "Workspace";
+    description = "AI Chat in workspace";
+    section = "workspace";
+  } else if (projectMatch) {
+    entityId = projectMatch[1];
+    name = "Editor";
+    description = "AI Chat in editor";
+    section = "editor";
+  }
+
+  return {
+    name,
+    description,
+    route: path,
+    section,
+    entityId,
+  };
+}
+
 export default function AIPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -693,10 +736,11 @@ export default function AIPage() {
     if (!input.trim() || loading || isSendingRef.current) return;
     isSendingRef.current = true;
 
+    const userText = input.trim();
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
       role: "user",
-      content: input.trim(),
+      content: userText,
       created_at: new Date().toISOString(),
     };
 
@@ -704,34 +748,80 @@ export default function AIPage() {
     setInput("");
     setLoading(true);
 
-    let sessionId = currentSession;
-    if (!sessionId) {
-      sessionId = await createNewSession();
-      if (!sessionId) return;
-    }
+    const pageContext = getPageContext();
 
     try {
-      const response = await apiClient.post(
-        `/api/ai/chat/session/${sessionId}/messages`,
+      const result = await aiActionService.sendMessage(
+        userText,
         {
-          sessionId,
-          content: userMessage.content,
-          messageType: "text",
+          pageContext: pageContext.name,
+          pageDescription: pageContext.description,
+          pageRoute: pageContext.route,
+          pageSection: pageContext.section,
+          entityId: pageContext.entityId,
+          conversationHistory: messages.slice(-10).map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        },
+        {
+          onConfirmationRequired: (action, confirm, cancel) => {
+            setPendingAction({
+              ...action,
+              confirm: async () => {
+                await confirm();
+                setPendingAction(null);
+              },
+              cancel: async () => {
+                await cancel();
+                setPendingAction(null);
+              },
+            });
+            window.__aiPageConfirm = confirm;
+            window.__aiPageCancel = cancel;
+          },
+          onResult: (result) => {
+            const assistantMessage: Message = {
+              id: `ai-${Date.now()}`,
+              role: "assistant",
+              content: result.message || "",
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+
+            // Handle navigation
+            if (result.suggestedActions && result.suggestedActions.length > 0) {
+              handleAINavigation(
+                {
+                  message: result.message,
+                  data: result.data,
+                  actionType: result.actionType,
+                },
+                (page, params) => {
+                  if (page === "editor" && params?.projectId) {
+                    router.push(`/editor/${params.projectId}`);
+                  } else if (page === "workspace" && params?.workspaceId) {
+                    router.push(`/workspace/${params.workspaceId}`);
+                  } else if (page === "tasks") {
+                    router.push("/tasks");
+                  } else if (page === "workspaces") {
+                    router.push("/workspaces");
+                  }
+                },
+              );
+            }
+          },
+          onError: (error) => {
+            const errorMessage: Message = {
+              id: `error-${Date.now()}`,
+              role: "assistant",
+              content: `Sorry, I encountered an error: ${error}. Please try again.`,
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, errorMessage]);
+          },
         },
       );
-
-      if (response.success) {
-        // Add assistant message from the saved response
-        const assistantMessage: Message = {
-          id: response.aiMessage.id,
-          role: "assistant",
-          content: response.aiMessage.content,
-          created_at: response.aiMessage.created_at,
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      } else {
-        throw new Error(response.message || "Failed to send message");
-      }
     } catch (error: any) {
       console.error("Failed to send message:", error);
       const errorMessage: Message = {
@@ -744,26 +834,6 @@ export default function AIPage() {
     } finally {
       setLoading(false);
       isSendingRef.current = false;
-
-      // Auto-update session title based on first message
-      const currentMsgCount = messages.length + 1; // +1 for the user message just added
-      if (currentMsgCount <= 2 && sessionId) {
-        const title =
-          userMessage.content.length > 40
-            ? userMessage.content.substring(0, 40).trim() + "..."
-            : userMessage.content;
-        // Update title in backend
-        apiClient
-          .patch(`/api/ai/chat/session/${sessionId}`, { title })
-          .then(() => {
-            setSessions((prev) =>
-              prev.map((s) => (s.id === sessionId ? { ...s, title } : s)),
-            );
-          })
-          .catch(() => {
-            // Silently fail — title update is not critical
-          });
-      }
     }
   };
 
