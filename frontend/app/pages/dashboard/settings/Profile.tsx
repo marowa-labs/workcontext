@@ -232,7 +232,7 @@ export default function Profile() {
                 >
                   Email
                 </label>
-                <div className="relative">
+                <div className="relative cursor-not-allowed select-none">
                   {/* Added dark mode support to the input */}
                   <input
                     type="email"
