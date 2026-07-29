@@ -766,17 +766,7 @@ export default function AIPage() {
         },
         {
           onConfirmationRequired: (action, confirm, cancel) => {
-            setPendingAction({
-              ...action,
-              confirm: async () => {
-                await confirm();
-                setPendingAction(null);
-              },
-              cancel: async () => {
-                await cancel();
-                setPendingAction(null);
-              },
-            });
+            setPendingAction(action);
             window.__aiPageConfirm = confirm;
             window.__aiPageCancel = cancel;
           },
