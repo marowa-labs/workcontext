@@ -261,7 +261,7 @@ Respond ONLY with valid JSON.`;
     if (params.workspaceName && !params.workspaceId) {
       const workspace = await prisma.workspace.findFirst({
         where: {
-          name: { contains: params.workspaceName, mode: "insensitive" },
+          name: { equals: params.workspaceName, mode: "insensitive" },
           OR: [
             { owner_id: context.userId },
             { members: { some: { user_id: context.userId } } },
@@ -278,7 +278,7 @@ Respond ONLY with valid JSON.`;
     if (params.projectName && !params.projectId) {
       const project = await prisma.project.findFirst({
         where: {
-          title: { contains: params.projectName, mode: "insensitive" },
+          title: { equals: params.projectName, mode: "insensitive" },
           user_id: context.userId,
         },
       });

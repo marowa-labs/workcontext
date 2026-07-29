@@ -70,6 +70,20 @@ export class AIActionExecutor {
 
       await this.failActionRecord(intent, context, error.message);
 
+      // Prisma foreign key errors — give a helpful message
+      if (
+        error.message?.includes("Foreign key constraint violated") ||
+        error.message?.includes("foreign key")
+      ) {
+        return {
+          success: false,
+          error: error.message,
+          message:
+            "I couldn't find the related item. It may have been deleted or the name doesn't match exactly. Please check the name and try again.",
+          affectedEntities: [],
+        };
+      }
+
       return {
         success: false,
         error: error.message,
@@ -617,9 +631,43 @@ export class AIActionExecutor {
       }
     }
 
+    // Validate workspaceId exists
+    if (!workspaceId || typeof workspaceId !== "string" || workspaceId.trim() === "") {
+      return {
+        success: false,
+        error: "Invalid workspace",
+        message: "I couldn't determine which workspace to use. Please specify a workspace name.",
+        affectedEntities: [],
+      };
+    }
+
+    // Verify the workspace actually exists
+    const workspaceExists = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { id: true, name: true },
+    });
+    if (!workspaceExists) {
+      return {
+        success: false,
+        error: "Workspace not found",
+        message: `I couldn't find workspace "${params.resolvedWorkspaceName || workspaceId}". It may have been deleted.`,
+        affectedEntities: [],
+      };
+    }
+
+    // Ensure title is present
+    if (!params.title || typeof params.title !== "string" || params.title.trim() === "") {
+      return {
+        success: false,
+        error: "Task title required",
+        message: "I need a title for the task. What should I call it?",
+        affectedEntities: [],
+      };
+    }
+
     const task = await this.prisma.workspaceTask.create({
       data: {
-        workspace_id: workspaceId,
+        workspace_id: workspaceExists.id,
         creator_id: context.userId,
         title: params.title,
         description: params.description,
