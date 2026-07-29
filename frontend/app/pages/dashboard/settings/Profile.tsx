@@ -232,21 +232,19 @@ export default function Profile() {
                 >
                   Email
                 </label>
-                <div className="relative cursor-not-allowed select-none">
-                  {/* Added dark mode support to the input */}
+                <div className="relative">
                   <input
                     type="email"
                     id="email"
                     name="email"
                     value={profile.email}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    disabled // Blocks editing completely
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-muted text-muted-foreground opacity-80 cursor-not-allowed select-none focus:outline-none"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <BadgeCheck className="h-5 w-5 text-green-500" />
                   </div>
                 </div>
-                {/* Added dark mode support to the verified text */}
                 <p className="mt-1 text-sm text-green-600 dark:text-green-400">
                   Changing your email sends a confirmation link to the new
                   address.
