@@ -19,6 +19,7 @@ import {
   Layout,
   StickyNote,
   Loader2,
+  Users,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { supabase } from "../../lib/supabase/client";
@@ -244,6 +245,11 @@ export function SlashCommandPalette({
       case "document":
         router.push("/projects/" + result.id);
         break;
+      case "member":
+        if (result.workspaceId) {
+          router.push("/dashboard/workspaces/" + result.workspaceId);
+        }
+        break;
     }
   };
 
@@ -261,6 +267,8 @@ export function SlashCommandPalette({
         return <StickyNote className="w-4 h-4" />;
       case "document":
         return <FileText className="w-4 h-4" />;
+      case "member":
+        return <Users className="w-4 h-4" />;
       default:
         return <Search className="w-4 h-4" />;
     }

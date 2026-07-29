@@ -682,7 +682,11 @@ export class WorkspaceTaskService {
           status: data.status,
           priority: data.priority,
           due_date: data.due_date,
-          project_id: data.project_id, // Update project linking
+          project_id: data.project_id,
+          is_recurring: data.is_recurring,
+          recurrence_pattern: data.recurrence_pattern,
+          recurrence_end_date: data.recurrence_end_date,
+          recurrence_max_occurrences: data.recurrence_max_occurrences,
         },
         include: {
           assignees: {

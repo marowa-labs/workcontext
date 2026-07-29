@@ -80,8 +80,8 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
 
     const queries: Promise<any[]>[] = [];
 
-    // 1. Workspaces (name / description)
     if (workspaceIds.length > 0) {
+      // 1. Workspaces (name / description)
       queries.push(
         prisma.workspace.findMany({
           where: {
@@ -140,15 +140,41 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
           take: limit,
         }),
       );
+
+      // 4. Workspace Members (users by name or email)
+      queries.push(
+        prisma.workspaceMember.findMany({
+          where: {
+            workspace_id: { in: workspaceIds },
+            user: {
+              OR: [
+                { full_name: searchFilter("full_name") },
+                { email: searchFilter("email") },
+              ],
+            },
+          },
+          select: {
+            id: true,
+            role: true,
+            workspace_id: true,
+            user: {
+              select: { id: true, full_name: true, email: true },
+            },
+            workspace: { select: { name: true } },
+          },
+          take: limit,
+        }),
+      );
     } else {
       queries.push(
+        Promise.resolve([]),
         Promise.resolve([]),
         Promise.resolve([]),
         Promise.resolve([]),
       );
     }
 
-    // 4. AI Chat Sessions (title)
+    // 5. AI Chat Sessions (title)
     queries.push(
       prisma.aIChatSession.findMany({
         where: {
@@ -160,7 +186,7 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       }),
     );
 
-    // 5. AI Chat Messages (content)
+    // 6. AI Chat Messages (content)
     queries.push(
       prisma.aIChatMessage.findMany({
         where: {
@@ -179,7 +205,7 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       }),
     );
 
-    // 6. PDF Documents (filename)
+    // 7. PDF Documents (filename)
     queries.push(
       prisma.pdfDocument.findMany({
         where: {
@@ -199,9 +225,9 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       workspaces,
       projects,
       tasks,
+      members,
       chatSessions,
       chatMessages,
-      notes,
       pdfDocuments,
     ] = await Promise.all(queries);
 
@@ -232,13 +258,16 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       "chat",
     );
 
-    const noteResults = formatResults(
-      notes.map((n: any) => ({
-        ...n,
-        name: n.title || "Untitled note",
-        description: (n.content || "").substring(0, 100),
+    const memberResults = formatResults(
+      members.map((m: any) => ({
+        id: m.user.id,
+        name: m.user.full_name || m.user.email || "Unknown",
+        description: m.workspace?.name || "Workspace member",
+        status: m.role,
+        workspace_id: m.workspace_id,
+        workspace: m.workspace,
       })),
-      "note",
+      "member",
     );
 
     const pdfResults = formatResults(
@@ -256,9 +285,9 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       ...workspaceResults,
       ...projectResults,
       ...taskResults,
+      ...memberResults,
       ...chatSessionResults,
       ...chatMessageResults,
-      ...noteResults,
       ...pdfResults,
     ]
       .sort((a, b) => b.score - a.score)
@@ -272,8 +301,9 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
         workspaces: workspaceResults.length,
         projects: projectResults.length,
         tasks: taskResults.length,
+        members: memberResults.length,
         chats: chatSessionResults.length + chatMessageResults.length,
-        documents: noteResults.length + pdfResults.length,
+        documents: pdfResults.length,
       },
     });
   } catch (error: any) {

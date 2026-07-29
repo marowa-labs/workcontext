@@ -15,13 +15,14 @@ import {
   MessageSquare,
   FileText,
   StickyNote,
+  Users,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase/client";
 import { cn } from "../../lib/utils";
 
 interface SearchResult {
   id: string;
-  type: "workspace" | "space" | "task" | "chat" | "note" | "document";
+  type: "workspace" | "space" | "task" | "chat" | "note" | "document" | "member";
   title: string;
   subtitle: string;
   status?: string;
@@ -184,6 +185,11 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       case "document":
         router.push("/projects/" + result.id);
         break;
+      case "member":
+        if (result.workspaceId) {
+          router.push("/workspaces/" + result.workspaceId);
+        }
+        break;
     }
   };
 
@@ -202,6 +208,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return <StickyNote className="w-5 h-5" />;
       case "document":
         return <FileText className="w-5 h-5" />;
+      case "member":
+        return <Users className="w-5 h-5" />;
       default:
         return <Folder className="w-5 h-5" />;
     }
@@ -222,6 +230,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400";
       case "document":
         return "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400";
+      case "member":
+        return "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400";
       default:
         return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
     }
@@ -234,6 +244,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     { id: "spaces", label: "Spaces", count: results.filter(r => r.type === "space").length },
     { id: "tasks", label: "Tasks", count: results.filter(r => r.type === "task").length },
     { id: "chats", label: "Chats", count: results.filter(r => r.type === "chat").length },
+    { id: "members", label: "Members", count: results.filter(r => r.type === "member").length },
     { id: "docs", label: "Docs", count: results.filter(r => r.type === "note" || r.type === "document").length },
   ];
 
@@ -246,6 +257,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       if (activeFilter === "spaces") return r.type === "space";
       if (activeFilter === "tasks") return r.type === "task";
       if (activeFilter === "chats") return r.type === "chat";
+      if (activeFilter === "members") return r.type === "member";
       if (activeFilter === "docs") return r.type === "note" || r.type === "document";
       return true;
     });
