@@ -88,80 +88,20 @@ export class SecurityNotificationService {
           break;
       }
 
-      // Build device info string
-      const deviceInfo = [
-        details.device && `Device: ${details.device}`,
-        details.ip && `IP Address: ${details.ip}`,
-        details.location && `Location: ${details.location}`,
-        `Time: ${timeStr}`,
-      ]
-        .filter(Boolean)
-        .join("<br>");
+      // Build device info details
+      const detailsList: { label: string; value: string }[] = [];
+      if (details.device) detailsList.push({ label: "Device", value: details.device });
+      if (details.ip) detailsList.push({ label: "IP Address", value: details.ip });
+      if (details.location) detailsList.push({ label: "Location", value: details.location });
+      detailsList.push({ label: "Time", value: timeStr });
 
-      // Send email
-      const emailBody = `
-        <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; padding: 20px;">
-          <div style="background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); max-width: 600px; margin: 0 auto;">
-            <div style="margin-bottom: 30px; text-align: center;">
-              <img src="https://image2url.com/images/1764774582648-980c2e10-52a6-4e57-b84d-d63c81250e2f.png" alt="WorkContext Logo" style="width: 120px; height: auto; margin-bottom: 10px;">
-              <h1 style="color: #dc2626; font-size: 24px; margin: 10px 0;">${title}</h1>
-            </div>
-
-            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-              <p style="color: #991b1b; font-size: 14px; margin: 0; font-weight: 500;">
-                ⚠️ Security Alert
-              </p>
-            </div>
-
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-              Hello ${user.full_name || "there"},
-            </p>
-
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-              ${message}
-            </p>
-
-            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-              <p style="color: #6b7280; font-size: 14px; margin: 0 0 5px; font-weight: 500;">Login Details:</p>
-              <p style="color: #374151; font-size: 14px; margin: 0; line-height: 1.8;">
-                ${deviceInfo}
-              </p>
-            </div>
-
-            <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-              <p style="color: #1e40af; font-size: 14px; margin: 0; font-weight: 500;">
-                🔒 If this wasn't you:
-              </p>
-              <ul style="color: #374151; font-size: 14px; margin: 10px 0 0; padding-left: 20px;">
-                <li>Change your password immediately</li>
-                <li>Review your active sessions</li>
-                <li>Enable two-factor authentication</li>
-                <li>Contact support if you need help</li>
-              </ul>
-            </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard/settings/account" 
-                 style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                Review Account Security
-              </a>
-            </div>
-
-            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 20px;">
-              You can manage your security notification preferences in your account settings.
-            </p>
-
-            <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; text-align: center;">
-              &copy; ${new Date().getFullYear()} WorkContext. All rights reserved.
-            </p>
-          </div>
-        </div>
-      `;
-
-      const success = await EmailService.sendCustomEmail(
+      const success = await EmailService.sendSecurityAlertEmail(
         user.email,
         subject,
-        emailBody,
+        title,
+        message,
+        detailsList,
+        user.full_name || "",
       );
 
       if (success) {
@@ -245,27 +185,13 @@ export class SecurityNotificationService {
     // Also send to the new email if possible
     if (newEmail && newEmail !== user.email) {
       try {
-        const emailBody = `
-          <div style="font-family: Arial, sans-serif; background-color: #f4f4f5; padding: 20px;">
-            <div style="background-color: #ffffff; padding: 30px; border-radius: 12px; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #1e40af; font-size: 24px; margin: 0 0 20px;">Email Address Updated</h1>
-              <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-                Hello ${user.full_name || "there"},
-              </p>
-              <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-                Your account email address has been changed to this email address. If you made this change, no action is needed.
-              </p>
-              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
-                If you didn't make this change, please contact support immediately.
-              </p>
-            </div>
-          </div>
-        `;
-
-        await EmailService.sendCustomEmail(
+        await EmailService.sendSecurityAlertEmail(
           newEmail,
           "Email Address Changed - WorkContext",
-          emailBody,
+          "Email Address Updated",
+          "Your account email address has been changed to this email address. If you made this change, no action is needed.",
+          [],
+          user.full_name || "",
         );
       } catch (error) {
         logger.error("Failed to send email change notification to new email", {

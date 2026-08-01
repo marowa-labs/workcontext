@@ -5,7 +5,7 @@ import { adapter } from "../prisma.config";
 import { SecretsService } from "../services/secrets-service";
 
 const globalForPrisma = global as unknown as {
-  prisma: any;
+  prisma?: PrismaClient;
 };
 
 // Prisma 7+ client configuration with adapter

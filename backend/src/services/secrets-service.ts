@@ -54,15 +54,26 @@ export class SecretsService {
     return apiKey;
   }
 
-  // Get Resend API key
-  static async getResendApiKey(): Promise<string | null> {
-    const apiKey = await this.getSecret("RESEND_API_KEY");
+  // Get EmailOctopus API key
+  static async getEmailOctopusApiKey(): Promise<string | null> {
+    const apiKey = await this.getSecret("EMAILOCTOPUS_API_KEY");
     if (!apiKey) {
-      logger.error(
-        "RESEND_API_KEY not configured - email sending will not work",
+      logger.info(
+        "EMAILOCTOPUS_API_KEY not configured - marketing list sync will be skipped",
       );
     }
     return apiKey;
+  }
+
+  // Get EmailOctopus list ID
+  static async getEmailOctopusListId(): Promise<string | null> {
+    const listId = await this.getSecret("EMAILOCTOPUS_LIST_ID");
+    if (!listId) {
+      logger.info(
+        "EMAILOCTOPUS_LIST_ID not configured - marketing list sync will be skipped",
+      );
+    }
+    return listId;
   }
 
   // Get Twilio API key

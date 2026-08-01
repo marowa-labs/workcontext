@@ -58,6 +58,7 @@ import { AuthService } from "./supabase/auth-service";
 
 import { supabase } from "./supabase/auth-service";
 import { OTPService } from "../services/otpService";
+import { EmailOctopusService } from "../services/emailOctopusService";
 import { getNotificationServer } from "../lib/notificationServer";
 // Prisma client is imported dynamically in functions to avoid conflicts
 // Import auth middleware
@@ -1113,6 +1114,17 @@ app.post("/api/auth/signin", async (req, res) => {
     const result = await AuthService.signIn(email, password);
 
     logger.info("Signin successful", { userId: result.user?.id });
+
+    // Stamp Last_Login_Date for the EmailOctopus re-engagement automation (fire-and-forget)
+    if (email) {
+      EmailOctopusService.updateContactLastLogin(email).catch((syncError) => {
+        logger.error("Failed to update EmailOctopus last login", {
+          error: syncError.message,
+          email,
+        });
+      });
+    }
+
     res.json({ success: true, data: result });
   } catch (error: any) {
     logger.error("Signin failed", {

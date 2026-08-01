@@ -237,7 +237,7 @@ async function sendAINotification(
         type: type,
         title: title,
         message: message,
-        data: data || null,
+        data: data as any || undefined,
         read: false,
         created_at: new Date().toISOString(),
       },

@@ -276,7 +276,7 @@ export class ProjectServiceEnhanced {
 
       return prisma.project.update({
         where: { id: projectId },
-        data: { content: version.content, updated_at: new Date() },
+        data: { content: version.content as any, updated_at: new Date() },
       });
     } catch (error) {
       logger.error("Error restoring version:", error);

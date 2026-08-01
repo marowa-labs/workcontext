@@ -415,9 +415,10 @@ export class FeedbackService {
       // Create a dedicated feedback audit log entry
       await prisma.auditLog.create({
         data: {
-          user_id: userId || undefined,
+          user_id: userId || '',
           action,
           resource_id: resourceId || undefined,
+          resource: resourceType || '',
           resource_type: resourceType || undefined,
           details: details ? JSON.stringify(details) : undefined,
           ip_address: details?.ipAddress || undefined,

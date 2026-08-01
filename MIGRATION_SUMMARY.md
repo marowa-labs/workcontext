@@ -1,117 +1,72 @@
-# Email Service Migration Summary
+# Email System Summary
 
-## ✅ Migration Complete: Resend → Plunk
+## Status: Rework Complete
+
+Transactional email runs on **Plunk** with **react-email** templates. Marketing signups sync to **EmailOctopus** as an independent side-channel. Supabase auth emails are unchanged.
 
 ### Files Modified
 
-1. **`backend/package.json`**
-   - Replaced `resend@^6.8.0` with `@plunk/node@^3.0.3`
+1. **`backend/src/services/emailService.ts`**
+   - Rewritten on the Plunk SDK with `from: noreply@workcontext.me` / `name: "WorkContext"`
+   - Renders react-email templates; awaited Plunk client init (fixed race condition)
+   - Removed dead payment/subscription methods
 
-2. **`backend/src/services/emailService.ts`**
-   - Complete rewrite using Plunk SDK
-   - All 10 email methods migrated successfully
-   - Same email templates (HTML unchanged)
+2. **`backend/src/services/emailOctopusService.ts`** (new)
+   - `addContactToList()` → EmailOctopus contact API, graceful skip without config, dedup handled
+   - `updateContactLastLogin()` / `updateContactFields()` → PUT update addressed by MD5 hash of lowercase email
 
-3. **`README.md`**
-   - Updated environment variable from `RESEND_API_KEY` to `PLUNK_API_KEY`
+3. **`backend/src/api/auth/hybrid-route.ts`**
+   - Splits `fullName` into first/last and syncs new signups to EmailOctopus
+   - On login, stamps `Last_Login_Date` via `updateContactLastLogin` (drives the re-engagement automation)
 
-4. **`CODEBASE_ANALYSIS.md`**
-   - Updated notification system documentation
-   - Updated environment variables list
+4. **`backend/src/api/workspaces/index.ts`**
+   - Team invites now use `sendTeamInvitationEmail` (Plunk) instead of Supabase `inviteUserByEmail`
 
-5. **`backend/.env.example`**
-   - Created new example environment file with `PLUNK_API_KEY`
+5. **`backend/src/services/securityNotificationService.ts`**
+   - Security alerts render `SecurityEmailTemplate` via `sendSecurityAlertEmail`
 
-### New Files Created
+6. **`backend/src/services/contactService.ts`**
+   - Removed broken inline HTML body; uses notification template via Plunk
 
-- **`PLUNK_MIGRATION.md`** - Complete migration guide
-- **`MIGRATION_SUMMARY.md`** - This file
+7. **`backend/src/services/secrets-service.ts`**
+   - Removed stale `getResendApiKey()`; added `getEmailOctopusApiKey()` / `getEmailOctopusListId()`
 
-### Next Steps Required
+8. **`backend/.env.example`**
+   - Added `EMAILOCTOPUS_API_KEY`, `EMAILOCTOPUS_LIST_ID`
 
-1. **Install Dependencies:**
-   ```bash
-   cd backend
-   npm install --legacy-peer-deps
-   ```
+9. **`backend/package.json`**
+   - Added `@react-email/components`, `@react-email/render` (Plunk already present)
 
-2. **Update Environment Variables:**
-   - Get **Secret API Key** from https://useplunk.com (Settings → API Keys)
-   - Add to `.env`:
-     ```
-     PLUNK_API_KEY=sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-     ```
-   - ⚠️ Use Secret API Key (starts with `sk_`), NOT Public API Key (`pk_`)
+### New Files
 
-3. **Optional - Domain Verification:**
-   - Configure `email.WorkContext.ai` in Plunk dashboard
-   - Add DNS records for better deliverability
+- `backend/src/templates/emails/EmailLayout.tsx` (shared layout + CTAButton/BodyText/SmallNote)
+- `backend/src/templates/emails/OTPEmailTemplate.tsx`
+- `backend/src/templates/emails/WelcomeEmailTemplate.tsx`
+- `backend/src/templates/emails/NotificationEmailTemplate.tsx`
+- `backend/src/templates/emails/TeamInvitationEmailTemplate.tsx`
+- `backend/src/templates/emails/SecurityEmailTemplate.tsx`
+- `backend/src/templates/renderEmail.ts`
 
-4. **Test Email Functionality:**
-   - Test signup flow (OTP email)
-   - Test password reset
-   - Test payment emails
-   - Test team invitations
+### Email Methods
 
-### Email Methods Migrated
+| Method | Purpose |
+|--------|---------|
+| `sendOTPEmail` | Verification codes |
+| `sendWelcomeEmail` | New user welcome |
+| `sendNotificationEmail` | General notifications |
+| `sendTeamInvitationEmail` | Team invites |
+| `sendSecurityAlertEmail` | Security alerts |
+| `sendCustomEmail` | Arbitrary HTML |
 
-All methods work exactly as before:
+Payment/subscription methods (`sendPaymentSuccessEmail`, etc.) never existed in the codebase and are removed.
 
-| Method | Purpose | Status |
-|--------|---------|--------|
-| `sendOTPEmail` | Verification codes | ✅ |
-| `sendWelcomeEmail` | New user welcome | ✅ |
-| `sendPasswordResetEmail` | Password reset | ✅ |
-| `sendNotificationEmail` | General notifications | ✅ |
-| `sendProfileUpdateOTPEmail` | Profile verification | ✅ |
-| `sendSubscriptionConfirmationEmail` | Subscription confirmed | ✅ |
-| `sendPaymentSuccessEmail` | Payment success | ✅ |
-| `sendPaymentFailedEmail` | Payment failed | ✅ |
-| `sendSubscriptionCancelledEmail` | Subscription cancelled | ✅ |
-| `sendTeamInvitationEmail` | Team invites | ✅ |
+### Next Steps
 
-### Code Changes Summary
-
-**Before (Resend):**
-```typescript
-import { Resend } from "resend";
-const resend = new Resend(apiKey);
-
-const { data, error } = await resend.emails.send({
-  from: "WorkContext<noreply@email.WorkContext.ai>",
-  to: email,
-  subject: "Subject",
-  html: content,
-});
-```
-
-**After (Plunk):**
-```typescript
-import Plunk from "@plunk/node";
-const plunk = new Plunk(apiKey);
-
-const success = await plunk.emails.send({
-  to: email,
-  subject: "Subject",
-  body: content,
-});
-```
-
-### Benefits
-
-1. ✅ Simpler API - Less configuration needed
-2. ✅ Better error handling - Returns boolean success
-3. ✅ Same email templates - No UI changes
-4. ✅ Improved deliverability
-5. ✅ Better analytics dashboard
-
-### Rollback Available
-
-If needed, rollback instructions are in `PLUNK_MIGRATION.md`.
+1. `npm install` in `backend` (updates `package-lock.json`)
+2. Add `EMAILOCTOPUS_API_KEY` + `EMAILOCTOPUS_LIST_ID` to production env
+3. Verify `workcontext.me` in the Plunk dashboard
+4. Test signup (welcome + EmailOctopus), OTP, team invite, and security-alert flows
 
 ---
 
-**Migration completed on:** 2026-05-30  
-**Tested:** ⏳ Pending dependency installation  
-**Status:** Ready for deployment after `npm install`
-
+**Note:** docs claiming "10 methods migrated" were inaccurate — 4 of the listed methods never existed, and `sendTeamInvitationEmail` was previously dead code (invites went through Supabase). Both are now corrected.
