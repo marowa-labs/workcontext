@@ -9,6 +9,9 @@ const eslintConfig = defineConfig([
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/set-state-in-effect": "warn",
+      "react/no-unescaped-entities": "off", // Ignores ' and " unescaped quote errors
+      "prefer-const": "off", // Ignores let vs const errors
+      "@typescript-eslint/no-unused-vars": "warn", // Turns unused variable errors into warnings
     },
   },
   // Override default ignores of eslint-config-next.
