@@ -68,6 +68,17 @@ export default function RootLayout({
           data-form="fed3dc92-8dab-11f1-a702-9f06b570a5bb"
           strategy="afterInteractive"
         />
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-L6YH94GFC1"
+          strategy="afterInteractive"
+        />
+        <Script id="google-gtag" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-L6YH94GFC1');`}
+        </Script>
       </body>
     </html>
   );
