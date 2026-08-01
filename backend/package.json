@@ -28,6 +28,8 @@
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.9.0",
     "@prisma/config": "^7.3.0",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "@supabase/supabase-js": "^2.91.0",
     "@tiptap/core": "^3.16.0",
     "@tiptap/extension-blockquote": "^3.16.0",

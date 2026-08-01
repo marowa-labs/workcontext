@@ -1,5 +1,6 @@
 import { AuthService } from "../../services/hybridAuthService";
 import { EmailService } from "../../services/emailService";
+import { EmailOctopusService } from "../../services/emailOctopusService";
 import { SessionService } from "../../services/sessionService";
 import { SecurityNotificationService } from "../../services/securityNotificationService";
 import { getSupabaseAdminClient } from "../../lib/supabase/client";
@@ -358,6 +359,11 @@ export async function POST_COMPLETE_SIGNUP(req: Request, res: Response) {
         const email = user.email;
 
         if (email) {
+          // Split full name into first and last name for the marketing list
+          const nameParts = (fullName || "").split(" ").filter(Boolean);
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+
           // Send welcome email asynchronously (don't wait for it to complete)
           EmailService.sendWelcomeEmail(email, fullName).catch((error) => {
             logger.error("Failed to send welcome email:", {
@@ -365,6 +371,13 @@ export async function POST_COMPLETE_SIGNUP(req: Request, res: Response) {
               userId,
               email,
             });
+          });
+
+          // Sync new signup to EmailOctopus marketing list (fire-and-forget)
+          EmailOctopusService.addContactToList({
+            emailAddress: email,
+            firstName,
+            lastName,
           });
         }
       }
@@ -442,6 +455,18 @@ export async function PUT_SIGNIN(req: Request, res: Response) {
 
     // Record session and login history
     await recordUserSession(supabaseUser.id, req);
+
+    // Stamp Last_Login_Date for the re-engagement automation (fire-and-forget)
+    if (supabaseUser.email) {
+      EmailOctopusService.updateContactLastLogin(supabaseUser.email).catch(
+        (error) => {
+          logger.error("Failed to update EmailOctopus last login:", {
+            error: error.message,
+            email: supabaseUser.email,
+          });
+        },
+      );
+    }
 
     return res.status(200).json({
       success: true,

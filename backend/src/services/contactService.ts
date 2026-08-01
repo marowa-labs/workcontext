@@ -192,39 +192,11 @@ export class ContactService {
     try {
       const subjectLine = "We've Received Your Message - WorkContext";
 
-      const htmlBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #3B82F6;">Thanks for Reaching Out!</h2>
-          
-          <p>Hello ${data.name},</p>
-          
-          <p>We've received your message and appreciate you taking the time to contact us. Our team will review your inquiry and get back to you within 24 hours.</p>
-          
-          <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #1e293b;">Your Message Summary</h3>
-            <p><strong>Subject:</strong> ${data.subject}</p>
-            <p><strong>Message:</strong></p>
-            <p style="white-space: pre-wrap; line-height: 1.5;">${data.message}</p>
-          </div>
-
-          <p>In the meantime, you might find answers to common questions in our <a href="https://WorkContextai.com/help" style="color: #3B82F6;">Help Center</a>.</p>
-          
-          <p>Best regards,<br/>
-          The WorkContextTeam</p>
-          
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">
-          
-          <p style="font-size: 12px; color: #64748b;">
-            This is an automated confirmation. Please do not reply to this email. If you need immediate assistance, contact us at hello@WorkContext.com.
-          </p>
-        </div>
-      `;
-
       return EmailService.sendNotificationEmail(
         data.email,
         data.name,
         subjectLine,
-        htmlBody,
+        `Thank you for reaching out to WorkContext. Our team has received your message and will get back to you within 24 hours.`,
         "contact",
       );
     } catch (error) {

@@ -1,179 +1,157 @@
-# Email Service Migration: Resend → Plunk
+# Email Service: Plunk + React Email + EmailOctopus
 
 ## Overview
-The email service has been successfully migrated from **Resend** to **Plunk** email provider.
+WorkContext sends transactional email via **Plunk** (using the Plunk SDK) with templates built in **react-email**. Signup contacts are synced to the **EmailOctopus** marketing list as a separate, independent side-channel (no mail provider is configured for EmailOctopus inside Supabase). Supabase handles auth emails via its own SMTP (`noreply@workcontext.me`).
+
+## Architecture
+
+```
+Transactional emails  →  Plunk SDK (@plunk/node)  +  react-email templates
+                         FROM: noreply@workcontext.me (Plunk verified domain)
+
+Marketing/newsletter →  EmailOctopus contact API (POST /lists/:listId/contacts)
+                         Fired on signup (email + first/last name), independent of Plunk/Supabase
+
+Supabase auth emails →  Supabase SMTP (noreply@workcontext.me) - unchanged
+```
 
 ## Changes Made
 
 ### 1. Package Dependencies
 **File:** `backend/package.json`
-- ❌ Removed: `resend@^6.8.0`
 - ✅ Added: `@plunk/node@^3.0.3`
+- ✅ Added: `@react-email/components@^1.0.12`
+- ✅ Added: `@react-email/render@^2.1.0`
 
-### 2. Email Service Implementation
+### 2. Email Templates (react-email)
+**Directory:** `backend/src/templates/emails/`
+
+| Template | Purpose |
+|----------|---------|
+| `EmailLayout.tsx` | Shared layout (header image, heading, body, footer) + `CTAButton`, `BodyText`, `SmallNote` |
+| `OTPEmailTemplate.tsx` | Verification codes |
+| `WelcomeEmailTemplate.tsx` | New user welcome |
+| `NotificationEmailTemplate.tsx` | General notifications |
+| `TeamInvitationEmailTemplate.tsx` | Team invites |
+| `SecurityEmailTemplate.tsx` | Security alerts (new device, password/email change) |
+
+- `backend/src/templates/renderEmail.ts` - renders a template to final HTML (also `renderPreview`/`renderPlainText`)
+
+### 3. Email Service Implementation
 **File:** `backend/src/services/emailService.ts`
-- Completely rewritten to use Plunk SDK instead of Resend
-- All email methods now use Plunk's `emails.send()` API
-- Email templates remain unchanged (same HTML structure)
+- Uses Plunk SDK with `from: noreply@workcontext.me` and `name: "WorkContext"`
+- Renders react-email templates via `renderEmail`
+- Fixed race condition: Plunk client is initialized once (`plunkPromise`) and awaited before each send (`getPlunk()`)
+- Removed dead payment/subscription methods that never existed in the codebase
 
-### 3. Environment Variables
-**Changed from:**
+### 4. EmailOctopus Service
+**File:** `backend/src/services/emailOctopusService.ts`
+- `addContactToList({ emailAddress, firstName, lastName, tags, status })`
+- Calls `POST https://emailoctopus.com/api/1.6/lists/:listId/contacts`
+- Skips gracefully if `EMAILOCTOPUS_API_KEY`/`EMAILOCTOPUS_LIST_ID` not configured
+- Treats `MEMBER_EXISTS_WITH_EMAIL_ADDRESS` as expected (log at info, return true)
+
+### 5. Signup Integration
+**File:** `backend/src/api/auth/hybrid-route.ts`
+- On signup completion, full name is split into first/last and pushed to EmailOctopus (fire-and-forget, alongside the Plunk welcome email)
+
+### 6. Team Invitations
+**File:** `backend/src/api/workspaces/index.ts`
+- `POST /api/workspaces/:id/invite` now sends via `EmailService.sendTeamInvitationEmail` (Plunk) instead of Supabase `inviteUserByEmail`
+
+### 7. Security Notifications
+**File:** `backend/src/services/securityNotificationService.ts`
+- New-device / password-change / email-change alerts now render `SecurityEmailTemplate` via `sendSecurityAlertEmail` with structured details (Device, IP, Location, Time)
+
+### 8. Environment Variables
 ```env
-RESEND_API_KEY=your_resend_key
-```
-
-**Changed to:**
-```env
-PLUNK_API_KEY=your_plunk_key
-```
-
-### 4. Documentation Updates
-- `README.md` - Updated environment variables section
-- `CODEBASE_ANALYSIS.md` - Updated notification system details
-- `backend/.env.example` - Created with Plunk API key
-
-## Migration Steps for Deployment
-
-### Step 1: Get Plunk Secret API Key
-1. Sign up for a Plunk account at https://useplunk.com
-2. Navigate to your dashboard
-3. Go to **Settings** → **API Keys**
-4. Copy your **Secret API Key** (NOT the Public API Key)
-   - ⚠️ **Important:** Use the Secret API Key for backend email sending
-   - Public API Key is for client-side operations only
-
-### Step 2: Update Environment Variables
-Update your `.env` file in the backend:
-```bash
-# Remove old variable
-# RESEND_API_KEY=...
-
-# Add new variable - USE SECRET API KEY
 PLUNK_API_KEY=sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+EMAILOCTOPUS_API_KEY=your_emailoctopus_api_key
+EMAILOCTOPUS_LIST_ID=your_emailoctopus_list_id
 ```
 
-**⚠️ Important:** 
-- Use the **Secret API Key** (starts with `sk_`)
-- Do NOT use the Public API Key (starts with `pk_`)
-- Keep the Secret API Key private and never expose it in frontend code
+## Deployment Setup
 
-### Step 3: Configure Sending Domain (Optional but Recommended)
-1. In Plunk dashboard, go to **Settings** → **Domains**
-2. Add your domain: `email.WorkContext.ai`
-3. Add the required DNS records to verify ownership
-4. Wait for verification
+### Step 1: Plunk Secret API Key
+1. Sign up at https://useplunk.com
+2. **Settings** → **API Keys** → copy the **Secret API Key** (`sk_...`), NOT the Public key (`pk_...`)
 
-**Note:** Without domain verification, emails will be sent from Plunk's default domain.
+### Step 2: Configure Sending Domain
+1. Plunk dashboard → **Settings** → **Domains**
+2. Add `workcontext.me`, add required DNS records, wait for verification
+3. Transactional sends use `noreply@workcontext.me`
+
+**Note:** Without verification, emails send from Plunk's default domain.
+
+### Step 3: EmailOctopus
+1. Create a list in EmailOctopus
+2. Copy the list ID and an API key
+3. Add `EMAILOCTOPUS_API_KEY` and `EMAILOCTOPUS_LIST_ID` to env
+4. Optional: set up a dedicated sending domain for marketing (recommended for deliverability)
 
 ### Step 4: Install Dependencies
 ```bash
 cd backend
-npm install --legacy-peer-deps
+npm install
 ```
 
 ### Step 5: Restart Server
 ```bash
 npm run dev  # Development
-# or
 npm start    # Production
 ```
 
 ## Email Methods Available
 
-All previous email methods are preserved:
+| Method | Description |
+|--------|-------------|
+| `sendOTPEmail(to, otp, fullName)` | Verification codes |
+| `sendWelcomeEmail(to, fullName)` | New user welcome |
+| `sendNotificationEmail(to, fullName, subject, message, type)` | General notifications |
+| `sendTeamInvitationEmail(to, inviterName, workspaceName, invitationLink, role)` | Team invites |
+| `sendSecurityAlertEmail(to, subject, alertTitle, message, details, fullName)` | Security alerts |
+| `sendCustomEmail(to, subject, htmlBody)` | Arbitrary pre-rendered HTML |
 
-1. ✅ `sendOTPEmail(to, otp, fullName)` - Send verification codes
-2. ✅ `sendWelcomeEmail(to, fullName)` - Welcome new users
-3. ✅ `sendPasswordResetEmail(to, resetLink, fullName)` - Password reset
-4. ✅ `sendNotificationEmail(to, fullName, title, message, type)` - General notifications
-5. ✅ `sendProfileUpdateOTPEmail(to, otp, isEmailChange)` - Profile update verification
-6. ✅ `sendSubscriptionConfirmationEmail(to, fullName, planName, amount, nextBillingDate, transactionId)` - Subscription confirmation
-7. ✅ `sendPaymentSuccessEmail(to, fullName, planName, amount, transactionId)` - Payment success
-8. ✅ `sendPaymentFailedEmail(to, fullName, planName, amount)` - Payment failure
-9. ✅ `sendSubscriptionCancelledEmail(to, fullName, planName, cancellationDate)` - Cancellation
-10. ✅ `sendTeamInvitationEmail(to, inviterName, workspaceName, invitationLink)` - Team invites
+Removed (never existed as callable paths): `sendPaymentSuccessEmail`, `sendPaymentFailedEmail`, `sendPasswordResetEmail`, `sendProfileUpdateOTPEmail`, `sendSubscriptionConfirmationEmail`, `sendSubscriptionCancelledEmail`. Password resets and profile OTPs are handled by Supabase Auth directly.
 
-## API Differences: Resend vs Plunk
+## Plunk Send Shape
 
-### Resend (Old)
-```typescript
-const { data, error } = await resend.emails.send({
-  from: "WorkContext<noreply@email.WorkContext.ai>",
-  to: email,
-  subject: "Subject",
-  html: htmlContent,
-});
-```
-
-### Plunk (New)
 ```typescript
 const success = await plunk.emails.send({
-  to: email,
-  subject: "Subject",
-  body: htmlContent,
+  to,            // string | string[]
+  subject,
+  body,          // HTML from react-email render
+  from,          // noreply@workcontext.me
+  name,          // "WorkContext"
 });
 ```
-
-**Key Differences:**
-- Plunk doesn't require `from` field (uses project default or verified domain)
-- Plunk returns boolean `success` instead of `{ data, error }` object
-- Plunk uses `body` instead of `html` for content
+- Plunk returns `{ success: true }` on success; failures throw.
 
 ## Testing
 
-To test the email service:
-
 ```bash
-# In backend directory
+cd backend
 npm run dev
 ```
 
-Test endpoints:
-- POST `/api/auth/signup` - Triggers OTP email
-- POST `/api/auth/forgot-password` - Triggers password reset email
-- POST `/api/auth/verify-email` - Triggers verification email
-
-## Benefits of Plunk
-
-1. **Simpler API** - Less boilerplate code
-2. **Better deliverability** - Modern email infrastructure
-3. **Lower cost** - More generous free tier
-4. **Better analytics** - Built-in email tracking
-5. **Easier setup** - Simplified domain verification
-
-## Rollback Plan
-
-If you need to rollback to Resend:
-
-1. Restore `backend/package.json`:
-   ```bash
-   npm install resend@^6.8.0 --legacy-peer-deps
-   npm uninstall @plunk/node --legacy-peer-deps
-   ```
-
-2. Restore the old `emailService.ts` from git:
-   ```bash
-   git checkout HEAD -- backend/src/services/emailService.ts
-   ```
-
-3. Update environment variables back to `RESEND_API_KEY`
-
-## Support
-
-- **Plunk Documentation:** https://docs.useplunk.com
-- **Plunk Support:** support@useplunk.com
-- **Plunk Dashboard:** https://app.useplunk.com
+Test flows:
+- `POST /api/auth/hybrid/complete-signup` → welcome email (Plunk) + EmailOctopus contact sync
+- `POST /api/auth/signup` / OTP → OTP email (Plunk)
+- `POST /api/workspaces/:id/invite` → team invitation (Plunk)
+- Sign in from new device → security alert (Plunk)
 
 ## Verification Checklist
 
-- [x] Package dependencies updated
-- [x] Email service rewritten for Plunk
-- [x] Environment variables updated
-- [x] Documentation updated
-- [x] .env.example created
-- [ ] **TODO:** Install dependencies (`npm install`)
-- [ ] **TODO:** Update production environment variables
-- [ ] **TODO:** Verify domain in Plunk dashboard
-- [ ] **TODO:** Test all email methods
-- [ ] **TODO:** Monitor email delivery rates
-
+- [x] Plunk SDK installed and email service rewritten
+- [x] react-email templates created and rendering
+- [x] `from` address set to `noreply@workcontext.me`
+- [x] Plunk race condition fixed (awaited client init)
+- [x] Payment/subscription dead methods removed
+- [x] EmailOctopus service created and wired at signup
+- [x] Team invitations moved from Supabase to Plunk
+- [x] `.env.example` updated
+- [ ] Install dependencies (`npm install`)
+- [ ] Verify `workcontext.me` in Plunk dashboard
+- [ ] Configure EmailOctopus list + API key
+- [ ] Test all email flows
+- [ ] Monitor delivery rates

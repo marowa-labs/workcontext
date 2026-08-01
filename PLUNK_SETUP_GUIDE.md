@@ -70,34 +70,56 @@ curl -X POST http://localhost:3001/api/auth/signup \
 
 ## Domain Configuration (Optional)
 
-To send emails from your own domain (`email.WorkContext.ai`):
+To send emails from your own domain (`workcontext.me`):
 
 ### Step 1: Add Domain in Plunk
 1. Go to Plunk dashboard → **Settings** → **Domains**
 2. Click **Add Domain**
-3. Enter: `email.WorkContext.ai`
+3. Enter: `workcontext.me`
 
 ### Step 2: Add DNS Records
 Add these DNS records to your domain:
 
 ```
 Type: TXT
-Host: email.WorkContext.ai
+Host: workcontext.me
 Value: [Provided by Plunk]
 
 Type: CNAME
-Host: plunk._domainkey.email.WorkContext.ai
+Host: plunk._domainkey.workcontext.me
 Value: [Provided by Plunk]
 
 Type: MX
-Host: email.WorkContext.ai
+Host: workcontext.me
 Value: [Provided by Plunk]
 ```
 
 ### Step 3: Verify
 - Wait for DNS propagation (5-30 minutes)
 - Click **Verify** in Plunk dashboard
-- Once verified, emails will show as from `noreply@email.WorkContext.ai`
+- Once verified, emails will show as from `noreply@workcontext.me`
+
+## EmailOctopus Setup (Marketing List)
+
+Signup contacts (email + first/last name) are synced to an EmailOctopus list as a separate side-channel — no mail provider is configured for EmailOctopus inside Supabase.
+
+### Step 1: Create a List
+1. Sign up at https://emailoctopus.com
+2. **Lists** → **Create List**
+3. Add custom fields `FirstName` and `LastName` (defaults exist)
+
+### Step 2: Get Credentials
+1. **Settings** → **API keys** → create an API key
+2. In the list, find the **List ID** (e.g. `6f2c...`)
+
+### Step 3: Add to Environment Variables
+```bash
+EMAILOCTOPUS_API_KEY=your_emailoctopus_api_key
+EMAILOCTOPUS_LIST_ID=your_emailoctopus_list_id
+```
+
+### Step 4: Optional - Dedicated Marketing Domain
+Recommended for deliverability: add a subdomain (e.g. `marketing.workcontext.me`) in EmailOctopus → **Domains**, add the DNS records, and verify. Newsletters then send from that subdomain, keeping `noreply@workcontext.me` for transactional mail.
 
 ## Troubleshooting
 
@@ -161,15 +183,19 @@ For higher volumes, upgrade to a paid plan.
 - [ ] Sign up for Plunk account
 - [ ] Get Secret API Key (starts with `sk_`)
 - [ ] Add `PLUNK_API_KEY` to `backend/.env`
-- [ ] Run `npm install --legacy-peer-deps`
+- [ ] Verify `workcontext.me` in Plunk dashboard
+- [ ] Create EmailOctopus list + API key
+- [ ] Add `EMAILOCTOPUS_API_KEY` + `EMAILOCTOPUS_LIST_ID` to `backend/.env`
+- [ ] Run `npm install`
 - [ ] Restart backend server
-- [ ] Test signup email flow
-- [ ] Test password reset email
-- [ ] (Optional) Configure custom domain
-- [ ] (Optional) Verify domain in Plunk
+- [ ] Test signup email flow (welcome + EmailOctopus sync)
+- [ ] Test OTP email flow
+- [ ] Test team invitation email flow
+- [ ] Test security alert flow
+- [ ] (Optional) Configure dedicated marketing domain in EmailOctopus
 - [ ] Monitor email delivery in dashboard
 
 ---
 
-**Last Updated:** 2026-05-30
+**Last Updated:** 2026-08-01
 
