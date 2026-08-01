@@ -586,7 +586,7 @@ export class BYOKService {
         return null;
       }
 
-      const encryptedKey = user[fieldMap[provider] as keyof typeof user] as
+      const encryptedKey = (user[fieldMap[provider] as keyof typeof user] as unknown) as
         | string
         | null;
 

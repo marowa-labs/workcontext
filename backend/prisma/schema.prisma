@@ -206,6 +206,9 @@ model Project {
   description         String?
   content             Json?
   word_count          Int                    @default(0)
+  character_count     Int                    @default(0)
+  paragraph_count     Int                    @default(0)
+  last_updated        DateTime?
   due_date            DateTime?
   status              String                 @default("draft")
   citation_style      String?                @default("apa")
@@ -215,9 +218,11 @@ model Project {
   workspace_id        String?
   workspace           Workspace?             @relation(fields: [workspace_id], references: [id])
   ai_chat_sessions    AIChatSession[]
-   collaborators       CollaboratorPresence[]
+  collaborators       CollaboratorPresence[]
   collaboration_logs  CollaborationLog[]
   comments            Comment[]
+  citations           Citation[]
+  collaboration_invites CollaborationInvite[]
   share_settings      DocumentShareSettings?
   document_versions   DocumentVersion[]
   editor_activities   EditorActivity[]
@@ -227,7 +232,6 @@ model Project {
   template            DocumentTemplate?      @relation(fields: [template_id], references: [id])
   version_schedules   VersionSchedule[]
   tasks               WorkspaceTask[]
-
   @@index([user_id])
 }
 
@@ -806,8 +810,11 @@ model AuditLog {
   action      String
   resource    String
   resource_id String?
+  resource_type String?
   ip_address  String?
   device_info String?
+  user_agent  String?
+  details     String?
   payload     Json?
   created_at  DateTime @default(now())
   user        User     @relation(fields: [user_id], references: [id])
@@ -1102,6 +1109,7 @@ model DocumentTemplate {
   downloads      Int       @default(0)
   author_name    String?
   category_id    String?
+  citation_style String?
   user           User?     @relation(fields: [user_id], references: [id])
   projects       Project[]
 
@@ -1192,4 +1200,141 @@ model Comment {
   @@index([section_id])
   @@index([user_id])
   @@index([parent_comment_id])
+}
+
+model Citation {
+  id          String   @id @default(uuid())
+  project_id  String
+  title       String
+  author      String?
+  year        Int?
+  journal     String?
+  volume      String?
+  issue       String?
+  pages       String?
+  doi         String?
+  url         String?
+  accessed_at DateTime?
+  citation_style String?
+  raw_text    String?
+  notes       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+}
+
+model CollaborationInvite {
+  id           String   @id @default(uuid())
+  project_id   String
+  email        String
+  role         String   @default("view")
+  token        String   @unique @default(uuid())
+  status       String   @default("pending")
+  invited_by   String
+  expires_at   DateTime
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  project      Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, email])
+  @@index([token])
+  @@index([email])
+  @@index([status])
+}
+
+model InstitutionalSubscription {
+  id                     String   @id @default(uuid())
+  institution_name       String
+  domain                 String?
+  plan                   String   @default("basic")
+  max_users              Int      @default(10)
+  current_users          Int      @default(0)
+  sso_client_id          String?
+  sso_client_secret      String?
+  sso_redirect_uri       String?
+  sso_authorization_url  String?
+  sso_token_url          String?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  oauth_tokens           OAuthToken[]
+
+  @@index([domain])
+}
+
+model OAuthToken {
+  id              String   @id @default(uuid())
+  subscription_id String
+  access_token    String
+  refresh_token   String   @unique
+  expires_at      DateTime?
+  token_type      String?
+  scope           String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  subscription    InstitutionalSubscription @relation(fields: [subscription_id], references: [id])
+
+  @@index([subscription_id])
+  @@index([refresh_token])
+}
+
+model ProjectSettings {
+  id                          String   @id @default(uuid())
+  user_id                     String   @unique
+  default_citation_style      String?  @default("apa")
+  auto_save_enabled           Boolean  @default(true)
+  auto_backup_enabled         Boolean  @default(true)
+  backup_frequency_hours      Int      @default(1)
+  collaboration_notifications Boolean  @default(true)
+  deadline_reminders          Boolean  @default(true)
+  word_count_goal             Int      @default(0)
+  daily_word_target           Int      @default(500)
+  export_format               String?  @default("pdf")
+  include_citations_in_export Boolean  @default(true)
+  include_comments_in_export  Boolean  @default(true)
+  created_at                  DateTime @default(now())
+  updated_at                  DateTime @updatedAt
+
+  @@index([user_id])
+}
+
+model ResearchTopic {
+  id           String   @id @default(uuid())
+  user_id      String
+  title        String
+  description  String?
+  sources      Int      @default(0)
+  sources_data Json?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([user_id])
+  @@index([created_at])
+}
+
+model ResearchSource {
+  id          String   @id @default(uuid())
+  topic_id    String
+  title       String
+  url         String?
+  content     String?
+  relevance   Float?
+  created_at  DateTime @default(now())
+
+  @@index([topic_id])
+}
+
+model AIAnalytics {
+  id                      String   @id @default(uuid())
+  user_id                 String   @unique
+  efficiency_score        Float?
+  feature_adoption_rate   Float?
+  cost_estimate           Float?
+  total_requests          Int?
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  @@index([user_id])
 }

@@ -56,8 +56,8 @@ export class ComplianceService {
           privacy_settings: true,
           projects: {
             include: {
-              research_sources: true,
-              research_topics: true,
+              citations: true,
+              comments: true,
             },
           },
           ai_chat_sessions: {
@@ -65,7 +65,6 @@ export class ComplianceService {
               messages: true,
             },
           },
-          backups: true,
           notifications: true,
         },
       });

@@ -200,7 +200,7 @@ async function handlePOST_RESTORE_VERSION(request: Request & { user?: any }) {
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
       data: {
-        content: version.content,
+        content: version.content as any,
         word_count: version.word_count,
         updated_at: new Date(),
       },

@@ -164,8 +164,8 @@ export class RecurringTaskService {
 
       const existingDueDates = new Set(
         existingInstances
-          .map((i: { due_date: Date }) => i.due_date?.toISOString())
-          .filter((d: string): d is string => d !== null && d !== undefined),
+          .map((i: { due_date: Date | null }) => i.due_date?.toISOString())
+          .filter((d): d is string => d !== null && d !== undefined),
       );
 
       // Generate occurrences using RRULE

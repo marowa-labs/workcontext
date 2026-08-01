@@ -80,19 +80,7 @@ router.get("/:id/invite/:token", async (req, res) => {
               },
               take: 5,
             },
-            plagiarism_reports: {
-              orderBy: {
-                created_at: "desc",
-              },
-              take: 5,
-            },
             ai_chat_sessions: {
-              orderBy: {
-                created_at: "desc",
-              },
-              take: 5,
-            },
-            ai_generated_images: {
               orderBy: {
                 created_at: "desc",
               },
@@ -131,7 +119,7 @@ router.get("/:id/invite/:token", async (req, res) => {
     // Return project data with permission level
     return res.status(200).json({
       project: transformedProject,
-      permission: invite.permission,
+      permission: invite.role,
     });
   } catch (error: any) {
     console.error("Error accessing shared project:", error);
@@ -328,7 +316,7 @@ router.get("/:id/permission", async (req, res) => {
     }
 
     // Check if user is a collaborator
-    const collaborator = await prisma.CollaboratorPresence.findFirst({
+    const collaborator = await prisma.collaboratorPresence.findFirst({
       where: {
         project_id: projectId,
         user_id: userId,

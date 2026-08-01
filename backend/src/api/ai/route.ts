@@ -1243,9 +1243,9 @@ async function handleRefreshModels(req: any, res: any) {
       where: { id: userId },
       select: { [encryptedFieldMap[provider]]: true },
     });
-    const encryptedKey = user?.[
+    const encryptedKey = (user?.[
       encryptedFieldMap[provider] as keyof typeof user
-    ] as string | null;
+    ] as unknown) as string | null;
     if (!encryptedKey) {
       return res.status(400).json({
         success: false,
