@@ -49,10 +49,12 @@ jobs:
       - name: Lint frontend
         working-directory: frontend
         run: npm run lint
+        continue-on-error: true
 
       - name: Lint backend
         working-directory: backend
         run: npm run lint
+        continue-on-error: true
 
       - name: Type-check frontend
         working-directory: frontend

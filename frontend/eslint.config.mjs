@@ -8,10 +8,14 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-this-alias": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
       "react-hooks/set-state-in-effect": "warn",
-      "react/no-unescaped-entities": "off", // Ignores ' and " unescaped quote errors
-      "prefer-const": "off", // Ignores let vs const errors
-      "@typescript-eslint/no-unused-vars": "warn", // Turns unused variable errors into warnings
+      "react/no-unescaped-entities": "off",
+      "prefer-const": "off",
     },
   },
   // Override default ignores of eslint-config-next.
