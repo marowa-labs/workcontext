@@ -26,6 +26,7 @@
     "@openrouter/sdk": "^0.11.2",
     "@plunk/node": "^3.0.3",
     "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.9.1",
     "@prisma/config": "^7.3.0",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
@@ -95,7 +96,6 @@
     "yjs": "^13.6.29"
   },
   "devDependencies": {
-    "@prisma/client": "^7.9.1",
     "@tailwindcss/postcss": "^4",
     "@types/archiver": "^7.0.0",
     "@types/cors": "^2.8.19",
