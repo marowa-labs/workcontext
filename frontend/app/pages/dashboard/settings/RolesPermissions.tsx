@@ -83,7 +83,7 @@ export default function RolesPermissionsPage() {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles`, {
+      const res = await fetch("/api/roles", {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
       if (!res.ok) throw new Error("Failed to fetch roles");
@@ -107,7 +107,7 @@ export default function RolesPermissionsPage() {
       setSaving(true);
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles`, {
+      const res = await fetch("/api/roles", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(newRole),
@@ -131,7 +131,7 @@ export default function RolesPermissionsPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles/${roleId}`, { method: "DELETE", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+      const res = await fetch(`/api/roles/${roleId}`, { method: "DELETE", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete role");
@@ -149,7 +149,7 @@ export default function RolesPermissionsPage() {
       setSaving(true);
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles/${editingRole.id}`, {
+      const res = await fetch(`/api/roles/${editingRole.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ permissions: editPermissions }),

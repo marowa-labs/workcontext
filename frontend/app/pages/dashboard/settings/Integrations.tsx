@@ -158,7 +158,7 @@ export default function IntegrationsPage() {
         setError("Not authenticated");
         return;
       }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations`, {
+      const res = await fetch("/api/integrations", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data: IntegrationsResponse = await res.json();
@@ -188,7 +188,7 @@ export default function IntegrationsPage() {
         setConnectingTool(null);
         return;
       }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations`, {
+      const res = await fetch("/api/integrations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
