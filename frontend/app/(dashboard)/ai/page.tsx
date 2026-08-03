@@ -675,15 +675,7 @@ export default function AIPage() {
       return data.session.id;
     } catch (error) {
       console.error("Failed to create session:", error);
-      const newSession = {
-        id: `session-${Date.now()}`,
-        title: "New chat",
-        updatedAt: new Date().toISOString(),
-      };
-      setCurrentSession(newSession.id);
-      setMessages([]);
-      setSessions((prev) => [newSession, ...prev]);
-      return newSession.id;
+      throw error;
     }
   };
 
@@ -732,11 +724,54 @@ export default function AIPage() {
 
   const isSendingRef = useRef(false);
 
+  // Helper to save user message to database (save-only, no AI processing)
+  const saveUserMessage = async (content: string, overrideSessionId?: string): Promise<void> => {
+    const targetSession = overrideSessionId || currentSession;
+    if (!targetSession) return;
+    try {
+      await apiClient.post("/api/ai/chat/message/direct", {
+        sessionId: targetSession,
+        content,
+        role: "user",
+        messageType: "text",
+      });
+    } catch (error) {
+      console.error("Failed to save user message:", error);
+    }
+  };
+
+  // Helper to save AI message to database
+  const saveAIMessage = async (content: string, overrideSessionId?: string): Promise<void> => {
+    const targetSession = overrideSessionId || currentSession;
+    if (!targetSession) return;
+    try {
+      await apiClient.post("/api/ai/chat/message/direct", {
+        sessionId: targetSession,
+        content,
+        role: "assistant",
+        messageType: "text",
+      });
+    } catch (error) {
+      console.error("Failed to save AI message:", error);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || loading || isSendingRef.current) return;
     isSendingRef.current = true;
 
     const userText = input.trim();
+
+    // Create session if none exists
+    let sessionId = currentSession;
+    if (!sessionId) {
+      sessionId = await createNewSession();
+      if (!sessionId) {
+        isSendingRef.current = false;
+        return;
+      }
+    }
+
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
       role: "user",
@@ -770,7 +805,7 @@ export default function AIPage() {
             (window as any).__aiPageConfirm = confirm;
             (window as any).__aiPageCancel = cancel;
           },
-          onResult: (result) => {
+          onResult: async (result) => {
             const assistantMessage: Message = {
               id: `ai-${Date.now()}`,
               role: "assistant",
@@ -778,6 +813,10 @@ export default function AIPage() {
               created_at: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, assistantMessage]);
+
+            // Save both messages to database using the local sessionId
+            await saveUserMessage(userText, sessionId);
+            await saveAIMessage(result.message || "", sessionId);
 
             // Handle navigation
             if (result.suggestedActions && result.suggestedActions.length > 0) {
@@ -799,7 +838,7 @@ export default function AIPage() {
               }
             }
           },
-          onError: (error) => {
+          onError: async (error) => {
             const errorMessage: Message = {
               id: `error-${Date.now()}`,
               role: "assistant",
@@ -807,6 +846,10 @@ export default function AIPage() {
               created_at: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, errorMessage]);
+
+            // Save both messages even on error
+            await saveUserMessage(userText, sessionId);
+            await saveAIMessage(`Sorry, I encountered an error: ${error}. Please try again.`, sessionId);
           },
         },
       );
@@ -819,6 +862,10 @@ export default function AIPage() {
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+
+      // Save both messages even on error
+      await saveUserMessage(userText, sessionId);
+      await saveAIMessage(`Sorry, I encountered an error: ${error.message || "Unknown error"}. Please try again.`, sessionId);
     } finally {
       setLoading(false);
       isSendingRef.current = false;

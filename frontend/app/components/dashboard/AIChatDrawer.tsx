@@ -888,20 +888,9 @@ export function AIChatDrawer({
             };
             setMessages((prev) => [...prev, assistantMessage]);
 
-            // Save messages to database so they persist across refreshes
-            if (currentSession) {
-              try {
-                await apiClient.post(
-                  `/api/ai/chat/session/${currentSession}/messages`,
-                  {
-                    content: messageContent,
-                    messageType: "text",
-                  },
-                );
-              } catch {
-                // Silently fail — messages shown in UI are enough
-              }
-            }
+            // Save both user and AI messages to database so they persist across refreshes
+            await saveUserMessage(messageContent);
+            await saveAIMessage(result.message);
           },
           onError: (error) => {
             const msg = error || "Unknown error";
@@ -1044,11 +1033,12 @@ export function AIChatDrawer({
   };
 
   // Helper to save user message to database (save-only, no AI processing)
-  const saveUserMessage = async (content: string): Promise<Message | null> => {
-    if (!currentSession) return null;
+  const saveUserMessage = async (content: string, overrideSessionId?: string): Promise<Message | null> => {
+    const targetSession = overrideSessionId || currentSession;
+    if (!targetSession) return null;
     try {
       const response = await apiClient.post("/api/ai/chat/message/direct", {
-        sessionId: currentSession,
+        sessionId: targetSession,
         content,
         role: "user",
         messageType: "text",
@@ -1061,12 +1051,13 @@ export function AIChatDrawer({
   };
 
   // Helper to save AI message to database
-  const saveAIMessage = async (content: string): Promise<Message | null> => {
-    if (!currentSession) return null;
+  const saveAIMessage = async (content: string, overrideSessionId?: string): Promise<Message | null> => {
+    const targetSession = overrideSessionId || currentSession;
+    if (!targetSession) return null;
     try {
       // Use a direct API call to save assistant message without triggering AI processing
       const response = await apiClient.post("/api/ai/chat/message/direct", {
-        sessionId: currentSession,
+        sessionId: targetSession,
         content,
         role: "assistant",
         messageType: "text",
@@ -1156,9 +1147,10 @@ export function AIChatDrawer({
             };
             setMessages((prev) => [...prev, assistantMessage]);
 
-            // Save both messages to database using existing helpers
-            await saveUserMessage(userMessageContent);
-            await saveAIMessage(result.message);
+            // Save both messages to database using the local sessionId
+            // (currentSession state may not be updated yet after createNewSession)
+            await saveUserMessage(userMessageContent, sessionId);
+            await saveAIMessage(result.message, sessionId);
 
             // Add suggested actions if available
             if (result.suggestedActions && result.suggestedActions.length > 0) {
@@ -1236,9 +1228,10 @@ export function AIChatDrawer({
       setMessages((prev) => [...prev, errorMessage]);
 
       // Try to save user message even on error
-      await saveUserMessage(userMessageContent);
+      await saveUserMessage(userMessageContent, sessionId);
       await saveAIMessage(
         `I'm sorry, I encountered an error: ${error.message || "Please try again."}`,
+        sessionId,
       );
 
       setLoading(false);
