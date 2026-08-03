@@ -18,7 +18,6 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hocuspocus/provider": "^3.4.4",
     "@hookform/resolvers": "^5.2.2",
-    "@next/swc-win32-x64-msvc": "^16.2.12",
     "@nextui-org/react": "^2.6.11",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

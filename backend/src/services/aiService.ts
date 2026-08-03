@@ -1508,6 +1508,8 @@ Please provide a helpful response. Use editor markers if you need to modify the 
       prompt = `Conversation History:
 ${conversationContext}
 
+${projectContext}
+
 User Message: ${content}
 
 Please provide a helpful response.`;
@@ -2208,6 +2210,8 @@ Please provide a helpful response. Use editor markers if you need to modify the 
     } else {
       prompt = `Conversation History:
 ${conversationContext}
+
+${projectContext}
 
 User Message: ${content}
 
