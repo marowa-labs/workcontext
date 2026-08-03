@@ -244,7 +244,7 @@ export default function SpacesLibraryPage() {
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations`, { headers });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations`, { headers });
         if (res.ok) {
           const data = await res.json();
           setIntegrations(data.connections || []);
@@ -253,7 +253,7 @@ export default function SpacesLibraryPage() {
           for (const conn of (data.connections || [])) {
             try {
               const treeRes = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations/tree?connection_id=${conn.id}`,
+                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/tree?connection_id=${conn.id}`,
                 { headers }
               );
               if (treeRes.ok) {
@@ -498,13 +498,13 @@ export default function SpacesLibraryPage() {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations/${conn.id}/sync`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/${conn.id}/sync`,
         { method: 'POST', headers }
       );
       
       // Re-fetch tree
       const treeRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations/tree?connection_id=${conn.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/tree?connection_id=${conn.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (treeRes.ok) {

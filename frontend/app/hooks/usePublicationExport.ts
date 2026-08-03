@@ -58,7 +58,7 @@ export function usePublicationExport() {
       const token = await getAccessToken();
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/publication/export`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/publication/export`,
         {
           method: "POST",
           headers: {
@@ -138,7 +138,7 @@ export function usePublicationExport() {
       const token = await getAccessToken();
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/publication/audit`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/publication/audit`,
         {
           method: "POST",
           headers: {

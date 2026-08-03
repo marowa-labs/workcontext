@@ -197,10 +197,10 @@ function DecisionsTab({ workspaceId }: { workspaceId: string }) {
       if (search) params.set("search", search);
 
       const [decisionsRes, statsRes] = await Promise.all([
-        fetch(`/api/memory/decisions?${params}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/memory/decisions?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`/api/memory/decisions/stats/overview?workspace_id=${workspaceId}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/memory/decisions/stats/overview?workspace_id=${workspaceId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -224,7 +224,7 @@ function DecisionsTab({ workspaceId }: { workspaceId: string }) {
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      await fetch(`/api/memory/decisions/${id}`, {
+      await authFetch(`/api/memory/decisions/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -242,7 +242,7 @@ function DecisionsTab({ workspaceId }: { workspaceId: string }) {
   const handleDelete = async (id: string) => {
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      await fetch(`/api/memory/decisions/${id}`, {
+      await authFetch(`/api/memory/decisions/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -439,7 +439,7 @@ function CreateDecisionModal({
     setSaving(true);
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const res = await fetch("/api/memory/decisions", {
+      const res = await authFetch("/api/memory/decisions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -560,7 +560,7 @@ function ActivityTab({ workspaceId }: { workspaceId: string }) {
         const params = new URLSearchParams({ workspace_id: workspaceId, limit: "100" });
         if (filterType) params.set("entity_type", filterType);
 
-        const res = await fetch(`/api/memory/activity?${params}`, {
+        const res = await authFetch(`/api/memory/activity?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -658,7 +658,7 @@ function TranscriptsTab({ workspaceId }: { workspaceId: string }) {
     const fetchTranscripts = async () => {
       try {
         const token = (await supabase.auth.getSession()).data.session?.access_token;
-        const res = await fetch(`/api/memory/transcripts?workspace_id=${workspaceId}`, {
+        const res = await authFetch(`/api/memory/transcripts?workspace_id=${workspaceId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -678,14 +678,14 @@ function TranscriptsTab({ workspaceId }: { workspaceId: string }) {
     setAnalyzing(id);
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const res = await fetch(`/api/memory/transcripts/${id}/analyze`, {
+      const res = await authFetch(`/api/memory/transcripts/${id}/analyze`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         toast({ title: "Analysis complete", description: "Decisions and action items extracted." });
         // Refresh the list
-        const listRes = await fetch(`/api/memory/transcripts?workspace_id=${workspaceId}`, {
+        const listRes = await authFetch(`/api/memory/transcripts?workspace_id=${workspaceId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (listRes.ok) {
@@ -774,7 +774,7 @@ function TranscriptsTab({ workspaceId }: { workspaceId: string }) {
             // Refresh
             supabase.auth.getSession().then(({ data: { session } }) => {
               if (session) {
-                fetch(`/api/memory/transcripts?workspace_id=${workspaceId}`, {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/memory/transcripts?workspace_id=${workspaceId}`, {
                   headers: { Authorization: `Bearer ${session.access_token}` },
                 }).then((r) => r.json()).then((d) => {
                   setTranscripts(d.transcripts);
@@ -816,7 +816,7 @@ function UploadTranscriptModal({
     setSaving(true);
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const res = await fetch("/api/memory/transcripts", {
+      const res = await authFetch("/api/memory/transcripts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -926,7 +926,7 @@ function SummariesTab({ workspaceId }: { workspaceId: string }) {
     const fetchSummaries = async () => {
       try {
         const token = (await supabase.auth.getSession()).data.session?.access_token;
-        const res = await fetch(`/api/memory/summaries?workspace_id=${workspaceId}`, {
+        const res = await authFetch(`/api/memory/summaries?workspace_id=${workspaceId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -946,7 +946,7 @@ function SummariesTab({ workspaceId }: { workspaceId: string }) {
     setGenerating(true);
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const res = await fetch("/api/memory/summaries/generate", {
+      const res = await authFetch("/api/memory/summaries/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -972,7 +972,7 @@ function SummariesTab({ workspaceId }: { workspaceId: string }) {
   const handlePin = async (id: string) => {
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      await fetch(`/api/memory/summaries/${id}/pin`, {
+      await authFetch(`/api/memory/summaries/${id}/pin`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -985,7 +985,7 @@ function SummariesTab({ workspaceId }: { workspaceId: string }) {
   const handleDelete = async (id: string) => {
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      await fetch(`/api/memory/summaries/${id}`, {
+      await authFetch(`/api/memory/summaries/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -1081,6 +1081,22 @@ function SummariesTab({ workspaceId }: { workspaceId: string }) {
 }
 
 // ============================================================
+// Authenticated Fetch Helper
+// ============================================================
+
+async function authFetch(url: string, options: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+}
+
+// ============================================================
 // Main Page
 // ============================================================
 
@@ -1095,7 +1111,7 @@ export default function MemoryPage() {
         const token = (await supabase.auth.getSession()).data.session?.access_token;
         if (!token) return;
 
-        const res = await fetch("/api/workspaces?limit=1", {
+        const res = await authFetch("/api/workspaces?limit=1", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

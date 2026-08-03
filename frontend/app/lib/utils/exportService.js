@@ -1,10 +1,7 @@
 import { supabase } from "../supabase/client";
 
-// API base URL - adjust this to match your backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
-console.log("API_BASE_URL from env:", process.env.NEXT_PUBLIC_API_URL);
-console.log("API_BASE_URL final value:", API_BASE_URL);
+// Use relative URLs to go through Next.js API rewrite proxy
+const API_BASE_URL = "";
 
 console.log("API_BASE_URL:", API_BASE_URL); // Debug logging
 

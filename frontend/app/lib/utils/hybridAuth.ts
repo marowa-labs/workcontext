@@ -5,7 +5,7 @@ import {
 } from "../supabase/client";
 import logger from "../../utils/logger";
 
-// API base URL - adjust this to match your backend URL
+// API base URL - using relative URLs through Next.js rewrite proxy
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // Timeout wrapper for fetch requests

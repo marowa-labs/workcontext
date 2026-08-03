@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { supabase } from "../../../lib/supabase/client";
 import {
   Shield,
   Plus,
@@ -80,8 +81,10 @@ export default function RolesPermissionsPage() {
   const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/roles", {
-        headers: { "Content-Type": "application/json" },
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles`, {
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
       if (!res.ok) throw new Error("Failed to fetch roles");
       const data = await res.json();
@@ -102,9 +105,11 @@ export default function RolesPermissionsPage() {
     if (!newRole.name || !newRole.displayName) return;
     try {
       setSaving(true);
-      const res = await fetch("/api/roles", {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(newRole),
       });
       if (!res.ok) {
@@ -124,7 +129,9 @@ export default function RolesPermissionsPage() {
   const handleDeleteRole = async (roleId: string) => {
     if (!confirm("Are you sure you want to delete this role? Members with this role will need to be reassigned.")) return;
     try {
-      const res = await fetch(`/api/roles/${roleId}`, { method: "DELETE" });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles/${roleId}`, { method: "DELETE", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete role");
@@ -140,9 +147,11 @@ export default function RolesPermissionsPage() {
     if (!editingRole) return;
     try {
       setSaving(true);
-      const res = await fetch(`/api/roles/${editingRole.id}`, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/roles/${editingRole.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ permissions: editPermissions }),
       });
       if (!res.ok) {

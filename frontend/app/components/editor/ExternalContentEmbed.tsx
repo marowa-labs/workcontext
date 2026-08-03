@@ -88,7 +88,7 @@ export default function ExternalContentEmbed({
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/integrations/embed/${contentId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/embed/${contentId}`);
       if (!res.ok) throw new Error("Failed to load embed");
       const data = await res.json();
       if (data.success) {
@@ -111,14 +111,14 @@ export default function ExternalContentEmbed({
     try {
       setSyncing(true);
       // Find connection ID from the content item
-      const connRes = await fetch("/api/integrations");
+      const connRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations`);
       const connData = await connRes.json();
       if (connData.success) {
         const conn = connData.connections?.find(
           (c: any) => c.tool_type === embedData?.tool_type
         );
         if (conn) {
-          await fetch(`/api/integrations/${conn.id}/sync-back`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/${conn.id}/sync-back`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content_id: contentId }),

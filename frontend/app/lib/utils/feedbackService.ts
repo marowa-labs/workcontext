@@ -52,7 +52,7 @@ class FeedbackService {
     // For feature requests, use the public endpoint to allow anonymous submissions
     if (feedbackData.type === "feature_request") {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/feedback/public`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/feedback/public`,
         {
           method: "POST",
           headers: {
@@ -86,7 +86,7 @@ class FeedbackService {
 
   // Get a specific feedback item by ID
   async getFeedbackById(id: string): Promise<UserFeedback> {
-    const response = await apiClient.get(`/api/feedback/${id}`);
+    const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/feedback/${id}`);
     return response.feedback;
   }
 
@@ -99,7 +99,7 @@ class FeedbackService {
     }
   ): Promise<FeedbackComment> {
     const response = await apiClient.post(
-      `/api/feedback/${feedbackId}/comments`,
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/feedback/${feedbackId}/comments`,
       commentData
     );
     return response.comment;
@@ -108,7 +108,7 @@ class FeedbackService {
   // Get comments for a feedback item
   async getFeedbackComments(feedbackId: string): Promise<FeedbackComment[]> {
     const response = await apiClient.get(
-      `/api/feedback/${feedbackId}/comments`
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/feedback/${feedbackId}/comments`
     );
     return response.comments;
   }

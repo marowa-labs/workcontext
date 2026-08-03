@@ -32,7 +32,7 @@ console.log("Supabase object in SignupPage:", {
   hasSupabase: typeof supabase !== "undefined" && supabase !== null,
 });
 
-// API base URL - adjust this to match your backend URL
+// API base URL - using relative URLs through Next.js rewrite proxy
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // List of allowed email domains

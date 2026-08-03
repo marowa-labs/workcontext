@@ -5,8 +5,7 @@ class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string = "") {
-    this.baseUrl =
-      baseUrl || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    this.baseUrl = baseUrl || "";
   }
 
   private async getAuthToken() {

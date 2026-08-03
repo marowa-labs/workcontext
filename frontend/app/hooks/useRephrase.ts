@@ -23,7 +23,7 @@ export function useRephrase() {
       const token = await getAccessToken();
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/plagiarism/rephrase`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/plagiarism/rephrase`,
         {
           method: "POST",
           headers: {

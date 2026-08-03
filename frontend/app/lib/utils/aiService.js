@@ -1,7 +1,7 @@
 import { supabase } from "../supabase/client";
 
-// API base URL - adjust this to match your backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// Use relative URLs to go through Next.js API rewrite proxy
+const API_BASE_URL = "";
 
 class AIService {
   // Get authentication token with better error handling
