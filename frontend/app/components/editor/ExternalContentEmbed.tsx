@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import apiClient from "../../lib/utils/apiClient";
 import {
   ExternalLink,
   RefreshCw,
@@ -88,9 +89,7 @@ export default function ExternalContentEmbed({
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/embed/${contentId}`);
-      if (!res.ok) throw new Error("Failed to load embed");
-      const data = await res.json();
+      const data = await apiClient.get(`/api/integrations/embed/${contentId}`);
       if (data.success) {
         setEmbedData(data.embed);
       } else {
@@ -111,19 +110,15 @@ export default function ExternalContentEmbed({
     try {
       setSyncing(true);
       // Find connection ID from the content item
-      const connRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations`);
-      const connData = await connRes.json();
+      const connData = await apiClient.get("/api/integrations");
       if (connData.success) {
         const conn = connData.connections?.find(
           (c: any) => c.tool_type === embedData?.tool_type
         );
         if (conn) {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/${conn.id}/sync-back`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content_id: contentId }),
+          await apiClient.post(`/api/integrations/${conn.id}/sync-back`, {
+            content_id: contentId,
           });
-          // Re-fetch embed data after sync
           setTimeout(fetchEmbed, 2000);
         }
       }

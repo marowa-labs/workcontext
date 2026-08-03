@@ -322,6 +322,13 @@ export class IntegrationImportService {
     // Determine best format
     const contentFormat = this.getContentFormat(toolType, rootItem.content_type);
 
+    // Calculate word count from all content for progress tracking
+    const allContentText = [
+      rootItem.content_text || "",
+      ...allChildren.map((c) => c.content_text || ""),
+    ].join(" ");
+    const wordCount = IntegrationImportService.calculateWordCount(allContentText, sourceTitle);
+
     // Create the Project
     const project = await prisma.project.create({
       data: {
@@ -330,6 +337,7 @@ export class IntegrationImportService {
         content: tipTapContent as any,
         block_content: contentFormat === "blocks" ? blockNoteContent as any : undefined,
         content_format: contentFormat,
+        word_count: wordCount,
         user_id: userId,
         workspace_id: workspaceId || null,
         type: "document",
@@ -424,6 +432,19 @@ export class IntegrationImportService {
   }
 
   /**
+   * Calculate word count from content text.
+   * Combines all available text and counts words.
+   */
+  private static calculateWordCount(contentText: string | null, title: string): number {
+    const combined = `${title || ""} ${contentText || ""}`;
+    const words = combined
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    return words.length;
+  }
+
+  /**
    * Get available content types for a connection.
    */
   static async getContentTypes(
@@ -500,7 +521,23 @@ export class IntegrationImportService {
     let editorContent: any;
     let blockContent: any = null;
 
-    if (contentFormat === "blocks") {
+    // Check if we have pre-built structured blocks from sync (e.g., Notion page body blocks)
+    const metadata = contentItem.metadata as any;
+    const existingBlockContent = metadata?.block_content;
+
+    if (contentFormat === "blocks" && existingBlockContent && Array.isArray(existingBlockContent) && existingBlockContent.length > 0) {
+      // Use the pre-built structured blocks from Notion connector
+      blockContent = existingBlockContent;
+      // Also build TipTap for backward compatibility
+      editorContent = IntegrationImportService.buildTipTapContent(
+        contentItem.title,
+        contentItem.content_text,
+        contentItem.tool_type,
+        contentItem.content_url,
+        contentItem.channel_or_project,
+        contentItem.author_name
+      );
+    } else if (contentFormat === "blocks") {
       blockContent = IntegrationImportService.buildBlockNoteContent(
         contentItem.title,
         contentItem.content_text,
@@ -532,6 +569,12 @@ export class IntegrationImportService {
     // Determine the effective workspace_id
     const effectiveWorkspaceId = workspaceId || contentItem.connection.workspace_id || null;
 
+    // Calculate word count from content text for progress tracking
+    const wordCount = IntegrationImportService.calculateWordCount(
+      contentItem.content_text,
+      contentItem.title || ""
+    );
+
     // Create the project with content_format flag
     const project = await prisma.project.create({
       data: {
@@ -539,6 +582,7 @@ export class IntegrationImportService {
         workspace_id: effectiveWorkspaceId,
         title: contentItem.title || `Imported from ${contentItem.connection.tool_name}`,
         content: editorContent,
+        word_count: wordCount,
         type: "document",
         status: "draft",
         content_format: contentFormat,

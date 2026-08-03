@@ -178,6 +178,12 @@ export class JiraConnector extends ConnectorBase {
               .filter(Boolean)
               .join("\n");
 
+            // Convert ADF description to BlockNote blocks
+            let blockContent: any[] | undefined;
+            if (fields.description && typeof fields.description === "object" && fields.description.type === "doc") {
+              blockContent = this.adfToBlockNoteBlocks(fields.description);
+            }
+
             items.push({
               external_id: `${site.id}_${issue.key}`,
               content_type: "ticket",
@@ -187,6 +193,7 @@ export class JiraConnector extends ConnectorBase {
               author_name: fields.reporter?.displayName || null,
               author_avatar: fields.reporter?.avatarUrls?.["48x48"] || null,
               channel_or_project: fields.project?.key || null,
+              block_content: blockContent,
               metadata: {
                 site_id: site.id,
                 site_url: siteUrl,
@@ -228,6 +235,127 @@ export class JiraConnector extends ConnectorBase {
       return this.walkAdf(doc.content);
     }
     return JSON.stringify(doc).slice(0, 2000);
+  }
+
+  /**
+   * Convert Atlassian Document Format (ADF) to BlockNote-compatible blocks.
+   * ADF is structurally similar to ProseMirror/TipTap.
+   */
+  private adfToBlockNoteBlocks(doc: any): any[] {
+    if (!doc || !doc.content) return [];
+    const blocks: any[] = [];
+    for (const node of doc.content) {
+      const converted = this.convertAdfNode(node);
+      if (converted) {
+        if (Array.isArray(converted)) blocks.push(...converted);
+        else blocks.push(converted);
+      }
+    }
+    return blocks;
+  }
+
+  private convertAdfNode(node: any): any | any[] | null {
+    if (!node) return null;
+    const text = this.extractAdfText(node);
+    const id = Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+
+    switch (node.type) {
+      case "heading": {
+        const level = Math.min(node.attrs?.level || 1, 3) as 1 | 2 | 3;
+        return { id, type: "heading", props: { level, textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: text, children: [] };
+      }
+      case "paragraph":
+        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: text, children: [] };
+      case "bulletList":
+      case "orderedList":
+      case "taskList":
+        if (node.content) {
+          return node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+        }
+        return null;
+      case "listItem":
+      case "taskItem":
+        if (node.content) {
+          // Check if it's inside a taskList (checkbox)
+          const innerContent = node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+          if (innerContent.length > 0) {
+            return {
+              ...innerContent[0],
+              type: node.parentType === "taskList" || node.attrs?.localId ? "checkListItem" : innerContent[0].type,
+              props: { ...innerContent[0].props, ...(node.attrs?.state === "TODO" ? { checked: false } : node.attrs?.state === "DONE" ? { checked: true } : {}) },
+            };
+          }
+          return null;
+        }
+        return null;
+      case "codeBlock":
+        return { id, type: "codeBlock", props: { language: node.attrs?.language || "plainText" }, content: text, children: [] };
+      case "blockquote":
+        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "gray", textAlignment: "left" }, content: text, children: [] };
+      case "rule":
+        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: "---", children: [] };
+      case "mediaSingle":
+      case "media":
+        if (node.content) {
+          return node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+        }
+        return null;
+      case "mediaGroup":
+        if (node.content) {
+          return node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+        }
+        return null;
+      case "panel":
+        // Panel → callout-style paragraph
+        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "yellow", textAlignment: "left" }, content: text, children: [] };
+      case "table":
+        // Render table as markdown-style code block
+        return this.convertAdfTable(node);
+      case "tableRow":
+      case "tableCell":
+      case "tableHeader":
+        return null; // Handled by parent table
+      case "emoji":
+        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: node.attrs?.shortName || "😀", children: [] };
+      case "mention":
+        return { id, type: "paragraph", props: { textColor: "blue", backgroundColor: "default", textAlignment: "left" }, content: `@${node.attrs?.text || node.attrs?.userId || "user"}`, children: [] };
+      case "hardBreak":
+        return null;
+      case "text":
+        return null; // Handled by parent
+      default:
+        return text ? { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: text, children: [] } : null;
+    }
+  }
+
+  private convertAdfTable(node: any): any {
+    const rows: string[] = [];
+    if (node.content) {
+      for (const row of node.content) {
+        if (row.type === "tableRow" && row.content) {
+          const cells = row.content
+            .filter((cell: any) => cell.type === "tableCell" || cell.type === "tableHeader")
+            .map((cell: any) => this.extractAdfText(cell))
+            .join(" | ");
+          rows.push(`| ${cells} |`);
+        }
+      }
+    }
+    if (rows.length > 1) {
+      const headerCells = rows[0].split("|").filter(Boolean).length;
+      rows.splice(1, 0, `| ${Array(headerCells).fill("---").join(" | ")} |`);
+    }
+    const id = Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+    return { id, type: "codeBlock", props: { language: "markdown" }, content: rows.join("\n"), children: [] };
+  }
+
+  private extractAdfText(node: any): string {
+    if (!node) return "";
+    if (node.type === "text") return node.text || "";
+    if (node.content && Array.isArray(node.content)) {
+      return node.content.map((child: any) => this.extractAdfText(child)).join("");
+    }
+    return "";
   }
 
   private walkAdf(nodes: any[]): string {

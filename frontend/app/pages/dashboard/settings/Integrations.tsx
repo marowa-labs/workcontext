@@ -136,10 +136,31 @@ export default function IntegrationsPage() {
   // Handle OAuth callback success/error
   useEffect(() => {
     const connected = searchParams.get("connected");
+    const connId = searchParams.get("connection_id");
     const connError = searchParams.get("error");
     if (connected) {
-      setSuccessMessage(`Successfully connected ${SOURCE_LABELS[connected] || connected}!`);
+      setSuccessMessage(`Successfully connected ${SOURCE_LABELS[connected] || connected}! Starting initial sync...`);
       fetchIntegrations();
+      // Auto-trigger sync for the new connection
+      if (connId) {
+        const triggerSync = async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            if (!token) return;
+            setSyncingId(connId);
+            await fetch(`/api/integrations/${connId}/sync`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+          } catch (err) {
+            console.error("Auto-sync failed:", err);
+          } finally {
+            setSyncingId(null);
+          }
+        };
+        triggerSync();
+      }
       // Clean URL
       window.history.replaceState({}, "", "/settings/integrations");
     }
@@ -339,6 +360,11 @@ export default function IntegrationsPage() {
     } catch {
       setError("Import failed");
     }
+  };
+
+  const handleReconnect = (conn: ConnectionInfo) => {
+    // Trigger the same OAuth flow as initial connect — reuses the reconnect endpoint
+    handleConnect(conn.tool_type);
   };
 
   const handleDisconnect = async (connectionId: string, toolName: string) => {
@@ -617,6 +643,8 @@ export default function IntegrationsPage() {
                         <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
                       ) : conn.status === "error" ? (
                         <><AlertTriangle className="w-3 h-3 mr-1" /> Error</>
+                      ) : conn.status === "disconnected" ? (
+                        <><Unplug className="w-3 h-3 mr-1" /> Disconnected</>
                       ) : (
                         conn.status
                       )}
@@ -629,32 +657,44 @@ export default function IntegrationsPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleBrowse(conn.id)}
-                    className={`p-2 rounded-lg transition-colors text-sm ${
-                      browsingConnectionId === conn.id
-                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`}
-                    title="Browse content"
-                  >
-                    <Globe className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleSync(conn.id)}
-                    disabled={syncingId === conn.id}
-                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
-                    title="Sync now"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${syncingId === conn.id ? "animate-spin" : ""}`} />
-                  </button>
-                  <button
-                    onClick={() => handleDisconnect(conn.id, conn.tool_name)}
-                    className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Disconnect"
-                  >
-                    <Unplug className="w-4 h-4" />
-                  </button>
+                  {conn.status === "disconnected" ? (
+                    <button
+                      onClick={() => handleReconnect(conn)}
+                      className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                      <Plug className="w-4 h-4" />
+                      Reconnect
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleBrowse(conn.id)}
+                        className={`p-2 rounded-lg transition-colors text-sm ${
+                          browsingConnectionId === conn.id
+                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }`}
+                        title="Browse content"
+                      >
+                        <Globe className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleSync(conn.id)}
+                        disabled={syncingId === conn.id}
+                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
+                        title="Sync now"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${syncingId === conn.id ? "animate-spin" : ""}`} />
+                      </button>
+                      <button
+                        onClick={() => handleDisconnect(conn.id, conn.tool_name)}
+                        className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Disconnect"
+                      >
+                        <Unplug className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               </div>

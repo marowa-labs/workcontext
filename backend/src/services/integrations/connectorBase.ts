@@ -62,6 +62,8 @@ export interface SyncedItem {
   parent_external_id?: string | null;
   /** Depth in the tree: 0 = root, 1 = child, 2 = grandchild */
   depth?: number;
+  /** Structured block content (BlockNote-compatible JSON blocks) */
+  block_content?: any[] | null;
 }
 
 export interface SearchResult {
@@ -268,6 +270,12 @@ export abstract class ConnectorBase {
             parentId = parent?.id;
           }
 
+          // Store structured block content in metadata if available
+          const metadata = { ...(item.metadata || {}) };
+          if (item.block_content && Array.isArray(item.block_content) && item.block_content.length > 0) {
+            metadata.block_content = item.block_content;
+          }
+
           const upserted = await prisma.externalToolContent.upsert({
             where: {
               connection_id_external_id: {
@@ -283,7 +291,7 @@ export abstract class ConnectorBase {
               author_avatar: item.author_avatar,
               channel_or_project: item.channel_or_project,
               content_type: item.content_type,
-              metadata: item.metadata || undefined,
+              metadata: metadata,
               parent_id: parentId || null,
               depth: item.depth ?? 0,
               sort_order: totalSynced,
@@ -300,7 +308,7 @@ export abstract class ConnectorBase {
               author_name: item.author_name,
               author_avatar: item.author_avatar,
               channel_or_project: item.channel_or_project,
-              metadata: item.metadata || undefined,
+              metadata: metadata,
               parent_id: parentId || null,
               depth: item.depth ?? 0,
               sort_order: totalSynced,

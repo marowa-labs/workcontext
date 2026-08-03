@@ -154,6 +154,7 @@ export class GitHubConnector extends ConnectorBase {
             channel_or_project: fullName,
             parent_external_id: `repo_${fullName}`,
             depth: 1,
+            block_content: issue.body ? this.markdownToBlockNoteBlocks(issue.body) : undefined,
             metadata: {
               repo: fullName,
               number: issue.number,
@@ -175,22 +176,24 @@ export class GitHubConnector extends ConnectorBase {
           accessToken
         );
         for (const pr of (Array.isArray(prs) ? prs : [])) {
-          items.push({
-            external_id: `${fullName}_pr_${pr.number}`,
-            content_type: "pr",
-            title: `#${pr.number}: ${pr.title}`,
-            content_text: [
+          const prBody = [
               pr.body || "",
               `Author: ${pr.user?.login}`,
               `State: ${pr.state}`,
               `Base: ${pr.base?.ref} <- Head: ${pr.head?.ref}`,
-            ].filter(Boolean).join("\n").slice(0, 8000),
+            ].filter(Boolean).join("\n");
+          items.push({
+            external_id: `${fullName}_pr_${pr.number}`,
+            content_type: "pr",
+            title: `#${pr.number}: ${pr.title}`,
+            content_text: prBody.slice(0, 8000),
             content_url: pr.html_url,
             author_name: pr.user?.login || null,
             author_avatar: pr.user?.avatar_url || null,
             channel_or_project: fullName,
             parent_external_id: `repo_${fullName}`,
             depth: 1,
+            block_content: pr.body ? this.markdownToBlockNoteBlocks(pr.body) : undefined,
             metadata: {
               repo: fullName,
               number: pr.number,
@@ -283,6 +286,118 @@ export class GitHubConnector extends ConnectorBase {
     if (!linkHeader) return null;
     const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
     return match ? match[1] : null;
+  }
+
+  /**
+   * Convert markdown text to BlockNote-compatible blocks.
+   * Parses common markdown patterns into structured blocks.
+   */
+  private markdownToBlockNoteBlocks(markdown: string): any[] {
+    if (!markdown) return [];
+    const blocks: any[] = [];
+    const lines = markdown.split("\n");
+    let i = 0;
+
+    const genId = () => Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Empty line → skip
+      if (line.trim() === "") { i++; continue; }
+
+      // Headings: # Heading, ## Heading, ### Heading
+      const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
+      if (headingMatch) {
+        const level = Math.min(headingMatch[1].length, 3) as 1 | 2 | 3;
+        blocks.push({ id: genId(), type: "heading", props: { level, textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: headingMatch[2].trim(), children: [] });
+        i++; continue;
+      }
+
+      // Code blocks: ```
+      if (line.trim().startsWith("```")) {
+        const lang = line.trim().replace(/^```/, "").trim() || "plainText";
+        const codeLines: string[] = [];
+        i++;
+        while (i < lines.length && !lines[i].trim().startsWith("```")) {
+          codeLines.push(lines[i]);
+          i++;
+        }
+        blocks.push({ id: genId(), type: "codeBlock", props: { language: lang }, content: codeLines.join("\n"), children: [] });
+        i++; continue; // Skip closing ```
+      }
+
+      // Horizontal rule: ---, ***, ___
+      if (/^[-*_]{3,}\s*$/.test(line.trim())) {
+        blocks.push({ id: genId(), type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: "─────────────────────────────────────", children: [] });
+        i++; continue;
+      }
+
+      // Blockquote: > text
+      if (line.trim().startsWith("> ")) {
+        const quoteLines: string[] = [];
+        while (i < lines.length && lines[i].trim().startsWith("> ")) {
+          quoteLines.push(lines[i].trim().replace(/^>\s*/, ""));
+          i++;
+        }
+        blocks.push({ id: genId(), type: "paragraph", props: { textColor: "default", backgroundColor: "gray", textAlignment: "left" }, content: quoteLines.join("\n"), children: [] });
+        continue;
+      }
+
+      // Unordered list: - item or * item or + item
+      const bulletMatch = line.match(/^(\s*)[-*+]\s+(.+)/);
+      if (bulletMatch) {
+        const indent = bulletMatch[1].length;
+        blocks.push({ id: genId(), type: "bulletListItem", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: bulletMatch[2].trim(), children: [] });
+        i++; continue;
+      }
+
+      // Ordered list: 1. item
+      const orderedMatch = line.match(/^(\s*)\d+\.\s+(.+)/);
+      if (orderedMatch) {
+        blocks.push({ id: genId(), type: "numberedListItem", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: orderedMatch[2].trim(), children: [] });
+        i++; continue;
+      }
+
+      // Task list: - [ ] item or - [x] item
+      const taskMatch = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s+(.+)/);
+      if (taskMatch) {
+        blocks.push({ id: genId(), type: "checkListItem", props: { textColor: "default", backgroundColor: "default", textAlignment: "left", checked: taskMatch[2].toLowerCase() === "x" }, content: taskMatch[3].trim(), children: [] });
+        i++; continue;
+      }
+
+      // Image: ![alt](url)
+      const imageMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+      if (imageMatch) {
+        blocks.push({ id: genId(), type: "image", props: { url: imageMatch[2], caption: imageMatch[1], previewWidth: 512 }, content: undefined, children: [] });
+        i++; continue;
+      }
+
+      // Link-only line: [text](url)
+      const linkMatch = line.match(/^\[([^\]]+)\]\(([^)]+)\)\s*$/);
+      if (linkMatch) {
+        blocks.push({ id: genId(), type: "paragraph", props: { textColor: "blue", backgroundColor: "default", textAlignment: "left" }, content: linkMatch[1], children: [] });
+        i++; continue;
+      }
+
+      // Table: | col1 | col2 |
+      if (line.trim().startsWith("|") && line.trim().endsWith("|")) {
+        const tableLines: string[] = [];
+        while (i < lines.length && lines[i].trim().startsWith("|") && lines[i].trim().endsWith("|")) {
+          tableLines.push(lines[i].trim());
+          i++;
+        }
+        // Convert table to markdown code block
+        blocks.push({ id: genId(), type: "codeBlock", props: { language: "markdown" }, content: tableLines.join("\n"), children: [] });
+        continue;
+      }
+
+      // Regular paragraph
+      blocks.push({ id: genId(), type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: line.trim(), children: [] });
+      i++;
+    }
+
+    return blocks;
   }
 
   getItemUrl(item: SyncedItem): string {
