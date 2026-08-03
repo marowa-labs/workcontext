@@ -25,6 +25,15 @@ import {
   HeartHandshake,
   BookOpen,
   Share2,
+  Zap,
+  FileText as FileTextIcon,
+  GitBranch,
+  PenTool,
+  Plug,
+  ExternalLink as ExternalLinkIcon,
+  RefreshCw,
+  Loader2,
+  FolderOpen,
 } from "lucide-react";
 import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
@@ -62,12 +71,40 @@ const getAccessBadge = (access) => {
 
 const TABS = [
   { id: "teamspaces", label: "Teamspaces", icon: Building2 },
+  { id: "integrations", label: "Integrations", icon: Plug },
   { id: "recents", label: "Recents", icon: Clock },
   { id: "favorites", label: "Favorites", icon: Star },
   { id: "shared", label: "Shared", icon: Users },
   { id: "private", label: "Private", icon: Lock },
   { id: "agents", label: "Agents", icon: Bot },
 ];
+
+const TOOL_ICONS = {
+  slack: Zap,
+  notion: FileTextIcon,
+  jira: GitBranch,
+  github: GitBranch,
+  github_app: GitBranch,
+  figma: PenTool,
+};
+
+const TOOL_COLORS = {
+  slack: "text-purple-600",
+  notion: "text-blue-600",
+  jira: "text-blue-500",
+  github: "text-gray-600",
+  github_app: "text-gray-600",
+  figma: "text-pink-500",
+};
+
+const TOOL_BG_COLORS = {
+  slack: "bg-purple-100",
+  notion: "bg-blue-100",
+  jira: "bg-blue-50",
+  github: "bg-gray-100",
+  github_app: "bg-gray-100",
+  figma: "bg-pink-100",
+};
 
 const AVATAR_COLORS = [
   "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-amber-500",
@@ -115,6 +152,10 @@ export default function SpacesLibraryPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [spaces, setSpaces] = useState([]);
+  const [integrations, setIntegrations] = useState([]);
+  const [integrationContent, setIntegrationContent] = useState({});
+  const [loadingIntegrations, setLoadingIntegrations] = useState(false);
+  const [syncingId, setSyncingId] = useState(null);
   const [activeTab, setActiveTab] = useState("teamspaces");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -194,6 +235,44 @@ export default function SpacesLibraryPage() {
       }
     };
     loadWorkspaces();
+
+    // Fetch connected integrations
+    const loadIntegrations = async () => {
+      try {
+        setLoadingIntegrations(true);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') : null;
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          setIntegrations(data.connections || []);
+          
+          // Fetch tree content for each connected tool
+          for (const conn of (data.connections || [])) {
+            try {
+              const treeRes = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations/tree?connection_id=${conn.id}`,
+                { headers }
+              );
+              if (treeRes.ok) {
+                const treeData = await treeRes.json();
+                setIntegrationContent((prev) => ({ ...prev, [conn.id]: treeData.tree || [] }));
+              }
+            } catch (err) {
+              console.error(`Error loading tree for ${conn.tool_type}:`, err);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading integrations:", err);
+      } finally {
+        setLoadingIntegrations(false);
+      }
+    };
+    loadIntegrations();
+
     return () => { isMounted = false; };
   }, [user]);
 
@@ -221,6 +300,8 @@ export default function SpacesLibraryPage() {
       case "shared":
         filtered = spaces.filter((s) => s.type === "shared");
         break;
+      case "integrations":
+        return integrations;
       case "recents":
         filtered = [...spaces]
           .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
@@ -409,6 +490,36 @@ export default function SpacesLibraryPage() {
     }
   };
 
+  const handleSyncIntegration = async (conn) => {
+    try {
+      setSyncingId(conn.id);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') : null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations/${conn.id}/sync`,
+        { method: 'POST', headers }
+      );
+      
+      // Re-fetch tree
+      const treeRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/integrations/tree?connection_id=${conn.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (treeRes.ok) {
+        const treeData = await treeRes.json();
+        setIntegrationContent((prev) => ({ ...prev, [conn.id]: treeData.tree || [] }));
+      }
+      
+      toast({ title: "Synced", description: `${conn.tool_type} content updated.` });
+    } catch {
+      toast({ title: "Error", description: "Failed to sync content.", variant: "destructive" });
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
   const handleLinkToProjects = (space) => {
     router.push(`/projects?workspace=${space.id}`);
   };
@@ -437,7 +548,8 @@ export default function SpacesLibraryPage() {
             const count = tab.id === "agents" ? 0 : (() => {
               switch (tab.id) {
                 case "teamspaces": return spaces.filter((s) => s.type === "teamspace").length;
-                case "recents": return spaces.length;
+                case "integrations": return integrations.length;
+        case "recents": return spaces.length;
                 case "favorites": return spaces.filter((s) => s.is_favorite).length;
                 case "shared": return spaces.filter((s) => s.type === "shared").length;
                 case "private": return spaces.filter((s) => s.type === "private" || s.id === "private").length;
@@ -514,6 +626,116 @@ export default function SpacesLibraryPage() {
               <p className="text-sm">
                 AI agents assigned to your workflows will appear here.
               </p>
+            </div>
+          ) : activeTab === "integrations" ? (
+            <div>
+              {loadingIntegrations ? (
+                <div className="p-8 text-center">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading connected tools...</p>
+                </div>
+              ) : filteredSpaces.length === 0 ? (
+                <div className="p-12 text-center text-muted-foreground">
+                  <Plug className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p className="text-base font-medium mb-1">No connected tools</p>
+                  <p className="text-sm mb-4">Connect Slack, Notion, Jira, GitHub, or Figma to see their content here.</p>
+                  <button
+                    onClick={() => router.push("/settings/integrations")}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    <Plug className="w-4 h-4" />
+                    Connect Tools
+                  </button>
+                </div>
+              ) : (
+                filteredSpaces.map((conn) => {
+                  const ToolIcon = TOOL_ICONS[conn.tool_type] || Plug;
+                  const toolColor = TOOL_COLORS[conn.tool_type] || "text-muted-foreground";
+                  const toolBg = TOOL_BG_COLORS[conn.tool_type] || "bg-muted";
+                  const content = integrationContent[conn.id] || [];
+                  const contentCount = content.length;
+                  const toolName = conn.tool_type?.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "Tool";
+                  
+                  return (
+                    <div key={conn.id}>
+                      <div className="flex items-center px-4 py-3 hover:bg-muted/50 border-b border-border group">
+                        <button
+                          onClick={() => toggleRow(conn.id)}
+                          className="w-8 flex items-center justify-center"
+                        >
+                          {expandedRows.has(conn.id) ? (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </button>
+
+                        <div className="flex-1 flex items-center gap-3 min-w-0">
+                          <div className={`w-8 h-8 rounded-lg ${toolBg} flex items-center justify-center shrink-0`}>
+                            <ToolIcon className={`w-4 h-4 ${toolColor}`} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-foreground">{toolName}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {contentCount} {contentCount === 1 ? "item" : "items"}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {conn.status === "active" ? "Connected & syncing" : conn.status || "Connected"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSyncIntegration(conn); }}
+                            disabled={syncingId === conn.id}
+                            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors disabled:opacity-50"
+                            title="Sync content"
+                          >
+                            {syncingId === conn.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); router.push("/settings/integrations"); }}
+                            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                            title="Manage"
+                          >
+                            <ExternalLinkIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {expandedRows.has(conn.id) && (
+                        <div className="bg-muted/30">
+                          {content.length === 0 ? (
+                            <div className="px-4 py-6 pl-16 text-sm text-muted-foreground">
+                              No content synced yet. Click the sync button to fetch content.
+                            </div>
+                          ) : (
+                            content.map((node) => (
+                              <TreeNode
+                                key={node.id}
+                                node={node}
+                                depth={1}
+                                expandedRows={expandedRows}
+                                toggleRow={toggleRow}
+                                toolColor={toolColor}
+                                toolBg={toolBg}
+                                ToolIcon={ToolIcon}
+                              />
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           ) : filteredSpaces.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
@@ -758,6 +980,98 @@ export default function SpacesLibraryPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TreeNode({ node, depth = 0, expandedRows, toggleRow, toolColor, toolBg, ToolIcon }) {
+  const router = useRouter();
+  const hasChildren = node.children && node.children.length > 0;
+  const isExpanded = expandedRows.has(node.id);
+  const indent = depth * 20;
+
+  const getContentTypeIcon = (contentType) => {
+    switch (contentType) {
+      case "message": return Zap;
+      case "page": return FileTextIcon;
+      case "database": return FolderOpen;
+      case "issue": return GitBranch;
+      case "pr": return GitBranch;
+      case "readme": return FileTextIcon;
+      case "figma_file": return PenTool;
+      case "repo": return FolderOpen;
+      case "project": return FolderOpen;
+      case "channel": return FolderOpen;
+      default: return FileTextIcon;
+    }
+  };
+
+  const ContentTypeIcon = getContentTypeIcon(node.content_type);
+
+  return (
+    <div>
+      <div
+        className="flex items-center px-4 py-2 hover:bg-muted/50 border-b border-border/50 group cursor-pointer"
+        style={{ paddingLeft: `${indent + 16}px` }}
+        onClick={() => {
+          if (hasChildren) toggleRow(node.id);
+          else if (node.content_url) window.open(node.content_url, "_blank");
+        }}
+      >
+        {hasChildren ? (
+          <button className="w-5 flex items-center justify-center shrink-0" onClick={(e) => { e.stopPropagation(); toggleRow(node.id); }}>
+            {isExpanded ? (
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+            )}
+          </button>
+        ) : (
+          <div className="w-5 shrink-0" />
+        )}
+
+        <div className={`w-5 h-5 rounded ${toolBg} flex items-center justify-center shrink-0 mx-2`}>
+          <ContentTypeIcon className={`w-3 h-3 ${toolColor}`} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <span className="text-sm text-foreground hover:text-blue-600 transition-colors truncate block">
+            {node.title || node.external_id || "Untitled"}
+          </span>
+          {node.snippet && (
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{node.snippet}</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          {node.content_url && (
+            <button
+              onClick={(e) => { e.stopPropagation(); window.open(node.content_url, "_blank"); }}
+              className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
+              title="Open in source"
+            >
+              <ExternalLinkIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isExpanded && hasChildren && (
+        <div>
+          {node.children.map((child) => (
+            <TreeNode
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              expandedRows={expandedRows}
+              toggleRow={toggleRow}
+              toolColor={toolColor}
+              toolBg={toolBg}
+              ToolIcon={ToolIcon}
+            />
+          ))}
         </div>
       )}
     </div>

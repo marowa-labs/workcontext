@@ -13,6 +13,7 @@ import {
   Shield,
   MessageSquare,
   Key,
+  Plug,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -104,6 +105,20 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       label: "Feedback",
       icon: MessageSquare,
       path: "feedback",
+    },
+
+    {
+      id: "integrations",
+      label: "Integrations",
+      icon: Plug,
+      path: "integrations",
+    },
+
+    {
+      id: "roles",
+      label: "Roles & Permissions",
+      icon: Shield,
+      path: "roles",
     },
 
     {

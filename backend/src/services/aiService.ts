@@ -1394,19 +1394,33 @@ Type: ${session.project.type}
 Document Content: ${docContent}`;
     }
 
-    // Append semantically related workspace items ("workspace memory") so the
-    // AI can answer questions that span the whole workspace, not just this doc.
+    // Append semantically related workspace items and external tool content
+    // ("workspace memory") so the AI can answer questions that span the
+    // whole workspace AND connected tools.
     const wsCtx = (metadata as any)?.workspaceContext;
     if (Array.isArray(wsCtx) && wsCtx.length > 0) {
       const relatedText = wsCtx
         .map(
-          (r: any) =>
-            `- [${r.entity_type}] ${r.title || "(untitled)"}: ${(
+          (r: any) => {
+            const source = r.source || "internal";
+            const sourceLabel = r.source_label || r.entity_type || "unknown";
+            if (source === "internal") {
+              // Internal workspace items — plain format
+              return `- [${r.entity_type}] ${r.title || "(untitled)"}: ${(
+                r.content || ""
+              ).slice(0, 300)}`;
+            }
+            // External tool items — show source citation with link
+            const authorPart = r.author_name ? ` by ${r.author_name}` : "";
+            const channelPart = r.channel_or_project ? ` in ${r.channel_or_project}` : "";
+            const urlPart = r.url ? ` (${r.url})` : "";
+            return `- [${sourceLabel}] ${r.title || "(untitled)"}${authorPart}${channelPart}: ${(
               r.content || ""
-            ).slice(0, 300)}`,
+            ).slice(0, 300)}${urlPart}`;
+          },
         )
         .join("\n");
-      projectContext += `\n\nRelated workspace items (semantic matches — use only if relevant to the question):\n${relatedText}`;
+      projectContext += `\n\nRelated items from workspace and connected tools (semantic matches — use only if relevant, cite sources in your response):\n${relatedText}`;
     }
 
     // MODE-SPECIFIC SYSTEM PROMPT — context-aware based on whether a document is open
@@ -1431,7 +1445,9 @@ When the user DOES ask to modify the document, use these markers:
 2. DELETE: [DELETE_IN_EDITOR]exact text[/DELETE_IN_EDITOR]
 3. REPLACE: [REPLACE_IN_EDITOR]old|||new[/REPLACE_IN_EDITOR]
 
-Keep responses insightful but concise.${userName ? ` You are assisting ${userName}.` : ""}`;
+Keep responses insightful but concise.${userName ? ` You are assisting ${userName}.` : ""}
+
+SOURCE CITATIONS: When your response is informed by items from the "Related items" section, cite the source naturally (e.g., "Based on the Slack conversation in #proj-beta..." or "According to Jira ticket PROJ-123..."). Always link to the source URL when provided.`;
     } else if (hasDocument) {
       // EDITOR CONTEXT: intelligent assistant with document access.
       // The document's title and full text content are provided in the "Project Context"
@@ -1450,7 +1466,9 @@ When the user DOES ask to modify the document, use these markers:
 2. DELETE: [DELETE_IN_EDITOR]exact text[/DELETE_IN_EDITOR]
 3. REPLACE: [REPLACE_IN_EDITOR]exact old text|||new text[/REPLACE_IN_EDITOR]
 
-Keep chat brief — confirm, then markers. Don't announce your capabilities, just help naturally.`;
+Keep chat brief — confirm, then markers. Don't announce your capabilities, just help naturally.
+
+SOURCE CITATIONS: When your response is informed by items from the "Related items" section, cite the source naturally (e.g., "Based on the Slack conversation in #proj-beta..." or "According to Jira ticket PROJ-123..."). Always link to the source URL when provided.`;
     } else {
       // GENERAL CHAT: like ChatGPT or Gemini — friendly, knowledgeable, conversational
       systemMessage = `You are WorkContext, a friendly and knowledgeable AI assistant. You can help with:
@@ -1460,7 +1478,9 @@ Keep chat brief — confirm, then markers. Don't announce your capabilities, jus
 - Academic writing and research advice
 - Platform help (workspaces, projects, tasks) when asked
 
-Be warm, conversational, and natural — like chatting with a knowledgeable friend. Don't force platform actions unless the user specifically asks. It's perfectly fine to just have a general discussion.${userName ? ` You are assisting ${userName}.` : ""}`;
+Be warm, conversational, and natural — like chatting with a knowledgeable friend. Don't force platform actions unless the user specifically asks. It's perfectly fine to just have a general discussion.${userName ? ` You are assisting ${userName}.` : ""}
+
+SOURCE CITATIONS: When your response is informed by items from the "Related items" section, cite the source naturally (e.g., "Based on the Slack conversation in #proj-beta..." or "According to Jira ticket PROJ-123..."). Always link to the source URL when provided.`;
     }
 
     // Apply user preferences

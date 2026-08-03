@@ -25,6 +25,9 @@ import {
   History,
   MessageSquarePlus,
   Clock,
+  ExternalLink,
+  Link2,
+  Layers,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -43,6 +46,14 @@ import {
 import { useRouter } from "next/navigation";
 
 // Enhanced interfaces for the new functionality
+interface SourceCitation {
+  source_label: string;
+  title: string | null;
+  url: string | null;
+  channel_or_project: string | null;
+  author_name: string | null;
+}
+
 interface ChatMessage {
   id: string;
   content: string;
@@ -50,6 +61,10 @@ interface ChatMessage {
   message_type: "text" | "image" | "file" | "suggestion";
   image_url?: string;
   created_at: string;
+  metadata?: {
+    sources?: SourceCitation[];
+    [key: string]: any;
+  };
 }
 
 interface ChatSession {
@@ -634,18 +649,6 @@ export function AIChatPanel({
         currentSessionId = session.id;
       }
 
-      // Handle image upload if selected
-      let imageUrl = null;
-      if (selectedImage) {
-        try {
-          const analysisResult = await AIService.analyzeImage(selectedImage);
-          imageUrl = analysisResult.image?.image_url || null;
-        } catch (error: any) {
-          console.error("Error analyzing image:", error);
-          // Continue with the message even if image analysis fails
-        }
-      }
-
       // Store the original user input for display (without context)
       const userDisplayMessage = inputValue;
 
@@ -654,16 +657,57 @@ export function AIChatPanel({
         id: `user-${Date.now()}`,
         role: "user",
         content: userDisplayMessage,
-        message_type: selectedImage ? "image" : "text",
-        image_url: imageUrl || undefined,
+        message_type: "text",
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, userMessage]);
-      const hadImage = !!selectedImage;
       setInputValue("");
       removeImage();
 
-      // Build the full message content with context for the AI backend
+      // SYNTHESIS MODE: Call the synthesis endpoint
+      if (chatMode === "synthesis") {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+        const { data: sessionData } = await import("../../lib/supabase/client").then(m => m.supabase.auth.getSession());
+        const token = sessionData?.session?.access_token;
+
+        const synthesisResult = await fetch(`${API_BASE_URL}/api/ai/synthesize`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            prompt: userDisplayMessage,
+            synthesisType: "custom",
+            projectId,
+          }),
+        });
+
+        const synthesisData = await synthesisResult.json();
+
+        if (!synthesisResult.ok) {
+          throw new Error(synthesisData.message || "Synthesis failed");
+        }
+
+        const aiMessage: ChatMessage = {
+          id: `ai-${Date.now()}`,
+          role: "assistant",
+          content: synthesisData.content || "No synthesis result generated.",
+          message_type: "text",
+          created_at: new Date().toISOString(),
+          metadata: {
+            sources: synthesisData.metadata?.sources || [],
+            synthesisType: synthesisData.metadata?.synthesisType,
+            sourcesUsed: synthesisData.metadata?.sourcesUsed || 0,
+          },
+        };
+
+        setMessages((prev) => [...prev, aiMessage]);
+        setIsLoading(false);
+        return;
+      }
+
+      // REGULAR MODE: Build the full message content with context for the AI backend
       // The context is sent in metadata so the AI can see the document
       // but it's NOT saved as the user's display message
       const contextString = buildContextString();
@@ -682,8 +726,8 @@ export function AIChatPanel({
         {
           sessionId: currentSessionId,
           content: userContent,
-          messageType: hadImage ? "image" : "text",
-          imageUrl: imageUrl,
+          messageType: "text",
+          imageUrl: null,
           fileUrl: null,
           metadata: {
             webSearchEnabled,
@@ -1693,6 +1737,27 @@ export function AIChatPanel({
             History
           </button>
         </div>
+        {chatMode === "synthesis" && (
+          <div className="shrink-0 px-3 py-2 bg-gradient-to-r from-violet-50 to-indigo-50 border-b border-violet-200 text-xs text-violet-700">
+            <div className="flex items-center gap-1.5">
+              <Layers size={12} />
+              <span className="font-medium">Synthesis Mode</span>
+              <span className="text-violet-500">-</span>
+              <span>Ask to generate PRDs, status updates, summaries, or action items from your connected tools</span>
+            </div>
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+              {["Summarize Slack conversations", "Create PRD from Jira + GitHub", "Extract action items", "Generate status update"].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setInputValue(suggestion)}
+                  className="px-2 py-0.5 bg-violet-100 text-violet-600 rounded-full hover:bg-violet-200 transition-colors text-xs"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scrollbar-none"
@@ -1808,6 +1873,56 @@ export function AIChatPanel({
                       {String(message.content || "")}
                     </p>
                   )}
+
+                  {/* Source citations from connected tools */}
+                  {message.role === "assistant" &&
+                    message.metadata?.sources &&
+                    message.metadata.sources.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        <div className="flex items-center gap-1 mb-1.5">
+                          <Link2 className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                            Sources
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {message.metadata.sources.map(
+                            (source, idx) => (
+                              <a
+                                key={idx}
+                                href={source.url || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium",
+                                  "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/50",
+                                  "transition-colors cursor-pointer",
+                                  !source.url && "pointer-events-none opacity-60"
+                                )}
+                                title={
+                                  source.channel_or_project
+                                    ? `${source.source_label} — ${source.channel_or_project}`
+                                    : source.source_label
+                                }
+                              >
+                                <span className="font-semibold">
+                                  {source.source_label}
+                                </span>
+                                {source.channel_or_project && (
+                                  <>
+                                    <span className="text-blue-300">/</span>
+                                    <span>{source.channel_or_project}</span>
+                                  </>
+                                )}
+                                {source.url && (
+                                  <ExternalLink className="h-2.5 w-2.5 text-blue-400" />
+                                )}
+                              </a>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                   {message.role === "assistant" && message.id !== "welcome" && (
                     <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">

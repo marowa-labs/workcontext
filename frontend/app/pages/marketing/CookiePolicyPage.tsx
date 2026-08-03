@@ -186,7 +186,7 @@ function CookiePolicyContent() {
             us:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-700">
-            <li>By email: privacy@WorkContextai.com</li>
+            <li>By email: privacy@workcontext.me</li>
             <li>
               By visiting our{" "}
               <Link href="/contact" className="text-blue-400 hover:underline">

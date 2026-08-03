@@ -114,6 +114,12 @@ model User {
   time_entries               TaskTimeEntry[]
   collaboration_logs         CollaborationLog[]
   comments                   Comment[]
+  external_tool_connections  ExternalToolConnection[]
+  meeting_transcripts        MeetingTranscript[]
+  decisions                  Decision[]
+  activity_feed_items        ActivityFeedItem[]
+  auto_summaries             AutoSummary[]
+  embed_blocks               EmbedBlock[]
 }
 
 model Workspace {
@@ -132,6 +138,11 @@ model Workspace {
   labels        WorkspaceLabel[]
   views         WorkspaceView[]
   custom_fields WorkspaceCustomField[]
+  external_tool_connections ExternalToolConnection[]
+  meeting_transcripts       MeetingTranscript[]
+  decisions                 Decision[]
+  activity_feed_items       ActivityFeedItem[]
+  auto_summaries            AutoSummary[]
 
   @@index([owner_id])
 }
@@ -154,13 +165,16 @@ model WorkspaceMember {
   workspace_id String
   user_id      String
   role         String    @default("viewer")
+  role_id      String?  // FK to Role table for granular permissions
   joined_at    DateTime  @default(now())
   workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
   user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  roleEntry    Role?     @relation(fields: [role_id], references: [id])
 
   @@unique([workspace_id, user_id])
   @@index([workspace_id])
   @@index([user_id])
+  @@index([role_id])
 }
 
 model WorkspaceInvitation {
@@ -224,6 +238,9 @@ model Project {
   citations           Citation[]
   collaboration_invites CollaborationInvite[]
   share_settings      DocumentShareSettings?
+  content_format      String                 @default("editor") // "editor" (TipTap) or "blocks" (BlockNote)
+  block_content       Json?                  // BlockNote JSON format (used when content_format = "blocks")
+  metadata            Json?                  // General-purpose metadata (import source, etc.)
   document_versions   DocumentVersion[]
   editor_activities   EditorActivity[]
   editor_events       EditorEvent[]
@@ -232,6 +249,10 @@ model Project {
   template            DocumentTemplate?      @relation(fields: [template_id], references: [id])
   version_schedules   VersionSchedule[]
   tasks               WorkspaceTask[]
+  decisions           Decision[]
+  activity_feed_items ActivityFeedItem[]
+  auto_summaries      AutoSummary[]
+  embed_blocks        EmbedBlock[]
   @@index([user_id])
 }
 
@@ -1337,4 +1358,315 @@ model AIAnalytics {
   updated_at              DateTime @updatedAt
 
   @@index([user_id])
+}
+
+// ============================================================
+// External Tool Integrations (Feature 1: Cross-Tool Semantic Search)
+// ============================================================
+
+model ExternalToolConnection {
+  id              String   @id @default(uuid())
+  user_id         String
+  workspace_id    String?
+  tool_type       String   // "slack" | "notion" | "jira" | "github" | "figma"
+  tool_name       String   // Display name, e.g. "Slack Workspace: Acme Corp"
+  access_token    String   @db.Text  // Encrypted at app level
+  refresh_token   String?  @db.Text  // For OAuth2 token refresh
+  token_type      String?  @default("Bearer")
+  expires_at      DateTime?
+  scope           String?  @db.Text  // Granted OAuth scopes
+  workspace_external_id String? // The tool's workspace/org/team ID
+  workspace_external_name String? // Human-readable workspace name
+  status          String   @default("active") // "active" | "error" | "expired" | "disconnected"
+  last_synced_at  DateTime?
+  sync_error      String?  @db.Text
+  metadata        Json?    // Tool-specific config (e.g. Jira project keys, Slack team ID)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  content         ExternalToolContent[]
+  sync_logs       ExternalToolSyncLog[]
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workspace       Workspace? @relation(fields: [workspace_id], references: [id])
+
+  @@unique([user_id, tool_type, workspace_external_id])
+  @@index([user_id])
+  @@index([tool_type])
+  @@index([workspace_id])
+  @@index([status])
+  @@index([last_synced_at])
+  @@map("external_tool_connections")
+}
+
+model ExternalToolContent {
+  id              String   @id @default(uuid())
+  connection_id   String
+  external_id     String   // The ID of the item in the external tool
+  tool_type       String   // "slack" | "notion" | "jira" | "github" | "figma"
+  content_type    String   // "message" | "page" | "ticket" | "issue" | "file" | "comment" | "pr" | "figma_file" | "repo" | "folder" | "channel" | "project" | "database"
+  title           String?
+  content_text    String?  @db.Text  // Plain text for embedding
+  content_url     String?  // Deep link back to the source
+  author_name     String?
+  author_avatar   String?
+  channel_or_project String? // Slack channel, Jira project, GitHub repo, etc.
+  metadata        Json?    // Extra tool-specific data
+  
+  // Hierarchy support
+  parent_id       String?  // FK to parent ExternalToolContent (null = root node)
+  depth           Int      @default(0) // 0 = root, 1 = child, 2 = grandchild
+  item_count      Int      @default(0) // Number of direct children (for folder/repo nodes)
+  sort_order      Int      @default(0) // Display order within parent
+  
+  embedding       Unsupported("vector")?
+  dim             Int?
+  indexed_at      DateTime?
+  last_synced_at  DateTime @default(now())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  connection      ExternalToolConnection @relation(fields: [connection_id], references: [id], onDelete: Cascade)
+  parent          ExternalToolContent?  @relation("ContentTree", fields: [parent_id], references: [id], onDelete: SetNull)
+  children        ExternalToolContent[] @relation("ContentTree")
+
+  @@unique([connection_id, external_id])
+  @@index([connection_id])
+  @@index([tool_type])
+  @@index([content_type])
+  @@index([external_id])
+  @@index([parent_id])
+  @@index([indexed_at])
+  @@index([depth])
+  @@map("external_tool_content")
+}
+
+model ExternalToolSyncLog {
+  id              String   @id @default(uuid())
+  connection_id   String
+  status          String   // "started" | "completed" | "failed"
+  items_synced    Int      @default(0)
+  items_indexed   Int      @default(0)
+  error_message   String?  @db.Text
+  started_at      DateTime @default(now())
+  completed_at    DateTime?
+
+  connection      ExternalToolConnection @relation(fields: [connection_id], references: [id], onDelete: Cascade)
+
+  @@index([connection_id])
+  @@index([status])
+  @@index([started_at])
+  @@map("external_tool_sync_logs")
+}
+
+// ============================================================
+// Feature 3: Memory Layer — Automated Decision & Activity Feeds
+// ============================================================
+
+model MeetingTranscript {
+  id              String   @id @default(uuid())
+  user_id         String
+  workspace_id    String
+  title           String
+  source          String   // "zoom" | "otter" | "teams" | "manual" | "external"
+  external_url    String?
+  content         String   @db.Text          // raw transcript text
+  summary         String?  @db.Text          // AI-generated summary
+  duration_min    Int?
+  participants    String[] // array of participant names/emails
+  meeting_date    DateTime?
+  indexed_at      DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  decisions       Decision[]
+
+  @@index([user_id])
+  @@index([workspace_id])
+  @@index([meeting_date])
+  @@index([source])
+  @@map("meeting_transcripts")
+}
+
+model Decision {
+  id              String   @id @default(uuid())
+  user_id         String
+  workspace_id    String
+  project_id      String?
+  transcript_id   String?  // linked meeting transcript if extracted from one
+  type            String   // "decision" | "action_item" | "blocker" | "insight"
+  title           String
+  description     String   @db.Text
+  assignee        String?  // who is responsible
+  priority        String   @default("medium") // "low" | "medium" | "high" | "urgent"
+  status          String   @default("open") // "open" | "in_progress" | "completed" | "cancelled"
+  due_date        DateTime?
+  source_url      String?  // link to original source (Slack thread, meeting, etc.)
+  source_tool     String?  // "slack" | "meeting" | "jira" | "github" | "manual"
+  embedding       Unsupported("vector")?
+  dim             Int?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  project         Project? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  transcript      MeetingTranscript? @relation(fields: [transcript_id], references: [id], onDelete: SetNull)
+  activityFeed    ActivityFeedItem[]
+
+  @@index([user_id])
+  @@index([workspace_id])
+  @@index([project_id])
+  @@index([type])
+  @@index([status])
+  @@index([due_date])
+  @@map("decisions")
+}
+
+model ActivityFeedItem {
+  id              String   @id @default(uuid())
+  user_id         String
+  workspace_id    String
+  project_id      String?
+  decision_id     String?
+  action          String   // "created" | "updated" | "commented" | "shared" | "decided" | "completed" | "synced"
+  entity_type     String   // "project" | "task" | "document" | "comment" | "decision" | "integration" | "meeting"
+  entity_id       String   // ID of the affected entity
+  entity_title    String?  // human-readable title of the entity
+  description     String?  @db.Text // what happened
+  metadata        Json?    // extra context (e.g., old/new values, external URL)
+  visibility      String   @default("workspace") // "private" | "workspace" | "public"
+  created_at      DateTime @default(now())
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  project         Project? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  decision        Decision? @relation(fields: [decision_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([workspace_id])
+  @@index([project_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+  @@index([action])
+  @@map("activity_feed_items")
+}
+
+model AutoSummary {
+  id              String   @id @default(uuid())
+  user_id         String
+  workspace_id    String
+  project_id      String?
+  title           String
+  summary_type    String   // "daily" | "weekly" | "meeting" | "project" | "custom"
+  content         String   @db.Text
+  source_refs     Json     // array of {type, id, title} referencing source items
+  generated_at    DateTime @default(now())
+  expires_at      DateTime?
+  is_pinned       Boolean  @default(false)
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  project         Project? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([workspace_id])
+  @@index([project_id])
+  @@index([summary_type])
+  @@index([generated_at])
+  @@map("auto_summaries")
+}
+
+// ============================================================
+// Feature 4: Living Canvas — Embed Blocks & Previews
+// ============================================================
+
+model EmbedBlock {
+  id              String   @id @default(uuid())
+  user_id         String
+  project_id      String
+  tool_type       String   // "slack" | "jira" | "github" | "figma" | "notion" | "custom"
+  external_id     String   // ID in the external tool
+  external_url    String   // deep link to the external content
+  title           String
+  description     String?
+  block_type      String   @default("card") // "card" | "inline" | "embed" | "preview"
+  config          Json?    // tool-specific config (e.g., show_header, show_comments)
+  preview         EmbedPreview?
+  position        Int      @default(0) // order in the document
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project         Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@index([user_id])
+  @@index([tool_type])
+  @@unique([project_id, external_id])
+  @@map("embed_blocks")
+}
+
+model EmbedPreview {
+  id              String   @id @default(uuid())
+  embed_block_id  String   @unique
+  html_content    String?  @db.Text  // rendered preview HTML
+  raw_data        Json?    // raw API response from the tool
+  thumbnail_url   String?
+  fetched_at      DateTime @default(now())
+  expires_at      DateTime? // preview cache expiry
+  status          String   @default("ok") // "ok" | "error" | "expired" | "unauthorized"
+  error_message   String?
+
+  embedBlock      EmbedBlock @relation(fields: [embed_block_id], references: [id], onDelete: Cascade)
+
+  @@map("embed_previews")
+}
+
+// ============================================================
+// Feature 5: Enterprise RBAC — Permissions & Roles
+// ============================================================
+
+model Role {
+  id              String   @id @default(uuid())
+  name            String   @unique // "owner" | "admin" | "editor" | "viewer" | "custom"
+  display_name    String
+  description     String?
+  is_system       Boolean  @default(false) // system roles can't be deleted
+  is_default      Boolean  @default(false) // default role for new members
+  permissions     RolePermission[]
+  workspaceMembers WorkspaceMember[]
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([name])
+  @@map("roles")
+}
+
+model Permission {
+  id              String   @id @default(uuid())
+  name            String   @unique // "project.create" | "project.delete" | "ai.use" | etc.
+  resource        String   // "project" | "task" | "workspace" | "ai" | "integration" | "settings"
+  action          String   // "create" | "read" | "update" | "delete" | "share" | "export" | "use"
+  description     String?
+  category        String?  // for UI grouping
+  roles           RolePermission[]
+
+  @@index([resource, action])
+  @@index([name])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id              String   @id @default(uuid())
+  role_id         String
+  permission_id   String
+
+  role            Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission      Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@unique([role_id, permission_id])
+  @@map("role_permissions")
 }

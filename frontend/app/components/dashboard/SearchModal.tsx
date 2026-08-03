@@ -16,13 +16,16 @@ import {
   FileText,
   StickyNote,
   Users,
+  Plug,
+  ExternalLink,
+  Zap,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase/client";
 import { cn } from "../../lib/utils";
 
 interface SearchResult {
   id: string;
-  type: "workspace" | "space" | "task" | "chat" | "note" | "document" | "member";
+  type: "workspace" | "space" | "project" | "task" | "chat" | "note" | "document" | "template" | "member" | "integration";
   title: string;
   subtitle: string;
   status?: string;
@@ -31,6 +34,10 @@ interface SearchResult {
   workspaceName?: string;
   icon?: string;
   score: number;
+  source?: string;
+  sourceLabel?: string;
+  contentUrl?: string | null;
+  contentType?: string;
 }
 
 interface SearchResponse {
@@ -43,6 +50,7 @@ interface SearchResponse {
     tasks: number;
     chats: number;
     documents: number;
+    integrations: number;
   };
 }
 
@@ -161,14 +169,26 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   // Handle result click
   const handleResultClick = (result: SearchResult) => {
+    // External tool results open in new tab
+    if (result.type === "integration") {
+      if (result.contentUrl) {
+        window.open(result.contentUrl, "_blank", "noopener,noreferrer");
+      }
+      onClose();
+      return;
+    }
+
     onClose();
 
     switch (result.type) {
       case "workspace":
         router.push("/workspaces/" + result.id);
         break;
+      case "project":
+        router.push("/editor/" + result.id);
+        break;
       case "space":
-        router.push("/workspaces/" + result.workspaceId + "/projects");
+        router.push("/editor/" + result.id);
         break;
       case "task":
         router.push("/workspaces/" + result.workspaceId + "/kanban");
@@ -180,10 +200,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         }));
         break;
       case "note":
-        router.push("/projects/" + result.id);
+        router.push("/editor/" + result.id);
         break;
       case "document":
-        router.push("/projects/" + result.id);
+        router.push("/editor/" + result.id);
+        break;
+      case "template":
+        router.push("/dashboard/templates");
         break;
       case "member":
         if (result.workspaceId) {
@@ -194,10 +217,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   };
 
   // Get icon for result type
-  const getResultIcon = (type: string, icon?: string) => {
+  const getResultIcon = (type: string, icon?: string, sourceLabel?: string) => {
     switch (type) {
       case "workspace":
         return icon === "Hash" ? <Hash className="w-5 h-5" /> : <Layout className="w-5 h-5" />;
+      case "project":
+        return <FileText className="w-5 h-5" />;
       case "space":
         return <FolderOpen className="w-5 h-5" />;
       case "task":
@@ -208,18 +233,30 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return <StickyNote className="w-5 h-5" />;
       case "document":
         return <FileText className="w-5 h-5" />;
+      case "template":
+        return <Layout className="w-5 h-5" />;
       case "member":
         return <Users className="w-5 h-5" />;
+      case "integration":
+        // Show tool-specific icons
+        if (sourceLabel?.toLowerCase().includes("slack")) return <Zap className="w-5 h-5" />;
+        if (sourceLabel?.toLowerCase().includes("github")) return <ExternalLink className="w-5 h-5" />;
+        if (sourceLabel?.toLowerCase().includes("notion")) return <FileText className="w-5 h-5" />;
+        if (sourceLabel?.toLowerCase().includes("jira")) return <CheckSquare className="w-5 h-5" />;
+        if (sourceLabel?.toLowerCase().includes("figma")) return <Layout className="w-5 h-5" />;
+        return <Plug className="w-5 h-5" />;
       default:
         return <Folder className="w-5 h-5" />;
     }
   };
 
   // Get color for result type
-  const getResultColor = (type: string) => {
+  const getResultColor = (type: string, sourceLabel?: string) => {
     switch (type) {
       case "workspace":
         return "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400";
+      case "project":
+        return "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400";
       case "space":
         return "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400";
       case "task":
@@ -230,8 +267,18 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400";
       case "document":
         return "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400";
+      case "template":
+        return "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400";
       case "member":
         return "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400";
+      case "integration":
+        // Tool-specific colors
+        if (sourceLabel?.toLowerCase().includes("slack")) return "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400";
+        if (sourceLabel?.toLowerCase().includes("github")) return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+        if (sourceLabel?.toLowerCase().includes("notion")) return "bg-black/10 text-black dark:bg-white/10 dark:text-white";
+        if (sourceLabel?.toLowerCase().includes("jira")) return "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400";
+        if (sourceLabel?.toLowerCase().includes("figma")) return "bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400";
+        return "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400";
       default:
         return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
     }
@@ -241,11 +288,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const filterTabs = [
     { id: "all", label: "All", count: results.length },
     { id: "workspaces", label: "Workspaces", count: results.filter(r => r.type === "workspace").length },
-    { id: "spaces", label: "Spaces", count: results.filter(r => r.type === "space").length },
+    { id: "projects", label: "Projects", count: results.filter(r => r.type === "project" || r.type === "space").length },
     { id: "tasks", label: "Tasks", count: results.filter(r => r.type === "task").length },
     { id: "chats", label: "Chats", count: results.filter(r => r.type === "chat").length },
     { id: "members", label: "Members", count: results.filter(r => r.type === "member").length },
-    { id: "docs", label: "Docs", count: results.filter(r => r.type === "note" || r.type === "document").length },
+    { id: "docs", label: "Docs", count: results.filter(r => r.type === "note" || r.type === "document" || r.type === "template").length },
+    { id: "integrations", label: "Integrations", count: results.filter(r => r.type === "integration").length },
   ];
 
   const [activeFilter, setActiveFilter] = useState("all");
@@ -254,11 +302,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     ? results
     : results.filter(r => {
       if (activeFilter === "workspaces") return r.type === "workspace";
+      if (activeFilter === "projects") return r.type === "project" || r.type === "space";
       if (activeFilter === "spaces") return r.type === "space";
       if (activeFilter === "tasks") return r.type === "task";
       if (activeFilter === "chats") return r.type === "chat";
       if (activeFilter === "members") return r.type === "member";
-      if (activeFilter === "docs") return r.type === "note" || r.type === "document";
+      if (activeFilter === "docs") return r.type === "note" || r.type === "document" || r.type === "template";
+      if (activeFilter === "integrations") return r.type === "integration";
       return true;
     });
 
@@ -280,7 +330,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search workspaces, projects, tasks, AI chats, docs..."
+            placeholder="Search workspaces, projects, tasks, docs, and connected tools..."
             className="flex-1 bg-transparent text-foreground placeholder-muted-foreground outline-none text-base"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -321,7 +371,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>Start typing to search...</p>
               <p className="text-sm mt-1 opacity-60">
-                Search across all your workspaces, projects, and tasks
+                Search across your workspaces, projects, and connected tools (Slack, Notion, Jira, GitHub, Figma)
               </p>
             </div>
           ) : loading ? (
@@ -353,14 +403,22 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   >
                     <div className={cn(
                       "flex items-center justify-center w-10 h-10 rounded-lg",
-                      getResultColor(result.type)
+                      getResultColor(result.type, result.sourceLabel)
                     )}>
-                      {getResultIcon(result.type, result.icon)}
+                      {getResultIcon(result.type, result.icon, result.sourceLabel)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">
-                        {result.title}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground truncate">
+                          {result.title}
+                        </p>
+                        {result.type === "integration" && result.sourceLabel && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 shrink-0">
+                            {result.sourceLabel}
+                            {result.contentUrl && <ExternalLink className="h-2.5 w-2.5" />}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground truncate">
                         {result.subtitle}
                       </p>

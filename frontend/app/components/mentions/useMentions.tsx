@@ -50,28 +50,49 @@ export function useMentions({ editor, workspaceId }: UseMentionsProps) {
       if (!editor || !range) return;
 
       const mentionText = `@${item.title}`;
+      const isExternalTool = item.category === "integration" && item.external_url;
+
+      const contentBlocks: any[] = [
+        {
+          type: "text",
+          marks: [
+            {
+              type: "mention",
+              attrs: {
+                id: item.id,
+                type: item.type,
+                label: item.title,
+                category: item.category,
+                source_label: item.source_label,
+                external_url: item.external_url,
+              },
+            },
+          ],
+          text: mentionText,
+        },
+        { type: "text", text: " " },
+      ];
+
+      // If it's an external tool mention, add a link after
+      if (isExternalTool) {
+        contentBlocks.push({
+          type: "text",
+          marks: [
+            {
+              type: "link",
+              attrs: { href: item.external_url },
+            },
+          ],
+          text: `(${item.source_label})`,
+        });
+        contentBlocks.push({ type: "text", text: " " });
+      }
 
       editor
         .chain()
         .focus()
         .deleteRange(range)
-        .insertContent([
-          {
-            type: "text",
-            marks: [
-              {
-                type: "mention",
-                attrs: {
-                  id: item.id,
-                  type: item.type,
-                  label: item.title,
-                },
-              },
-            ],
-            text: mentionText,
-          },
-          { type: "text", text: " " },
-        ])
+        .insertContent(contentBlocks)
         .run();
 
       setIsOpen(false);

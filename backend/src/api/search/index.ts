@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../../lib/prisma";
 import { authenticateExpressRequest } from "../../middleware/auth";
 import logger from "../../monitoring/logger";
+import { SearchAggregator } from "../../services/integrations/searchAggregator";
 
 const router = Router();
 
@@ -95,30 +96,36 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
           take: limit,
         }),
       );
+    } else {
+      queries.push(Promise.resolve([]));
+    }
 
-      // 2. Projects (title / description)
-      queries.push(
-        prisma.project.findMany({
-          where: {
-            workspace_id: { in: workspaceIds },
-            OR: [
-              { title: searchFilter("title") },
-              { description: searchFilter("description") },
-            ],
-          },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            status: true,
-            workspace_id: true,
-            workspace: { select: { name: true } },
-          },
-          take: limit,
-        }),
-      );
+    // 2. Projects (title / description) — both workspace-scoped AND standalone
+    queries.push(
+      prisma.project.findMany({
+        where: {
+          user_id: userId,
+          OR: [
+            { title: searchFilter("title") },
+            { description: searchFilter("description") },
+          ],
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          workspace_id: true,
+          content_format: true,
+          metadata: true,
+          workspace: { select: { name: true } },
+        },
+        take: limit,
+      }),
+    );
 
-      // 3. Tasks (title / description)
+    // 3. Tasks (title / description) — only workspace-scoped
+    if (workspaceIds.length > 0) {
       queries.push(
         prisma.workspaceTask.findMany({
           where: {
@@ -167,8 +174,6 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       );
     } else {
       queries.push(
-        Promise.resolve([]),
-        Promise.resolve([]),
         Promise.resolve([]),
         Promise.resolve([]),
       );
@@ -221,6 +226,21 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       }),
     );
 
+    // 9. Document Templates
+    queries.push(
+      prisma.documentTemplate.findMany({
+        where: {
+          user_id: userId,
+          OR: [
+            { name: searchFilter("name") },
+            { description: searchFilter("description") },
+          ],
+        },
+        select: { id: true, name: true, description: true, type: true },
+        take: limit,
+      }),
+    );
+
     const [
       workspaces,
       projects,
@@ -229,11 +249,42 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       chatSessions,
       chatMessages,
       pdfDocuments,
+      templates,
     ] = await Promise.all(queries);
 
-    // Format all result types
+    // 8. External tool content (Slack, Notion, Jira, GitHub, Figma)
+    let externalResults: any[] = [];
+    try {
+      const externalItems = await SearchAggregator.search({
+        userId,
+        query,
+        k: Math.min(limit, 10),
+        threshold: 0.15,
+      });
+
+      externalResults = externalItems.map((item) => ({
+        id: item.id,
+        type: "integration" as const,
+        title: item.title || `(${item.source_label})`,
+        subtitle: [
+          item.source_label,
+          item.channel_or_project,
+          item.author_name ? `by ${item.author_name}` : null,
+          item.content_text ? item.content_text.substring(0, 80) : null,
+        ].filter(Boolean).join(" \u2022 "),
+        source: item.source,
+        sourceLabel: item.source_label,
+        contentUrl: item.content_url,
+        contentType: item.content_type,
+        score: Math.round(item.similarity * 100),
+      }));
+    } catch (err: any) {
+      logger.warn("External tool search failed in global search", { error: err.message });
+    }
+
+    // Format all internal result types
     const workspaceResults = formatResults(workspaces, "workspace");
-    const projectResults = formatResults(projects, "space");
+    const projectResults = formatResults(projects, "project");
     const taskResults = formatResults(tasks, "task");
 
     const chatSessionResults = formatResults(
@@ -280,6 +331,17 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       "document",
     );
 
+    const templateResults = formatResults(
+      templates.map((t: any) => ({
+        ...t,
+        name: t.name,
+        description: t.type
+          ? `${t.type} template · ${t.description || ""}`
+          : t.description || "Document template",
+      })),
+      "template",
+    );
+
     // Combine, deduplicate by id+type, score-sort, slice
     const allResults = [
       ...workspaceResults,
@@ -289,6 +351,8 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
       ...chatSessionResults,
       ...chatMessageResults,
       ...pdfResults,
+      ...templateResults,
+      ...externalResults,
     ]
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
@@ -303,7 +367,8 @@ router.get("/", authenticateExpressRequest, async (req: any, res) => {
         tasks: taskResults.length,
         members: memberResults.length,
         chats: chatSessionResults.length + chatMessageResults.length,
-        documents: pdfResults.length,
+        documents: pdfResults.length + templateResults.length,
+        integrations: externalResults.length,
       },
     });
   } catch (error: any) {

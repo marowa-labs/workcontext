@@ -181,6 +181,7 @@ export default function DashboardLayout({
     if (path === "/ai") return "ai";
     if (path === "/projects") return "projects";
     if (path === "/spaces" || path.startsWith("/spaces/")) return "spaces";
+    if (path.startsWith("/memory")) return "memory";
     if (path.startsWith("/dashboard/admin")) return "admin";
     if (path.startsWith("/settings/")) return "settings";
     if (path.startsWith("/help")) return "help";
@@ -292,19 +293,38 @@ export default function DashboardLayout({
     fetchSidebarData();
   }, [user, token]);
 
-  // Keyboard shortcut: Ctrl+J to toggle AI Chat Drawer
+  // Global keyboard shortcuts: Cmd+K search, Cmd+J AI chat, / search
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Ctrl+J or Cmd+J (Mac)
+      const target = event.target as HTMLElement;
+      const tagName = target?.tagName?.toLowerCase();
+      const isInput = tagName === "input" || tagName === "textarea" || target?.isContentEditable;
+
+      // Cmd+K or Ctrl+K — open search from anywhere (works even in inputs)
+      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+        event.preventDefault();
+        setShowSearchModal(true);
+        return;
+      }
+
+      // Cmd+J or Cmd+J (Mac) — toggle AI Chat
       if ((event.ctrlKey || event.metaKey) && event.key === "j") {
         event.preventDefault();
         setShowAIChat((prev) => !prev);
+        return;
+      }
+
+      // / key — open search (only when NOT in an input/textarea/contenteditable)
+      if (event.key === "/" && !isInput && !showSearchModal) {
+        event.preventDefault();
+        setShowSearchModal(true);
+        return;
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [showSearchModal]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -396,6 +416,12 @@ export default function DashboardLayout({
       isLogo: true,
     },
     { id: "spaces", label: "My Spaces", icon: Folder, href: "/spaces" },
+    {
+      id: "memory",
+      label: "Memory",
+      icon: Bell,
+      href: "/memory",
+    },
   ];
 
   const bottomItems = [

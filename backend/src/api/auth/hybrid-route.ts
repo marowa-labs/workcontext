@@ -26,48 +26,67 @@ async function recordUserSession(
     const parsed = SessionService.parseUserAgent(userAgent);
     const deviceInfo = `${parsed.browser} - ${parsed.os}`;
 
+    // Format IP and resolve location
+    const formattedIp = SessionService.formatIpAddress(ipAddress);
+    const location = await SessionService.getLocationFromIp(formattedIp);
+
     // Create session
-    await SessionService.createSession(userId, userAgent, ipAddress);
+    await SessionService.createSession(userId, userAgent, ipAddress, location || undefined);
 
     // Record login attempt
     await SessionService.recordLoginAttempt(
       userId,
       ipAddress,
       userAgent,
-      undefined,
+      location || undefined,
       "success",
     );
 
     logger.info("Session recorded for user", { userId, ipAddress });
 
-    // Send security notifications (don't await - don't block auth flow)
+    // Smart security notifications — only send when something actually changed
     if (!isNewUser) {
-      // Check if this is a new device
-      const existingSessions = await SessionService.getUserSessions(userId);
-      const isNewDevice = !existingSessions.some(
-        (s: { id: string; device_info: string }) =>
-          s.device_info === deviceInfo && s.id !== existingSessions[0]?.id,
-      );
-
-      if (isNewDevice) {
-        // Send new device notification
-        SecurityNotificationService.sendNewDeviceNotification(
-          userId,
-          deviceInfo,
-          SessionService.formatIpAddress(ipAddress),
-          null,
-        ).catch((err) =>
-          logger.error("Error sending new device notification:", err),
-        );
-      }
-
-      // Always send unusual login notification
-      SecurityNotificationService.sendUnusualLoginNotification(
+      const changes = await SessionService.detectLoginChanges(
         userId,
         deviceInfo,
-        SessionService.formatIpAddress(ipAddress),
-        null,
-      ).catch((err) => logger.error("Error sending login notification:", err));
+        ipAddress,
+        location,
+      );
+
+      if (changes.hasAnyChange) {
+        // Determine the most significant alert type
+        const alertType = changes.isNewDevice ? "new_device" : "new_login";
+        const details = changes.isNewDevice
+          ? "new device"
+          : changes.isNewIp
+            ? "new IP address"
+            : "new location";
+
+        logger.info("Login change detected, sending security notification", {
+          userId,
+          details,
+          isNewDevice: changes.isNewDevice,
+          isNewIp: changes.isNewIp,
+          isNewLocation: changes.isNewLocation,
+        });
+
+        // Send a single notification describing the change
+        SecurityNotificationService.sendSecurityAlert(
+          userId,
+          alertType,
+          {
+            device: deviceInfo,
+            ip: formattedIp,
+            location: location || undefined,
+          },
+        ).catch((err) =>
+          logger.error("Error sending security notification:", err),
+        );
+      } else {
+        logger.info("No login changes detected, skipping notification", {
+          userId,
+        });
+      }
     }
   } catch (error) {
     logger.error("Error recording session:", error);

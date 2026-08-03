@@ -2,14 +2,22 @@
 
 import { useState, useEffect, useRef } from "react";
 import { cn } from "../../lib/utils";
-import { User, FileText, Folder, CheckSquare, Hash } from "lucide-react";
+import { User, FileText, Folder, CheckSquare, Hash, Zap, ExternalLink, Plug } from "lucide-react";
 
 export interface MentionItem {
   id: string;
-  type: "user" | "page" | "space" | "task";
+  type: "user" | "page" | "space" | "task" | "integration";
+  category?: string;
   title: string;
   subtitle?: string;
   avatar?: string;
+  source?: string;
+  sourceLabel?: string;
+  source_label?: string;
+  contentUrl?: string | null;
+  external_url?: string | null;
+  contentType?: string;
+  snippet?: string;
 }
 
 interface MentionSuggestionListProps {
@@ -24,6 +32,7 @@ const typeIcons = {
   page: FileText,
   space: Folder,
   task: CheckSquare,
+  integration: Plug,
 };
 
 const typeLabels = {
@@ -31,6 +40,7 @@ const typeLabels = {
   page: "Pages",
   space: "Spaces",
   task: "Tasks",
+  integration: "Connected Tools",
 };
 
 export function MentionSuggestionList({
@@ -130,9 +140,17 @@ export function MentionSuggestionList({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                {item.title}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {item.title}
+                </p>
+                {item.type === "integration" && item.sourceLabel && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 shrink-0">
+                    {item.sourceLabel}
+                    {item.contentUrl && <ExternalLink className="h-2 w-2" />}
+                  </span>
+                )}
+              </div>
               {item.subtitle && (
                 <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
               )}

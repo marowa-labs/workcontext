@@ -58,7 +58,7 @@ export class FeedbackService {
       if (
         user &&
         (user.user_role === "feedback" ||
-          user.email.endsWith("@WorkContextai.com"))
+          user.email.endsWith("@workcontext.me"))
       ) {
         return true;
       }
@@ -415,10 +415,10 @@ export class FeedbackService {
       // Create a dedicated feedback audit log entry
       await prisma.auditLog.create({
         data: {
-          user_id: userId || '',
+          user_id: userId || "",
           action,
           resource_id: resourceId || undefined,
-          resource: resourceType || '',
+          resource: resourceType || "",
           resource_type: resourceType || undefined,
           details: details ? JSON.stringify(details) : undefined,
           ip_address: details?.ipAddress || undefined,
@@ -439,9 +439,11 @@ export class FeedbackService {
     try {
       // Discord webhook URL for feedback team notifications
       const webhookUrl = process.env.FEEDBACK_DISCORD_WEBHOOK_URL;
-      
+
       if (!webhookUrl) {
-        console.warn("FEEDBACK_DISCORD_WEBHOOK_URL not configured, skipping Discord notification");
+        console.warn(
+          "FEEDBACK_DISCORD_WEBHOOK_URL not configured, skipping Discord notification",
+        );
         return;
       }
 
@@ -563,4 +565,3 @@ export class FeedbackService {
     }
   }
 }
-

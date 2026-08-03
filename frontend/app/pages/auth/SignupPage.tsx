@@ -121,6 +121,17 @@ const userRoles = [
   "Researcher",
   "Professor/Faculty",
   "Academic Administrator",
+  "Product Manager",
+  "Software Engineer",
+  "Designer",
+  "Marketing Manager",
+  "Data Scientist/Analyst",
+  "Team Lead/Manager",
+  "Freelancer/Consultant",
+  "Entrepreneur/Founder",
+  "Content Creator",
+  "HR Professional",
+  "Sales Professional",
   "Other",
 ];
 
@@ -139,7 +150,7 @@ const signupSchema = z
       ), // Add this line for special characters (adjust as needed)
     confirmPassword: z.string(),
     userType: z.string().optional(),
-    fieldOfStudy: z.string().optional(),
+
     agreeToTerms: z.boolean().refine((val) => val === true, {
       message: "You must agree to the terms and conditions",
     }),
@@ -150,7 +161,7 @@ const signupSchema = z
     heardAboutPlatform: z.string().optional(),
     userGoal: z.string().optional(),
     userRole: z.string().optional(),
-    mainJob: z.string().optional(),
+
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -685,9 +696,7 @@ const SignupPage: React.FC = () => {
           userRole: data.userRole,
           heardAboutPlatform: data.heardAboutPlatform,
           userGoal: data.userGoal,
-          mainJob: data.mainJob,
           userType: data.userType,
-          fieldOfStudy: data.fieldOfStudy,
         };
 
         console.log("Sending survey data to backend:", surveyData);
@@ -1006,17 +1015,7 @@ const SignupPage: React.FC = () => {
         {/* Survey Step */}
         {surveyStep && (
           <div className="space-y-6">
-            {/* Moved Optional Fields */}
-            <div className="space-y-4 pt-2">
-              <FormInput
-                label="Field of study (optional)"
-                type="text"
-                placeholder="e.g. Computer Science, Psychology, etc."
-                {...register("fieldOfStudy")}
-                className="bg-white border-white text-gray-600 placeholder-gray-500"
-              />
-            </div>
-
+            {/* Survey Fields */}
             <div>
               <label className="text-sm font-medium text-gray-600 block mb-2">
                 How did you hear about us? *
@@ -1088,24 +1087,6 @@ const SignupPage: React.FC = () => {
                 </SelectContent>
               </Select>
               {errors.userRole && (
-                <p className="text-sm text-red-400 mt-1">
-                  This field is required
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-600 block mb-2">
-                What 'job' are you primarily 'hiring' our product to do for you?
-                *
-              </label>
-              <textarea
-                placeholder="Describe the main task or problem you want to solve..."
-                className="w-full px-4 py-3 bg-white border border-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 resize-none text-gray-600 placeholder-gray-500"
-                rows={3}
-                {...register("mainJob", { required: true })}
-              />
-              {errors.mainJob && (
                 <p className="text-sm text-red-400 mt-1">
                   This field is required
                 </p>

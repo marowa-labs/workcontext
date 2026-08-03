@@ -146,22 +146,32 @@ ${content}`,
               "No AI model available. Please configure an API key in your AI settings.",
             );
 
-          // Ground the answer with semantically related workspace items
-          // ("workspace memory") when available.
+          // Ground the answer with semantically related workspace items AND
+          // connected external tool content ("workspace memory").
           let workspaceContextBlock = "";
           if (
             Array.isArray(options.workspaceContext) &&
             options.workspaceContext.length > 0
           ) {
             const ctxLines = (options.workspaceContext as any[])
-              .map(
-                (r) =>
-                  `- [${r.entity_type}] ${r.title || "(untitled)"}: ${(
+              .map((r) => {
+                const source = r.source || "internal";
+                const sourceLabel = r.source_label || r.entity_type || "unknown";
+                if (source === "internal") {
+                  return `- [${r.entity_type}] ${r.title || "(untitled)"}: ${(
                     r.content || ""
-                  ).slice(0, 300)}`,
-              )
+                  ).slice(0, 300)}`;
+                }
+                // External tool items — show source citation
+                const authorPart = r.author_name ? ` by ${r.author_name}` : "";
+                const channelPart = r.channel_or_project ? ` in ${r.channel_or_project}` : "";
+                const urlPart = r.url ? ` (${r.url})` : "";
+                return `- [${sourceLabel}] ${r.title || "(untitled)"}${authorPart}${channelPart}: ${(
+                  r.content || ""
+                ).slice(0, 300)}${urlPart}`;
+              })
               .join("\n");
-            workspaceContextBlock = `\n\nWORKSPACE CONTEXT — related items from across the user's workspace (use only if relevant to the question):\n${ctxLines}`;
+            workspaceContextBlock = `\n\nRelated items from workspace and connected tools (use only if relevant, cite sources):\n${ctxLines}`;
           }
 
           result = await this.routeToProvider(

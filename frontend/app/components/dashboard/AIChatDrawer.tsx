@@ -1113,6 +1113,8 @@ export function AIChatDrawer({
 
       // First, try to process as an action using AI Action Service
       const pageContext = getPageContext();
+      const workspaceMatch = window.location.pathname.match(/\/workspace\/([^\/]+)/);
+      const activeWorkspaceId = workspaceMatch ? workspaceMatch[1] : undefined;
 
       await aiActionService.sendMessage(
         userMessageContent,
@@ -1122,6 +1124,7 @@ export function AIChatDrawer({
           pageRoute: pageContext.route,
           pageSection: pageContext.section,
           entityId: pageContext.entityId,
+          currentWorkspaceId: activeWorkspaceId,
           conversationHistory: messages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,

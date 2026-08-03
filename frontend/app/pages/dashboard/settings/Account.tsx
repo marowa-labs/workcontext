@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   XCircle,
   MapPin,
@@ -12,6 +12,9 @@ import {
   CheckCircle,
   Phone,
   BookOpen,
+  Search,
+  Filter,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import PrivacySettingsService, {
@@ -107,6 +110,10 @@ const AccountSettingsPage: React.FC = () => {
   // Email change states
   const [showEmailChangeModal, setShowEmailChangeModal] = useState(false);
   const [newEmail, setNewEmail] = useState("");
+
+  // Login History search and filter states
+  const [loginSearchQuery, setLoginSearchQuery] = useState("");
+  const [loginTimeFilter, setLoginTimeFilter] = useState("all");
 
   const { toast } = useToast();
 
@@ -572,6 +579,49 @@ const AccountSettingsPage: React.FC = () => {
     setDeleteStep(1);
     setDeleteVerification("");
   };
+
+  // Filtered login history based on search and time filter
+  const filteredLoginHistory = useMemo(() => {
+    let result = loginHistory;
+
+    // Time filter
+    if (loginTimeFilter !== "all") {
+      const now = new Date();
+      let cutoff: Date;
+      switch (loginTimeFilter) {
+        case "24h":
+          cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case "7d":
+          cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "30d":
+          cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case "90d":
+          cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          cutoff = new Date(0);
+      }
+      result = result.filter((login) => login.date >= cutoff);
+    }
+
+    // Search filter
+    if (loginSearchQuery.trim()) {
+      const q = loginSearchQuery.toLowerCase();
+      result = result.filter(
+        (login) =>
+          login.ip?.toLowerCase().includes(q) ||
+          login.device?.toLowerCase().includes(q) ||
+          login.browser?.toLowerCase().includes(q) ||
+          login.location?.toLowerCase().includes(q) ||
+          login.status?.toLowerCase().includes(q),
+      );
+    }
+
+    return result;
+  }, [loginHistory, loginSearchQuery, loginTimeFilter]);
 
   // Handle email change button click
   const handleChangeEmail = () => {
@@ -1043,67 +1093,82 @@ const AccountSettingsPage: React.FC = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
+                <>
+                  {/* Search and Time Filter */}
+                  <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search by IP, device, location..."
+                        value={loginSearchQuery}
+                        onChange={(e) => setLoginSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2 text-sm rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      {loginSearchQuery && (
+                        <button
+                          onClick={() => setLoginSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
-                          Date/Time
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
-                        >
-                          Device/Browser
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
-                        >
-                          Location
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
-                        >
-                          IP Address
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"
-                        >
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {loginHistory.map((login) => (
-                        <tr key={login.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.date.toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.device} - {login.browser}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.location || "Unknown"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {login.ip}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {getStatusBadge(
-                              login.status as "success" | "failed",
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <select
+                        value={loginTimeFilter}
+                        onChange={(e) => setLoginTimeFilter(e.target.value)}
+                        className="pl-10 pr-8 py-2 text-sm rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[160px]"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none rotate-90" />
+                    </div>
+                  </div>
+
+                  {(loginSearchQuery || loginTimeFilter !== "all") && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {filteredLoginHistory.length} record{filteredLoginHistory.length !== 1 ? "s" : ""} found
+                      {loginSearchQuery && ` matching "${loginSearchQuery}"`}
+                    </p>
+                  )}
+
+                  {filteredLoginHistory.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      {loginSearchQuery ? `No records matching "${loginSearchQuery}"` : "No login history found."}
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Date/Time</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Device/Browser</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Location</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">IP Address</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {filteredLoginHistory.map((login) => (
+                            <tr key={login.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{login.date.toLocaleString()}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{login.device} - {login.browser}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{login.location || "Unknown"}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{login.ip}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{getStatusBadge(login.status as "success" | "failed")}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

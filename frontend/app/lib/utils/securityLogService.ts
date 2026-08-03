@@ -27,6 +27,8 @@ class SecurityLogService {
     limit = 50,
     offset = 0,
     type?: string,
+    from?: string,
+    to?: string,
   ): Promise<SecurityLogResponse> {
     try {
       const params = new URLSearchParams({
@@ -34,6 +36,8 @@ class SecurityLogService {
         offset: String(offset),
       });
       if (type) params.set("type", type);
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
       const response = await apiClient.get(
         `/api/security-log?${params.toString()}`,
       );

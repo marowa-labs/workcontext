@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, MessageSquare, Sparkles } from "lucide-react";
+import { Brain, MessageSquare, Sparkles, Layers } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Tooltip,
@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 
-export type ChatMode = "general" | "research" | "autocomplete";
+export type ChatMode = "general" | "research" | "autocomplete" | "synthesis";
 
 export interface ChatModeSelectorProps {
   mode: ChatMode;
@@ -34,6 +34,12 @@ const modes = [
     label: "Autocomplete",
     icon: Sparkles,
     description: "Real-time writing suggestions",
+  },
+  {
+    value: "synthesis" as ChatMode,
+    label: "Synthesize",
+    icon: Layers,
+    description: "Generate documents from connected tools",
   },
 ];
 

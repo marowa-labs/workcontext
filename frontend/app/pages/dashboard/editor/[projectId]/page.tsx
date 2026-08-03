@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AIChatPanel } from "../../../../components/ai-chat/AIChat";
 import { Button } from "../../../../components/ui/button";
-import { X, FileText, ChevronLeft, ChevronRight, Link2, MessageSquare } from "lucide-react";
+import { X, FileText, ChevronLeft, ChevronRight, Link2, MessageSquare, Blocks, Type, ExternalLink, Lock } from "lucide-react";
 import { cn } from "../../../../lib/utils";
 import ProjectService from "../../../../lib/utils/projectService";
 import { useUser } from "../../../../lib/utils/useUser";
@@ -23,6 +23,8 @@ import { ConceptMapPanel } from "../../../../components/editor/SidebarLeft/Conce
 import { RelatedItems } from "../../../../components/related/RelatedItems";
 import { CollaborationLogPanel } from "../../../../components/editor/SidebarLeft/CollaborationLogPanel";
 import { CommentPanel } from "../../../../components/editor/SidebarLeft/CommentPanel";
+import BlockEditor, { BlockEditorRef } from "../../../../components/editor/BlockEditor";
+import ExternalContentEmbed from "../../../../components/editor/ExternalContentEmbed";
 
 // Define panel types
 export type LeftPanelType =
@@ -96,6 +98,49 @@ export default function EditorPage() {
       setAiPrompt(message);
     }, 100);
   };
+
+  // Editor mode state for dual tabs (editor/blocks)
+  const [editorMode, setEditorMode] = useState<"editor" | "blocks" | "preview">("editor");
+  const blockEditorRef = useRef<BlockEditorRef>(null);
+
+  // Determine if this is an imported external project (view-only)
+  const isExternalImport = useMemo(() => {
+    if (!project?.metadata || typeof project.metadata !== "object") return false;
+    const meta = project.metadata as any;
+    return !!(meta.external_content_id && (meta.imported_from || meta.source_tool));
+  }, [project?.metadata]);
+
+  const sourceToolName = useMemo(() => {
+    if (!isExternalImport) return null;
+    const meta = project?.metadata as any;
+    const tool = meta?.imported_from || meta?.source_tool || "";
+    const labels: Record<string, string> = {
+      github: "GitHub", github_app: "GitHub", notion: "Notion",
+      jira: "Jira", figma: "Figma", slack: "Slack",
+    };
+    return labels[tool] || tool;
+  }, [isExternalImport, project?.metadata]);
+
+  // Auto-detect content format when project loads
+  useEffect(() => {
+    if (isExternalImport) {
+      // External imports are always read-only preview
+      setEditorMode("preview");
+    } else if (project?.content_format === "blocks") {
+      setEditorMode("blocks");
+    }
+  }, [project?.content_format, isExternalImport]);
+
+  const handleBlockSave = useCallback((content: any) => {
+    // Save block content to the project
+    if (project?.id) {
+      ProjectService.updateProject(project.id, {
+        block_content: content,
+      }).catch((err: any) => {
+        console.error("Failed to save block content:", err);
+      });
+    }
+  }, [project?.id]);
 
   // Resize handlers
   useEffect(() => {
@@ -596,28 +641,107 @@ export default function EditorPage() {
 
       {/* Center Editor Area */}
       <div className="flex-1 overflow-hidden relative">
+        {/* External Import: View-Only Banner */}
+        {isExternalImport && (
+          <div className="flex items-center justify-between border-b border-gray-200 bg-amber-50 px-4 py-2">
+            <div className="flex items-center gap-2 text-sm text-amber-800">
+              <Lock className="h-4 w-4" />
+              <span className="font-medium">View-only</span>
+              <span className="text-amber-600">
+                — Imported from {sourceToolName}. Edit in {sourceToolName} to make changes.
+              </span>
+            </div>
+            {(() => {
+              const meta = project?.metadata as any;
+              const sourceUrl = meta?.import_source_url || meta?.source_url;
+              return sourceUrl ? (
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-md transition-colors"
+                >
+                  Open in {sourceToolName}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              ) : null;
+            })()}
+          </div>
+        )}
+
+        {/* Editor Mode Tabs (only for non-imported block content) */}
+        {!isExternalImport && (project?.block_content || project?.content_format === "blocks") && (
+          <div className="flex items-center border-b border-gray-200 bg-white px-4">
+            <button
+              onClick={() => setEditorMode("editor")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
+                editorMode === "editor"
+                  ? "text-blue-600 border-blue-600"
+                  : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50",
+              )}
+            >
+              <Type className="h-4 w-4" />
+              Editor
+            </button>
+            {(project?.block_content || project?.content_format === "blocks") && (
+              <button
+                onClick={() => setEditorMode("blocks")}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
+                  editorMode === "blocks"
+                    ? "text-purple-600 border-purple-600"
+                    : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <Blocks className="h-4 w-4" />
+                Blocks
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Editor Content */}
         {viewMode === "write" ? (
           project && documentId && user?.id ? (
-            <MainEditor
-              key={`${documentId}-${isTeamProject ? "collab" : "solo"}`}
-              project={project}
-              documentId={documentId}
-              userId={user.id}
-              userName={
-                user.user_metadata?.full_name ||
-                user.user_metadata?.name ||
-                user.email ||
-                "User"
-              }
-              ref={mainEditorRef}
-              isCollaborative={isTeamProject}
-              onShare={() => setIsShareDialogOpen(true)}
-              allowedPanels={activeAllowedPanels}
-              onEditorReady={(editor) => setEditorInstance(editor)}
-              activeRightPanel={rightPanel}
-              onToggleRightPanel={handleMainEditorPanelToggle}
-              onAIAsk={handleChatNode}
-            />
+            isExternalImport ? (
+              // External imports: read-only source preview only
+              <div className="h-full overflow-auto p-4 bg-gray-50">
+                <ExternalContentEmbed
+                  contentId={(project.metadata as any).external_content_id}
+                  className="max-w-4xl mx-auto"
+                />
+              </div>
+            ) : editorMode === "blocks" && project?.block_content ? (
+              <BlockEditor
+                ref={blockEditorRef}
+                initialContent={project.block_content}
+                onSave={handleBlockSave}
+                className="h-full"
+                placeholder="Start writing with blocks..."
+              />
+            ) : (
+              <MainEditor
+                key={`${documentId}-${isTeamProject ? "collab" : "solo"}`}
+                project={project}
+                documentId={documentId}
+                userId={user.id}
+                userName={
+                  user.user_metadata?.full_name ||
+                  user.user_metadata?.name ||
+                  user.email ||
+                  "User"
+                }
+                ref={mainEditorRef}
+                isCollaborative={isTeamProject}
+                onShare={() => setIsShareDialogOpen(true)}
+                allowedPanels={activeAllowedPanels}
+                onEditorReady={(editor) => setEditorInstance(editor)}
+                activeRightPanel={rightPanel}
+                onToggleRightPanel={handleMainEditorPanelToggle}
+                onAIAsk={handleChatNode}
+              />
+            )
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">

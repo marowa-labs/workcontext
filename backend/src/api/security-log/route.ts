@@ -34,15 +34,28 @@ router.get("/", async (req: any, res) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = parseInt(req.query.offset as string) || 0;
     const typeFilter = req.query.type as string | undefined;
+    const fromDate = req.query.from as string | undefined;
+    const toDate = req.query.to as string | undefined;
+
+    const loginWhere: any = { user_id: userId };
+    const auditWhere: any = { user_id: userId };
+
+    if (fromDate || toDate) {
+      const dateFilter: any = {};
+      if (fromDate) dateFilter.gte = new Date(fromDate);
+      if (toDate) dateFilter.lte = new Date(toDate);
+      loginWhere.created_at = dateFilter;
+      auditWhere.created_at = dateFilter;
+    }
 
     const [loginHistory, auditLogs] = await Promise.all([
       prisma.loginHistory.findMany({
-        where: { user_id: userId },
+        where: loginWhere,
         orderBy: { created_at: "desc" },
         take: limit + offset,
       }),
       prisma.auditLog.findMany({
-        where: { user_id: userId },
+        where: auditWhere,
         orderBy: { created_at: "desc" },
         take: limit + offset,
       }),

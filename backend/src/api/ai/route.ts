@@ -11,6 +11,7 @@ import searchRouter from "./search-route";
 import chatRouter from "./chat-route";
 import actionsRouter from "./actions/route";
 import pdfChatRouter from "./pdf-chat-route";
+import synthesisRouter from "./synthesis-route";
 const router: ExpressRouter = Router();
 
 // Process AI request (improve writing, fix grammar, etc.)
@@ -1397,5 +1398,8 @@ router.post(
 );
 
 logger.info("BYOK routes registered successfully");
+
+// Cross-app synthesis router
+router.use(synthesisRouter);
 
 export default router;

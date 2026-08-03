@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Twitter, Github, Linkedin, Mail } from "lucide-react";
+import { Twitter, Github, Linkedin } from "lucide-react";
 
 const footerLinks = {
   solutions: [
@@ -38,7 +38,7 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#FAF9F6] border-t border-gray-200">
+    <footer className="bg-[#0a0a0a] border-t border-white/10">
       <div className="container-custom">
         {/* Main Footer Content */}
         <div className="py-16">
@@ -51,24 +51,24 @@ export default function Footer() {
                   alt="WorkContext Logo"
                   className="h-15 w-auto"
                 />
-                <span className="text-xl font-bold text-gray-700">
+                <span className="text-xl font-bold text-white">
                   WorkContext
                 </span>
               </Link>
-              <p className="text-gray-600 text-sm mb-6 max-w-xs">
+              <p className="text-gray-400 text-sm mb-6 max-w-xs">
                 Your context-aware workspace. Connect docs, tasks, and team with
                 intelligent flow.
               </p>
-              <div className="flex space-x-4">
+              <div className="flex space-x-3">
                 {socialLinks.map((social) => (
                   <a
                     key={social.name}
                     href={social.href}
-                    className="p-2 rounded-lg bg-white border border-gray-200 hover:border-blue-500 hover:shadow-sm transition-all duration-200 group"
+                    className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-white/10 transition-all duration-200 group"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <social.icon className="h-4 w-4 text-gray-600 font-bold group-hover:text-blue-400 transition-colors" />
+                    <social.icon className="h-4 w-4 text-gray-400 group-hover:text-blue-400 transition-colors" />
                     <span className="sr-only">{social.name}</span>
                   </a>
                 ))}
@@ -77,7 +77,7 @@ export default function Footer() {
 
             {/* Product Links */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+              <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wide">
                 Product
               </h3>
               <ul className="space-y-3">
@@ -85,7 +85,7 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                      className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
                     >
                       {link.name}
                     </Link>
@@ -96,7 +96,7 @@ export default function Footer() {
 
             {/* Solutions Links */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+              <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wide">
                 Solutions
               </h3>
               <ul className="space-y-3">
@@ -104,7 +104,7 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                      className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
                     >
                       {link.name}
                     </Link>
@@ -115,10 +115,10 @@ export default function Footer() {
 
             {/* Legal Links */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+              <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wide">
                 Legal
               </h3>
-               <ul className="space-y-3">
+              <ul className="space-y-3">
                 {footerLinks.legal.map((link) => (
                   <li key={link.name}>
                     {"action" in link && link.action === "cookie-settings" ? (
@@ -129,14 +129,14 @@ export default function Footer() {
                             new Event("workcontext:open-cookie-settings"),
                           )
                         }
-                        className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                        className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
                       >
                         {link.name}
                       </button>
                     ) : (
                       <Link
                         href={link.href}
-                        className="text-gray-600 hover:text-blue-400 transition-colors duration-200 text-sm"
+                        className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
                       >
                         {link.name}
                       </Link>
@@ -149,26 +149,29 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="py-6 border-t border-gray-200">
+        <div className="py-6 border-t border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex items-center space-x-4">
-              <p className="text-gray-600 text-sm">
-                © {new Date().getFullYear()} WorkContext. All rights reserved.
+              <p className="text-gray-500 text-sm">
+                &copy; {new Date().getFullYear()} WorkContext. All rights
+                reserved.
               </p>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-500 text-sm">
                 Made with ❤️ for individual and teams worldwide
               </p>
             </div>
-            <div className="flex space-x-4">
-              <Link href="/legal/privacy">
-                <p className="text-gray-600 text-sm hover:text-gray-600 transition-colors">
-                  Privacy Policy
-                </p>
+            <div className="flex space-x-6">
+              <Link
+                href="/legal/privacy"
+                className="text-gray-500 text-sm hover:text-gray-300 transition-colors"
+              >
+                Privacy Policy
               </Link>
-              <Link href="/legal/terms">
-                <p className="text-gray-600 text-sm hover:text-gray-600 transition-colors">
-                  Terms of Service
-                </p>
+              <Link
+                href="/legal/terms"
+                className="text-gray-500 text-sm hover:text-gray-300 transition-colors"
+              >
+                Terms of Service
               </Link>
             </div>
           </div>

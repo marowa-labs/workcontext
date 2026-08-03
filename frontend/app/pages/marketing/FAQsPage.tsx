@@ -228,7 +228,7 @@ function ContactSupport() {
       title: "Email Support",
       description:
         "Send us a detailed message and we'll respond within 24 hours.",
-      action: "support@WorkContextai.com",
+      action: "support@workcontext.me",
     },
     {
       icon: MessageCircle,

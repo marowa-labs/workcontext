@@ -6,6 +6,8 @@ import { AIActionExecutor } from "./aiActionExecutor";
 import { prisma } from "../lib/prisma";
 import logger from "../monitoring/logger";
 import { randomUUID } from "crypto";
+import { ContextEmbeddingService } from "./contextEmbeddingService";
+import { SearchAggregator } from "./integrations/searchAggregator";
 import {
   ParsedIntent,
   AIActionContext,
@@ -217,11 +219,63 @@ export class AIActionService {
     const { AIService } = await import("./aiService");
 
     try {
+      // Build workspace context for general chat — search both internal workspace
+      // content and connected external tools so the AI is fully context-aware
+      let workspaceContext: any[] = [];
+      try {
+        // Internal: semantically similar workspace items
+        const workspaceId = request.currentWorkspaceId || request.entityId;
+        if (workspaceId) {
+          const [internalResults, externalResults] = await Promise.allSettled([
+            ContextEmbeddingService.similaritySearch({
+              query: request.message,
+              ownerId: request.userId,
+              workspaceId,
+              k: 4,
+              threshold: 0.3,
+            }),
+            SearchAggregator.search({
+              query: request.message,
+              userId: request.userId,
+              k: 6,
+            }),
+          ]);
+
+          if (internalResults.status === "fulfilled") {
+            workspaceContext.push(
+              ...internalResults.value.map((r: any) => ({
+                ...r,
+                source: "internal",
+              })),
+            );
+          }
+          if (externalResults.status === "fulfilled") {
+            workspaceContext.push(
+              ...externalResults.value.map((r: any) => ({
+                title: r.title,
+                content: r.snippet || r.content_text || "",
+                entity_type: r.type,
+                source: "external",
+                source_label: r.source_label,
+                author_name: r.author_name,
+                channel_or_project: r.channel_or_project,
+                url: r.content_url,
+              })),
+            );
+          }
+        }
+      } catch (ctxErr) {
+        logger.warn("Failed to build workspace context for AI chat", {
+          error: (ctxErr as Error).message,
+        });
+      }
+
       const result = await AIService.processChatMessage({
         sessionId: request.sessionId || `chat-${Date.now()}`,
         userId: request.userId,
         content: request.message,
         model: request.model, // Use user's preferred model
+        metadata: workspaceContext.length > 0 ? { workspaceContext } : undefined,
       });
 
       return {

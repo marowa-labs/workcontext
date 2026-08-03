@@ -82,6 +82,10 @@ import workspacesRouter from "../api/workspaces/index";
 import searchRouter from "../api/search/index";
 import analyticsRouter from "../api/analytics/route";
 import statsRouter from "../api/stats/route";
+import integrationsRouter from "../api/integrations/index";
+import { memoryRouter } from "../api/memory/route";
+import rolesRouter from "../api/roles/route";
+import integrationsSearchRouter from "../api/integrations/search/route";
 // Additional utility imports
 
 // Import AI routes
@@ -288,6 +292,12 @@ app.use("/api/workspaces", workspacesRouter);
 app.use("/api/search", searchRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/stats", statsRouter);
+
+// Integrations — cross-tool semantic search
+app.use("/api/integrations", integrationsRouter);
+app.use("/api/memory", memoryRouter);
+app.use("/api/integrations/search", integrationsSearchRouter);
+app.use("/api/roles", rolesRouter);
 
 app.use("/api/cron", cronTasksRouter);
 

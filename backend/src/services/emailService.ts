@@ -20,7 +20,9 @@ async function initializePlunk(): Promise<Plunk | null> {
     return null;
   }
 
-  return new Plunk(plunkApiKey);
+  return new Plunk(plunkApiKey, {
+    baseUrl: "https://next-api.useplunk.com/v1/",
+  });
 }
 
 async function getPlunk(): Promise<Plunk | null> {
@@ -100,7 +102,7 @@ export class EmailService {
       "Welcome to WorkContext!",
       WelcomeEmailTemplate({
         fullName,
-        dashboardUrl: `${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard`,
+        dashboardUrl: `${process.env.FRONTEND_URL || "https://www.workcontext.me"}/dashboard`,
       }),
     );
   }
@@ -120,7 +122,7 @@ export class EmailService {
         fullName,
         title,
         message,
-        dashboardUrl: `${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard`,
+        dashboardUrl: `${process.env.FRONTEND_URL || "https://www.workcontext.me"}/dashboard`,
       }),
     );
   }
@@ -163,7 +165,7 @@ export class EmailService {
         alertTitle,
         message,
         details,
-        securityUrl: `${process.env.FRONTEND_URL || "http://workcontext.vercel.app"}/dashboard/settings/account`,
+        securityUrl: `${process.env.FRONTEND_URL || "https://www.workcontext.me"}/dashboard/settings/account`,
       }),
     );
   }

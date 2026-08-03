@@ -24,7 +24,7 @@ function IntroHero() {
               Policy
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
             Last updated:{" "}
             {new Date().toLocaleDateString("en-US", {
               year: "numeric",
@@ -32,7 +32,7 @@ function IntroHero() {
               day: "numeric",
             })}
           </p>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-400 max-w-2xl mx-auto">
             We are committed to protecting your privacy and being transparent
             about how we handle your data.
           </p>
@@ -255,17 +255,11 @@ function PrivacyContent() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a
-                  href="mailto:privacy@workcontextai.com"
+                  href="mailto:privacy@workcontext.me"
                   className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium text-center"
                 >
                   Email Privacy Team
                 </a>
-                <Link
-                  href="/docs"
-                  className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-center text-gray-700 hover:bg-gray-50"
-                >
-                  Back to Documentation
-                </Link>
               </div>
             </div>
           </div>

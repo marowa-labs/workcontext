@@ -331,6 +331,89 @@ export class SessionService {
     }
   }
 
+  // Get the most recent successful login for a user
+  static async getMostRecentSuccessfulLogin(userId: string) {
+    try {
+      const lastLogin = await prisma.loginHistory.findFirst({
+        where: {
+          user_id: userId,
+          status: "success",
+        },
+        orderBy: {
+          created_at: "desc",
+        },
+      });
+
+      return lastLogin;
+    } catch (error) {
+      logger.error("Error fetching most recent login:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Detect what changed between the current login and the previous one.
+   * Returns an object describing the changes. If nothing meaningful changed,
+   * all fields will be false.
+   */
+  static async detectLoginChanges(
+    userId: string,
+    currentDeviceInfo: string,
+    currentIp: string,
+    currentLocation: string | null,
+  ): Promise<{
+    isNewDevice: boolean;
+    isNewIp: boolean;
+    isNewLocation: boolean;
+    hasAnyChange: boolean;
+    previousLogin: {
+      device_info: string;
+      ip_address: string;
+      location: string | null;
+    } | null;
+  }> {
+    const previousLogin = await this.getMostRecentSuccessfulLogin(userId);
+
+    if (!previousLogin) {
+      // No previous login — first time, treat everything as new
+      return {
+        isNewDevice: true,
+        isNewIp: true,
+        isNewLocation: true,
+        hasAnyChange: true,
+        previousLogin: null,
+      };
+    }
+
+    // Normalize for comparison
+    const prevDevice = previousLogin.device_info;
+    const prevIp = this.formatIpAddress(previousLogin.ip_address);
+    const currIp = this.formatIpAddress(currentIp);
+    const prevLocation = previousLogin.location;
+    const currLocation = currentLocation;
+
+    const isNewDevice = prevDevice !== currentDeviceInfo;
+    const isNewIp = prevIp !== currIp;
+    const isNewLocation =
+      prevLocation !== currLocation &&
+      currLocation !== null &&
+      prevLocation !== null;
+
+    const hasAnyChange = isNewDevice || isNewIp || isNewLocation;
+
+    return {
+      isNewDevice,
+      isNewIp,
+      isNewLocation,
+      hasAnyChange,
+      previousLogin: {
+        device_info: prevDevice,
+        ip_address: prevIp,
+        location: prevLocation,
+      },
+    };
+  }
+
   // Get login history for a user
   static async getLoginHistory(userId: string, limit = 10) {
     try {

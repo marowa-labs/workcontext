@@ -1,165 +1,271 @@
-<p align="center">
-  <img src="https://workcontext.vercel.app/assets/images/WorkContext-Logo.png" alt="WorkContext Logo" width="160">
-</p>
+# WorkContext Backend
 
-<p align="center">
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-20+-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js"></a>
-  <a href="https://expressjs.com/"><img src="https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express&logoColor=white" alt="Express"></a>
-  <a href="https://www.prisma.io/"><img src="https://img.shields.io/badge/Prisma-7-2D3748?style=flat-square&logo=prisma&logoColor=white" alt="Prisma"></a>
-  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-17-336791?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"></a>
-</p>
+Node.js/Express backend for the WorkContext collaborative writing platform.
 
-# WorkContext — Backend
+## Tech Stack
 
-> **The engine room: an Express + TypeScript API that powers AI, real-time collaboration, tasks, and secure Bring-Your-Own-Key routing for WorkContext.**
+- Node.js 18+ with Express
+- TypeScript
+- Prisma ORM (PostgreSQL + pgvector)
+- WebSocket (Hocuspocus + Socket.io)
+- Multi-provider AI integration (OpenAI, Anthropic, Google, Mistral, Perplexity)
+- Plunk for email notifications
 
-This package is the **backend** of WorkContext. It exposes the REST API and WebSocket servers consumed by the [frontend](../frontend), persists data in PostgreSQL via Prisma, authenticates through Supabase, and routes every AI request to the user's own provider key (BYOK) — with AES-256-GCM encrypted storage.
+## Project Structure
 
----
-
-## 📌 Table of Contents
-
-- [What It Does](#-what-it-does)
-- [Tech Stack](#️-tech-stack)
-- [Project Structure](#-project-structure)
-- [AI & BYOK Flow](#-ai--byok-flow)
-- [Getting Started](#-getting-started)
-- [Environment](#-environment)
-- [Scripts](#-scripts)
-- [Deployment](#-deployment)
-- [License](#-license)
-
----
-
-## ⚙️ What It Does
-
-- **REST API** — workspaces, projects, tasks, documents, citations, billing, analytics.
-- **AI Service** — context-aware writing, grammar, research, summarization, chat (streaming), and RAG over workspace content.
-- **BYOK & secure key vault** — per-user API keys for Google, OpenAI, Anthropic, OpenRouter, encrypted with AES-256-GCM; keys are only decrypted server-side at request time.
-- **Real-time** — Hocuspocus/Yjs collaboration server + a notification WebSocket server.
-- **Auth** — email OTP, SMS OTP, Google OAuth, and MFA, delegated to Supabase.
-
----
-
-## 🛠️ Tech Stack
-
-| Concern  | Technology                                                                   |
-| -------- | ---------------------------------------------------------------------------- |
-| Runtime  | Node.js 20+ · Express 5 · TypeScript                                         |
-| ORM / DB | Prisma 7 · PostgreSQL 17 + pgvector                                          |
-| Auth     | Supabase Auth                                                                |
-| Realtime | Hocuspocus 3 · Yjs (CRDT)                                                    |
-| AI SDKs  | `@google/generative-ai` · `openai` · `@anthropic-ai/sdk` · `@openrouter/sdk` |
-| Security | AES-256-GCM encryption · rate limiting · CORS (credential-aware)             |
-
----
-
-## 📁 Project Structure
-
-```text
-backend/
-├── src/
-│   ├── api/              # Route handlers (ai, auth, projects, tasks, billing…)
-│   ├── services/         # Business logic (aiService, byokService, encryptionService…)
-│   ├── hybrid/           # main-server.ts + websockets + supabase auth
-│   ├── middleware/       # Auth & validation
-│   ├── monitoring/       # Logging, metrics, AI performance
-│   ├── scheduledTasks/   # Cleanup, embeddings refresh, reminders
-│   └── lib/              # Prisma client & shared utils
-├── prisma/              # schema.prisma + migrations
-├── supabase/functions/  # Edge functions (e.g. OTP verification)
-├── tests/               # Unit tests (e.g. aiRouting.test.ts)
-└── scripts/             # Maintenance scripts
+```
+src/
+├── api/                    # API route handlers
+│   ├── ai/                 # AI chat, completions, synthesis, document analysis
+│   │   ├── route.ts        # Main AI endpoints (process, complete, analyze)
+│   │   ├── chat-route.ts   # AI chat with context retrieval
+│   │   ├── chat/route.ts   # AI chat endpoint (alternative)
+│   │   └── synthesis-route.ts  # Cross-app document synthesis
+│   ├── auth/               # Authentication (register, login, SSO)
+│   ├── collaboration/      # Comments, real-time editing collaboration
+│   ├── editor/             # Document version history
+│   ├── integrations/       # External tool connections, OAuth, browse, import, search
+│   │   ├── index.ts        # CRUD + OAuth flows + browse + import
+│   │   ├── callback/route.ts   # OAuth callback handlers
+│   │   └── search/route.ts     # Cross-source semantic search
+│   ├── memory/             # Memory Layer (transcripts, decisions, activity, summaries)
+│   │   └── route.ts        # All memory endpoints
+│   ├── projects/           # Project CRUD, sharing, permissions
+│   ├── roles/              # RBAC roles and permissions management
+│   │   └── route.ts        # Role CRUD, permission assignment, member queries
+│   ├── search/             # Global search (internal + external tools)
+│   └── templates/          # Document templates
+├── hybrid/
+│   ├── main-server.ts      # Main Express server + route registration
+│   └── websockets/
+│       ├── hocuspocus-server.ts  # Real-time collaborative editing (Yjs/CRDT)
+│       └── notification-server.ts # WebSocket notifications (Socket.io)
+├── middleware/
+│   ├── auth.ts             # JWT authentication + authorization
+│   └── rbac.ts             # Role-based access control middleware
+└── services/
+    ├── integrations/       # Connector framework for external tools
+    │   ├── connectorBase.ts       # Abstract base class (OAuth, sync, search, embeddings)
+    │   ├── connectorRegistry.ts   # Central registry for all connectors
+    │   ├── slackConnector.ts      # Slack OAuth2 + channels/messages sync
+    │   ├── notionConnector.ts     # Notion OAuth2 + pages/databases/blocks sync
+    │   ├── jiraConnector.ts       # Atlassian OAuth2 + issues sync
+    │   ├── githubConnector.ts     # GitHub OAuth App + repos/issues/PRs sync
+    │   ├── githubAppConnector.ts  # GitHub App (JWT + installation tokens)
+    │   ├── figmaConnector.ts      # Figma OAuth2 + files/pages sync
+    │   ├── importService.ts       # Content import (browse + convert to Project)
+    │   └── searchAggregator.ts    # Unified cross-source semantic search
+    ├── aiService.ts                # Core AI orchestration, provider routing, streaming
+    ├── unifiedAIService.ts         # Unified interface across all AI providers
+    ├── byokService.ts              # Bring-Your-Own-Key management
+    ├── contextEmbeddingService.ts  # Semantic search via embeddings + pgvector
+    ├── embeddingService.ts         # OpenAI embedding generation
+    ├── searchService.ts            # Full-text + semantic search, research topics
+    ├── editorService.ts            # Document editing, comments, collaboration logs
+    ├── workspaceTaskService.ts     # Task management within workspaces
+    ├── projectService.ts           # Project management, citations
+    ├── projectServiceEnhanced.ts   # Enhanced project operations
+    ├── projectSettingsService.ts   # Per-project user settings
+    ├── storageService.ts           # File upload/download, storage quotas
+    ├── exportHelper.ts             # Document export (DOCX, PDF, HTML)
+    ├── notificationService.ts      # Email + in-app notifications
+    ├── feedbackService.ts          # User feedback, audit logging
+    ├── complianceService.ts        # Compliance checks, research verification
+    ├── oauthService.ts             # OAuth/SSO for institutional accounts
+    ├── RecurringTaskService.ts     # Recurring task scheduling
+    ├── meetingTranscriptService.ts # Meeting transcript processing + AI extraction
+    ├── decisionService.ts          # Decision/action item/blocker tracking
+    ├── activityFeedService.ts      # Centralized activity feed
+    ├── autoSummaryService.ts       # AI-powered summary generation
+    ├── permissionService.ts        # RBAC permission checking + management
+    └── roleService.ts              # RBAC role CRUD + member assignment
 ```
 
----
+## Key Services
 
-## 🔑 AI & BYOK Flow
+### Integration Framework (`services/integrations/`)
 
-Every AI request is routed to the user's own provider key. There is **no system AI key fallback** in the request path — if a user hasn't configured a key (and enabled it), the request returns a clear "API key not configured" message.
+The connector framework provides a generic OAuth2 flow, content sync, and semantic search for 6 external tools:
 
-```mermaid
-sequenceDiagram
-    participant U as User (Frontend)
-    participant API as Backend (Express)
-    participant BYOK as BYOKService
-    participant P as AI Provider (BYOK key)
+| Connector | Auth Flow | Synced Content | Rate Limits |
+|-----------|-----------|---------------|-------------|
+| Slack | OAuth2 (user token) | Messages, channels, threads | Tier 3 (50/min) |
+| Notion | OAuth2 | Pages, databases, blocks | 3 req/s |
+| Jira | OAuth2 (Atlassian) | Issues, comments, projects | Varies by plan |
+| GitHub OAuth | OAuth2 (user) | Repos, issues, PRs, READMEs | 5,000/hr |
+| GitHub App | JWT + installation tokens | Repos, issues, PRs, READMEs | 15,000/hr |
+| Figma | OAuth2 (personal access) | Files, pages, components | Varies |
 
-    U->>API: POST /api/ai/process (model: openai/gpt-4o-mini)
-    API->>BYOK: getDecryptedKey(userId, "openai")
-    BYOK-->>API: decrypted key (only if byok_enabled = true)
-    API->>P: authorized request with user's key
-    P-->>API: streamed completion
-    API-->>U: streamed response
-```
+Each connector extends `ConnectorBase` and implements:
+- `authenticate(code, redirectUri)` — Exchange OAuth code for tokens
+- `testConnection()` — Verify tokens are valid
+- `syncContent(connection)` — Fetch and store content with embeddings
+- `searchContent(query, workspaceId)` — Vector similarity search
 
-Key points:
+### AI Synthesis (`api/ai/synthesis-route.ts`)
 
-- Keys are validated (format + live test) **before** they are stored.
-- Saving a key auto-enables BYOK; deleting the last key disables it.
-- CORS is credential-aware and allows the Vercel frontend (including preview deploys).
+Generates documents from multiple connected tools:
+- **PRD** — Product Requirements Document
+- **Status Update** — Project status with accomplishments/blockers
+- **Handoff** — Team handoff document
+- **Summary** — Concise key points
+- **Action Items** — Extracted with ownership and priority
 
----
+### Memory Layer (`services/meetingTranscriptService.ts`, `decisionService.ts`, etc.)
 
-## 🚀 Getting Started
+| Service | Purpose |
+|---------|---------|
+| MeetingTranscriptService | Upload, parse, AI-analyze transcripts (Zoom, Otter, Teams) |
+| DecisionService | CRUD for decisions, action items, blockers with status tracking |
+| ActivityFeedService | Centralized activity timeline across all tools |
+| AutoSummaryService | AI-powered daily/weekly/project summaries |
 
-### Prerequisites
+### RBAC (`services/permissionService.ts`, `middleware/rbac.ts`)
 
-- Node.js 20+
-- PostgreSQL 17 (local Docker or a hosted instance)
-- Supabase project (URL, service-role key, JWT secret)
-- At least one AI provider key for testing
+| Component | Purpose |
+|-----------|---------|
+| PermissionService | Seed defaults, check/grant/revoke 30+ granular permissions |
+| RoleService | CRUD for roles, workspace initialization, member assignment |
+| rbac middleware | `requirePermission()`, `requireRole()`, `requireOwnership()` |
 
-### Install & Run
-
-```bash
-cd backend
-cp .env.example .env
-# Set DATABASE_URL, SUPABASE_*, ENCRYPTION_MASTER_KEY (64 hex chars), and AI keys
-npm install
-npx prisma migrate dev
-npm run dev                 # http://localhost:3001
-```
-
----
-
-## 🔐 Environment
-
-Key variables (see `.env.example`):
+## Environment Variables
 
 ```env
-DATABASE_URL=postgresql://postgres:password@localhost:5435/workcontext
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-ENCRYPTION_MASTER_KEY=0000...0000   # 64 hex chars — required for BYOK encryption
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/workcontext
+
+# Server
 PORT=3001
-FRONTEND_URL=https://your-app.vercel.app
-CORS_ORIGINS=https://your-app.vercel.app,https://www.your-app.com
+NODE_ENV=development
+
+# Authentication
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-key
+JWT_SECRET=your-jwt-secret
+
+# AI Providers (at least one required)
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_AI_API_KEY=...
+MISTRAL_API_KEY=...
+OPENROUTER_API_KEY=...
+
+# Email
+PLUNK_API_KEY=...
+
+# Encryption
+ENCRYPTION_MASTER_KEY=your-encryption-key
+
+# Integrations (optional)
+SLACK_CLIENT_ID=
+SLACK_CLIENT_SECRET=
+NOTION_CLIENT_ID=
+NOTION_CLIENT_SECRET=
+JIRA_CLIENT_ID=
+JIRA_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GITHUB_APP_ID=
+GITHUB_APP_PRIVATE_KEY=
+GITHUB_APP_CLIENT_ID=
+GITHUB_APP_CLIENT_SECRET=
+GITHUB_APP_SLUG=
+FIGMA_CLIENT_ID=
+FIGMA_CLIENT_SECRET=
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000
 ```
 
-> `ENCRYPTION_MASTER_KEY` is mandatory. If it changes or rotates, previously encrypted keys become unreadable until re-saved.
+## Getting Started
 
----
+```bash
+npm install
+cp .env.example .env
+# Configure your environment variables
+npx prisma generate
+npx prisma db push
+npm run dev          # Starts on http://localhost:3001
+```
 
-## 📜 Scripts
+## API Endpoints
 
-| Script                            | Description                            |
-| --------------------------------- | -------------------------------------- |
-| `npm run dev`                     | Run with hot reload (`tsx watch`)      |
-| `npm run build`                   | Compile TypeScript (`tsc`)             |
-| `npm run start`                   | Start the compiled/server directly     |
-| `npm run lint`                    | ESLint                                 |
-| `npx tsx tests/aiRouting.test.ts` | Run AI routing + key-format unit tests |
+### Authentication
+- `POST /api/auth/register` — Register new user
+- `POST /api/auth/login` — Login
+- `POST /api/auth/sso` — SSO callback
+- `GET /api/auth/user` — Get current user
+- `POST /api/auth/logout` — Logout
 
----
+### AI
+- `POST /api/ai/chat` — AI chat with external tool context
+- `POST /api/ai/synthesize` — Cross-app document synthesis
+- `POST /api/ai/analyze` — Document analysis
+- `POST /api/ai/completions` — Text completions
+- `POST /api/ai/process` — AI request processing
 
-## 🚢 Deployment
+### Integrations
+- `GET /api/integrations` — List connected tools
+- `POST /api/integrations` — Start OAuth flow (returns authorization URL)
+- `GET /api/integrations/callback` — OAuth callback
+- `POST /api/integrations/github/installation/callback` — GitHub App installation callback
+- `POST /api/integrations/:id/sync` — Trigger content sync
+- `DELETE /api/integrations/:id` — Disconnect tool
+- `GET /api/integrations/browse` — Browse synced content from a connection
+- `POST /api/integrations/import` — Import content as a new Project
+- `POST /api/integrations/search` — Cross-source semantic search
+- `GET /api/integrations/available` — List all available tool types
 
-Built for **Render** (or any Node host). Set the env vars above, set the health-check path to `/` or `/health`, and point your Vercel frontend's `NEXT_PUBLIC_API_URL` (or the `/api` rewrite) at the deployed URL.
+### Memory
+- `POST /api/memory/transcripts` — Upload transcript
+- `GET /api/memory/transcripts` — List transcripts
+- `GET /api/memory/transcripts/:id` — Get transcript
+- `DELETE /api/memory/transcripts/:id` — Delete transcript
+- `POST /api/memory/transcripts/:id/analyze` — AI-analyze transcript
+- `POST /api/memory/decisions` — Create decision/action item
+- `GET /api/memory/decisions` — List decisions
+- `GET /api/memory/decisions/:id` — Get decision
+- `PUT /api/memory/decisions/:id` — Update decision
+- `DELETE /api/memory/decisions/:id` — Delete decision
+- `GET /api/memory/decisions/stats/overview` — Decision statistics
+- `GET /api/memory/activity` — Activity feed
+- `GET /api/memory/activity/stats` — Activity statistics
+- `POST /api/memory/summaries/generate` — Generate AI summary
+- `GET /api/memory/summaries` — List summaries
+- `GET /api/memory/summaries/:id` — Get summary
+- `PUT /api/memory/summaries/:id/pin` — Toggle pin
+- `DELETE /api/memory/summaries/:id` — Delete summary
 
----
+### RBAC
+- `GET /api/roles` — List all roles with permissions
+- `POST /api/roles` — Create custom role
+- `POST /api/roles/seed` — Seed default roles and permissions
+- `GET /api/roles/:id` — Get role details
+- `PUT /api/roles/:id` — Update role
+- `DELETE /api/roles/:id` — Delete custom role
+- `POST /api/roles/:id/assign/:memberId` — Assign role to member
+- `GET /api/roles/:id/members` — List members with role
+- `GET /api/roles/permissions/all` — List all available permissions
+- `GET /api/roles/permissions/my` — Get current user's permissions
 
-## 📄 License
+### Other
+- `GET/POST /api/projects` — Project management
+- `GET/POST /api/templates` — Document templates
+- `POST /api/search` — Global search (8 sources including integrations)
+- `GET/POST /api/workspaces` — Workspace management
 
-MIT — see the [root LICENSE](../LICENSE).
+## Scripts
+
+```bash
+npm run dev              # Start development server
+npm run build            # Build for production
+npm start                # Start production server
+npx prisma generate      # Regenerate Prisma client
+npx prisma db push       # Push schema to database
+npx prisma migrate dev   # Create migration
+npx tsc --noEmit         # Type-check without emitting
+```
+
+## License
+
+MIT

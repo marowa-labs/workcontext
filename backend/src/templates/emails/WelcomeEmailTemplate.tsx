@@ -7,7 +7,7 @@ interface WelcomeEmailTemplateProps {
 
 export function WelcomeEmailTemplate({
   fullName = "",
-  dashboardUrl = "http://workcontext.vercel.app/dashboard",
+  dashboardUrl = "https://www.workcontext.me/dashboard",
 }: WelcomeEmailTemplateProps) {
   return (
     <EmailLayout

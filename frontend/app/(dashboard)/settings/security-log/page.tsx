@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Shield,
   LogIn,
@@ -16,6 +16,8 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  Search,
+  Filter,
 } from "lucide-react";
 import SecurityLogService, {
   type SecurityEvent,
@@ -40,6 +42,38 @@ const TYPE_FILTERS = [
   { label: "Data Exports", value: "data_export" },
 ];
 
+const TIME_FILTERS = [
+  { label: "All Time", value: "all" },
+  { label: "Last 24 Hours", value: "24h" },
+  { label: "Last 7 Days", value: "7d" },
+  { label: "Last 30 Days", value: "30d" },
+  { label: "Last 90 Days", value: "90d" },
+];
+
+function getTimeFilterDates(value: string): { from?: string; to?: string } {
+  const now = new Date();
+  if (value === "all") return {};
+  const to = now.toISOString();
+  let from: Date;
+  switch (value) {
+    case "24h":
+      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      break;
+    case "7d":
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "30d":
+      from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      return {};
+  }
+  return { from: from.toISOString(), to };
+}
+
 const ITEMS_PER_PAGE = 20;
 
 export default function SecurityLogPage() {
@@ -48,16 +82,21 @@ export default function SecurityLogPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [typeFilter, setTypeFilter] = useState("");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      const { from, to } = getTimeFilterDates(timeFilter);
       const data = await SecurityLogService.getSecurityLog(
-        ITEMS_PER_PAGE,
-        page * ITEMS_PER_PAGE,
+        200,
+        0,
         typeFilter || undefined,
+        from,
+        to,
       );
       setEvents(data.events);
       setTotal(data.total);
@@ -67,13 +106,28 @@ export default function SecurityLogPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, typeFilter]);
+  }, [typeFilter, timeFilter]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
 
-  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  // Client-side search filtering
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery.trim()) return events;
+    const q = searchQuery.toLowerCase();
+    return events.filter(
+      (event) =>
+        event.ip_address?.toLowerCase().includes(q) ||
+        event.device_info?.toLowerCase().includes(q) ||
+        event.location?.toLowerCase().includes(q) ||
+        event.details?.toLowerCase().includes(q) ||
+        TYPE_LABELS[event.type]?.label.toLowerCase().includes(q),
+    );
+  }, [events, searchQuery]);
+
+  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+  const paginatedEvents = filteredEvents.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -102,6 +156,55 @@ export default function SecurityLogPage() {
         password changes, and data exports.
       </p>
 
+      {/* Search and Time Filter Row */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search Bar */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by IP, device, location, or event type..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(0);
+            }}
+            className="w-full pl-10 pr-10 py-2 text-sm rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setPage(0);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <XCircle className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Time Filter Dropdown */}
+        <div className="relative">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <select
+            value={timeFilter}
+            onChange={(e) => {
+              setTimeFilter(e.target.value);
+              setPage(0);
+            }}
+            className="pl-10 pr-8 py-2 text-sm rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[160px]"
+          >
+            {TIME_FILTERS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+          <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none rotate-90" />
+        </div>
+      </div>
+
       {/* Type filter tabs */}
       <div className="flex flex-wrap gap-2">
         {TYPE_FILTERS.map((f) => (
@@ -122,21 +225,34 @@ export default function SecurityLogPage() {
         ))}
       </div>
 
+      {/* Results count */}
+      {(searchQuery || timeFilter !== "all") && (
+        <p className="text-xs text-muted-foreground">
+          {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} found
+          {searchQuery && ` matching "${searchQuery}"`}
+          {timeFilter !== "all" && ` in ${TIME_FILTERS.find((f) => f.value === timeFilter)?.label}`}
+        </p>
+      )}
+
       {loading ? (
         <div className="flex justify-center items-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       ) : error ? (
         <div className="text-center py-16 text-red-600">{error}</div>
-      ) : events.length === 0 ? (
+      ) : paginatedEvents.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Shield className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p>No security events found.</p>
+          <p>
+            {searchQuery
+              ? `No events matching "${searchQuery}"`
+              : "No security events found."}
+          </p>
         </div>
       ) : (
         <>
           <div className="space-y-2">
-            {events.map((event) => {
+            {paginatedEvents.map((event) => {
               const typeInfo = TYPE_LABELS[event.type];
               if (!typeInfo) return null;
               const Icon = typeInfo.icon;
@@ -187,7 +303,7 @@ export default function SecurityLogPage() {
             <div className="flex items-center justify-between pt-4">
               <p className="text-sm text-muted-foreground">
                 Showing {page * ITEMS_PER_PAGE + 1}–
-                {Math.min((page + 1) * ITEMS_PER_PAGE, total)} of {total} events
+                {Math.min((page + 1) * ITEMS_PER_PAGE, filteredEvents.length)} of {filteredEvents.length} events
               </p>
               <div className="flex gap-2">
                 <button

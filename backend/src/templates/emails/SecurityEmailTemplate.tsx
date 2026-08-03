@@ -15,7 +15,7 @@ export function SecurityEmailTemplate({
   alertTitle,
   message,
   details = [],
-  securityUrl = "http://workcontext.vercel.app/dashboard/settings/account",
+  securityUrl = "https://www.workcontext.me/dashboard/settings/account",
 }: SecurityEmailTemplateProps) {
   return (
     <EmailLayout
@@ -71,7 +71,9 @@ export function SecurityEmailTemplate({
         </a>
       </BodyText>
 
-      <SmallNote>If this wasn&apos;t you, please contact support immediately.</SmallNote>
+      <SmallNote>
+        If this wasn&apos;t you, please contact support immediately.
+      </SmallNote>
     </EmailLayout>
   );
 }

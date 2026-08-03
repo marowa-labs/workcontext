@@ -16,6 +16,8 @@ import {
   MessageCircle,
   Headphones,
   ArrowRight,
+  Clock,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
@@ -35,39 +37,34 @@ import { useRouter } from "next/navigation";
 function ContactHero() {
   return (
     <section className="section-padding bg-[#121212] relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=800&fit=crop')",
-          zIndex: 0,
-        }}
-      ></div>
-
-      {/* Background elements */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 text-gray-600xl">💬</div>
-        <div className="absolute top-40 right-20 text-4xl">📧</div>
-        <div className="absolute bottom-40 left-1/4 text-5xl">🤝</div>
-        <div className="absolute bottom-20 right-10 text-3xl">🌍</div>
-      </div>
-
       <div className="container-custom relative z-10">
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-gray-600xl font-bold text-white mb-6">
-            We're Here to Help with Academic Defensibility —{" "}
-            <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-              Anytime, Anywhere
+        <div className="text-center max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600/20 border border-blue-500/30 mb-6">
+            <Headphones className="h-4 w-4 text-blue-400" />
+            <span className="text-sm font-medium text-blue-400">
+              Support Center
             </span>
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            How Can We Help You?
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
-            Have a question about our core functionalities? Need support with
-            The Explainable Originality Map, Citation Confidence Auditor,
-            Submission-Safe Writing Mode, Defensibility Log, or One-Click
-            Publication Suite? Our team is ready to assist you. Choose the best
-            way to reach us below.
+          <p className="text-lg text-gray-400 mb-8 leading-relaxed">
+            Have a question or need assistance? Our support team is ready to
+            help. Choose the best way to reach us below.
           </p>
+
+          <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
+            <span className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Response within 24 hours
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Expert support team
+            </span>
+          </div>
         </div>
       </div>
     </section>
@@ -79,79 +76,74 @@ function QuickContactOptions() {
   const contactTypes = [
     {
       icon: Mail,
-      title: "Core Functionality Support",
+      title: "General Support",
       description:
-        "Questions about our five core functionalities for academic defensibility",
-      action: "Send us an email",
-      contact: "hello@WorkContextai.com",
-      color: "from-blue-600 to-blue-800",
+        "Questions about features, getting started, or how things work",
+      contact: "hello@workcontext.me",
+      color: "from-blue-500 to-blue-600",
     },
     {
       icon: Building,
-      title: "Institutional Partnerships",
+      title: "Partnerships",
       description:
-        "Academic defensibility solutions for universities and institutions",
-      action: "Contact our team",
-      contact: "partnerships@WorkContextai.com",
-      color: "from-purple-600 to-purple-800",
+        "Institutional partnerships, enterprise plans, and custom solutions",
+      contact: "partnerships@workcontext.me",
+      color: "from-purple-500 to-purple-600",
     },
     {
       icon: Newspaper,
-      title: "Academic Research",
+      title: "Research & Academic",
       description:
-        "Research inquiries, academic partnerships, and scholarly collaboration",
-      action: "Research contact",
-      contact: "research@WorkContextai.com",
-      color: "from-green-600 to-green-800",
+        "Research inquiries, academic collaborations, and scholarly questions",
+      contact: "research@workcontext.me",
+      color: "from-green-500 to-green-600",
     },
   ];
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-gray-50">
       <div className="container-custom">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Quick Contact Options
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+            Get in Touch
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Choose the option that best matches your academic defensibility
-            needs for faster, more targeted assistance.
+          <p className="text-gray-600 max-w-xl mx-auto">
+            Pick the channel that best fits your needs for a faster response.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {contactTypes.map((type, index) => (
             <Card
               key={index}
-              className="border border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-white"
+              className="border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group bg-white"
             >
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 text-center">
                 <div
-                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${type.color} mb-6 group-hover:scale-110 transition-transform duration-300`}
+                  className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${type.color} mb-4 group-hover:scale-110 transition-transform duration-300`}
                 >
-                  <type.icon className="h-8 w-8 text-white" />
+                  <type.icon className="h-6 w-6 text-white" />
                 </div>
 
-                <h3 className="text-xl font-semibold text-white mb-3">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {type.title}
                 </h3>
 
-                <p className="text-gray-600 mb-6 leading-relaxed">
+                <p className="text-sm text-gray-500 mb-4 leading-relaxed">
                   {type.description}
                 </p>
 
                 <Button
                   variant="outline"
-                  className="w-full bg-white border-white text-white hover:bg-white"
+                  size="sm"
+                  className="w-full"
                   onClick={() =>
                     (window.location.href = `mailto:${type.contact}`)
                   }
                 >
-                  {type.action}
-                  <Mail className="ml-2 h-4 w-4" />
+                  <Mail className="mr-2 h-4 w-4" />
+                  {type.contact}
                 </Button>
-
-                <p className="text-sm text-gray-600 mt-3">{type.contact}</p>
               </CardContent>
             </Card>
           ))}
@@ -214,289 +206,247 @@ function ContactForm() {
 
   if (isSubmitted) {
     return (
-      <Card className="max-w-2xl mx-auto border border-white shadow-2xl bg-white">
-        <CardContent className="p-12 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-600 mb-6">
-            <Send className="h-10 w-10 text-white" />
-          </div>
+      <div className="max-w-xl mx-auto text-center py-12">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
+          <Send className="h-8 w-8 text-green-600" />
+        </div>
 
-          <h3 className="text-2xl font-bold text-white mb-4">
-            Message Sent Successfully!
-          </h3>
+        <h3 className="text-2xl font-bold text-gray-900 mb-3">Message Sent!</h3>
 
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            Thank you for reaching out. We've received your message and will get
-            back to you within 24 hours. In the meantime, feel free to explore
-            our Help Center for quick answers.
-          </p>
+        <p className="text-gray-600 mb-8 leading-relaxed">
+          Thanks for reaching out. We&apos;ll get back to you within 24 hours.
+        </p>
 
-          <Button
-            onClick={() => {
-              setIsSubmitted(false);
-              setFormData({
-                name: "",
-                email: "",
-                subject: "",
-                message: "",
-              });
-            }}
-            variant="outline"
-            className="bg-white border-white text-white hover:bg-white"
-          >
-            Send Another Message
-          </Button>
-        </CardContent>
-      </Card>
+        <Button
+          onClick={() => {
+            setIsSubmitted(false);
+            setFormData({ name: "", email: "", subject: "", message: "" });
+          }}
+          variant="outline"
+        >
+          Send Another Message
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card className="max-w-2xl mx-auto border border-white shadow-2xl bg-white">
-      <CardHeader className="text-center pb-8">
-        <h3 className="text-2xl font-bold text-white mb-2">
-          Academic Defensibility Support
-        </h3>
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+          Send Us a Message
+        </h2>
         <p className="text-gray-600">
-          Fill out the form below and we'll get back to you within 24 hours.
+          Fill out the form below and we&apos;ll get back to you as soon as
+          possible.
         </p>
-      </CardHeader>
+      </div>
 
-      <CardContent className="px-8 pb-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-900/50 border border-red-700 rounded-md p-4">
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-600 mb-2"
-              >
-                Full Name *
-              </label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full bg-white border-white text-white"
-                placeholder="Your full name"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-600 mb-2"
-              >
-                Email Address *
-              </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full bg-white border-white text-white"
-                placeholder="your.email@example.com"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="subject"
-              className="block text-sm font-medium text-gray-600 mb-2"
-            >
-              Subject *
-            </label>
-            <Select
-              name="subject"
-              required
-              onValueChange={(value) =>
-                setFormData({ ...formData, subject: value })
-              }
-              value={formData.subject}
-            >
-              <SelectTrigger className="w-full bg-white border-white text-white">
-                <SelectValue placeholder="Select a topic" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-white">
-                <SelectItem value="general" className="text-white">
-                  Core Functionality Question
-                </SelectItem>
-                <SelectItem value="technical" className="text-white">
-                  Technical Support
-                </SelectItem>
-                <SelectItem value="billing" className="text-white">
-                  Billing Question
-                </SelectItem>
-                <SelectItem value="feature" className="text-white">
-                  Feature Request
-                </SelectItem>
-                <SelectItem value="partnership" className="text-white">
-                  Partnership Inquiry
-                </SelectItem>
-                <SelectItem value="defensibility" className="text-white">
-                  Academic Defensibility
-                </SelectItem>
-                <SelectItem value="other" className="text-white">
-                  Other
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="message"
-              className="block text-sm font-medium text-gray-600 mb-2"
-            >
-              Message *
-            </label>
-            <Textarea
-              id="message"
-              name="message"
-              required
-              value={formData.message}
-              onChange={handleChange}
-              rows={5}
-              className="w-full resize-none bg-white border-white text-white"
-              placeholder="Tell us how we can help you..."
-            />
-          </div>
-
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-glow"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>Sending Message...</>
-            ) : (
-              <>
-                Send Message
-                <Send className="ml-2 h-4 w-4" />
-              </>
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardContent className="p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
             )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
 
-// Alternative Contact Info
-function AlternativeContactInfo() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-      <Card className="border border-white shadow-lg text-center bg-white">
-        <CardContent className="p-6">
-          <Mail className="h-8 w-8 text-blue-400 mx-auto mb-4" />
-          <h3 className="font-semibold text-white mb-2">Email</h3>
-          <p className="text-sm text-gray-600">hello@WorkContextai.com</p>
-        </CardContent>
-      </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
+                  Full Name *
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full"
+                  placeholder="Your full name"
+                />
+              </div>
 
-      <Card className="border border-white shadow-lg text-center bg-white">
-        <CardContent className="p-6">
-          <MapPin className="h-8 w-8 text-green-400 mx-auto mb-4" />
-          <h3 className="font-semibold text-white mb-2">Address</h3>
-          <p className="text-sm text-gray-600">
-            San Francisco, CA
-            <br />
-            United States
-          </p>
-        </CardContent>
-      </Card>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
+                  Email Address *
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
 
-      <Card className="border border-white shadow-lg text-center bg-white">
-        <CardContent className="p-6">
-          <Globe className="h-8 w-8 text-purple-400 mx-auto mb-4" />
-          <h3 className="font-semibold text-white mb-2">Global</h3>
-          <p className="text-sm text-gray-600">
-            Serving students
-            <br />
-            worldwide 24/7
-          </p>
-        </CardContent>
-      </Card>
+            <div>
+              <label
+                htmlFor="subject"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
+                Subject *
+              </label>
+              <Select
+                name="subject"
+                required
+                onValueChange={(value) =>
+                  setFormData({ ...formData, subject: value })
+                }
+                value={formData.subject}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General Question</SelectItem>
+                  <SelectItem value="technical">Technical Support</SelectItem>
+                  <SelectItem value="billing">Billing Question</SelectItem>
+                  <SelectItem value="feature">Feature Request</SelectItem>
+                  <SelectItem value="partnership">
+                    Partnership Inquiry
+                  </SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      <Card className="border border-white shadow-lg text-center bg-white">
-        <CardContent className="p-6">
-          <div className="flex justify-center space-x-3 mb-4">
-            <Twitter className="h-6 w-6 text-blue-400" />
-            <Linkedin className="h-6 w-6 text-blue-500" />
-            <Github className="h-6 w-6 text-gray-600" />
-          </div>
-          <h3 className="font-semibold text-white mb-2">Social</h3>
-          <p className="text-sm text-gray-600">Follow us for updates</p>
+            <div>
+              <label
+                htmlFor="message"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
+                Message *
+              </label>
+              <Textarea
+                id="message"
+                name="message"
+                required
+                value={formData.message}
+                onChange={handleChange}
+                rows={5}
+                className="w-full resize-none"
+                placeholder="Tell us how we can help you..."
+              />
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                "Sending..."
+              ) : (
+                <>
+                  Send Message
+                  <Send className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-// FAQ Teaser
-function FAQTeaser() {
+// Contact Info Cards
+function ContactInfoCards() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      <Card className="border border-gray-200 shadow-sm text-center bg-white">
+        <CardContent className="p-6">
+          <Mail className="h-8 w-8 text-blue-500 mx-auto mb-3" />
+          <h3 className="font-semibold text-gray-900 mb-1">Email Us</h3>
+          <p className="text-sm text-gray-500">hello@workcontext.me</p>
+        </CardContent>
+      </Card>
+
+      <Card className="border border-gray-200 shadow-sm text-center bg-white">
+        <CardContent className="p-6">
+          <MapPin className="h-8 w-8 text-green-500 mx-auto mb-3" />
+          <h3 className="font-semibold text-gray-900 mb-1">Location</h3>
+          <p className="text-sm text-gray-500">San Francisco, CA</p>
+        </CardContent>
+      </Card>
+
+      <Card className="border border-gray-200 shadow-sm text-center bg-white">
+        <CardContent className="p-6">
+          <Globe className="h-8 w-8 text-purple-500 mx-auto mb-3" />
+          <h3 className="font-semibold text-gray-900 mb-1">
+            Available Worldwide
+          </h3>
+          <p className="text-sm text-gray-500">24/7 online support</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// FAQ Section
+function FAQSection() {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const router = useRouter();
 
-  const handleGetStarted = () => {
-    router.push("/help");
-  };
-
   const faqs = [
     {
-      question: "How quickly do you respond to messages?",
+      question: "How quickly do you respond?",
       answer:
-        "We typically respond to all inquiries within 24 hours during business days. For urgent technical issues, our response time is usually within 4-6 hours.",
+        "We respond to all inquiries within 24 hours during business days. For urgent technical issues, our response time is usually within 4-6 hours.",
     },
     {
       question: "Do you offer phone support?",
       answer:
-        "We're happy to schedule a call with you. Reach us via email and we'll arrange a time to discuss your needs.",
+        "We can schedule a call for complex issues. Reach us via email and we'll arrange a time that works for you.",
     },
     {
-      question: "Can you help with institutional partnerships?",
+      question: "How do I report a bug?",
       answer:
-        "Absolutely! We work with universities and institutions worldwide. Contact our partnerships team at partnerships@WorkContextai.com for custom solutions.",
+        "Please use the contact form above and select 'Technical Support'. Include as much detail as possible about the issue you're experiencing.",
     },
   ];
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h3 className="text-2xl font-bold text-white mb-8 text-center">
-        Quick Answers
-      </h3>
+    <div className="max-w-2xl mx-auto">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+        Frequently Asked Questions
+      </h2>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {faqs.map((faq, index) => (
-          <Card key={index} className="border border-white bg-white">
+          <Card key={index} className="border border-gray-200 bg-white">
             <CardContent className="p-0">
               <button
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-white transition-colors"
+                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                 onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
               >
-                <h4 className="font-semibold text-white pr-4">
+                <h4 className="font-medium text-gray-900 pr-4">
                   {faq.question}
                 </h4>
                 {openFAQ === index ? (
-                  <ChevronUp className="h-5 w-5 text-gray-600" />
+                  <ChevronUp className="h-5 w-5 text-gray-400 shrink-0" />
                 ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                  <ChevronDown className="h-5 w-5 text-gray-400 shrink-0" />
                 )}
               </button>
               {openFAQ === index && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                <div className="px-6 pb-4">
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {faq.answer}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -504,11 +454,12 @@ function FAQTeaser() {
         ))}
       </div>
 
-      <div className="text-center mt-8">
+      <div className="text-center mt-6">
         <Button
           variant="outline"
-          className="gap-2 bg-white border-white text-white hover:bg-white"
-          onClick={handleGetStarted}
+          size="sm"
+          className="gap-2"
+          onClick={() => router.push("/help")}
         >
           Visit Help Center
           <ArrowRight className="h-4 w-4" />
@@ -518,96 +469,39 @@ function FAQTeaser() {
   );
 }
 
-// Global Presence Map (Simple representation)
-function GlobalPresence() {
+// Social Links
+function SocialLinks() {
   return (
-    <Card className="border border-gray-200 shadow-lg overflow-hidden bg-white">
-      <CardContent className="p-8">
-        <div className="text-center mb-8">
-          <Globe className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">
-            Serving Students Globally
-          </h3>
-          <p className="text-gray-600">
-            Join thousands of students across 15+ countries who trust
-            WorkContext
-          </p>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-600">
-          {[
-            "🇺🇸 United States",
-            "🇬🇧 United Kingdom",
-            "🇨🇦 Canada",
-            "🇦🇺 Australia",
-            "🇩🇪 Germany",
-            "🇫🇷 France",
-            "🇪🇸 Spain",
-            "🇮🇹 Italy",
-            "🇯🇵 Japan",
-            "🇰🇷 South Korea",
-            "🇮🇳 India",
-            "🇧🇷 Brazil",
-            "🇲🇽 Mexico",
-            "🇿🇦 South Africa",
-            "🇳🇱 Netherlands",
-          ].map((country, index) => (
-            <span key={index} className="px-3 py-1 bg-white rounded-full">
-              {country}
-            </span>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center justify-center gap-4">
+      <a
+        href="https://twitter.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+      >
+        <Twitter className="h-5 w-5 text-gray-600" />
+      </a>
+      <a
+        href="https://linkedin.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+      >
+        <Linkedin className="h-5 w-5 text-gray-600" />
+      </a>
+      <a
+        href="https://github.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+      >
+        <Github className="h-5 w-5 text-gray-600" />
+      </a>
+    </div>
   );
 }
 
-// Closing CTA
-function ClosingCTA() {
-  const router = useRouter();
-
-  const handleGetStarted = () => {
-    router.push("/signup");
-  };
-
-  return (
-    <Card className="border border-gray-500 shadow-2xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-      <CardContent className="p-12 text-center">
-        <MessageCircle className="h-16 w-16 text-blue-400 mx-auto mb-6" />
-
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-          Don't Let Questions Hold You Back
-        </h2>
-
-        <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-          Whether you're just curious about our five core functionalities for
-          academic defensibility or ready to transform your academic workflow,
-          we're here to help you succeed.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 py-6 btn-glow"
-          >
-            <Headphones className="mr-2 h-5 w-5" />
-            Get Support
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleGetStarted}
-            className="border-gray-500 text-white hover:bg-gray-900 px-8 py-6"
-          >
-            Start Free
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
+// Main Page
 export default function ContactPage() {
   return (
     <Layout>
@@ -620,30 +514,22 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gray-50">
         <div className="container-custom">
-          <h2 className="text-3xl font-bold text-center text-white mb-12">
-            Other Ways to Reach Us
-          </h2>
-          <AlternativeContactInfo />
+          <ContactInfoCards />
         </div>
       </section>
 
       <section className="py-16 bg-white">
         <div className="container-custom">
-          <FAQTeaser />
+          <FAQSection />
         </div>
       </section>
 
-      <section className="py-16 bg-white">
-        <div className="container-custom">
-          <GlobalPresence />
-        </div>
-      </section>
-
-      <section className="py-16 bg-[#121212]">
-        <div className="container-custom">
-          <ClosingCTA />
+      <section className="py-12 bg-gray-50">
+        <div className="container-custom text-center">
+          <p className="text-sm text-gray-500 mb-4">Follow us for updates</p>
+          <SocialLinks />
         </div>
       </section>
     </Layout>

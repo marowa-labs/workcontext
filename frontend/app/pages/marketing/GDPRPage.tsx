@@ -264,7 +264,7 @@ function GDPRContent() {
             this policy or your rights:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-700">
-            <li>By email: dpo@WorkContextai.com</li>
+            <li>By email: dpo@workcontext.me</li>
             <li>
               By post: Data Protection Officer, WorkContext, 123 Privacy Street,
               San Francisco, CA 94107

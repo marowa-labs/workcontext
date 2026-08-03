@@ -507,8 +507,8 @@ function ContactInfo() {
     {
       icon: Mail,
       title: "Email Us",
-      description: "demo@WorkContextai.com",
-      action: "mailto:demo@WorkContextai.com",
+      description: "demo@workcontext.me",
+      action: "mailto:demo@workcontext.me",
     },
     {
       icon: Phone,

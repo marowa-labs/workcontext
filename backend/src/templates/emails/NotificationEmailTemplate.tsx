@@ -11,7 +11,7 @@ export function NotificationEmailTemplate({
   fullName = "",
   title,
   message,
-  dashboardUrl = "http://workcontext.vercel.app/dashboard",
+  dashboardUrl = "https://www.workcontext.me/dashboard",
 }: NotificationEmailTemplateProps) {
   return (
     <EmailLayout

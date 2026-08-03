@@ -280,7 +280,7 @@ function ReportingSecurityIssues() {
                 variant="outline"
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-none"
               >
-                security@WorkContextai.com
+                security@workcontext.me
               </Button>
               <Button
                 variant="outline"

@@ -5,9 +5,11 @@ import { authenticateExpressRequest } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
 import { createNotification } from "../../services/notificationService";
 import { ContextEmbeddingService } from "../../services/contextEmbeddingService";
+import { SearchAggregator, UnifiedSearchResult } from "../../services/integrations/searchAggregator";
 
-// Retrieve semantically related workspace items to ground the AI answer
-// ("workspace memory") — scoped to the session's project workspace when present.
+// Retrieve semantically related workspace items AND connected external tool
+// content to ground the AI answer ("workspace memory") — scoped to the
+// session's project workspace when present.
 async function retrieveWorkspaceContext(
   userId: string,
   projectId: string | null,
@@ -22,13 +24,91 @@ async function retrieveWorkspaceContext(
       });
       workspaceId = project?.workspace_id || null;
     }
-    return await ContextEmbeddingService.similaritySearch({
+
+    // Permission check: Verify user has access to this workspace and determine their role
+    let userRole: string = "viewer";
+    if (workspaceId) {
+      const membership = await prisma.workspaceMember.findUnique({
+        where: {
+          workspace_id_user_id: {
+            workspace_id: workspaceId,
+            user_id: userId,
+          },
+        },
+        select: { role: true, role_id: true },
+      });
+      if (!membership) {
+        logger.warn("User does not have access to workspace", {
+          userId,
+          workspaceId,
+        });
+        return [];
+      }
+      userRole = membership.role;
+
+      // Permission mirroring: Check if user has permission to access AI
+      if (membership.role_id) {
+        const { PermissionService } = await import("../../services/permissionService");
+        const result = await PermissionService.checkPermission(userId, workspaceId, "ai.access");
+        if (!result.allowed) {
+          logger.warn("User lacks AI access permission", { userId, workspaceId });
+          return [];
+        }
+      }
+    }
+
+    // 1) Internal workspace embeddings
+    const internalResults = await ContextEmbeddingService.similaritySearch({
       ownerId: userId,
       workspaceId,
       query,
       k: 4,
       threshold: 0.2,
     });
+
+    // 2) External tool content (Slack, Notion, Jira, GitHub, Figma)
+    // Permission mirroring: Viewers get fewer results, editors get full access
+    const externalK = userRole === "viewer" ? 2 : 6;
+    let externalResults: UnifiedSearchResult[] = [];
+    try {
+      externalResults = await SearchAggregator.search({
+        userId,
+        query,
+        workspaceId: workspaceId || undefined,
+        k: externalK,
+        threshold: 0.2,
+      });
+    } catch (err: any) {
+      logger.warn("External tool search failed", { error: err.message });
+    }
+
+    // Combine and format for AI context
+    const combined = [
+      ...internalResults.map((r) => ({
+        source: "internal" as const,
+        source_label: r.entity_type === "project" ? "Project" : "Task",
+        entity_type: r.entity_type,
+        title: r.title,
+        content: r.content,
+        url: r.entity_type === "project" ? `/dashboard/projects/${r.entity_id}` : `/dashboard/tasks`,
+        similarity: r.similarity,
+      })),
+      ...externalResults.map((r) => ({
+        source: r.source,
+        source_label: r.source_label,
+        entity_type: r.content_type,
+        title: r.title,
+        content: r.content_text,
+        url: r.content_url,
+        similarity: r.similarity,
+        channel_or_project: r.channel_or_project,
+        author_name: r.author_name,
+      })),
+    ];
+
+    // Sort by similarity and return top results
+    combined.sort((a, b) => b.similarity - a.similarity);
+    return combined.slice(0, 8);
   } catch (err: any) {
     logger.warn("Workspace context retrieval failed", { error: err.message });
     return [];
@@ -288,7 +368,17 @@ async function handlePostChatMessage(req: any, res: any) {
       metadata: { ...metadata, workspaceContext },
     });
 
-    // Save AI response
+    // Save AI response with source citations in metadata
+    const externalSources = workspaceContext
+      .filter((r: any) => r.source !== "internal")
+      .map((r: any) => ({
+        source_label: r.source_label,
+        title: r.title,
+        url: r.url,
+        channel_or_project: r.channel_or_project,
+        author_name: r.author_name,
+      }));
+
     const aiMessage = await prisma.aIChatMessage.create({
       data: {
         session_id: sessionId,
@@ -298,8 +388,10 @@ async function handlePostChatMessage(req: any, res: any) {
         message_type: aiResponse.messageType || "text",
         image_url: aiResponse.imageUrl || null,
         file_url: aiResponse.fileUrl || null,
-        metadata:
-          aiResponse.metadata !== undefined ? aiResponse.metadata : undefined,
+        metadata: {
+          ...(aiResponse.metadata !== undefined ? aiResponse.metadata : {}),
+          ...(externalSources.length > 0 ? { sources: externalSources } : {}),
+        },
       },
     });
 
@@ -434,7 +526,17 @@ async function handlePostChatMessageStream(req: any, res: any) {
       },
     });
 
-    // Save AI response
+    // Save AI response with source citations in metadata
+    const externalSources = workspaceContext
+      .filter((r: any) => r.source !== "internal")
+      .map((r: any) => ({
+        source_label: r.source_label,
+        title: r.title,
+        url: r.url,
+        channel_or_project: r.channel_or_project,
+        author_name: r.author_name,
+      }));
+
     const aiMessage = await prisma.aIChatMessage.create({
       data: {
         session_id: sessionId,
@@ -444,8 +546,10 @@ async function handlePostChatMessageStream(req: any, res: any) {
         message_type: aiResponse.messageType || "text",
         image_url: aiResponse.imageUrl || null,
         file_url: aiResponse.fileUrl || null,
-        metadata:
-          aiResponse.metadata !== undefined ? aiResponse.metadata : undefined,
+        metadata: {
+          ...(aiResponse.metadata !== undefined ? aiResponse.metadata : {}),
+          ...(externalSources.length > 0 ? { sources: externalSources } : {}),
+        },
       },
     });
 
