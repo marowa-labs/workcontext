@@ -60,10 +60,10 @@ const getAccessBadge = (access) => {
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${config.color}`}>
       {key === "public" ? <Globe className="w-3 h-3" /> :
-       key === "private" ? <Lock className="w-3 h-3" /> :
-       key === "view only" ? <Lock className="w-3 h-3" /> :
-       key === "restricted" ? <Lock className="w-3 h-3" /> :
-       <Users className="w-3 h-3" />}
+        key === "private" ? <Lock className="w-3 h-3" /> :
+          key === "view only" ? <Lock className="w-3 h-3" /> :
+            key === "restricted" ? <Lock className="w-3 h-3" /> :
+              <Users className="w-3 h-3" />}
       {config.label}
     </span>
   );
@@ -80,12 +80,12 @@ const TABS = [
 ];
 
 const TOOL_ICONS = {
-  slack: Zap,
-  notion: FileTextIcon,
-  jira: GitBranch,
-  github: GitBranch,
-  github_app: GitBranch,
-  figma: PenTool,
+  slack: "/assets/images/slack.png",
+  notion: "/assets/images/notion.png",
+  jira: "/assets/images/Atlassian-Jira.png",
+  github: "/assets/images/GitHub.png",
+  github_app: "/assets/images/GitHub.png",
+  figma: "/assets/images/figma.png",
 };
 
 const TOOL_COLORS = {
@@ -238,21 +238,21 @@ export default function SpacesLibraryPage() {
 
     // Fetch connected integrations
     const loadIntegrations = async () => {
+      if (!token) return;
       try {
         setLoadingIntegrations(true);
-        const headers = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        
+        const headers = { 'Authorization': `Bearer ${token}` };
+
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations`, { headers });
         if (res.ok) {
           const data = await res.json();
           setIntegrations(data.connections || []);
-          
+
           // Fetch tree content for each connected tool
           for (const conn of (data.connections || [])) {
             try {
               const treeRes = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/tree?connection_id=${conn.id}`,
+                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/${conn.id}/tree`,
                 { headers }
               );
               if (treeRes.ok) {
@@ -491,15 +491,18 @@ export default function SpacesLibraryPage() {
 
   const handleSyncIntegration = async (conn) => {
     try {
+      if (!token) {
+        toast({ title: "Error", description: "Not authenticated.", variant: "destructive" });
+        return;
+      }
       setSyncingId(conn.id);
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
       await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/${conn.id}/sync`,
         { method: 'POST', headers }
       );
-      
+
       // Poll until sync completes
       let done = false;
       let attempts = 0;
@@ -523,14 +526,14 @@ export default function SpacesLibraryPage() {
 
       // Re-fetch tree after sync finishes
       const treeRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/tree?connection_id=${conn.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/${conn.id}/tree`,
         { headers }
       );
       if (treeRes.ok) {
         const treeData = await treeRes.json();
         setIntegrationContent((prev) => ({ ...prev, [conn.id]: treeData.tree || [] }));
       }
-      
+
       toast({ title: "Synced", description: `${conn.tool_type} content updated.` });
     } catch {
       toast({ title: "Error", description: "Failed to sync content.", variant: "destructive" });
@@ -568,7 +571,7 @@ export default function SpacesLibraryPage() {
               switch (tab.id) {
                 case "teamspaces": return spaces.filter((s) => s.type === "teamspace").length;
                 case "integrations": return integrations.length;
-        case "recents": return spaces.length;
+                case "recents": return spaces.length;
                 case "favorites": return spaces.filter((s) => s.is_favorite).length;
                 case "shared": return spaces.filter((s) => s.type === "shared").length;
                 case "private": return spaces.filter((s) => s.type === "private" || s.id === "private").length;
@@ -579,11 +582,10 @@ export default function SpacesLibraryPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "text-foreground bg-muted border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${activeTab === tab.id
+                  ? "text-foreground bg-muted border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -668,13 +670,13 @@ export default function SpacesLibraryPage() {
                 </div>
               ) : (
                 filteredSpaces.map((conn) => {
-                  const ToolIcon = TOOL_ICONS[conn.tool_type] || Plug;
+                  const toolIconSrc = TOOL_ICONS[conn.tool_type];
                   const toolColor = TOOL_COLORS[conn.tool_type] || "text-muted-foreground";
                   const toolBg = TOOL_BG_COLORS[conn.tool_type] || "bg-muted";
                   const content = integrationContent[conn.id] || [];
                   const contentCount = content.length;
                   const toolName = conn.tool_type?.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "Tool";
-                  
+
                   return (
                     <div key={conn.id}>
                       <div className="flex items-center px-4 py-3 hover:bg-muted/50 border-b border-border group">
@@ -691,7 +693,11 @@ export default function SpacesLibraryPage() {
 
                         <div className="flex-1 flex items-center gap-3 min-w-0">
                           <div className={`w-8 h-8 rounded-lg ${toolBg} flex items-center justify-center shrink-0`}>
-                            <ToolIcon className={`w-4 h-4 ${toolColor}`} />
+                            {toolIconSrc ? (
+                              <img src={toolIconSrc} alt={toolName} className="w-4 h-4 object-contain" />
+                            ) : (
+                              <Plug className={`w-4 h-4 ${toolColor}`} />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
@@ -745,7 +751,6 @@ export default function SpacesLibraryPage() {
                                 toggleRow={toggleRow}
                                 toolColor={toolColor}
                                 toolBg={toolBg}
-                                ToolIcon={ToolIcon}
                               />
                             ))
                           )}
@@ -829,11 +834,10 @@ export default function SpacesLibraryPage() {
                       className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Star
-                        className={`w-3.5 h-3.5 ${
-                          space.is_favorite
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-muted-foreground hover:text-amber-400"
-                        }`}
+                        className={`w-3.5 h-3.5 ${space.is_favorite
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-muted-foreground hover:text-amber-400"
+                          }`}
                       />
                     </button>
                   </div>
@@ -913,7 +917,7 @@ export default function SpacesLibraryPage() {
                         </div>
                         <div className="w-32">{getAccessBadge(child.access)}</div>
                         <div className="w-32">
-                          <MemberAvatars members={child.members || 1} memberNames={[]} onAdd={() => {}} />
+                          <MemberAvatars members={child.members || 1} memberNames={[]} onAdd={() => { }} />
                         </div>
                         <div className="w-10" />
                       </div>
@@ -960,22 +964,20 @@ export default function SpacesLibraryPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setCreateForm({ ...createForm, type: "teamspace" })}
-                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                      createForm.type === "teamspace"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:bg-muted"
-                    }`}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${createForm.type === "teamspace"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                      }`}
                   >
                     <Building2 className="w-4 h-4 mx-auto mb-1" />
                     Teamspace
                   </button>
                   <button
                     onClick={() => setCreateForm({ ...createForm, type: "private" })}
-                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                      createForm.type === "private"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:bg-muted"
-                    }`}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${createForm.type === "private"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                      }`}
                   >
                     <Lock className="w-4 h-4 mx-auto mb-1" />
                     Private
@@ -1005,7 +1007,7 @@ export default function SpacesLibraryPage() {
   );
 }
 
-function TreeNode({ node, depth = 0, expandedRows, toggleRow, toolColor, toolBg, ToolIcon }) {
+function TreeNode({ node, depth = 0, expandedRows, toggleRow, toolColor, toolBg }) {
   const router = useRouter();
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = expandedRows.has(node.id);
@@ -1088,7 +1090,6 @@ function TreeNode({ node, depth = 0, expandedRows, toggleRow, toolColor, toolBg,
               toggleRow={toggleRow}
               toolColor={toolColor}
               toolBg={toolBg}
-              ToolIcon={ToolIcon}
             />
           ))}
         </div>
