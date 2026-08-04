@@ -685,12 +685,12 @@ class AIService {
         throw new Error("Not authenticated");
       }
 
-      const url = new URL(`${API_BASE_URL}/api/ai/chat/sessions`);
+      let url = `${API_BASE_URL}/api/ai/chat/sessions`;
       if (projectId) {
-        url.searchParams.append("projectId", projectId);
+        url += `${url.includes("?") ? "&" : "?"}projectId=${encodeURIComponent(projectId)}`;
       }
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -1032,12 +1032,12 @@ class AIService {
         throw new Error("Not authenticated");
       }
 
-      const url = new URL(`${API_BASE_URL}/api/ai/image`);
+      let url = `${API_BASE_URL}/api/ai/image`;
       if (projectId) {
-        url.searchParams.append("projectId", projectId);
+        url += `${url.includes("?") ? "&" : "?"}projectId=${encodeURIComponent(projectId)}`;
       }
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

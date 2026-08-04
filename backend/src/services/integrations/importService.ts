@@ -635,19 +635,12 @@ export class IntegrationImportService {
 
   /**
    * Determine the best content format for imported content.
-   * Block-structured content (Notion pages, Jira issues) → "blocks"
-   * Linear content (Slack messages, GitHub READMEs) → "editor"
+   * V1: Use "editor" format for all tools. Notion content is stored as
+   * clean markdown (no more BlockNote conversion edge cases).
+   * "blocks" format is reserved for future use with native block editors.
    */
-  private static getContentFormat(toolType: string, contentType: string): "editor" | "blocks" {
-    // Notion pages and databases are inherently block-structured
-    if (toolType === "notion" && (contentType === "page" || contentType === "database")) {
-      return "blocks";
-    }
-    // Jira issues have structured fields that benefit from block layout
-    if (toolType === "jira" && contentType === "issue") {
-      return "blocks";
-    }
-    // Everything else works well in the standard editor
+  private static getContentFormat(toolType: string, _contentType: string): "editor" | "blocks" {
+    // V1: Everything uses the standard editor (TipTap) with markdown content.
     return "editor";
   }
 

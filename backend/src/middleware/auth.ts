@@ -144,6 +144,7 @@ export async function authenticateExpressRequest(
 
       // Attach user to request object
       (req as any).user = data.user;
+      (req as any).userId = data.user.id;
       next();
     } catch (networkError: any) {
       logger.error("Authentication error:", networkError);

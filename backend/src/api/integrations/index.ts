@@ -381,15 +381,37 @@ router.post("/:id/sync", authenticateExpressRequest, async (req, res) => {
       return res.status(400).json({ success: false, message: "Unknown tool type" });
     }
 
-    // Start sync in background (don't await)
-    connector.syncContent(id).catch((err) => {
+    // Prevent duplicate syncs — if one is already running, return the existing log
+    const activeLog = await prisma.externalToolSyncLog.findFirst({
+      where: { connection_id: id, status: { in: ["pending", "started"] } },
+    });
+    if (activeLog) {
+      return res.status(202).json({
+        success: true,
+        message: "Sync already in progress",
+        connection_id: id,
+        sync_log_id: activeLog.id,
+        status: activeLog.status,
+        items_synced: activeLog.items_synced,
+      });
+    }
+
+    // Create a PENDING log so the frontend can poll it immediately
+    const syncLog = await prisma.externalToolSyncLog.create({
+      data: { connection_id: id, status: "pending" },
+    });
+
+    // Fire-and-forget: run sync in background
+    connector.syncContent(id, syncLog.id).catch((err) => {
       logger.error("Background sync failed", { connectionId: id, error: err.message });
     });
 
-    return res.json({
+    return res.status(202).json({
       success: true,
       message: "Sync started",
       connection_id: id,
+      sync_log_id: syncLog.id,
+      status: "pending",
     });
   } catch (error: any) {
     logger.error("POST /api/integrations/:id/sync failed", { error: error.message });

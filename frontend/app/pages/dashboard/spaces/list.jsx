@@ -167,7 +167,7 @@ export default function SpacesLibraryPage() {
   const [createForm, setCreateForm] = useState({ name: "", description: "", type: "teamspace" });
   const [showMembersPopover, setShowMembersPopover] = useState(null);
 
-  const { data: user, loading: userLoading } = useUser();
+  const { data: user, token, loading: userLoading } = useUser();
 
   useEffect(() => {
     let isMounted = true;
@@ -240,7 +240,6 @@ export default function SpacesLibraryPage() {
     const loadIntegrations = async () => {
       try {
         setLoadingIntegrations(true);
-        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') : null;
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
@@ -274,7 +273,7 @@ export default function SpacesLibraryPage() {
     loadIntegrations();
 
     return () => { isMounted = false; };
-  }, [user]);
+  }, [user, token]);
 
   if (userLoading) {
     return (
@@ -493,7 +492,6 @@ export default function SpacesLibraryPage() {
   const handleSyncIntegration = async (conn) => {
     try {
       setSyncingId(conn.id);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') : null;
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
@@ -502,10 +500,31 @@ export default function SpacesLibraryPage() {
         { method: 'POST', headers }
       );
       
-      // Re-fetch tree
+      // Poll until sync completes
+      let done = false;
+      let attempts = 0;
+      while (!done && attempts < 150) {
+        await new Promise((r) => setTimeout(r, 2000));
+        attempts++;
+        try {
+          const statusRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/${conn.id}/status`,
+            { headers }
+          );
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            const log = statusData?.connection?.sync_logs?.[0];
+            if (log && (log.status === "completed" || log.status === "failed")) {
+              done = true;
+            }
+          }
+        } catch { /* keep polling */ }
+      }
+
+      // Re-fetch tree after sync finishes
       const treeRes = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/integrations/tree?connection_id=${conn.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers }
       );
       if (treeRes.ok) {
         const treeData = await treeRes.json();

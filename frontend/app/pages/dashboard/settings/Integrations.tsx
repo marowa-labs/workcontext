@@ -123,6 +123,7 @@ export default function IntegrationsPage() {
   const [searching, setSearching] = useState(false);
   const [activeSourceFilter, setActiveSourceFilter] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState<Record<string, { status: string; items_synced: number; items_indexed: number }>>({});
 
   // Get auth token on mount
   useEffect(() => {
@@ -149,14 +150,39 @@ export default function IntegrationsPage() {
             const token = session?.access_token;
             if (!token) return;
             setSyncingId(connId);
+            setSyncProgress((prev) => ({ ...prev, [connId]: { status: "starting", items_synced: 0, items_indexed: 0 } }));
             await fetch(`/api/integrations/${connId}/sync`, {
               method: "POST",
               headers: { Authorization: `Bearer ${token}` },
             });
+
+            // Poll for completion
+            let done = false;
+            let attempts = 0;
+            while (!done && attempts < 150) {
+              await new Promise((r) => setTimeout(r, 2000));
+              attempts++;
+              try {
+                const statusRes = await fetch(`/api/integrations/${connId}/status`, { headers: { Authorization: `Bearer ${token}` } });
+                const statusData = await statusRes.json();
+                const log = statusData?.connection?.sync_logs?.[0];
+                if (log) {
+                  setSyncProgress((prev) => ({
+                    ...prev,
+                    [connId]: { status: log.status, items_synced: log.items_synced || 0, items_indexed: log.items_indexed || 0 },
+                  }));
+                  if (log.status === "completed" || log.status === "failed") {
+                    done = true;
+                  }
+                }
+              } catch { /* keep polling */ }
+            }
           } catch (err) {
             console.error("Auto-sync failed:", err);
           } finally {
             setSyncingId(null);
+            setSyncProgress((prev) => { const next = { ...prev }; delete next[connId]; return next; });
+            fetchIntegrations();
           }
         };
         triggerSync();
@@ -234,28 +260,67 @@ export default function IntegrationsPage() {
     try {
       setSyncingId(connectionId);
       setError(null);
+      setSyncProgress((prev) => ({ ...prev, [connectionId]: { status: "starting", items_synced: 0, items_indexed: 0 } }));
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
         setError("Not authenticated");
         setSyncingId(null);
+        setSyncProgress((prev) => { const next = { ...prev }; delete next[connectionId]; return next; });
         return;
       }
+
       const res = await fetch(
         `/api/integrations/${connectionId}/sync`,
         { method: "POST", headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
       if (data.success) {
-        setSuccessMessage("Sync started! Content will be indexed shortly.");
-        setTimeout(() => fetchIntegrations(), 3000);
+        // Poll for progress
+        const pollSync = async () => {
+          let done = false;
+          let attempts = 0;
+          while (!done && attempts < 150) {
+            await new Promise((r) => setTimeout(r, 2000));
+            attempts++;
+            try {
+              const statusRes = await fetch(
+                `/api/integrations/${connectionId}/status`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              const statusData = await statusRes.json();
+              const log = statusData?.connection?.sync_logs?.[0];
+              if (log) {
+                setSyncProgress((prev) => ({
+                  ...prev,
+                  [connectionId]: { status: log.status, items_synced: log.items_synced || 0, items_indexed: log.items_indexed || 0 },
+                }));
+                if (log.status === "completed") {
+                  setSuccessMessage(`Sync complete! ${log.items_synced} items synced, ${log.items_indexed} items embedded.`);
+                  done = true;
+                } else if (log.status === "failed") {
+                  setError(log.error_message || "Sync failed");
+                  done = true;
+                }
+              }
+            } catch {
+              // Network hiccup — keep polling
+            }
+          }
+          setSyncingId(null);
+          setSyncProgress((prev) => { const next = { ...prev }; delete next[connectionId]; return next; });
+          fetchIntegrations();
+        };
+        pollSync();
       } else {
         setError(data.message || "Failed to start sync");
+        setSyncingId(null);
+        setSyncProgress((prev) => { const next = { ...prev }; delete next[connectionId]; return next; });
       }
     } catch {
       setError("Failed to start sync");
-    } finally {
       setSyncingId(null);
+      setSyncProgress((prev) => { const next = { ...prev }; delete next[connectionId]; return next; });
     }
   };
 
@@ -657,6 +722,14 @@ export default function IntegrationsPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {syncingId === conn.id && syncProgress[conn.id] && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {syncProgress[conn.id].status === "pending" && "Queued…"}
+                      {syncProgress[conn.id].status === "started" && `${syncProgress[conn.id].items_synced} synced…`}
+                      {syncProgress[conn.id].status === "completed" && "Done!"}
+                      {syncProgress[conn.id].status === "failed" && "Failed"}
+                    </span>
+                  )}
                   {conn.status === "disconnected" ? (
                     <button
                       onClick={() => handleReconnect(conn)}

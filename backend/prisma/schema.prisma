@@ -1426,9 +1426,11 @@ model ExternalToolContent {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
+  // Relations
   connection      ExternalToolConnection @relation(fields: [connection_id], references: [id], onDelete: Cascade)
   parent          ExternalToolContent?  @relation("ContentTree", fields: [parent_id], references: [id], onDelete: SetNull)
   children        ExternalToolContent[] @relation("ContentTree")
+  chunks          ExternalDocumentChunk[] @relation("ContentChunks")
 
   @@unique([connection_id, external_id])
   @@index([connection_id])
@@ -1444,7 +1446,7 @@ model ExternalToolContent {
 model ExternalToolSyncLog {
   id              String   @id @default(uuid())
   connection_id   String
-  status          String   // "started" | "completed" | "failed"
+  status          String   // "pending" | "started" | "completed" | "failed"
   items_synced    Int      @default(0)
   items_indexed   Int      @default(0)
   error_message   String?  @db.Text
@@ -1457,6 +1459,25 @@ model ExternalToolSyncLog {
   @@index([status])
   @@index([started_at])
   @@map("external_tool_sync_logs")
+}
+
+model ExternalDocumentChunk {
+  id           String   @id @default(uuid())
+  content_id   String
+  chunk_index  Int      @default(0)
+  chunk_text   String   @db.Text
+  embedding    Unsupported("vector")?
+  dim          Int?
+  indexed_at   DateTime?
+  created_at   DateTime @default(now())
+
+  content      ExternalToolContent @relation("ContentChunks", fields: [content_id], references: [id], onDelete: Cascade)
+
+  @@unique([content_id, chunk_index])
+  @@index([content_id])
+  @@index([dim])
+  @@index([indexed_at])
+  @@map("external_document_chunks")
 }
 
 // ============================================================

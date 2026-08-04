@@ -11,7 +11,6 @@
  */
 
 import { ConnectorBase, ToolType, OAuthConfig, TokenResult, SyncedItem } from "./connectorBase";
-import { convertNotionBlocksToBlockNote } from "./notionToBlockNote";
 
 export class NotionConnector extends ConnectorBase {
   readonly toolType: ToolType = "notion";
@@ -144,17 +143,13 @@ export class NotionConnector extends ConnectorBase {
       for (const result of data.results || []) {
         const item = this.parseNotionResult(result);
         if (item) {
-          // For pages (not databases), fetch the actual page body content
+          // For pages (not databases), fetch the actual page body content as markdown
           if (result.object === "page" && item.content_type === "page") {
             try {
-              const bodyContent = await this.fetchPageBodyContent(accessToken, result.id);
-              if (bodyContent) {
-                // Store plain text for search/embedding (truncated)
-                item.content_text = bodyContent.text?.slice(0, 8000) || item.content_text;
-                // Store structured blocks for BlockNote rendering
-                if (bodyContent.blocks && bodyContent.blocks.length > 0) {
-                  item.block_content = bodyContent.blocks;
-                }
+              const bodyMarkdown = await this.fetchPageBodyContent(accessToken, result.id);
+              if (bodyMarkdown) {
+                // Use the markdown for search/embedding (truncated)
+                item.content_text = bodyMarkdown.slice(0, 8000) || item.content_text;
               }
             } catch (err: any) {
               // Log but don't fail - we still have property text as fallback
@@ -273,14 +268,12 @@ export class NotionConnector extends ConnectorBase {
 
   /**
    * Fetch the actual page body content from Notion blocks API.
-   * Returns both plain text (for search/embedding) and structured blocks
-   * (for BlockNote editor rendering).
+   * Returns plain markdown text for embedding and editor rendering.
    */
   private async fetchPageBodyContent(
     accessToken: string,
     pageId: string
-  ): Promise<{ text: string; blocks: any[] } | null> {
-    const rawBlocks: any[] = [];
+  ): Promise<string | null> {
     const texts: string[] = [];
     let cursor: string | undefined;
     let hasMore = true;
@@ -300,92 +293,14 @@ export class NotionConnector extends ConnectorBase {
       if (data.object === "error") break;
 
       for (const block of data.results || []) {
-        // For structured blocks: fetch children and attach them
+        const md = this.notionBlockToMarkdown(block);
+        if (md) texts.push(md);
+
+        // Fetch nested children as indented markdown
         if (block.has_children) {
-          block._children = await this.fetchBlockChildrenRaw(accessToken, block.id);
+          const childTexts = await this.fetchChildBlocksAsMarkdown(accessToken, block.id, 1);
+          if (childTexts) texts.push(childTexts);
         }
-        rawBlocks.push(block);
-
-        // For plain text: extract text (used for search/embedding)
-        const text = this.extractBlockText(block);
-        if (text) texts.push(text);
-      }
-
-      hasMore = data.has_more || false;
-      cursor = data.next_cursor || undefined;
-    }
-
-    // Convert raw Notion blocks to BlockNote format
-    const blockNoteBlocks = convertNotionBlocksToBlockNote(rawBlocks);
-
-    return {
-      text: texts.filter(Boolean).join("\n") || "",
-      blocks: blockNoteBlocks,
-    };
-  }
-
-  /** Fetch child blocks as raw Notion blocks (preserving structure for BlockNote conversion) */
-  private async fetchBlockChildrenRaw(
-    accessToken: string,
-    blockId: string
-  ): Promise<any[]> {
-    const blocks: any[] = [];
-    let cursor: string | undefined;
-    let hasMore = true;
-
-    while (hasMore && blocks.length < 200) {
-      const url = `${this.API_BASE}/blocks/${blockId}/children${cursor ? `?start_cursor=${cursor}` : ""}`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Notion-Version": this.NOTION_VERSION,
-        },
-      });
-
-      if (!res.ok) break;
-      const data = await res.json();
-      if (data.object === "error") break;
-
-      for (const block of data.results || []) {
-        // Recursively fetch nested children
-        if (block.has_children) {
-          block._children = await this.fetchBlockChildrenRaw(accessToken, block.id);
-        }
-        blocks.push(block);
-      }
-
-      hasMore = data.has_more || false;
-      cursor = data.next_cursor || undefined;
-    }
-
-    return blocks;
-  }
-
-  /** Fetch child blocks as plain text (legacy, for backward compatibility) */
-  private async fetchBlockChildren(
-    accessToken: string,
-    blockId: string
-  ): Promise<string | null> {
-    const texts: string[] = [];
-    let cursor: string | undefined;
-    let hasMore = true;
-
-    while (hasMore && texts.join("\n").length < 4000) {
-      const url = `${this.API_BASE}/blocks/${blockId}/children${cursor ? `?start_cursor=${cursor}` : ""}`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Notion-Version": this.NOTION_VERSION,
-        },
-      });
-
-      if (!res.ok) break;
-      const data = await res.json();
-      if (data.object === "error") break;
-
-      for (const block of data.results || []) {
-        const text = this.extractBlockText(block);
-        if (text) texts.push(text);
       }
 
       hasMore = data.has_more || false;
@@ -395,37 +310,108 @@ export class NotionConnector extends ConnectorBase {
     return texts.filter(Boolean).join("\n") || null;
   }
 
-  /** Extract plain text from a single Notion block */
-  private extractBlockText(block: any): string {
-    if (!block || !block.type) return "";
+  /** Recursively fetch child blocks as indented markdown */
+  private async fetchChildBlocksAsMarkdown(
+    accessToken: string,
+    blockId: string,
+    depth: number
+  ): Promise<string | null> {
+    const texts: string[] = [];
+    let cursor: string | undefined;
+    let hasMore = true;
+    const indent = "  ".repeat(Math.min(depth, 4));
 
+    while (hasMore && texts.join("\n").length < 8000) {
+      const url = `${this.API_BASE}/blocks/${blockId}/children${cursor ? `?start_cursor=${cursor}` : ""}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Notion-Version": this.NOTION_VERSION,
+        },
+      });
+
+      if (!res.ok) break;
+      const data = await res.json();
+      if (data.object === "error") break;
+
+      for (const block of data.results || []) {
+        const md = this.notionBlockToMarkdown(block);
+        if (md) texts.push(`${indent}${md}`);
+
+        if (block.has_children) {
+          const childTexts = await this.fetchChildBlocksAsMarkdown(accessToken, block.id, depth + 1);
+          if (childTexts) texts.push(childTexts);
+        }
+      }
+
+      hasMore = data.has_more || false;
+      cursor = data.next_cursor || undefined;
+    }
+
+    return texts.filter(Boolean).join("\n") || null;
+  }
+
+  /** Convert a single Notion block to a markdown string */
+  private notionBlockToMarkdown(block: any): string {
+    if (!block || !block.type) return "";
     const blockData = block[block.type];
     if (!blockData) return "";
 
-    // Handle rich_text blocks (paragraphs, headings, bullets, numbered lists, quotes, callouts)
-    if (Array.isArray(blockData.rich_text)) {
-      return blockData.rich_text
-        .map((t: any) => t.plain_text)
+    const extractRichText = (rt: any[]): string =>
+      (rt || [])
+        .map((t: any) => {
+          let text = t.plain_text || "";
+          if (t.annotations?.bold) text = `**${text}**`;
+          if (t.annotations?.italic) text = `*${text}*`;
+          if (t.annotations?.code) text = `\`${text}\``;
+          if (t.annotations?.strikethrough) text = `~~${text}~~`;
+          if (t.href) text = `[${text}](${t.href})`;
+          return text;
+        })
         .join("");
+
+    switch (block.type) {
+      case "heading_1":
+        return `# ${extractRichText(blockData.rich_text)}`;
+      case "heading_2":
+        return `## ${extractRichText(blockData.rich_text)}`;
+      case "heading_3":
+        return `### ${extractRichText(blockData.rich_text)}`;
+      case "paragraph":
+        return extractRichText(blockData.rich_text);
+      case "bulleted_list_item":
+        return `- ${extractRichText(blockData.rich_text)}`;
+      case "numbered_list_item":
+        return `1. ${extractRichText(blockData.rich_text)}`;
+      case "to_do":
+        return blockData.checked
+          ? `- [x] ${extractRichText(blockData.rich_text)}`
+          : `- [ ] ${extractRichText(blockData.rich_text)}`;
+      case "toggle":
+        return `<details><summary>${extractRichText(blockData.rich_text)}</summary></details>`;
+      case "quote":
+        return `> ${extractRichText(blockData.rich_text)}`;
+      case "callout":
+        return `> ${extractRichText(blockData.rich_text)}`;
+      case "code": {
+        const lang = blockData.language || "";
+        return `\`\`\`${lang}\n${extractRichText(blockData.rich_text)}\n\`\`\``;
+      }
+      case "divider":
+        return "---";
+      case "bookmark":
+        return blockData.url || "";
+      case "equation":
+        return `$$${blockData.expression}$$`;
+      case "image":
+        return blockData.file?.url
+          ? `![image](${blockData.file.url})`
+          : "";
+      case "embed":
+        return blockData.url || "";
+      default:
+        return extractRichText(blockData.rich_text) || "";
     }
-
-    // Handle toggle blocks
-    if (blockData.rich_text && Array.isArray(blockData.rich_text)) {
-      return blockData.rich_text.map((t: any) => t.plain_text).join("");
-    }
-
-    // Handle code blocks
-    if (block.type === "code" && blockData.rich_text) {
-      const language = blockData.language ? `[${blockData.language}] ` : "";
-      return language + blockData.rich_text.map((t: any) => t.plain_text).join("");
-    }
-
-    // Handle bookmark, equation, table of contents, divider
-    if (block.type === "bookmark") return blockData.url || "";
-    if (block.type === "equation") return blockData.expression || "";
-    if (block.type === "divider") return "---";
-
-    return "";
   }
 
   getItemUrl(item: SyncedItem): string {

@@ -23,6 +23,7 @@ export interface UnifiedSearchResult {
   channel_or_project: string | null;
   similarity: number;
   metadata?: Record<string, any>;
+  snippet?: string;
 }
 
 const TOOL_DISPLAY_NAMES: Record<ToolType, string> = {
@@ -84,15 +85,17 @@ export class SearchAggregator {
 
     const allResults: UnifiedSearchResult[] = [];
 
-    // 1) Search external tool content
+    // 1) Search external tool content via chunk-level embeddings
     if (connectionIds.length > 0) {
-      const contentTypeClause = contentTypes && contentTypes.length > 0
-        ? `AND ect.content_type = ANY($5)`
-        : "";
-      const contentTypeParams = contentTypes && contentTypes.length > 0 ? [contentTypes] : [];
+      const contentTypeClause =
+        contentTypes && contentTypes.length > 0
+          ? `AND ect.content_type = ANY($5)`
+          : "";
+      const contentTypeParams =
+        contentTypes && contentTypes.length > 0 ? [contentTypes] : [];
 
       const externalSql = `
-        SELECT
+        SELECT DISTINCT ON (ect.id)
           ect.id,
           ect.connection_id,
           ect.tool_type,
@@ -103,18 +106,20 @@ export class SearchAggregator {
           ect.author_name,
           ect.channel_or_project,
           ect.metadata,
-          1 - (ect.embedding <=> $1::vector) as similarity
-        FROM external_tool_content ect
-        WHERE ect.dim = $2::int
-          AND ect.embedding IS NOT NULL
-          AND 1 - (ect.embedding <=> $1::vector) > $3
+          edc.chunk_text as snippet,
+          1 - (edc.embedding <=> $1::vector) as similarity
+        FROM external_document_chunks edc
+        JOIN external_tool_content ect ON ect.id = edc.content_id
+        WHERE edc.dim = $2::int
+          AND edc.embedding IS NOT NULL
+          AND 1 - (edc.embedding <=> $1::vector) > $3
           AND ect.connection_id = ANY($4)
           ${contentTypeClause}
-        ORDER BY ect.embedding <=> $1::vector
+        ORDER BY ect.id, edc.embedding <=> $1::vector
         LIMIT $${5 + contentTypeParams.length}
       `;
 
-      const externalParams = [
+      const externalParams: any[] = [
         vectorString,
         embedding.dim,
         threshold,
@@ -130,7 +135,8 @@ export class SearchAggregator {
           allResults.push({
             id: row.id,
             source: row.tool_type as ToolType,
-            source_label: TOOL_DISPLAY_NAMES[row.tool_type as ToolType] || row.tool_type,
+            source_label:
+              TOOL_DISPLAY_NAMES[row.tool_type as ToolType] || row.tool_type,
             content_type: row.content_type,
             title: row.title,
             content_text: row.content_text,
@@ -138,6 +144,7 @@ export class SearchAggregator {
             author_name: row.author_name,
             channel_or_project: row.channel_or_project,
             similarity: parseFloat(row.similarity),
+            snippet: row.snippet,
             metadata: {
               ...row.metadata,
               connection_id: row.connection_id,
@@ -146,7 +153,9 @@ export class SearchAggregator {
           });
         }
       } catch (err: any) {
-        logger.error("SearchAggregator: external search failed", { error: err.message });
+        logger.error("SearchAggregator: external search failed", {
+          error: err.message,
+        });
       }
     }
 
@@ -157,7 +166,7 @@ export class SearchAggregator {
         ownerId: userId,
         entityTypes: ["project", "task"],
         query: cleanQuery,
-        k: Math.ceil(k / 2), // Half for internal, half for external
+        k: Math.ceil(k / 2),
         threshold,
       });
 
@@ -165,13 +174,15 @@ export class SearchAggregator {
         allResults.push({
           id: item.id,
           source: "internal",
-          source_label: item.entity_type === "project" ? "Project" : "Task",
+          source_label:
+            item.entity_type === "project" ? "Project" : "Task",
           content_type: item.entity_type,
           title: item.title,
           content_text: item.content,
-          content_url: item.entity_type === "project"
-            ? `/dashboard/projects/${item.entity_id}`
-            : `/dashboard/tasks`,
+          content_url:
+            item.entity_type === "project"
+              ? `/dashboard/projects/${item.entity_id}`
+              : `/dashboard/tasks`,
           author_name: null,
           channel_or_project: null,
           similarity: item.similarity,
@@ -182,7 +193,9 @@ export class SearchAggregator {
         });
       }
     } catch (err: any) {
-      logger.error("SearchAggregator: internal search failed", { error: err.message });
+      logger.error("SearchAggregator: internal search failed", {
+        error: err.message,
+      });
     }
 
     // Sort by similarity (highest first) and deduplicate
@@ -217,7 +230,8 @@ export class SearchAggregator {
       id: c.id,
       tool_type: c.tool_type,
       tool_name: c.tool_name,
-      display_name: TOOL_DISPLAY_NAMES[c.tool_type as ToolType] || c.tool_type,
+      display_name:
+        TOOL_DISPLAY_NAMES[c.tool_type as ToolType] || c.tool_type,
       status: c.status,
       workspace_name: c.workspace_external_name,
       last_synced: c.last_synced_at,

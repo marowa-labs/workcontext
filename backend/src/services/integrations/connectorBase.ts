@@ -6,11 +6,12 @@
  *
  * The framework handles:
  * - Token refresh logic
- * - Sync orchestration
- * - Embedding generation & vector storage
- * - Cross-source search aggregation
+ * - Sync orchestration (background, with progress via ExternalToolSyncLog)
+ * - Chunk-level embedding generation & vector storage
+ * - Cross-source semantic search aggregation
  */
 
+import crypto from "crypto";
 import { prisma } from "../../lib/prisma";
 import logger from "../../monitoring/logger";
 import { EmbeddingService } from "../embeddingService";
@@ -78,6 +79,13 @@ export interface SearchResult {
   channel_or_project: string | null;
   similarity: number;
   metadata?: Record<string, any>;
+  snippet?: string;
+}
+
+// ---------- Helpers ----------
+
+function contentHash(text: string): string {
+  return crypto.createHash("sha256").update(text || "").digest("hex");
 }
 
 // ---------- Base Connector ----------
@@ -144,7 +152,6 @@ export abstract class ConnectorBase {
     });
 
     if (this.oauthConfig.usePKCE) {
-      // Generate PKCE code_verifier and code_challenge
       const codeVerifier = this.generateCodeVerifier();
       const codeChallenge = this.generateCodeChallenge(codeVerifier);
 
@@ -160,12 +167,7 @@ export abstract class ConnectorBase {
     return `${this.oauthConfig.authorizationUrl}?${params.toString()}`;
   }
 
-  /**
-   * Generate a cryptographically random code_verifier for PKCE.
-   * 43-128 characters from unreserved characters [A-Z] / [a-z] / [0-9] / '-' / '.' / '_' / '~'.
-   */
   protected generateCodeVerifier(): string {
-    const crypto = require("crypto");
     const buffer = crypto.randomBytes(32);
     return buffer
       .toString("base64url")
@@ -173,19 +175,19 @@ export abstract class ConnectorBase {
       .slice(0, 43);
   }
 
-  /**
-   * Generate a code_challenge from a code_verifier using SHA-256.
-   */
   protected generateCodeChallenge(codeVerifier: string): string {
-    const crypto = require("crypto");
     return crypto.createHash("sha256").update(codeVerifier).digest("base64url");
   }
 
   /**
-   * Sync content from the external tool into ExternalToolContent + embeddings.
-   * Returns the number of items synced.
+   * Sync content from the external tool into ExternalToolContent + chunk embeddings.
+   *
+   * @param connectionId  — the ExternalToolConnection to sync
+   * @param syncLogId     — optional pre-created PENDING log; if omitted, creates one.
+   *
+   * Runs entirely in the background. The caller is expected to fire-and-forget.
    */
-  async syncContent(connectionId: string): Promise<number> {
+  async syncContent(connectionId: string, syncLogId?: string): Promise<number> {
     const connection = await prisma.externalToolConnection.findUnique({
       where: { id: connectionId },
     });
@@ -228,17 +230,26 @@ export abstract class ConnectorBase {
       }
     }
 
-    // Create sync log
-    const syncLog = await prisma.externalToolSyncLog.create({
-      data: { connection_id: connectionId, status: "started" },
-    });
+    // Create or adopt the sync log
+    const syncLog = syncLogId
+      ? await prisma.externalToolSyncLog.update({
+          where: { id: syncLogId },
+          data: { status: "started", items_synced: 0, items_indexed: 0 },
+        })
+      : await prisma.externalToolSyncLog.create({
+          data: { connection_id: connectionId, status: "started" },
+        });
+
+    const updateLog = async (data: Record<string, any>) =>
+      prisma.externalToolSyncLog.update({ where: { id: syncLog.id }, data }).catch(() => {});
 
     try {
       let totalSynced = 0;
+      let totalIndexed = 0;
       let cursor: string | undefined;
       let hasMore = true;
 
-      // Fetch all pages
+      // Paginate through all content from the external tool
       while (hasMore) {
         const result = await this.fetchContent(accessToken, {
           since: connection.last_synced_at || undefined,
@@ -246,16 +257,14 @@ export abstract class ConnectorBase {
           cursor,
         });
 
-        // Upsert content items
+        // Collect chunks for batch embedding this page
+        const chunksToEmbed: { contentId: string; chunks: string[] }[] = [];
+
         for (const item of result.items) {
           const url = this.getItemUrl(item);
-          const textForEmbedding = [item.title, item.content_text]
-            .filter(Boolean)
-            .join("\n")
-            .slice(0, 8000);
+          const hash = contentHash(`${item.title || ""}\n${item.content_text || ""}`);
 
-          // Upsert the content record
-          // Resolve parent_id if this item has a parent_external_id
+          // Resolve parent
           let parentId: string | undefined;
           if (item.parent_external_id) {
             const parent = await prisma.externalToolContent.findUnique({
@@ -270,12 +279,24 @@ export abstract class ConnectorBase {
             parentId = parent?.id;
           }
 
-          // Store structured block content in metadata if available
-          const metadata = { ...(item.metadata || {}) };
-          if (item.block_content && Array.isArray(item.block_content) && item.block_content.length > 0) {
-            metadata.block_content = item.block_content;
-          }
+          // Build metadata with content hash
+          const metadata: Record<string, any> = { ...(item.metadata || {}) };
+          metadata.content_hash = hash;
 
+          // Check if content actually changed (delta-sync)
+          const existing = await prisma.externalToolContent.findUnique({
+            where: {
+              connection_id_external_id: {
+                connection_id: connectionId,
+                external_id: item.external_id,
+              },
+            },
+            select: { id: true, indexed_at: true, metadata: true },
+          });
+
+          const contentChanged = !existing || (existing.metadata as any)?.content_hash !== hash;
+
+          // Upsert content record
           const upserted = await prisma.externalToolContent.upsert({
             where: {
               connection_id_external_id: {
@@ -291,11 +312,13 @@ export abstract class ConnectorBase {
               author_avatar: item.author_avatar,
               channel_or_project: item.channel_or_project,
               content_type: item.content_type,
-              metadata: metadata,
+              metadata,
               parent_id: parentId || null,
               depth: item.depth ?? 0,
               sort_order: totalSynced,
               last_synced_at: new Date(),
+              // If content changed, invalidate existing chunk embeddings
+              ...(contentChanged ? { dim: null, indexed_at: null } : {}),
             },
             create: {
               connection_id: connectionId,
@@ -308,7 +331,7 @@ export abstract class ConnectorBase {
               author_name: item.author_name,
               author_avatar: item.author_avatar,
               channel_or_project: item.channel_or_project,
-              metadata: metadata,
+              metadata,
               parent_id: parentId || null,
               depth: item.depth ?? 0,
               sort_order: totalSynced,
@@ -316,7 +339,15 @@ export abstract class ConnectorBase {
             },
           });
 
-          // Update parent's item_count
+          // If content changed and has text, prepare chunks for embedding
+          if (contentChanged && item.content_text) {
+            const chunks = EmbeddingService.chunkText(item.content_text);
+            if (chunks.length > 0) {
+              chunksToEmbed.push({ contentId: upserted.id, chunks });
+            }
+          }
+
+          // Update parent item_count
           if (parentId) {
             await prisma.externalToolContent.updateMany({
               where: { id: parentId },
@@ -327,53 +358,34 @@ export abstract class ConnectorBase {
           totalSynced++;
         }
 
+        // Batch-embed all chunks for this page
+        for (const { contentId, chunks } of chunksToEmbed) {
+          const dim = await this.rebuildChunks(contentId, chunks);
+          totalIndexed++;
+          // Update content-level dim so search knows it's indexed
+          if (dim) {
+            await prisma.externalToolContent.updateMany({
+              where: { id: contentId },
+              data: { dim, indexed_at: new Date() },
+            });
+          }
+        }
+
         cursor = result.nextCursor;
         hasMore = result.hasMore;
+
+        // Progress update every page
+        await updateLog({ items_synced: totalSynced, items_indexed: totalIndexed });
       }
 
-      // Generate embeddings for newly synced content
-      const unindexed = await prisma.externalToolContent.findMany({
-        where: {
-          connection_id: connectionId,
-          indexed_at: null,
-          content_text: { not: null },
-        },
+      // Done
+      await updateLog({
+        status: "completed",
+        items_synced: totalSynced,
+        items_indexed: totalIndexed,
+        completed_at: new Date(),
       });
 
-      let indexedCount = 0;
-      for (const item of unindexed) {
-        if (!item.content_text) continue;
-        try {
-          const embedding = await EmbeddingService.embed(item.content_text.slice(0, 8000));
-          await prisma.$executeRawUnsafe(
-            `UPDATE external_tool_content
-             SET embedding = $1::vector, dim = $2, indexed_at = now()
-             WHERE id = $3`,
-            `[${embedding.vector.join(",")}]`,
-            embedding.dim,
-            item.id,
-          );
-          indexedCount++;
-        } catch (err: any) {
-          logger.warn("Failed to generate embedding for external content", {
-            contentId: item.id,
-            error: err.message,
-          });
-        }
-      }
-
-      // Update sync log
-      await prisma.externalToolSyncLog.update({
-        where: { id: syncLog.id },
-        data: {
-          status: "completed",
-          items_synced: totalSynced,
-          items_indexed: indexedCount,
-          completed_at: new Date(),
-        },
-      });
-
-      // Update connection
       await prisma.externalToolConnection.update({
         where: { id: connectionId },
         data: {
@@ -387,18 +399,15 @@ export abstract class ConnectorBase {
         connectionId,
         tool: this.toolType,
         synced: totalSynced,
-        indexed: indexedCount,
+        indexed: totalIndexed,
       });
 
       return totalSynced;
     } catch (err: any) {
-      await prisma.externalToolSyncLog.update({
-        where: { id: syncLog.id },
-        data: {
-          status: "failed",
-          error_message: err.message,
-          completed_at: new Date(),
-        },
+      await updateLog({
+        status: "failed",
+        error_message: err.message,
+        completed_at: new Date(),
       });
       await prisma.externalToolConnection.update({
         where: { id: connectionId },
@@ -409,7 +418,44 @@ export abstract class ConnectorBase {
   }
 
   /**
-   * Perform a semantic similarity search across synced content for a connection.
+   * Delete old chunks, embed new ones, and insert into document_chunks.
+   * Returns the embedding dimension used (for setting content.dim).
+   */
+  private async rebuildChunks(contentId: string, chunks: string[]): Promise<number | null> {
+    // Delete existing chunks
+    await prisma.externalDocumentChunk.deleteMany({ where: { content_id: contentId } });
+
+    // Batch-embed
+    const results = await EmbeddingService.embedBatch(chunks);
+    const dim = results.find((r) => r !== null)?.dim ?? null;
+
+    // Insert chunk rows
+    for (let i = 0; i < chunks.length; i++) {
+      const emb = results[i];
+      if (emb) {
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO external_document_chunks (id, content_id, chunk_index, chunk_text, embedding, dim, indexed_at)
+           VALUES ($1, $2, $3, $4, $5::vector, $6, now())`,
+          crypto.randomUUID(),
+          contentId,
+          i,
+          chunks[i],
+          `[${emb.vector.join(",")}]`,
+          emb.dim,
+        );
+      } else {
+        // Store chunk without embedding (search will skip it)
+        await prisma.externalDocumentChunk.create({
+          data: { content_id: contentId, chunk_index: i, chunk_text: chunks[i] },
+        });
+      }
+    }
+
+    return dim;
+  }
+
+  /**
+   * Perform a semantic similarity search across chunked content for a connection.
    */
   async searchContent(
     query: string,
@@ -429,42 +475,42 @@ export abstract class ConnectorBase {
     }
 
     const vectorString = `[${embedding.vector.join(",")}]`;
-    const params: any[] = [vectorString, embedding.dim];
+    const params: any[] = [vectorString, embedding.dim, threshold];
 
     let connectionClause = "";
     if (connectionIds && connectionIds.length > 0) {
-      connectionClause = `AND ect.connection_id = ANY($${params.length + 1})`;
       params.push(connectionIds);
+      connectionClause = `AND ect.connection_id = ANY($${params.length})`;
     }
 
-    // Filter by tool type
     const toolTypeClause = `AND ect.tool_type = $${params.length + 1}`;
     params.push(this.toolType);
 
-    const thresholdIdx = params.length + 1;
-    const limitIdx = params.length + 2;
-    params.push(threshold, k);
+    const limitIdx = params.length + 1;
+    params.push(k);
 
     const sql = `
-      SELECT
+      SELECT DISTINCT ON (ect.id)
+        ect.id,
         ect.connection_id,
         ect.tool_type,
         ect.content_type,
-        ect.external_id,
         ect.title,
         ect.content_text,
         ect.content_url,
         ect.author_name,
         ect.channel_or_project,
         ect.metadata,
-        1 - (ect.embedding <=> $1::vector) as similarity
-      FROM external_tool_content ect
-      WHERE ect.dim = $2::int
-        AND ect.embedding IS NOT NULL
-        AND 1 - (ect.embedding <=> $1::vector) > $${thresholdIdx}
+        edc.chunk_text as snippet,
+        1 - (edc.embedding <=> $1::vector) as similarity
+      FROM external_document_chunks edc
+      JOIN external_tool_content ect ON ect.id = edc.content_id
+      WHERE edc.dim = $2::int
+        AND edc.embedding IS NOT NULL
+        AND 1 - (edc.embedding <=> $1::vector) > $3
         ${connectionClause}
         ${toolTypeClause}
-      ORDER BY ect.embedding <=> $1::vector
+      ORDER BY ect.id, edc.embedding <=> $1::vector
       LIMIT $${limitIdx}
     `;
 
@@ -474,17 +520,18 @@ export abstract class ConnectorBase {
         connection_id: row.connection_id,
         tool_type: row.tool_type as ToolType,
         content_type: row.content_type,
-        external_id: row.external_id,
+        external_id: row.external_id || row.id,
         title: row.title,
         content_text: row.content_text,
         content_url: row.content_url,
         author_name: row.author_name,
         channel_or_project: row.channel_or_project,
         similarity: parseFloat(row.similarity),
+        snippet: row.snippet,
         metadata: row.metadata,
       }));
     } catch (err: any) {
-      logger.error("External content search failed", { tool: this.toolType, error: err.message });
+      logger.error("External chunk search failed", { tool: this.toolType, error: err.message });
       return [];
     }
   }
@@ -497,7 +544,5 @@ export abstract class ConnectorBase {
       where: { id: connectionId },
       data: { status: "disconnected" },
     });
-    // Optionally: delete synced content, or keep for historical reference
-    // We keep content but mark connection as disconnected
   }
 }
