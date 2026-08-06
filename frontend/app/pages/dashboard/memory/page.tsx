@@ -1327,7 +1327,7 @@ export default function MemoryPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="w-full px-6 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Brain className="w-6 h-6" />
