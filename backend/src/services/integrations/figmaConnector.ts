@@ -11,12 +11,19 @@
  * We fetch: Figma files, file comments, and project listings.
  */
 
-import { ConnectorBase, ToolType, OAuthConfig, TokenResult, SyncedItem } from "./connectorBase";
+import {
+  ConnectorBase,
+  ToolType,
+  OAuthConfig,
+  TokenResult,
+  SyncedItem,
+} from "./connectorBase";
 
 export class FigmaConnector extends ConnectorBase {
   readonly toolType: ToolType = "figma";
   readonly displayName = "Figma";
-  readonly iconUrl = "https://cdn.brandfetch.io/id-0MnQzDp/w/512/h/512/theme/dark/icon.jpeg";
+  readonly iconUrl =
+    "https://cdn.brandfetch.io/id-0MnQzDp/w/512/h/512/theme/dark/icon.jpeg";
   readonly description = "Search across Figma files, designs, and comments";
 
   readonly oauthConfig: OAuthConfig = {
@@ -26,12 +33,16 @@ export class FigmaConnector extends ConnectorBase {
     tokenUrl: "https://www.figma.com/api/oauth/token",
     scopes: ["file_read"],
     usePKCE: true,
-    omitResponseType: true,
+    omitResponseType: false,
   };
 
   private readonly API_BASE = "https://api.figma.com/v1";
 
-  async exchangeCode(code: string, redirectUri: string, codeVerifier?: string): Promise<TokenResult> {
+  async exchangeCode(
+    code: string,
+    redirectUri: string,
+    codeVerifier?: string,
+  ): Promise<TokenResult> {
     // Figma requires PKCE: grant_type + code_verifier
     const body: Record<string, string> = {
       code,
@@ -65,7 +76,9 @@ export class FigmaConnector extends ConnectorBase {
   async refreshAccessToken(_refreshToken: string): Promise<TokenResult> {
     // Figma doesn't use refresh tokens in the standard OAuth flow.
     // Tokens are long-lived. If expired, user must re-authenticate.
-    throw new Error("Figma tokens don't support refresh. Re-authenticate if expired.");
+    throw new Error(
+      "Figma tokens don't support refresh. Re-authenticate if expired.",
+    );
   }
 
   async fetchWorkspaceInfo(accessToken: string) {
@@ -89,7 +102,7 @@ export class FigmaConnector extends ConnectorBase {
 
   async fetchContent(
     accessToken: string,
-    options: { since?: Date; pageSize?: number; cursor?: string }
+    options: { since?: Date; pageSize?: number; cursor?: string },
   ): Promise<{ items: SyncedItem[]; nextCursor?: string; hasMore: boolean }> {
     const items: SyncedItem[] = [];
     let isPersonalAccount = false;
@@ -129,7 +142,7 @@ export class FigmaConnector extends ConnectorBase {
 
           const projectsRes = await fetch(
             `${this.API_BASE}/teams/${team.id}/projects`,
-            { headers: { Authorization: `Bearer ${accessToken}` } }
+            { headers: { Authorization: `Bearer ${accessToken}` } },
           );
           const projects = await projectsRes.json();
 
@@ -156,7 +169,7 @@ export class FigmaConnector extends ConnectorBase {
 
             const filesRes = await fetch(
               `${this.API_BASE}/projects/${project.id}/files`,
-              { headers: { Authorization: `Bearer ${accessToken}` } }
+              { headers: { Authorization: `Bearer ${accessToken}` } },
             );
             const files = await filesRes.json();
 
@@ -235,7 +248,9 @@ export class FigmaConnector extends ConnectorBase {
         `Pages: ${(file.pages || []).map((p: any) => p.name).join(", ")}`,
         `Components: ${file.componentCount || "N/A"}`,
         `Version: ${file.version}`,
-      ].filter(Boolean).join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n"),
       content_url: `https://www.figma.com/file/${file.key}`,
       author_name: null,
       author_avatar: null,
