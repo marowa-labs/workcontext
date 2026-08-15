@@ -2,19 +2,28 @@
  * Slack Connector
  *
  * Implements OAuth2 with user tokens for reading messages, channels, and files.
- * Scopes: channels:history, channels:read, files:read, users:read, search:read
+ * Bot scopes: channels:history, channels:read, files:read, users:read, groups:history, im:history, mpim:history
+ * User scopes: channels:history, channels:read, files:read, users:read, search:read, groups:history, im:history, mpim:history
+ * NOTE: search:read is a User Token Scope only — it must never be requested as a bot scope.
  *
  * API: https://api.slack.com/web
  * Rate Limits: Tier 3 — 50 requests/min for conversations.history, search.*
  * Pagination: Cursor-based (cursor param in conversations.list, conversations.history)
  */
 
-import { ConnectorBase, ToolType, OAuthConfig, TokenResult, SyncedItem } from "./connectorBase";
+import {
+  ConnectorBase,
+  ToolType,
+  OAuthConfig,
+  TokenResult,
+  SyncedItem,
+} from "./connectorBase";
 
 export class SlackConnector extends ConnectorBase {
   readonly toolType: ToolType = "slack";
   readonly displayName = "Slack";
-  readonly iconUrl = "https://cdn.brandfetch.io/id-wVCa7Wd/w/512/h/512/theme/dark/icon.jpeg";
+  readonly iconUrl =
+    "https://cdn.brandfetch.io/id-wVCa7Wd/w/512/h/512/theme/dark/icon.jpeg";
   readonly description = "Search across Slack messages, channels, and files";
 
   readonly oauthConfig: OAuthConfig = {
@@ -22,18 +31,22 @@ export class SlackConnector extends ConnectorBase {
     clientSecret: process.env.SLACK_CLIENT_SECRET || "",
     authorizationUrl: "https://slack.com/oauth/v2/authorize",
     tokenUrl: "https://slack.com/api/oauth.v2.access",
+    // NOTE: `search:read` is strictly a User Token Scope in Slack.
+    // It must NOT be requested as a bot scope — Slack rejects the
+    // authorization request if it appears in `scope`. It is kept only
+    // in `user_scope` below.
     scopes: [
       "channels:history",
       "channels:read",
       "files:read",
       "users:read",
-      "search:read",
       "groups:history",
       "im:history",
       "mpim:history",
     ],
     extraAuthParams: {
-      user_scope: "channels:history,channels:read,files:read,users:read,search:read,groups:history,im:history,mpim:history",
+      user_scope:
+        "channels:history,channels:read,files:read,users:read,search:read,groups:history,im:history,mpim:history",
     },
   };
 
@@ -92,10 +105,9 @@ export class SlackConnector extends ConnectorBase {
     if (!data.ok) throw new Error(`Slack auth.test failed: ${data.error}`);
 
     // Also fetch team info
-    const teamRes = await fetch(
-      `${this.API_BASE}/team.info`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    const teamRes = await fetch(`${this.API_BASE}/team.info`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     const teamData = await teamRes.json();
 
     return {
@@ -112,7 +124,7 @@ export class SlackConnector extends ConnectorBase {
 
   async fetchContent(
     accessToken: string,
-    options: { since?: Date; pageSize?: number; cursor?: string }
+    options: { since?: Date; pageSize?: number; cursor?: string },
   ): Promise<{ items: SyncedItem[]; nextCursor?: string; hasMore: boolean }> {
     const items: SyncedItem[] = [];
     const pageSize = options.pageSize || 100;
@@ -128,15 +140,17 @@ export class SlackConnector extends ConnectorBase {
     const channelsRes = await this.slackGet(
       `${this.API_BASE}/conversations.list`,
       accessToken,
-      channelParams
+      channelParams,
     );
     const channels = channelsRes.channels || [];
 
     // 2) Fetch recent messages from each channel (last 7 days max for search:read)
-    const since = options.since || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const since =
+      options.since || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const oldest = Math.floor(since.getTime() / 1000).toString();
 
-    for (const channel of channels.slice(0, 20)) { // Limit to 20 channels per sync
+    for (const channel of channels.slice(0, 20)) {
+      // Limit to 20 channels per sync
       try {
         const historyRes = await this.slackGet(
           `${this.API_BASE}/conversations.history`,
@@ -145,7 +159,7 @@ export class SlackConnector extends ConnectorBase {
             channel: channel.id,
             oldest,
             limit: "50",
-          }
+          },
         );
 
         for (const msg of historyRes.messages || []) {
@@ -158,11 +172,14 @@ export class SlackConnector extends ConnectorBase {
               const userRes = await this.slackGet(
                 `${this.API_BASE}/users.info`,
                 accessToken,
-                { user: userId }
+                { user: userId },
               );
-              authorName = userRes.user?.real_name || userRes.user?.name || "Unknown";
+              authorName =
+                userRes.user?.real_name || userRes.user?.name || "Unknown";
             }
-          } catch { /* skip */ }
+          } catch {
+            /* skip */
+          }
 
           items.push({
             external_id: `${channel.id}_${msg.ts}`,
@@ -200,7 +217,7 @@ export class SlackConnector extends ConnectorBase {
           count: "20",
           sort: "timestamp",
           sort_dir: "desc",
-        }
+        },
       );
 
       for (const match of searchRes.messages?.matches || []) {
@@ -231,7 +248,11 @@ export class SlackConnector extends ConnectorBase {
     return item.content_url || "";
   }
 
-  private async slackGet(url: string, token: string, params: Record<string, string> = {}) {
+  private async slackGet(
+    url: string,
+    token: string,
+    params: Record<string, string> = {},
+  ) {
     const qs = new URLSearchParams(params).toString();
     const fullUrl = qs ? `${url}?${qs}` : url;
     const res = await fetch(fullUrl, {
