@@ -51,7 +51,7 @@ function WaveHero() {
     offCtx.textBaseline = "middle";
     offCtx.fillText(text, W / 2, H * yPos);
     const imgData = offCtx.getImageData(0, 0, W, H).data;
-    const positions = [];
+    const positions: { x: number; y: number }[] = [];
     const density = 4;
     for (let y = 0; y < H; y += density) {
       for (let x = 0; x < W; x += density) {
@@ -78,7 +78,15 @@ function WaveHero() {
       rows.get(key).push(pos);
     });
 
-    const particles = [];
+    const particles: {
+      x: number;
+      y: number;
+      baseY: number;
+      next: { x: number; y: number } | null;
+      phase: number;
+      size: number;
+      baseOpacity: number;
+    }[] = [];
     rows.forEach((rowPositions) => {
       rowPositions.sort((a, b) => a.x - b.x);
       rowPositions.forEach((pos, idx) => {
