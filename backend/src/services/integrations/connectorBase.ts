@@ -18,13 +18,16 @@ import { EmbeddingService } from "../embeddingService";
 
 // ---------- Types ----------
 
-export type ToolType = "slack" | "notion" | "jira" | "github" | "github_app" | "figma";
+export type ToolType =
+  "slack" | "notion" | "jira" | "github" | "github_app" | "figma";
 
 export interface OAuthConfig {
   clientId: string;
   clientSecret: string;
   authorizationUrl: string;
   tokenUrl: string;
+  /** Optional separate refresh-token endpoint (e.g. Figma uses /v1/oauth/refresh) */
+  refreshTokenUrl?: string;
   scopes: string[];
   /** Extra auth params (e.g. Slack needs `user_scope` in addition to `scope`) */
   extraAuthParams?: Record<string, string>;
@@ -85,7 +88,10 @@ export interface SearchResult {
 // ---------- Helpers ----------
 
 function contentHash(text: string): string {
-  return crypto.createHash("sha256").update(text || "").digest("hex");
+  return crypto
+    .createHash("sha256")
+    .update(text || "")
+    .digest("hex");
 }
 
 // ---------- Base Connector ----------
@@ -100,7 +106,11 @@ export abstract class ConnectorBase {
   // ------ Abstract methods each connector must implement ------
 
   /** Exchange authorization code for tokens. Pass codeVerifier for PKCE flows (e.g. Figma). */
-  abstract exchangeCode(code: string, redirectUri: string, codeVerifier?: string): Promise<TokenResult>;
+  abstract exchangeCode(
+    code: string,
+    redirectUri: string,
+    codeVerifier?: string,
+  ): Promise<TokenResult>;
 
   /** Refresh an expired access token */
   abstract refreshAccessToken(refreshToken: string): Promise<TokenResult>;
@@ -119,7 +129,7 @@ export abstract class ConnectorBase {
       since?: Date;
       pageSize?: number;
       cursor?: string;
-    }
+    },
   ): Promise<{
     items: SyncedItem[];
     nextCursor?: string;
@@ -138,14 +148,12 @@ export abstract class ConnectorBase {
    */
   getAuthorizationUrl(
     redirectUri: string,
-    state: string
+    state: string,
   ): string | { authorizationUrl: string; pkceData: PKCEData } {
     const params = new URLSearchParams({
       client_id: this.oauthConfig.clientId,
       redirect_uri: redirectUri,
-      ...(this.oauthConfig.omitResponseType
-        ? {}
-        : { response_type: "code" }),
+      ...(this.oauthConfig.omitResponseType ? {} : { response_type: "code" }),
       scope: this.oauthConfig.scopes.join(" "),
       state,
       ...this.oauthConfig.extraAuthParams,
@@ -192,7 +200,8 @@ export abstract class ConnectorBase {
       where: { id: connectionId },
     });
     if (!connection) throw new Error("Connection not found");
-    if (connection.status === "disconnected") throw new Error("Connection is disconnected");
+    if (connection.status === "disconnected")
+      throw new Error("Connection is disconnected");
 
     let accessToken = connection.access_token;
 
@@ -201,12 +210,17 @@ export abstract class ConnectorBase {
       if (!connection.refresh_token) {
         await prisma.externalToolConnection.update({
           where: { id: connectionId },
-          data: { status: "expired", sync_error: "Token expired and no refresh token available" },
+          data: {
+            status: "expired",
+            sync_error: "Token expired and no refresh token available",
+          },
         });
         throw new Error("Token expired and no refresh token available");
       }
       try {
-        const newTokens = await this.refreshAccessToken(connection.refresh_token);
+        const newTokens = await this.refreshAccessToken(
+          connection.refresh_token,
+        );
         accessToken = newTokens.access_token;
         await prisma.externalToolConnection.update({
           where: { id: connectionId },
@@ -224,7 +238,10 @@ export abstract class ConnectorBase {
       } catch (err: any) {
         await prisma.externalToolConnection.update({
           where: { id: connectionId },
-          data: { status: "error", sync_error: `Token refresh failed: ${err.message}` },
+          data: {
+            status: "error",
+            sync_error: `Token refresh failed: ${err.message}`,
+          },
         });
         throw err;
       }
@@ -241,7 +258,9 @@ export abstract class ConnectorBase {
         });
 
     const updateLog = async (data: Record<string, any>) =>
-      prisma.externalToolSyncLog.update({ where: { id: syncLog.id }, data }).catch(() => {});
+      prisma.externalToolSyncLog
+        .update({ where: { id: syncLog.id }, data })
+        .catch(() => {});
 
     try {
       let totalSynced = 0;
@@ -262,7 +281,9 @@ export abstract class ConnectorBase {
 
         for (const item of result.items) {
           const url = this.getItemUrl(item);
-          const hash = contentHash(`${item.title || ""}\n${item.content_text || ""}`);
+          const hash = contentHash(
+            `${item.title || ""}\n${item.content_text || ""}`,
+          );
 
           // Resolve parent
           let parentId: string | undefined;
@@ -294,7 +315,8 @@ export abstract class ConnectorBase {
             select: { id: true, indexed_at: true, metadata: true },
           });
 
-          const contentChanged = !existing || (existing.metadata as any)?.content_hash !== hash;
+          const contentChanged =
+            !existing || (existing.metadata as any)?.content_hash !== hash;
 
           // Upsert content record
           const upserted = await prisma.externalToolContent.upsert({
@@ -375,7 +397,10 @@ export abstract class ConnectorBase {
         hasMore = result.hasMore;
 
         // Progress update every page
-        await updateLog({ items_synced: totalSynced, items_indexed: totalIndexed });
+        await updateLog({
+          items_synced: totalSynced,
+          items_indexed: totalIndexed,
+        });
       }
 
       // Done
@@ -421,9 +446,14 @@ export abstract class ConnectorBase {
    * Delete old chunks, embed new ones, and insert into document_chunks.
    * Returns the embedding dimension used (for setting content.dim).
    */
-  private async rebuildChunks(contentId: string, chunks: string[]): Promise<number | null> {
+  private async rebuildChunks(
+    contentId: string,
+    chunks: string[],
+  ): Promise<number | null> {
     // Delete existing chunks
-    await prisma.externalDocumentChunk.deleteMany({ where: { content_id: contentId } });
+    await prisma.externalDocumentChunk.deleteMany({
+      where: { content_id: contentId },
+    });
 
     // Batch-embed
     const results = await EmbeddingService.embedBatch(chunks);
@@ -446,7 +476,11 @@ export abstract class ConnectorBase {
       } else {
         // Store chunk without embedding (search will skip it)
         await prisma.externalDocumentChunk.create({
-          data: { content_id: contentId, chunk_index: i, chunk_text: chunks[i] },
+          data: {
+            content_id: contentId,
+            chunk_index: i,
+            chunk_text: chunks[i],
+          },
         });
       }
     }
@@ -461,7 +495,7 @@ export abstract class ConnectorBase {
     query: string,
     connectionIds?: string[],
     k = 10,
-    threshold = 0.15
+    threshold = 0.15,
   ): Promise<SearchResult[]> {
     const cleanQuery = (query || "").trim();
     if (!cleanQuery) return [];
@@ -531,7 +565,10 @@ export abstract class ConnectorBase {
         metadata: row.metadata,
       }));
     } catch (err: any) {
-      logger.error("External chunk search failed", { tool: this.toolType, error: err.message });
+      logger.error("External chunk search failed", {
+        tool: this.toolType,
+        error: err.message,
+      });
       return [];
     }
   }

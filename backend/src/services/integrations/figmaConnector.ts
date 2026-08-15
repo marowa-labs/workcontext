@@ -33,7 +33,10 @@ export class FigmaConnector extends ConnectorBase {
     clientId: process.env.FIGMA_CLIENT_ID || "",
     clientSecret: process.env.FIGMA_CLIENT_SECRET || "",
     authorizationUrl: "https://www.figma.com/oauth",
-    tokenUrl: "https://www.figma.com/api/oauth/token",
+    // Figma's OAuth token endpoint is api.figma.com/v1/oauth/token.
+    // (www.figma.com/api/oauth/token returns 404 "Not Found".)
+    tokenUrl: "https://api.figma.com/v1/oauth/token",
+    refreshTokenUrl: "https://api.figma.com/v1/oauth/refresh",
     // Figma OAuth scopes — must match the Figma Developer Console settings.
     // There is no `file_read` scope in Figma; these are the correct ones.
     scopes: ["current_user:read", "file_content:read", "project_metadata:read"],
@@ -42,6 +45,32 @@ export class FigmaConnector extends ConnectorBase {
   };
 
   private readonly API_BASE = "https://api.figma.com/v1";
+
+  /**
+   * Figma requires HTTP Basic Auth (Base64 of client_id:client_secret) for
+   * token exchange, NOT client_id/client_secret in the request body.
+   */
+  private basicAuthHeader(): string {
+    const credentials = Buffer.from(
+      `${this.oauthConfig.clientId}:${this.oauthConfig.clientSecret}`,
+    ).toString("base64");
+    return `Basic ${credentials}`;
+  }
+
+  /** Parse a JSON response, throwing a clear error for non-JSON bodies. */
+  private async parseJson(res: Response): Promise<any> {
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(
+        `Figma API error (${res.status}): ${text || res.statusText}`,
+      );
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`Figma returned invalid JSON: ${text}`);
+    }
+  }
 
   async exchangeCode(
     code: string,
@@ -52,8 +81,6 @@ export class FigmaConnector extends ConnectorBase {
     const body: Record<string, string> = {
       code,
       redirect_uri: redirectUri,
-      client_id: this.oauthConfig.clientId,
-      client_secret: this.oauthConfig.clientSecret,
       grant_type: "authorization_code",
     };
 
@@ -63,27 +90,46 @@ export class FigmaConnector extends ConnectorBase {
 
     const res = await fetch(this.oauthConfig.tokenUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: this.basicAuthHeader(),
+      },
       body: new URLSearchParams(body),
     });
-    const data = await res.json();
+    const data = await this.parseJson(res);
     if (data.err || data.error) {
       throw new Error(`Figma OAuth error: ${data.err || data.error}`);
     }
 
     return {
       access_token: data.access_token,
+      refresh_token: data.refresh_token,
       expires_in: data.expires_in,
       token_type: data.token_type,
     };
   }
 
-  async refreshAccessToken(_refreshToken: string): Promise<TokenResult> {
-    // Figma doesn't use refresh tokens in the standard OAuth flow.
-    // Tokens are long-lived. If expired, user must re-authenticate.
-    throw new Error(
-      "Figma tokens don't support refresh. Re-authenticate if expired.",
-    );
+  async refreshAccessToken(refreshToken: string): Promise<TokenResult> {
+    // Figma refresh endpoint: POST https://api.figma.com/v1/oauth/refresh
+    const res = await fetch(this.oauthConfig.refreshTokenUrl!, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: this.basicAuthHeader(),
+      },
+      body: new URLSearchParams({ refresh_token: refreshToken }),
+    });
+    const data = await this.parseJson(res);
+    if (data.err || data.error) {
+      throw new Error(`Figma token refresh failed: ${data.err || data.error}`);
+    }
+
+    return {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_in: data.expires_in,
+      token_type: data.token_type,
+    };
   }
 
   async fetchWorkspaceInfo(accessToken: string) {
@@ -91,7 +137,7 @@ export class FigmaConnector extends ConnectorBase {
     const res = await fetch(`${this.API_BASE}/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    const data = await res.json();
+    const data = await this.parseJson(res);
     if (data.err) throw new Error(`Figma API error: ${data.err}`);
 
     return {
