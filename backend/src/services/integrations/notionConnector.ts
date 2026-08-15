@@ -154,8 +154,11 @@ export class NotionConnector extends ConnectorBase {
       for (const result of data.results || []) {
         const item = this.parseNotionResult(result);
         if (item) {
-          // For pages (not databases), fetch the actual page body content as markdown
-          if (result.object === "page" && item.content_type === "page") {
+          // Fetch body content for ALL pages (including database entries).
+          // Database entries are pages with a database parent — they have
+          // body blocks just like regular pages, and skipping them leaves
+          // content_text empty so they can't be searched/embedded.
+          if (result.object === "page") {
             try {
               const bodyMarkdown = await this.fetchPageBodyContent(
                 accessToken,

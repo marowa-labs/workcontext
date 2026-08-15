@@ -59,10 +59,10 @@ export class SearchAggregator {
     const cleanQuery = (query || "").trim();
     if (!cleanQuery) return [];
 
-    // Get embedding for query
+    // Get embedding for query (falls back to the user's BYOK key)
     let embedding;
     try {
-      embedding = await EmbeddingService.embed(cleanQuery);
+      embedding = await EmbeddingService.embed(cleanQuery, userId);
     } catch (err: any) {
       logger.warn("SearchAggregator: embedding failed", { error: err.message });
       return [];
@@ -75,7 +75,9 @@ export class SearchAggregator {
       where: {
         user_id: userId,
         status: "active",
-        ...(toolTypes && toolTypes.length > 0 ? { tool_type: { in: toolTypes } } : {}),
+        ...(toolTypes && toolTypes.length > 0
+          ? { tool_type: { in: toolTypes } }
+          : {}),
       },
       select: { id: true, tool_type: true, tool_name: true },
     });
@@ -129,7 +131,10 @@ export class SearchAggregator {
       ];
 
       try {
-        const externalRows = await prisma.$queryRawUnsafe(externalSql, ...externalParams);
+        const externalRows = await prisma.$queryRawUnsafe(
+          externalSql,
+          ...externalParams,
+        );
         for (const row of externalRows as any[]) {
           const conn = connectionMap.get(row.connection_id);
           allResults.push({
@@ -174,8 +179,7 @@ export class SearchAggregator {
         allResults.push({
           id: item.id,
           source: "internal",
-          source_label:
-            item.entity_type === "project" ? "Project" : "Task",
+          source_label: item.entity_type === "project" ? "Project" : "Task",
           content_type: item.entity_type,
           title: item.title,
           content_text: item.content,
@@ -230,8 +234,7 @@ export class SearchAggregator {
       id: c.id,
       tool_type: c.tool_type,
       tool_name: c.tool_name,
-      display_name:
-        TOOL_DISPLAY_NAMES[c.tool_type as ToolType] || c.tool_type,
+      display_name: TOOL_DISPLAY_NAMES[c.tool_type as ToolType] || c.tool_type,
       status: c.status,
       workspace_name: c.workspace_external_name,
       last_synced: c.last_synced_at,

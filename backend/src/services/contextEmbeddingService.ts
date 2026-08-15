@@ -41,7 +41,8 @@ export class ContextEmbeddingService {
   static extractText(node: any): string {
     if (!node) return "";
     if (typeof node === "string") return node;
-    if (Array.isArray(node)) return node.map((n) => this.extractText(n)).join(" ");
+    if (Array.isArray(node))
+      return node.map((n) => this.extractText(n)).join(" ");
     if (typeof node === "object") {
       let out = "";
       if (node.type === "text" && typeof node.text === "string") {
@@ -84,7 +85,7 @@ export class ContextEmbeddingService {
 
     let embedding: Awaited<ReturnType<typeof EmbeddingService.embed>>;
     try {
-      embedding = await EmbeddingService.embed(text);
+      embedding = await EmbeddingService.embed(text, input.ownerId);
     } catch (error: any) {
       logger.warn("ContextEmbeddingService: embedding failed", {
         entityType: input.entityType,
@@ -158,10 +159,7 @@ export class ContextEmbeddingService {
     });
   }
 
-  static async remove(
-    entityType: EntityType,
-    entityId: string,
-  ): Promise<void> {
+  static async remove(entityType: EntityType, entityId: string): Promise<void> {
     try {
       await prisma.$executeRawUnsafe(
         `DELETE FROM context_embeddings WHERE entity_type = $1 AND entity_id = $2`,
@@ -204,7 +202,10 @@ export class ContextEmbeddingService {
 
     let embedding: Awaited<ReturnType<typeof EmbeddingService.embed>>;
     try {
-      embedding = await EmbeddingService.embed(cleanQuery);
+      embedding = await EmbeddingService.embed(
+        cleanQuery,
+        ownerId || undefined,
+      );
     } catch (error: any) {
       logger.warn("ContextEmbeddingService: retrieval embedding failed", {
         error: error.message,
@@ -242,7 +243,10 @@ export class ContextEmbeddingService {
       LIMIT $${limitIdx}`;
 
     try {
-      const rows = (await prisma.$queryRawUnsafe(sql, ...params)) as RelatedItem[];
+      const rows = (await prisma.$queryRawUnsafe(
+        sql,
+        ...params,
+      )) as RelatedItem[];
       return rows;
     } catch (error: any) {
       logger.error("ContextEmbeddingService: similarity search failed", {

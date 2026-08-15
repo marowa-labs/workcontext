@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
 import { SecretsService } from "./secrets-service";
+import { BYOKService } from "./byokService";
 import logger from "../monitoring/logger";
 
 export interface EmbeddingResult {
@@ -12,35 +13,88 @@ export interface EmbeddingResult {
  * Provider-agnostic text embedding service.
  *
  * Primary provider is Gemini (the app's primary AI provider, no extra dependency
- * required) using `text-embedding-004` (768-dim). If Gemini is unavailable it
+ * required) using `gemini-embedding-001` (768-dim). If Gemini is unavailable it
  * falls back to OpenAI `text-embedding-3-small` (1536-dim).
+ *
+ * Key resolution order per provider:
+ *   1. System env key (GEMINI_API_KEY / OPENAI_API_KEY)
+ *   2. User's BYOK key (Google / OpenAI) — used when the app runs BYOK-only
  *
  * The active provider is resolved deterministically from the configured keys, so a
  * given user consistently produces the same dimension. Each stored embedding records
  * its `dim` so similarity queries only compare vectors of the same dimension.
  */
 export class EmbeddingService {
-  private static geminiClient: GoogleGenerativeAI | null = null;
-  private static openaiClient: OpenAI | null = null;
+  // Clients are cached per API key so different users (BYOK) don't share clients.
+  private static geminiClients = new Map<string, GoogleGenerativeAI>();
+  private static openaiClients = new Map<string, OpenAI>();
 
   private static getGeminiClient(apiKey: string): GoogleGenerativeAI {
-    if (!this.geminiClient) {
-      this.geminiClient = new GoogleGenerativeAI(apiKey);
+    let client = this.geminiClients.get(apiKey);
+    if (!client) {
+      client = new GoogleGenerativeAI(apiKey);
+      this.geminiClients.set(apiKey, client);
     }
-    return this.geminiClient;
+    return client;
   }
 
   private static getOpenAIClient(apiKey: string): OpenAI {
-    if (!this.openaiClient) {
-      this.openaiClient = new OpenAI({ apiKey });
+    let client = this.openaiClients.get(apiKey);
+    if (!client) {
+      client = new OpenAI({ apiKey });
+      this.openaiClients.set(apiKey, client);
     }
-    return this.openaiClient;
+    return client;
+  }
+
+  /**
+   * Resolve the Gemini API key: system env first, then the user's BYOK Google key.
+   */
+  private static async resolveGeminiKey(
+    userId?: string,
+  ): Promise<string | null> {
+    const systemKey = await SecretsService.getGeminiApiKey();
+    if (systemKey) return systemKey;
+    if (userId) {
+      try {
+        const byokKey = await BYOKService.getDecryptedKey(userId, "google");
+        if (byokKey) return byokKey;
+      } catch (error: any) {
+        logger.warn("Failed to resolve BYOK Google key for embeddings", {
+          error: error.message,
+        });
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Resolve the OpenAI API key: system env first, then the user's BYOK OpenAI key.
+   */
+  private static async resolveOpenAIKey(
+    userId?: string,
+  ): Promise<string | null> {
+    const systemKey = await SecretsService.getOpenAiApiKey();
+    if (systemKey) return systemKey;
+    if (userId) {
+      try {
+        const byokKey = await BYOKService.getDecryptedKey(userId, "openai");
+        if (byokKey) return byokKey;
+      } catch (error: any) {
+        logger.warn("Failed to resolve BYOK OpenAI key for embeddings", {
+          error: error.message,
+        });
+      }
+    }
+    return null;
   }
 
   /**
    * Embed a single text. Throws if no embedding provider is configured.
+   * Pass `userId` to fall back to the user's BYOK Google/OpenAI key when no
+   * system-level embedding key is set.
    */
-  static async embed(text: string): Promise<EmbeddingResult> {
+  static async embed(text: string, userId?: string): Promise<EmbeddingResult> {
     const clean = (text || "").toString().slice(0, 8000).trim();
     if (!clean) {
       throw new Error("Cannot embed empty text");
@@ -48,13 +102,13 @@ export class EmbeddingService {
 
     // 1. Try Gemini (primary)
     try {
-      const geminiKey = await SecretsService.getGeminiApiKey();
+      const geminiKey = await this.resolveGeminiKey(userId);
       if (geminiKey) {
         const model = this.getGeminiClient(geminiKey).getGenerativeModel({
-          model: "text-embedding-004",
+          model: "gemini-embedding-001",
         });
         const result = await model.embedContent({
-          contents: [{ parts: [{ text: clean }] }],
+          content: { parts: [{ text: clean }] },
           taskType: "RETRIEVAL_DOCUMENT",
         } as any);
         const values = result.embedding.values;
@@ -69,10 +123,10 @@ export class EmbeddingService {
     }
 
     // 2. Fall back to OpenAI
-    const openAiKey = await SecretsService.getOpenAiApiKey();
+    const openAiKey = await this.resolveOpenAIKey(userId);
     if (!openAiKey) {
       throw new Error(
-        "No embedding provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY.",
+        "No embedding provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY, or add a Google/OpenAI key in Settings → AI.",
       );
     }
     const response = await this.getOpenAIClient(openAiKey).embeddings.create({
@@ -111,28 +165,33 @@ export class EmbeddingService {
    * with the input. Empty/whitespace texts get `null` in their slot.
    *
    * Automatically retries on rate-limit (429) with exponential backoff.
+   * Pass `userId` to fall back to the user's BYOK Google/OpenAI key when no
+   * system-level embedding key is set.
    */
   static async embedBatch(
     texts: string[],
     batchSize = 32,
+    userId?: string,
   ): Promise<(EmbeddingResult | null)[]> {
-    const results: (EmbeddingResult | null)[] = new Array(texts.length).fill(null);
+    const results: (EmbeddingResult | null)[] = new Array(texts.length).fill(
+      null,
+    );
 
     // Determine provider once for the whole batch
     let provider: "gemini" | "openai" | null = null;
     try {
-      const geminiKey = await SecretsService.getGeminiApiKey();
+      const geminiKey = await this.resolveGeminiKey(userId);
       if (geminiKey) provider = "gemini";
     } catch {}
     if (!provider) {
       try {
-        const openAiKey = await SecretsService.getOpenAiApiKey();
+        const openAiKey = await this.resolveOpenAIKey(userId);
         if (openAiKey) provider = "openai";
       } catch {}
     }
     if (!provider) {
       throw new Error(
-        "No embedding provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY.",
+        "No embedding provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY, or add a Google/OpenAI key in Settings → AI.",
       );
     }
 
@@ -159,9 +218,9 @@ export class EmbeddingService {
         try {
           let batchResults: EmbeddingResult[];
           if (provider === "gemini") {
-            batchResults = await this.embedBatchGemini(nonEmptyTexts);
+            batchResults = await this.embedBatchGemini(nonEmptyTexts, userId);
           } else {
-            batchResults = await this.embedBatchOpenAI(nonEmptyTexts);
+            batchResults = await this.embedBatchOpenAI(nonEmptyTexts, userId);
           }
           // Map results back to original positions
           for (let k = 0; k < nonEmptyIndices.length; k++) {
@@ -189,7 +248,7 @@ export class EmbeddingService {
               const idx = i + nonEmptyIndices[k];
               if (results[idx]) continue;
               try {
-                results[idx] = await this.embed(nonEmptyTexts[k]);
+                results[idx] = await this.embed(nonEmptyTexts[k], userId);
               } catch (err2: any) {
                 logger.warn("Single-text embedding fallback failed", {
                   error: err2.message,
@@ -209,12 +268,13 @@ export class EmbeddingService {
   /** Gemini batch embedding */
   private static async embedBatchGemini(
     texts: string[],
+    userId?: string,
   ): Promise<EmbeddingResult[]> {
-    const geminiKey = await SecretsService.getGeminiApiKey();
+    const geminiKey = await this.resolveGeminiKey(userId);
     if (!geminiKey) throw new Error("Gemini API key not available");
 
     const model = this.getGeminiClient(geminiKey).getGenerativeModel({
-      model: "text-embedding-004",
+      model: "gemini-embedding-001",
     });
 
     const result = await (model as any).batchEmbedContents({
@@ -233,8 +293,9 @@ export class EmbeddingService {
   /** OpenAI batch embedding */
   private static async embedBatchOpenAI(
     texts: string[],
+    userId?: string,
   ): Promise<EmbeddingResult[]> {
-    const openAiKey = await SecretsService.getOpenAiApiKey();
+    const openAiKey = await this.resolveOpenAIKey(userId);
     if (!openAiKey) throw new Error("OpenAI API key not available");
 
     const response = await this.getOpenAIClient(openAiKey).embeddings.create({

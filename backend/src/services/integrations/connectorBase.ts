@@ -382,7 +382,11 @@ export abstract class ConnectorBase {
 
         // Batch-embed all chunks for this page
         for (const { contentId, chunks } of chunksToEmbed) {
-          const dim = await this.rebuildChunks(contentId, chunks);
+          const dim = await this.rebuildChunks(
+            contentId,
+            chunks,
+            connection.user_id,
+          );
           totalIndexed++;
           // Update content-level dim so search knows it's indexed
           if (dim) {
@@ -449,14 +453,15 @@ export abstract class ConnectorBase {
   private async rebuildChunks(
     contentId: string,
     chunks: string[],
+    userId?: string,
   ): Promise<number | null> {
     // Delete existing chunks
     await prisma.externalDocumentChunk.deleteMany({
       where: { content_id: contentId },
     });
 
-    // Batch-embed
-    const results = await EmbeddingService.embedBatch(chunks);
+    // Batch-embed (falls back to the user's BYOK key when no system key is set)
+    const results = await EmbeddingService.embedBatch(chunks, 32, userId);
     const dim = results.find((r) => r !== null)?.dim ?? null;
 
     // Insert chunk rows
@@ -496,13 +501,14 @@ export abstract class ConnectorBase {
     connectionIds?: string[],
     k = 10,
     threshold = 0.15,
+    userId?: string,
   ): Promise<SearchResult[]> {
     const cleanQuery = (query || "").trim();
     if (!cleanQuery) return [];
 
     let embedding;
     try {
-      embedding = await EmbeddingService.embed(cleanQuery);
+      embedding = await EmbeddingService.embed(cleanQuery, userId);
     } catch (err: any) {
       logger.warn("Search embedding failed", { error: err.message });
       return [];

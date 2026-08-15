@@ -147,6 +147,13 @@ export class JiraConnector extends ConnectorBase {
         },
       },
     );
+    if (!resourcesRes.ok) {
+      // 401 = token expired/revoked; surface it so the sync is reported as
+      // failed instead of silently completing with 0 items.
+      throw new Error(
+        `Jira accessible-resources failed with HTTP ${resourcesRes.status} — the access token may be expired or revoked. Reconnect the Jira integration to refresh it.`,
+      );
+    }
     const resources = await resourcesRes.json();
     const sites = resources.data || [];
 
@@ -241,8 +248,11 @@ export class JiraConnector extends ConnectorBase {
 
           startAt += (searchData.issues || []).length;
         } catch (err) {
-          // Skip sites where we don't have access
-          break;
+          // Surface the error instead of silently breaking — a failed site
+          // fetch should be visible in the sync log, not reported as success
+          // with 0 items.
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(`Jira search failed for ${siteUrl}: ${msg}`);
         }
       }
     }

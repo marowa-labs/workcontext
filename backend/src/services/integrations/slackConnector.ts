@@ -38,9 +38,10 @@ export class SlackConnector extends ConnectorBase {
     scopes: [
       "channels:history",
       "channels:read",
+      "groups:read",
+      "groups:history",
       "files:read",
       "users:read",
-      "groups:history",
       "im:history",
       "mpim:history",
     ],
@@ -282,7 +283,13 @@ export class SlackConnector extends ConnectorBase {
     const res = await fetch(fullUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    return res.json();
+    const data = await res.json();
+    // Slack returns HTTP 200 with `ok: false` for API errors — surface them
+    // so a failed sync is reported as failed instead of silently syncing 0 items.
+    if (data && data.ok === false) {
+      throw new Error(`Slack API error: ${data.error}`);
+    }
+    return data;
   }
 
   private sleep(ms: number): Promise<void> {
