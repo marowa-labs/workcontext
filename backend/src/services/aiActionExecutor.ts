@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma";
 import logger from "../monitoring/logger";
 import { UnifiedAIService } from "./unifiedAIService";
 import { ContextEmbeddingService } from "./contextEmbeddingService";
+import { getConnector } from "./integrations/connectorRegistry";
 import {
   ActionDefinition,
   ActionResult,
@@ -322,6 +323,16 @@ export class AIActionExecutor {
       case "create_project_with_tasks":
         return this.createProjectWithTasks(parameters, context);
 
+      // ─── Integration Actions (connected external tools) ───────────────────
+      case "send_slack_message":
+        return this.sendSlackMessage(parameters, context);
+      case "create_jira_issue":
+        return this.createJiraIssue(parameters, context);
+      case "create_notion_page":
+        return this.createNotionPage(parameters, context);
+      case "create_github_issue":
+        return this.createGitHubIssue(parameters, context);
+
       default:
         return {
           success: false,
@@ -473,7 +484,9 @@ export class AIActionExecutor {
     });
 
     ContextEmbeddingService.upsertForProject(project as any).catch((e) =>
-      logger.warn("AI executor: failed to embed new project", { error: e.message }),
+      logger.warn("AI executor: failed to embed new project", {
+        error: e.message,
+      }),
     );
 
     return {
@@ -505,7 +518,9 @@ export class AIActionExecutor {
     });
 
     ContextEmbeddingService.upsertForProject(project as any).catch((e) =>
-      logger.warn("AI executor: failed to re-embed project", { error: e.message }),
+      logger.warn("AI executor: failed to re-embed project", {
+        error: e.message,
+      }),
     );
 
     return {
@@ -632,11 +647,16 @@ export class AIActionExecutor {
     }
 
     // Validate workspaceId exists
-    if (!workspaceId || typeof workspaceId !== "string" || workspaceId.trim() === "") {
+    if (
+      !workspaceId ||
+      typeof workspaceId !== "string" ||
+      workspaceId.trim() === ""
+    ) {
       return {
         success: false,
         error: "Invalid workspace",
-        message: "I couldn't determine which workspace to use. Please specify a workspace name.",
+        message:
+          "I couldn't determine which workspace to use. Please specify a workspace name.",
         affectedEntities: [],
       };
     }
@@ -656,7 +676,11 @@ export class AIActionExecutor {
     }
 
     // Ensure title is present
-    if (!params.title || typeof params.title !== "string" || params.title.trim() === "") {
+    if (
+      !params.title ||
+      typeof params.title !== "string" ||
+      params.title.trim() === ""
+    ) {
       return {
         success: false,
         error: "Task title required",
@@ -679,7 +703,9 @@ export class AIActionExecutor {
     });
 
     ContextEmbeddingService.upsertForTask(task as any).catch((e) =>
-      logger.warn("AI executor: failed to embed new task", { error: e.message }),
+      logger.warn("AI executor: failed to embed new task", {
+        error: e.message,
+      }),
     );
 
     // Add assignees if specified
@@ -1275,7 +1301,9 @@ Summary:`;
     });
 
     ContextEmbeddingService.upsertForProject(project as any).catch((e) =>
-      logger.warn("AI executor: failed to embed new project", { error: e.message }),
+      logger.warn("AI executor: failed to embed new project", {
+        error: e.message,
+      }),
     );
 
     // Create tasks if workspace is provided
@@ -1293,7 +1321,9 @@ Summary:`;
           },
         });
         ContextEmbeddingService.upsertForTask(task as any).catch((e) =>
-          logger.warn("AI executor: failed to embed new task", { error: e.message }),
+          logger.warn("AI executor: failed to embed new task", {
+            error: e.message,
+          }),
         );
         createdTasks.push(task);
       }
@@ -1312,6 +1342,313 @@ Summary:`;
         })),
       ],
     };
+  }
+
+  // ====================
+  // Integration Actions (connected external tools)
+  // ====================
+
+  /**
+   * Resolve the user's active connection for a tool type.
+   * Prefers a connection scoped to the current workspace, falls back to any
+   * active connection for the user.
+   */
+  private static async resolveConnection(
+    toolType: string,
+    context: AIActionContext,
+  ): Promise<any> {
+    const workspaceId = context.currentWorkspaceId || context.entityId;
+
+    const connection = await this.prisma.externalToolConnection.findFirst({
+      where: {
+        user_id: context.userId,
+        tool_type: toolType,
+        status: "active",
+        ...(workspaceId ? { workspace_id: workspaceId } : {}),
+      },
+      orderBy: { updated_at: "desc" },
+    });
+
+    if (connection) return connection;
+
+    // Fall back to any active connection for the user
+    return await this.prisma.externalToolConnection.findFirst({
+      where: {
+        user_id: context.userId,
+        tool_type: toolType,
+        status: "active",
+      },
+      orderBy: { updated_at: "desc" },
+    });
+  }
+
+  private static async sendSlackMessage(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
+    const connection = await this.resolveConnection("slack", context);
+    if (!connection) {
+      return {
+        success: false,
+        error: "No Slack connection",
+        message:
+          "You haven't connected Slack yet. Connect it in Settings → Integrations and I'll be able to send messages for you.",
+        affectedEntities: [],
+      };
+    }
+
+    const connector = getConnector("slack");
+    if (!connector) {
+      return {
+        success: false,
+        error: "Slack connector unavailable",
+        message: "The Slack connector isn't available right now.",
+        affectedEntities: [],
+      };
+    }
+
+    const channel = params.channel || params.channelName;
+    const text = params.text || params.message;
+    if (!channel || !text) {
+      return {
+        success: false,
+        error: "Missing channel or text",
+        message:
+          "I need both a channel (e.g. #general) and the message text to send to Slack.",
+        affectedEntities: [],
+      };
+    }
+
+    try {
+      const result = await (connector as any).sendMessage(
+        connection.access_token,
+        channel,
+        text,
+      );
+      return {
+        success: true,
+        data: result,
+        message: `Sent message to ${channel} on Slack.`,
+        affectedEntities: [{ type: "slack_message", name: channel }],
+      };
+    } catch (error: any) {
+      logger.error("Slack sendMessage failed:", error);
+      return {
+        success: false,
+        error: error.message,
+        message: `I couldn't send that Slack message: ${error.message}`,
+        affectedEntities: [],
+      };
+    }
+  }
+
+  private static async createJiraIssue(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
+    const connection = await this.resolveConnection("jira", context);
+    if (!connection) {
+      return {
+        success: false,
+        error: "No Jira connection",
+        message:
+          "You haven't connected Jira yet. Connect it in Settings → Integrations and I'll be able to create tickets for you.",
+        affectedEntities: [],
+      };
+    }
+
+    const connector = getConnector("jira");
+    if (!connector) {
+      return {
+        success: false,
+        error: "Jira connector unavailable",
+        message: "The Jira connector isn't available right now.",
+        affectedEntities: [],
+      };
+    }
+
+    const projectKey = params.projectKey || params.project;
+    const summary = params.summary || params.title;
+    if (!projectKey || !summary) {
+      return {
+        success: false,
+        error: "Missing project key or summary",
+        message:
+          "I need both a Jira project key (e.g. PROJ) and an issue summary to create a ticket.",
+        affectedEntities: [],
+      };
+    }
+
+    // Resolve the Jira site URL from connection metadata
+    const siteUrl =
+      (connection.metadata as any)?.url ||
+      (connection.metadata as any)?.all_sites?.[0]?.url;
+    if (!siteUrl) {
+      return {
+        success: false,
+        error: "Jira site URL unknown",
+        message:
+          "I couldn't determine your Jira site URL. Please re-connect Jira.",
+        affectedEntities: [],
+      };
+    }
+
+    try {
+      const result = await (connector as any).createIssue(
+        connection.access_token,
+        {
+          siteUrl,
+          projectKey,
+          summary,
+          description: params.description,
+          issueType: params.issueType,
+          priority: params.priority,
+        },
+      );
+      return {
+        success: true,
+        data: result,
+        message: `Created Jira ticket ${result.key}: ${summary}`,
+        affectedEntities: [
+          { type: "jira_issue", id: result.key, name: summary },
+        ],
+      };
+    } catch (error: any) {
+      logger.error("Jira createIssue failed:", error);
+      return {
+        success: false,
+        error: error.message,
+        message: `I couldn't create that Jira ticket: ${error.message}`,
+        affectedEntities: [],
+      };
+    }
+  }
+
+  private static async createNotionPage(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
+    const connection = await this.resolveConnection("notion", context);
+    if (!connection) {
+      return {
+        success: false,
+        error: "No Notion connection",
+        message:
+          "You haven't connected Notion yet. Connect it in Settings → Integrations and I'll be able to create pages for you.",
+        affectedEntities: [],
+      };
+    }
+
+    const connector = getConnector("notion");
+    if (!connector) {
+      return {
+        success: false,
+        error: "Notion connector unavailable",
+        message: "The Notion connector isn't available right now.",
+        affectedEntities: [],
+      };
+    }
+
+    const title = params.title;
+    if (!title) {
+      return {
+        success: false,
+        error: "Missing page title",
+        message: "I need a title for the Notion page.",
+        affectedEntities: [],
+      };
+    }
+
+    try {
+      const result = await (connector as any).createPage(
+        connection.access_token,
+        {
+          parentPageId: params.parentPageId,
+          title,
+          content: params.content,
+        },
+      );
+      return {
+        success: true,
+        data: result,
+        message: `Created Notion page "${title}".`,
+        affectedEntities: [{ type: "notion_page", id: result.id, name: title }],
+      };
+    } catch (error: any) {
+      logger.error("Notion createPage failed:", error);
+      return {
+        success: false,
+        error: error.message,
+        message: `I couldn't create that Notion page: ${error.message}`,
+        affectedEntities: [],
+      };
+    }
+  }
+
+  private static async createGitHubIssue(
+    params: any,
+    context: AIActionContext,
+  ): Promise<ActionResult> {
+    const connection = await this.resolveConnection("github", context);
+    if (!connection) {
+      return {
+        success: false,
+        error: "No GitHub connection",
+        message:
+          "You haven't connected GitHub yet. Connect it in Settings → Integrations and I'll be able to create issues for you.",
+        affectedEntities: [],
+      };
+    }
+
+    const connector = getConnector("github");
+    if (!connector) {
+      return {
+        success: false,
+        error: "GitHub connector unavailable",
+        message: "The GitHub connector isn't available right now.",
+        affectedEntities: [],
+      };
+    }
+
+    const repo = params.repo;
+    const title = params.title;
+    if (!repo || !title) {
+      return {
+        success: false,
+        error: "Missing repo or title",
+        message:
+          "I need both a repository (owner/repo) and an issue title to create a GitHub issue.",
+        affectedEntities: [],
+      };
+    }
+
+    try {
+      const result = await (connector as any).createIssue(
+        connection.access_token,
+        {
+          repo,
+          title,
+          body: params.body,
+          labels: params.labels,
+        },
+      );
+      return {
+        success: true,
+        data: result,
+        message: `Created GitHub issue #${result.number} in ${repo}.`,
+        affectedEntities: [
+          { type: "github_issue", id: String(result.number), name: title },
+        ],
+      };
+    } catch (error: any) {
+      logger.error("GitHub createIssue failed:", error);
+      return {
+        success: false,
+        error: error.message,
+        message: `I couldn't create that GitHub issue: ${error.message}`,
+        affectedEntities: [],
+      };
+    }
   }
 
   // ====================
@@ -1411,6 +1748,10 @@ Summary:`;
       invite_workspace_member: "invite this member",
       edit_document: "edit this document",
       analyze_workspace: "analyze this workspace",
+      send_slack_message: "send this message to Slack",
+      create_jira_issue: "create this Jira ticket",
+      create_notion_page: "create this Notion page",
+      create_github_issue: "create this GitHub issue",
     };
 
     return (
@@ -1438,7 +1779,9 @@ Summary:`;
           _count: { select: { projects: true, members: true } },
           projects: { select: { id: true, title: true, status: true } },
           members: {
-            include: { user: { select: { id: true, full_name: true, email: true } } },
+            include: {
+              user: { select: { id: true, full_name: true, email: true } },
+            },
           },
         },
       });
@@ -1447,7 +1790,8 @@ Summary:`;
         return {
           success: true,
           data: { workspaces: [], totalWorkspaces: 0 },
-          message: "You don't have any workspaces yet. Create one to get started!",
+          message:
+            "You don't have any workspaces yet. Create one to get started!",
           affectedEntities: [],
         };
       }
@@ -1502,9 +1846,13 @@ Summary:`;
         ],
       },
       include: {
-        projects: { select: { id: true, title: true, type: true, status: true } },
+        projects: {
+          select: { id: true, title: true, type: true, status: true },
+        },
         members: {
-          include: { user: { select: { id: true, full_name: true, email: true } } },
+          include: {
+            user: { select: { id: true, full_name: true, email: true } },
+          },
         },
       },
     });

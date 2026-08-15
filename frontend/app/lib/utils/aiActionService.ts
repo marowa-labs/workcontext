@@ -207,6 +207,10 @@ export function formatActionType(actionType: string): string {
     mark_notifications_read: "Mark Notifications Read",
     invite_workspace_member: "Invite Member",
     create_project_with_tasks: "Create Project with Tasks",
+    send_slack_message: "Send Slack Message",
+    create_jira_issue: "Create Jira Ticket",
+    create_notion_page: "Create Notion Page",
+    create_github_issue: "Create GitHub Issue",
   };
 
   return (
@@ -240,6 +244,10 @@ export function getActionIcon(actionType: string): string {
     summarize_document: "📊",
     navigate_to_page: "🧭",
     invite_workspace_member: "👤",
+    send_slack_message: "💬",
+    create_jira_issue: "🎫",
+    create_notion_page: "📄",
+    create_github_issue: "🐙",
   };
 
   return iconMap[actionType] || "🤖";

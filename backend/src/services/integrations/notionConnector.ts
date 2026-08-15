@@ -450,4 +450,108 @@ export class NotionConnector extends ConnectorBase {
   getItemUrl(item: SyncedItem): string {
     return item.content_url || "";
   }
+
+  /**
+   * Create a page in Notion (write action for AI).
+   * If parentPageId is omitted, creates a top-level page in the workspace.
+   * Content is converted from markdown to Notion blocks.
+   */
+  async createPage(
+    accessToken: string,
+    params: {
+      parentPageId?: string;
+      title: string;
+      content?: string;
+    },
+  ): Promise<{ id: string; url: string }> {
+    const parent =
+      params.parentPageId && params.parentPageId.trim()
+        ? { page_id: params.parentPageId.trim() }
+        : { type: "workspace", workspace: true };
+
+    const body: Record<string, any> = {
+      parent,
+      properties: {
+        title: {
+          title: [{ type: "text", text: { content: params.title } }],
+        },
+      },
+    };
+
+    // Convert markdown content to Notion blocks
+    const blocks = this.markdownToNotionBlocks(params.content || "");
+    if (blocks.length > 0) {
+      body.children = blocks;
+    }
+
+    const res = await fetch(`${this.API_BASE}/pages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Notion-Version": this.NOTION_VERSION,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.object === "error" || !res.ok) {
+      throw new Error(
+        `Notion create page failed: ${data.message || res.statusText}`,
+      );
+    }
+    return { id: data.id, url: data.url };
+  }
+
+  /** Convert simple markdown to Notion block objects */
+  private markdownToNotionBlocks(markdown: string): any[] {
+    if (!markdown) return [];
+    const blocks: any[] = [];
+    const lines = markdown.split("\n");
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      const richText = (text: string) => [
+        { type: "text", text: { content: text } },
+      ];
+
+      if (/^#{1,3}\s/.test(trimmed)) {
+        const level = trimmed.match(/^#+/)?.[0].length || 1;
+        const text = trimmed.replace(/^#+\s*/, "");
+        blocks.push({
+          object: "block",
+          type: `heading_${level}`,
+          [`heading_${level}`]: { rich_text: richText(text) },
+        });
+      } else if (/^[-*]\s/.test(trimmed)) {
+        blocks.push({
+          object: "block",
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: richText(trimmed.replace(/^[-*]\s*/, "")),
+          },
+        });
+      } else if (/^\d+\.\s/.test(trimmed)) {
+        blocks.push({
+          object: "block",
+          type: "numbered_list_item",
+          numbered_list_item: {
+            rich_text: richText(trimmed.replace(/^\d+\.\s*/, "")),
+          },
+        });
+      } else if (/^```/.test(trimmed)) {
+        // Skip code fences (simplified)
+        continue;
+      } else {
+        blocks.push({
+          object: "block",
+          type: "paragraph",
+          paragraph: { rich_text: richText(trimmed) },
+        });
+      }
+    }
+
+    return blocks.slice(0, 100); // Notion allows max 100 children per request
+  }
 }

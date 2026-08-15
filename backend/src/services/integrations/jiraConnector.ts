@@ -12,12 +12,19 @@
  * The access token grants access to ALL accessible Jira Cloud sites for the user.
  */
 
-import { ConnectorBase, ToolType, OAuthConfig, TokenResult, SyncedItem } from "./connectorBase";
+import {
+  ConnectorBase,
+  ToolType,
+  OAuthConfig,
+  TokenResult,
+  SyncedItem,
+} from "./connectorBase";
 
 export class JiraConnector extends ConnectorBase {
   readonly toolType: ToolType = "jira";
   readonly displayName = "Jira";
-  readonly iconUrl = "https://cdn.brandfetch.io/id-9QwYm1g_/w/512/h/512/theme/dark/icon.jpeg";
+  readonly iconUrl =
+    "https://cdn.brandfetch.io/id-9QwYm1g_/w/512/h/512/theme/dark/icon.jpeg";
   readonly description = "Search across Jira issues, boards, and projects";
 
   readonly oauthConfig: OAuthConfig = {
@@ -48,7 +55,10 @@ export class JiraConnector extends ConnectorBase {
       }),
     });
     const data = await res.json();
-    if (data.error) throw new Error(`Jira OAuth error: ${data.error_description || data.error}`);
+    if (data.error)
+      throw new Error(
+        `Jira OAuth error: ${data.error_description || data.error}`,
+      );
 
     return {
       access_token: data.access_token,
@@ -71,7 +81,10 @@ export class JiraConnector extends ConnectorBase {
       }),
     });
     const data = await res.json();
-    if (data.error) throw new Error(`Jira token refresh failed: ${data.error_description || data.error}`);
+    if (data.error)
+      throw new Error(
+        `Jira token refresh failed: ${data.error_description || data.error}`,
+      );
 
     return {
       access_token: data.access_token,
@@ -84,12 +97,15 @@ export class JiraConnector extends ConnectorBase {
 
   async fetchWorkspaceInfo(accessToken: string) {
     // Fetch accessible Jira sites
-    const res = await fetch("https://api.atlassian.com/oauth/token/accessible-resources", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
+    const res = await fetch(
+      "https://api.atlassian.com/oauth/token/accessible-resources",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
       },
-    });
+    );
     const data = await res.json();
     if (!data.data || data.data.length === 0) {
       throw new Error("No accessible Jira sites found");
@@ -116,22 +132,26 @@ export class JiraConnector extends ConnectorBase {
 
   async fetchContent(
     accessToken: string,
-    options: { since?: Date; pageSize?: number; cursor?: string }
+    options: { since?: Date; pageSize?: number; cursor?: string },
   ): Promise<{ items: SyncedItem[]; nextCursor?: string; hasMore: boolean }> {
     const items: SyncedItem[] = [];
     const pageSize = options.pageSize || 50;
 
     // First, get accessible resources to find Jira site URLs
-    const resourcesRes = await fetch("https://api.atlassian.com/oauth/token/accessible-resources", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
+    const resourcesRes = await fetch(
+      "https://api.atlassian.com/oauth/token/accessible-resources",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
       },
-    });
+    );
     const resources = await resourcesRes.json();
     const sites = resources.data || [];
 
-    for (const site of sites.slice(0, 3)) { // Limit to 3 sites
+    for (const site of sites.slice(0, 3)) {
+      // Limit to 3 sites
       const siteUrl = site.url; // e.g., https://yourteam.atlassian.net
 
       // JQL: fetch recently updated issues
@@ -144,13 +164,15 @@ export class JiraConnector extends ConnectorBase {
       let startAt = parseInt(options.cursor || "0");
       let total = Infinity;
 
-      while (startAt < Math.min(total, 200)) { // Cap at 200 issues per site
+      while (startAt < Math.min(total, 200)) {
+        // Cap at 200 issues per site
         const searchUrl = `${siteUrl}/rest/api/3/search`;
         const params = new URLSearchParams({
           jql,
           maxResults: pageSize.toString(),
           startAt: startAt.toString(),
-          fields: "summary,description,status,assignee,reporter,created,updated,issuetype,priority,labels,project,comment",
+          fields:
+            "summary,description,status,assignee,reporter,created,updated,issuetype,priority,labels,project,comment",
         });
 
         try {
@@ -180,7 +202,11 @@ export class JiraConnector extends ConnectorBase {
 
             // Convert ADF description to BlockNote blocks
             let blockContent: any[] | undefined;
-            if (fields.description && typeof fields.description === "object" && fields.description.type === "doc") {
+            if (
+              fields.description &&
+              typeof fields.description === "object" &&
+              fields.description.type === "doc"
+            ) {
               blockContent = this.adfToBlockNoteBlocks(fields.description);
             }
 
@@ -188,7 +214,10 @@ export class JiraConnector extends ConnectorBase {
               external_id: `${site.id}_${issue.key}`,
               content_type: "ticket",
               title: `${issue.key}: ${fields.summary}`,
-              content_text: [description, commentText].filter(Boolean).join("\n\n").slice(0, 8000),
+              content_text: [description, commentText]
+                .filter(Boolean)
+                .join("\n\n")
+                .slice(0, 8000),
               content_url: `${siteUrl}/browse/${issue.key}`,
               author_name: fields.reporter?.displayName || null,
               author_avatar: fields.reporter?.avatarUrls?.["48x48"] || null,
@@ -257,57 +286,137 @@ export class JiraConnector extends ConnectorBase {
   private convertAdfNode(node: any): any | any[] | null {
     if (!node) return null;
     const text = this.extractAdfText(node);
-    const id = Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+    const id =
+      Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
 
     switch (node.type) {
       case "heading": {
         const level = Math.min(node.attrs?.level || 1, 3) as 1 | 2 | 3;
-        return { id, type: "heading", props: { level, textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: text, children: [] };
+        return {
+          id,
+          type: "heading",
+          props: {
+            level,
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: text,
+          children: [],
+        };
       }
       case "paragraph":
-        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: text, children: [] };
+        return {
+          id,
+          type: "paragraph",
+          props: {
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: text,
+          children: [],
+        };
       case "bulletList":
       case "orderedList":
       case "taskList":
         if (node.content) {
-          return node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+          return node.content
+            .map((child: any) => this.convertAdfNode(child))
+            .flat()
+            .filter(Boolean);
         }
         return null;
       case "listItem":
       case "taskItem":
         if (node.content) {
           // Check if it's inside a taskList (checkbox)
-          const innerContent = node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+          const innerContent = node.content
+            .map((child: any) => this.convertAdfNode(child))
+            .flat()
+            .filter(Boolean);
           if (innerContent.length > 0) {
             return {
               ...innerContent[0],
-              type: node.parentType === "taskList" || node.attrs?.localId ? "checkListItem" : innerContent[0].type,
-              props: { ...innerContent[0].props, ...(node.attrs?.state === "TODO" ? { checked: false } : node.attrs?.state === "DONE" ? { checked: true } : {}) },
+              type:
+                node.parentType === "taskList" || node.attrs?.localId
+                  ? "checkListItem"
+                  : innerContent[0].type,
+              props: {
+                ...innerContent[0].props,
+                ...(node.attrs?.state === "TODO"
+                  ? { checked: false }
+                  : node.attrs?.state === "DONE"
+                    ? { checked: true }
+                    : {}),
+              },
             };
           }
           return null;
         }
         return null;
       case "codeBlock":
-        return { id, type: "codeBlock", props: { language: node.attrs?.language || "plainText" }, content: text, children: [] };
+        return {
+          id,
+          type: "codeBlock",
+          props: { language: node.attrs?.language || "plainText" },
+          content: text,
+          children: [],
+        };
       case "blockquote":
-        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "gray", textAlignment: "left" }, content: text, children: [] };
+        return {
+          id,
+          type: "paragraph",
+          props: {
+            textColor: "default",
+            backgroundColor: "gray",
+            textAlignment: "left",
+          },
+          content: text,
+          children: [],
+        };
       case "rule":
-        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: "---", children: [] };
+        return {
+          id,
+          type: "paragraph",
+          props: {
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: "---",
+          children: [],
+        };
       case "mediaSingle":
       case "media":
         if (node.content) {
-          return node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+          return node.content
+            .map((child: any) => this.convertAdfNode(child))
+            .flat()
+            .filter(Boolean);
         }
         return null;
       case "mediaGroup":
         if (node.content) {
-          return node.content.map((child: any) => this.convertAdfNode(child)).flat().filter(Boolean);
+          return node.content
+            .map((child: any) => this.convertAdfNode(child))
+            .flat()
+            .filter(Boolean);
         }
         return null;
       case "panel":
         // Panel → callout-style paragraph
-        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "yellow", textAlignment: "left" }, content: text, children: [] };
+        return {
+          id,
+          type: "paragraph",
+          props: {
+            textColor: "default",
+            backgroundColor: "yellow",
+            textAlignment: "left",
+          },
+          content: text,
+          children: [],
+        };
       case "table":
         // Render table as markdown-style code block
         return this.convertAdfTable(node);
@@ -316,15 +425,47 @@ export class JiraConnector extends ConnectorBase {
       case "tableHeader":
         return null; // Handled by parent table
       case "emoji":
-        return { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: node.attrs?.shortName || "😀", children: [] };
+        return {
+          id,
+          type: "paragraph",
+          props: {
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: node.attrs?.shortName || "😀",
+          children: [],
+        };
       case "mention":
-        return { id, type: "paragraph", props: { textColor: "blue", backgroundColor: "default", textAlignment: "left" }, content: `@${node.attrs?.text || node.attrs?.userId || "user"}`, children: [] };
+        return {
+          id,
+          type: "paragraph",
+          props: {
+            textColor: "blue",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: `@${node.attrs?.text || node.attrs?.userId || "user"}`,
+          children: [],
+        };
       case "hardBreak":
         return null;
       case "text":
         return null; // Handled by parent
       default:
-        return text ? { id, type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: text, children: [] } : null;
+        return text
+          ? {
+              id,
+              type: "paragraph",
+              props: {
+                textColor: "default",
+                backgroundColor: "default",
+                textAlignment: "left",
+              },
+              content: text,
+              children: [],
+            }
+          : null;
     }
   }
 
@@ -334,7 +475,10 @@ export class JiraConnector extends ConnectorBase {
       for (const row of node.content) {
         if (row.type === "tableRow" && row.content) {
           const cells = row.content
-            .filter((cell: any) => cell.type === "tableCell" || cell.type === "tableHeader")
+            .filter(
+              (cell: any) =>
+                cell.type === "tableCell" || cell.type === "tableHeader",
+            )
             .map((cell: any) => this.extractAdfText(cell))
             .join(" | ");
           rows.push(`| ${cells} |`);
@@ -345,15 +489,24 @@ export class JiraConnector extends ConnectorBase {
       const headerCells = rows[0].split("|").filter(Boolean).length;
       rows.splice(1, 0, `| ${Array(headerCells).fill("---").join(" | ")} |`);
     }
-    const id = Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
-    return { id, type: "codeBlock", props: { language: "markdown" }, content: rows.join("\n"), children: [] };
+    const id =
+      Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+    return {
+      id,
+      type: "codeBlock",
+      props: { language: "markdown" },
+      content: rows.join("\n"),
+      children: [],
+    };
   }
 
   private extractAdfText(node: any): string {
     if (!node) return "";
     if (node.type === "text") return node.text || "";
     if (node.content && Array.isArray(node.content)) {
-      return node.content.map((child: any) => this.extractAdfText(child)).join("");
+      return node.content
+        .map((child: any) => this.extractAdfText(child))
+        .join("");
     }
     return "";
   }
@@ -370,5 +523,74 @@ export class JiraConnector extends ConnectorBase {
 
   getItemUrl(item: SyncedItem): string {
     return item.content_url || "";
+  }
+
+  /**
+   * Create a Jira issue (write action for AI).
+   * Resolves the user's Jira site from the connection metadata, then POSTs
+   * to the Jira Cloud REST API v3.
+   */
+  async createIssue(
+    accessToken: string,
+    params: {
+      siteUrl: string;
+      projectKey: string;
+      summary: string;
+      description?: string;
+      issueType?: string;
+      priority?: string;
+    },
+  ): Promise<{ key: string; url: string; id: string }> {
+    const siteUrl = params.siteUrl.replace(/\/$/, "");
+    const body: Record<string, any> = {
+      fields: {
+        project: { key: params.projectKey },
+        summary: params.summary,
+        issuetype: { name: params.issueType || "Task" },
+      },
+    };
+    if (params.description) {
+      body.fields.description = {
+        type: "doc",
+        version: 1,
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: params.description,
+              },
+            ],
+          },
+        ],
+      };
+    }
+    if (params.priority) {
+      body.fields.priority = { name: params.priority };
+    }
+
+    const res = await fetch(`${siteUrl}/rest/api/3/issue`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const errMsg =
+        data.errorMessages?.join(", ") ||
+        data.message ||
+        `Jira create issue failed (${res.status})`;
+      throw new Error(errMsg);
+    }
+    return {
+      key: data.key,
+      id: data.id,
+      url: `${siteUrl}/browse/${data.key}`,
+    };
   }
 }

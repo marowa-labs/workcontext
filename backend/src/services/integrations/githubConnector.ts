@@ -12,12 +12,19 @@
  * and recent commit messages.
  */
 
-import { ConnectorBase, ToolType, OAuthConfig, TokenResult, SyncedItem } from "./connectorBase";
+import {
+  ConnectorBase,
+  ToolType,
+  OAuthConfig,
+  TokenResult,
+  SyncedItem,
+} from "./connectorBase";
 
 export class GitHubConnector extends ConnectorBase {
   readonly toolType: ToolType = "github";
   readonly displayName = "GitHub";
-  readonly iconUrl = "https://cdn.brandfetch.io/id-wVCa7Wd/w/512/h/512/theme/dark/icon.jpeg";
+  readonly iconUrl =
+    "https://cdn.brandfetch.io/id-wVCa7Wd/w/512/h/512/theme/dark/icon.jpeg";
   readonly description = "Search across GitHub issues, PRs, repos, and code";
 
   readonly oauthConfig: OAuthConfig = {
@@ -44,7 +51,10 @@ export class GitHubConnector extends ConnectorBase {
       }),
     });
     const data = await res.json();
-    if (data.error) throw new Error(`GitHub OAuth error: ${data.error_description || data.error}`);
+    if (data.error)
+      throw new Error(
+        `GitHub OAuth error: ${data.error_description || data.error}`,
+      );
 
     return {
       access_token: data.access_token,
@@ -56,7 +66,9 @@ export class GitHubConnector extends ConnectorBase {
   async refreshAccessToken(_refreshToken: string): Promise<TokenResult> {
     // GitHub OAuth tokens don't expire (unless user revokes or app has "expiring tokens" enabled)
     // For GitHub Apps, we'd use a different flow. For now, throw an error.
-    throw new Error("GitHub OAuth tokens don't expire. Re-authenticate if revoked.");
+    throw new Error(
+      "GitHub OAuth tokens don't expire. Re-authenticate if revoked.",
+    );
   }
 
   async fetchWorkspaceInfo(accessToken: string) {
@@ -68,7 +80,8 @@ export class GitHubConnector extends ConnectorBase {
       },
     });
     const user = await userRes.json();
-    if (user.message === "Bad credentials") throw new Error("Invalid GitHub token");
+    if (user.message === "Bad credentials")
+      throw new Error("Invalid GitHub token");
 
     // Fetch user's organizations
     const orgsRes = await fetch(`${this.API_BASE}/user/orgs`, {
@@ -97,17 +110,18 @@ export class GitHubConnector extends ConnectorBase {
 
   async fetchContent(
     accessToken: string,
-    options: { since?: Date; pageSize?: number; cursor?: string }
+    options: { since?: Date; pageSize?: number; cursor?: string },
   ): Promise<{ items: SyncedItem[]; nextCursor?: string; hasMore: boolean }> {
     const items: SyncedItem[] = [];
     const pageSize = options.pageSize || 30;
-    const since = options.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const since =
+      options.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sinceStr = since.toISOString().split("T")[0];
 
     // 1) Fetch user's repos
     const repos = await this.githubFetchAll(
       `${this.API_BASE}/user/repos?sort=updated&per_page=20&direction=desc`,
-      accessToken
+      accessToken,
     );
 
     for (const repo of (Array.isArray(repos) ? repos : []).slice(0, 15)) {
@@ -138,10 +152,10 @@ export class GitHubConnector extends ConnectorBase {
       try {
         const issues = await this.githubFetchAll(
           `${this.API_BASE}/repos/${fullName}/issues?state=all&since=${sinceStr}&sort=updated&per_page=${pageSize}`,
-          accessToken
+          accessToken,
         );
         let issueOrder = 0;
-        for (const issue of (Array.isArray(issues) ? issues : [])) {
+        for (const issue of Array.isArray(issues) ? issues : []) {
           if (issue.pull_request) continue;
           items.push({
             external_id: `${fullName}_issue_${issue.number}`,
@@ -154,7 +168,9 @@ export class GitHubConnector extends ConnectorBase {
             channel_or_project: fullName,
             parent_external_id: `repo_${fullName}`,
             depth: 1,
-            block_content: issue.body ? this.markdownToBlockNoteBlocks(issue.body) : undefined,
+            block_content: issue.body
+              ? this.markdownToBlockNoteBlocks(issue.body)
+              : undefined,
             metadata: {
               repo: fullName,
               number: issue.number,
@@ -167,21 +183,25 @@ export class GitHubConnector extends ConnectorBase {
           });
           issueOrder++;
         }
-      } catch { /* skip repos we can't access */ }
+      } catch {
+        /* skip repos we can't access */
+      }
 
       // 3) Fetch recent pull requests (children of repo)
       try {
         const prs = await this.githubFetchAll(
           `${this.API_BASE}/repos/${fullName}/pulls?state=all&sort=updated&per_page=${Math.min(pageSize, 10)}`,
-          accessToken
+          accessToken,
         );
-        for (const pr of (Array.isArray(prs) ? prs : [])) {
+        for (const pr of Array.isArray(prs) ? prs : []) {
           const prBody = [
-              pr.body || "",
-              `Author: ${pr.user?.login}`,
-              `State: ${pr.state}`,
-              `Base: ${pr.base?.ref} <- Head: ${pr.head?.ref}`,
-            ].filter(Boolean).join("\n");
+            pr.body || "",
+            `Author: ${pr.user?.login}`,
+            `State: ${pr.state}`,
+            `Base: ${pr.base?.ref} <- Head: ${pr.head?.ref}`,
+          ]
+            .filter(Boolean)
+            .join("\n");
           items.push({
             external_id: `${fullName}_pr_${pr.number}`,
             content_type: "pr",
@@ -193,7 +213,9 @@ export class GitHubConnector extends ConnectorBase {
             channel_or_project: fullName,
             parent_external_id: `repo_${fullName}`,
             depth: 1,
-            block_content: pr.body ? this.markdownToBlockNoteBlocks(pr.body) : undefined,
+            block_content: pr.body
+              ? this.markdownToBlockNoteBlocks(pr.body)
+              : undefined,
             metadata: {
               repo: fullName,
               number: pr.number,
@@ -207,7 +229,9 @@ export class GitHubConnector extends ConnectorBase {
             },
           });
         }
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
 
       // 4) Fetch file tree (children of repo)
       try {
@@ -218,11 +242,13 @@ export class GitHubConnector extends ConnectorBase {
               Authorization: `Bearer ${accessToken}`,
               Accept: "application/vnd.github.v3+json",
             },
-          }
+          },
         );
         if (treeRes.ok) {
           const tree = await treeRes.json();
-          const files = (tree.tree || []).filter((t: any) => t.type === "blob").slice(0, 50);
+          const files = (tree.tree || [])
+            .filter((t: any) => t.type === "blob")
+            .slice(0, 50);
           for (const file of files) {
             items.push({
               external_id: `${fullName}_file_${file.path}`,
@@ -244,7 +270,9 @@ export class GitHubConnector extends ConnectorBase {
             });
           }
         }
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
     }
 
     return { items, hasMore: false };
@@ -253,7 +281,11 @@ export class GitHubConnector extends ConnectorBase {
   /**
    * Fetch all pages of a paginated GitHub API endpoint.
    */
-  private async githubFetchAll(url: string, accessToken: string, maxPages = 3): Promise<any[]> {
+  private async githubFetchAll(
+    url: string,
+    accessToken: string,
+    maxPages = 3,
+  ): Promise<any[]> {
     const results: any[] = [];
     let currentUrl: string | undefined = url;
     let page = 0;
@@ -298,20 +330,36 @@ export class GitHubConnector extends ConnectorBase {
     const lines = markdown.split("\n");
     let i = 0;
 
-    const genId = () => Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+    const genId = () =>
+      Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
 
     while (i < lines.length) {
       const line = lines[i];
 
       // Empty line → skip
-      if (line.trim() === "") { i++; continue; }
+      if (line.trim() === "") {
+        i++;
+        continue;
+      }
 
       // Headings: # Heading, ## Heading, ### Heading
       const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
       if (headingMatch) {
         const level = Math.min(headingMatch[1].length, 3) as 1 | 2 | 3;
-        blocks.push({ id: genId(), type: "heading", props: { level, textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: headingMatch[2].trim(), children: [] });
-        i++; continue;
+        blocks.push({
+          id: genId(),
+          type: "heading",
+          props: {
+            level,
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: headingMatch[2].trim(),
+          children: [],
+        });
+        i++;
+        continue;
       }
 
       // Code blocks: ```
@@ -323,14 +371,32 @@ export class GitHubConnector extends ConnectorBase {
           codeLines.push(lines[i]);
           i++;
         }
-        blocks.push({ id: genId(), type: "codeBlock", props: { language: lang }, content: codeLines.join("\n"), children: [] });
-        i++; continue; // Skip closing ```
+        blocks.push({
+          id: genId(),
+          type: "codeBlock",
+          props: { language: lang },
+          content: codeLines.join("\n"),
+          children: [],
+        });
+        i++;
+        continue; // Skip closing ```
       }
 
       // Horizontal rule: ---, ***, ___
       if (/^[-*_]{3,}\s*$/.test(line.trim())) {
-        blocks.push({ id: genId(), type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: "─────────────────────────────────────", children: [] });
-        i++; continue;
+        blocks.push({
+          id: genId(),
+          type: "paragraph",
+          props: {
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: "─────────────────────────────────────",
+          children: [],
+        });
+        i++;
+        continue;
       }
 
       // Blockquote: > text
@@ -340,7 +406,17 @@ export class GitHubConnector extends ConnectorBase {
           quoteLines.push(lines[i].trim().replace(/^>\s*/, ""));
           i++;
         }
-        blocks.push({ id: genId(), type: "paragraph", props: { textColor: "default", backgroundColor: "gray", textAlignment: "left" }, content: quoteLines.join("\n"), children: [] });
+        blocks.push({
+          id: genId(),
+          type: "paragraph",
+          props: {
+            textColor: "default",
+            backgroundColor: "gray",
+            textAlignment: "left",
+          },
+          content: quoteLines.join("\n"),
+          children: [],
+        });
         continue;
       }
 
@@ -348,52 +424,128 @@ export class GitHubConnector extends ConnectorBase {
       const bulletMatch = line.match(/^(\s*)[-*+]\s+(.+)/);
       if (bulletMatch) {
         const indent = bulletMatch[1].length;
-        blocks.push({ id: genId(), type: "bulletListItem", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: bulletMatch[2].trim(), children: [] });
-        i++; continue;
+        blocks.push({
+          id: genId(),
+          type: "bulletListItem",
+          props: {
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: bulletMatch[2].trim(),
+          children: [],
+        });
+        i++;
+        continue;
       }
 
       // Ordered list: 1. item
       const orderedMatch = line.match(/^(\s*)\d+\.\s+(.+)/);
       if (orderedMatch) {
-        blocks.push({ id: genId(), type: "numberedListItem", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: orderedMatch[2].trim(), children: [] });
-        i++; continue;
+        blocks.push({
+          id: genId(),
+          type: "numberedListItem",
+          props: {
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: orderedMatch[2].trim(),
+          children: [],
+        });
+        i++;
+        continue;
       }
 
       // Task list: - [ ] item or - [x] item
       const taskMatch = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s+(.+)/);
       if (taskMatch) {
-        blocks.push({ id: genId(), type: "checkListItem", props: { textColor: "default", backgroundColor: "default", textAlignment: "left", checked: taskMatch[2].toLowerCase() === "x" }, content: taskMatch[3].trim(), children: [] });
-        i++; continue;
+        blocks.push({
+          id: genId(),
+          type: "checkListItem",
+          props: {
+            textColor: "default",
+            backgroundColor: "default",
+            textAlignment: "left",
+            checked: taskMatch[2].toLowerCase() === "x",
+          },
+          content: taskMatch[3].trim(),
+          children: [],
+        });
+        i++;
+        continue;
       }
 
       // Image: ![alt](url)
       const imageMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
       if (imageMatch) {
-        blocks.push({ id: genId(), type: "image", props: { url: imageMatch[2], caption: imageMatch[1], previewWidth: 512 }, content: undefined, children: [] });
-        i++; continue;
+        blocks.push({
+          id: genId(),
+          type: "image",
+          props: {
+            url: imageMatch[2],
+            caption: imageMatch[1],
+            previewWidth: 512,
+          },
+          content: undefined,
+          children: [],
+        });
+        i++;
+        continue;
       }
 
       // Link-only line: [text](url)
       const linkMatch = line.match(/^\[([^\]]+)\]\(([^)]+)\)\s*$/);
       if (linkMatch) {
-        blocks.push({ id: genId(), type: "paragraph", props: { textColor: "blue", backgroundColor: "default", textAlignment: "left" }, content: linkMatch[1], children: [] });
-        i++; continue;
+        blocks.push({
+          id: genId(),
+          type: "paragraph",
+          props: {
+            textColor: "blue",
+            backgroundColor: "default",
+            textAlignment: "left",
+          },
+          content: linkMatch[1],
+          children: [],
+        });
+        i++;
+        continue;
       }
 
       // Table: | col1 | col2 |
       if (line.trim().startsWith("|") && line.trim().endsWith("|")) {
         const tableLines: string[] = [];
-        while (i < lines.length && lines[i].trim().startsWith("|") && lines[i].trim().endsWith("|")) {
+        while (
+          i < lines.length &&
+          lines[i].trim().startsWith("|") &&
+          lines[i].trim().endsWith("|")
+        ) {
           tableLines.push(lines[i].trim());
           i++;
         }
         // Convert table to markdown code block
-        blocks.push({ id: genId(), type: "codeBlock", props: { language: "markdown" }, content: tableLines.join("\n"), children: [] });
+        blocks.push({
+          id: genId(),
+          type: "codeBlock",
+          props: { language: "markdown" },
+          content: tableLines.join("\n"),
+          children: [],
+        });
         continue;
       }
 
       // Regular paragraph
-      blocks.push({ id: genId(), type: "paragraph", props: { textColor: "default", backgroundColor: "default", textAlignment: "left" }, content: line.trim(), children: [] });
+      blocks.push({
+        id: genId(),
+        type: "paragraph",
+        props: {
+          textColor: "default",
+          backgroundColor: "default",
+          textAlignment: "left",
+        },
+        content: line.trim(),
+        children: [],
+      });
       i++;
     }
 
@@ -402,5 +554,47 @@ export class GitHubConnector extends ConnectorBase {
 
   getItemUrl(item: SyncedItem): string {
     return item.content_url || "";
+  }
+
+  /**
+   * Create a GitHub issue (write action for AI).
+   * Requires the `repo` scope on the token.
+   */
+  async createIssue(
+    accessToken: string,
+    params: {
+      repo: string; // "owner/repo"
+      title: string;
+      body?: string;
+      labels?: string[];
+    },
+  ): Promise<{ number: number; url: string; html_url: string }> {
+    const repo = params.repo
+      .replace(/^https?:\/\/github\.com\//, "")
+      .replace(/\/$/, "");
+    const body: Record<string, any> = { title: params.title };
+    if (params.body) body.body = params.body;
+    if (params.labels && params.labels.length > 0) body.labels = params.labels;
+
+    const res = await fetch(`${this.API_BASE}/repos/${repo}/issues`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(
+        `GitHub create issue failed: ${data.message || res.statusText}`,
+      );
+    }
+    return {
+      number: data.number,
+      url: data.html_url,
+      html_url: data.html_url,
+    };
   }
 }

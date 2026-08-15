@@ -1,8 +1,24 @@
 // AI Action System - Types and Action Definitions
 
-export type ActionCategory = "create" | "read" | "update" | "delete" | "manage" | "navigate";
-export type ActionStatus = "pending" | "confirmed" | "executing" | "completed" | "failed" | "cancelled";
-export type TargetEntity = "workspace" | "project" | "task" | "user" | "member" | "label" | "view" | "document" | "notification" | "page";
+export type ActionCategory =
+  "create" | "read" | "update" | "delete" | "manage" | "navigate";
+export type ActionStatus =
+  "pending" | "confirmed" | "executing" | "completed" | "failed" | "cancelled";
+export type TargetEntity =
+  | "workspace"
+  | "project"
+  | "task"
+  | "user"
+  | "member"
+  | "label"
+  | "view"
+  | "document"
+  | "notification"
+  | "page"
+  | "slack_message"
+  | "jira_issue"
+  | "notion_page"
+  | "github_issue";
 
 export interface ParsedIntent {
   actionType: string;
@@ -37,7 +53,11 @@ export interface AIActionContext {
   currentWorkspaceId?: string;
   currentProjectId?: string;
   userPreferences?: Record<string, any>;
-  userWorkspaces?: Array<{ id: string; name: string; _count?: { projects: number; members: number } }>;
+  userWorkspaces?: Array<{
+    id: string;
+    name: string;
+    _count?: { projects: number; members: number };
+  }>;
   userProjects?: Array<{ id: string; title: string }>;
 }
 
@@ -61,209 +81,461 @@ export interface ActionDefinition {
 // Available Actions Registry
 export const ACTION_DEFINITIONS: Record<string, Partial<ActionDefinition>> = {
   // Workspace Actions
-  "create_workspace": {
+  create_workspace: {
     type: "create_workspace",
     category: "create",
     targetEntity: "workspace",
     description: "Create a new workspace",
     parameters: [
-      { name: "name", type: "string", required: true, description: "Workspace name" },
-      { name: "description", type: "string", required: false, description: "Workspace description" },
-      { name: "icon", type: "string", required: false, description: "Workspace icon/emoji" },
+      {
+        name: "name",
+        type: "string",
+        required: true,
+        description: "Workspace name",
+      },
+      {
+        name: "description",
+        type: "string",
+        required: false,
+        description: "Workspace description",
+      },
+      {
+        name: "icon",
+        type: "string",
+        required: false,
+        description: "Workspace icon/emoji",
+      },
     ],
     requiresConfirmation: true,
   },
-  "update_workspace": {
+  update_workspace: {
     type: "update_workspace",
     category: "update",
     targetEntity: "workspace",
     description: "Update workspace details",
     parameters: [
-      { name: "workspaceId", type: "string", required: true, description: "Workspace ID" },
-      { name: "name", type: "string", required: false, description: "New workspace name" },
-      { name: "description", type: "string", required: false, description: "New description" },
-      { name: "icon", type: "string", required: false, description: "New icon" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: true,
+        description: "Workspace ID",
+      },
+      {
+        name: "name",
+        type: "string",
+        required: false,
+        description: "New workspace name",
+      },
+      {
+        name: "description",
+        type: "string",
+        required: false,
+        description: "New description",
+      },
+      {
+        name: "icon",
+        type: "string",
+        required: false,
+        description: "New icon",
+      },
     ],
     requiresConfirmation: true,
   },
-  "delete_workspace": {
+  delete_workspace: {
     type: "delete_workspace",
     category: "delete",
     targetEntity: "workspace",
     description: "Delete a workspace",
     parameters: [
-      { name: "workspaceId", type: "string", required: true, description: "Workspace ID to delete" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: true,
+        description: "Workspace ID to delete",
+      },
     ],
     requiresConfirmation: true,
   },
-  "invite_workspace_member": {
+  invite_workspace_member: {
     type: "invite_workspace_member",
     category: "manage",
     targetEntity: "member",
     description: "Invite a member to a workspace",
     parameters: [
-      { name: "workspaceId", type: "string", required: true, description: "Workspace ID" },
-      { name: "email", type: "string", required: true, description: "Member email" },
-      { name: "role", type: "string", required: false, description: "Member role", enum: ["admin", "editor", "viewer"] },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: true,
+        description: "Workspace ID",
+      },
+      {
+        name: "email",
+        type: "string",
+        required: true,
+        description: "Member email",
+      },
+      {
+        name: "role",
+        type: "string",
+        required: false,
+        description: "Member role",
+        enum: ["admin", "editor", "viewer"],
+      },
     ],
     requiresConfirmation: true,
   },
 
   // Project Actions
-  "create_project": {
+  create_project: {
     type: "create_project",
     category: "create",
     targetEntity: "project",
     description: "Create a new project",
     parameters: [
-      { name: "title", type: "string", required: true, description: "Project title" },
-      { name: "type", type: "string", required: false, description: "Project type", enum: ["essay", "research_paper", "thesis", "dissertation", "article", "report", "other"] },
-      { name: "description", type: "string", required: false, description: "Project description" },
-      { name: "workspaceId", type: "string", required: false, description: "Optional workspace ID" },
-      { name: "templateId", type: "string", required: false, description: "Optional template ID" },
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        description: "Project title",
+      },
+      {
+        name: "type",
+        type: "string",
+        required: false,
+        description: "Project type",
+        enum: [
+          "essay",
+          "research_paper",
+          "thesis",
+          "dissertation",
+          "article",
+          "report",
+          "other",
+        ],
+      },
+      {
+        name: "description",
+        type: "string",
+        required: false,
+        description: "Project description",
+      },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: false,
+        description: "Optional workspace ID",
+      },
+      {
+        name: "templateId",
+        type: "string",
+        required: false,
+        description: "Optional template ID",
+      },
     ],
     requiresConfirmation: true,
   },
-  "update_project": {
+  update_project: {
     type: "update_project",
     category: "update",
     targetEntity: "project",
     description: "Update project details",
     parameters: [
-      { name: "projectId", type: "string", required: true, description: "Project ID" },
-      { name: "title", type: "string", required: false, description: "New title" },
-      { name: "description", type: "string", required: false, description: "New description" },
-      { name: "content", type: "object", required: false, description: "Project content (for editing document)" },
-      { name: "status", type: "string", required: false, description: "Project status", enum: ["draft", "in_progress", "review", "completed", "archived"] },
+      {
+        name: "projectId",
+        type: "string",
+        required: true,
+        description: "Project ID",
+      },
+      {
+        name: "title",
+        type: "string",
+        required: false,
+        description: "New title",
+      },
+      {
+        name: "description",
+        type: "string",
+        required: false,
+        description: "New description",
+      },
+      {
+        name: "content",
+        type: "object",
+        required: false,
+        description: "Project content (for editing document)",
+      },
+      {
+        name: "status",
+        type: "string",
+        required: false,
+        description: "Project status",
+        enum: ["draft", "in_progress", "review", "completed", "archived"],
+      },
     ],
     requiresConfirmation: true,
   },
-  "delete_project": {
+  delete_project: {
     type: "delete_project",
     category: "delete",
     targetEntity: "project",
     description: "Delete a project",
     parameters: [
-      { name: "projectId", type: "string", required: true, description: "Project ID to delete" },
+      {
+        name: "projectId",
+        type: "string",
+        required: true,
+        description: "Project ID to delete",
+      },
     ],
     requiresConfirmation: true,
   },
-  "archive_project": {
+  archive_project: {
     type: "archive_project",
     category: "update",
     targetEntity: "project",
     description: "Archive a project",
     parameters: [
-      { name: "projectId", type: "string", required: true, description: "Project ID to archive" },
+      {
+        name: "projectId",
+        type: "string",
+        required: true,
+        description: "Project ID to archive",
+      },
     ],
     requiresConfirmation: true,
   },
 
   // Task Actions
-  "create_task": {
+  create_task: {
     type: "create_task",
     category: "create",
     targetEntity: "task",
     description: "Create a new task",
     parameters: [
-      { name: "workspaceId", type: "string", required: true, description: "Workspace ID" },
-      { name: "title", type: "string", required: true, description: "Task title" },
-      { name: "description", type: "string", required: false, description: "Task description" },
-      { name: "priority", type: "string", required: false, description: "Task priority", enum: ["low", "medium", "high"] },
-      { name: "dueDate", type: "date", required: false, description: "Due date" },
-      { name: "assigneeEmails", type: "array", required: false, description: "Array of assignee emails" },
-      { name: "projectId", type: "string", required: false, description: "Linked project ID" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: true,
+        description: "Workspace ID",
+      },
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        description: "Task title",
+      },
+      {
+        name: "description",
+        type: "string",
+        required: false,
+        description: "Task description",
+      },
+      {
+        name: "priority",
+        type: "string",
+        required: false,
+        description: "Task priority",
+        enum: ["low", "medium", "high"],
+      },
+      {
+        name: "dueDate",
+        type: "date",
+        required: false,
+        description: "Due date",
+      },
+      {
+        name: "assigneeEmails",
+        type: "array",
+        required: false,
+        description: "Array of assignee emails",
+      },
+      {
+        name: "projectId",
+        type: "string",
+        required: false,
+        description: "Linked project ID",
+      },
     ],
     requiresConfirmation: false,
   },
-  "update_task": {
+  update_task: {
     type: "update_task",
     category: "update",
     targetEntity: "task",
     description: "Update a task",
     parameters: [
-      { name: "taskId", type: "string", required: true, description: "Task ID" },
-      { name: "title", type: "string", required: false, description: "New title" },
-      { name: "description", type: "string", required: false, description: "New description" },
-      { name: "status", type: "string", required: false, description: "Task status" },
-      { name: "priority", type: "string", required: false, description: "New priority" },
-      { name: "dueDate", type: "date", required: false, description: "New due date" },
+      {
+        name: "taskId",
+        type: "string",
+        required: true,
+        description: "Task ID",
+      },
+      {
+        name: "title",
+        type: "string",
+        required: false,
+        description: "New title",
+      },
+      {
+        name: "description",
+        type: "string",
+        required: false,
+        description: "New description",
+      },
+      {
+        name: "status",
+        type: "string",
+        required: false,
+        description: "Task status",
+      },
+      {
+        name: "priority",
+        type: "string",
+        required: false,
+        description: "New priority",
+      },
+      {
+        name: "dueDate",
+        type: "date",
+        required: false,
+        description: "New due date",
+      },
     ],
     requiresConfirmation: false,
   },
-  "delete_task": {
+  delete_task: {
     type: "delete_task",
     category: "delete",
     targetEntity: "task",
     description: "Delete a task",
     parameters: [
-      { name: "taskId", type: "string", required: true, description: "Task ID to delete" },
+      {
+        name: "taskId",
+        type: "string",
+        required: true,
+        description: "Task ID to delete",
+      },
     ],
     requiresConfirmation: true,
   },
-  "complete_task": {
+  complete_task: {
     type: "complete_task",
     category: "update",
     targetEntity: "task",
     description: "Mark a task as complete",
     parameters: [
-      { name: "taskId", type: "string", required: true, description: "Task ID" },
+      {
+        name: "taskId",
+        type: "string",
+        required: true,
+        description: "Task ID",
+      },
     ],
     requiresConfirmation: false,
   },
-  "create_subtask": {
+  create_subtask: {
     type: "create_subtask",
     category: "create",
     targetEntity: "task",
     description: "Create a subtask",
     parameters: [
-      { name: "taskId", type: "string", required: true, description: "Parent task ID" },
-      { name: "title", type: "string", required: true, description: "Subtask title" },
+      {
+        name: "taskId",
+        type: "string",
+        required: true,
+        description: "Parent task ID",
+      },
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        description: "Subtask title",
+      },
     ],
     requiresConfirmation: false,
   },
 
   // Label Actions
-  "create_label": {
+  create_label: {
     type: "create_label",
     category: "create",
     targetEntity: "label",
     description: "Create a workspace label",
     parameters: [
-      { name: "workspaceId", type: "string", required: true, description: "Workspace ID" },
-      { name: "name", type: "string", required: true, description: "Label name" },
-      { name: "color", type: "string", required: false, description: "Label color (hex)" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: true,
+        description: "Workspace ID",
+      },
+      {
+        name: "name",
+        type: "string",
+        required: true,
+        description: "Label name",
+      },
+      {
+        name: "color",
+        type: "string",
+        required: false,
+        description: "Label color (hex)",
+      },
     ],
     requiresConfirmation: false,
   },
-  "assign_label": {
+  assign_label: {
     type: "assign_label",
     category: "manage",
     targetEntity: "label",
     description: "Assign a label to a task",
     parameters: [
-      { name: "taskId", type: "string", required: true, description: "Task ID" },
-      { name: "labelId", type: "string", required: true, description: "Label ID" },
+      {
+        name: "taskId",
+        type: "string",
+        required: true,
+        description: "Task ID",
+      },
+      {
+        name: "labelId",
+        type: "string",
+        required: true,
+        description: "Label ID",
+      },
     ],
     requiresConfirmation: false,
   },
 
   // View Actions
-  "create_view": {
+  create_view: {
     type: "create_view",
     category: "create",
     targetEntity: "view",
     description: "Create a workspace view",
     parameters: [
-      { name: "workspaceId", type: "string", required: true, description: "Workspace ID" },
-      { name: "name", type: "string", required: true, description: "View name" },
-      { name: "filters", type: "object", required: false, description: "View filters" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: true,
+        description: "Workspace ID",
+      },
+      {
+        name: "name",
+        type: "string",
+        required: true,
+        description: "View name",
+      },
+      {
+        name: "filters",
+        type: "object",
+        required: false,
+        description: "View filters",
+      },
     ],
     requiresConfirmation: false,
   },
 
   // Read/Query Actions
-  "list_workspaces": {
+  list_workspaces: {
     type: "list_workspaces",
     category: "read",
     targetEntity: "workspace",
@@ -271,127 +543,371 @@ export const ACTION_DEFINITIONS: Record<string, Partial<ActionDefinition>> = {
     parameters: [],
     requiresConfirmation: false,
   },
-  "list_projects": {
+  list_projects: {
     type: "list_projects",
     category: "read",
     targetEntity: "project",
     description: "List projects",
     parameters: [
-      { name: "workspaceId", type: "string", required: false, description: "Filter by workspace" },
-      { name: "archived", type: "boolean", required: false, description: "Include archived" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: false,
+        description: "Filter by workspace",
+      },
+      {
+        name: "archived",
+        type: "boolean",
+        required: false,
+        description: "Include archived",
+      },
     ],
     requiresConfirmation: false,
   },
-  "list_tasks": {
+  list_tasks: {
     type: "list_tasks",
     category: "read",
     targetEntity: "task",
     description: "List tasks in a workspace",
     parameters: [
-      { name: "workspaceId", type: "string", required: true, description: "Workspace ID" },
-      { name: "status", type: "string", required: false, description: "Filter by status" },
-      { name: "priority", type: "string", required: false, description: "Filter by priority" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: true,
+        description: "Workspace ID",
+      },
+      {
+        name: "status",
+        type: "string",
+        required: false,
+        description: "Filter by status",
+      },
+      {
+        name: "priority",
+        type: "string",
+        required: false,
+        description: "Filter by priority",
+      },
     ],
     requiresConfirmation: false,
   },
-  "get_project_details": {
+  get_project_details: {
     type: "get_project_details",
     category: "read",
     targetEntity: "project",
     description: "Get detailed project information",
     parameters: [
-      { name: "projectId", type: "string", required: true, description: "Project ID" },
+      {
+        name: "projectId",
+        type: "string",
+        required: true,
+        description: "Project ID",
+      },
     ],
     requiresConfirmation: false,
   },
-  "analyze_workspace": {
+  analyze_workspace: {
     type: "analyze_workspace",
     category: "read",
     targetEntity: "workspace",
-    description: "Analyze or summarize a workspace's contents (projects, tasks, members)",
+    description:
+      "Analyze or summarize a workspace's contents (projects, tasks, members)",
     parameters: [
-      { name: "workspaceId", type: "string", required: false, description: "Workspace ID (omit to list all)" },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: false,
+        description: "Workspace ID (omit to list all)",
+      },
     ],
     requiresConfirmation: false,
   },
 
   // Navigation Actions
-  "navigate_to_page": {
+  navigate_to_page: {
     type: "navigate_to_page",
     category: "navigate",
     targetEntity: "page",
-    description: "Navigate to any page in the platform - use this when user asks to go somewhere or see something",
+    description:
+      "Navigate to any page in the platform - use this when user asks to go somewhere or see something",
     parameters: [
-      { name: "page", type: "string", required: true, description: "Page identifier", enum: [
-        // Main pages
-        "dashboard", "workspaces", "projects", "tasks", "editor", "settings", "guide", "search", 
-        // Workspace pages
-        "workspace", "workspace_projects", "workspace_tasks", "workspace_notes", "workspace_wiki", "workspace_team", "workspace_settings",
-        // Additional aliases
-        "workspace_list", "help", "preferences"
-      ]},
-      { name: "params", type: "object", required: false, description: "Page parameters like { projectId, workspaceId, query, path }" },
+      {
+        name: "page",
+        type: "string",
+        required: true,
+        description: "Page identifier",
+        enum: [
+          // Main pages
+          "dashboard",
+          "workspaces",
+          "projects",
+          "tasks",
+          "editor",
+          "settings",
+          "guide",
+          "search",
+          // Workspace pages
+          "workspace",
+          "workspace_projects",
+          "workspace_tasks",
+          "workspace_notes",
+          "workspace_wiki",
+          "workspace_team",
+          "workspace_settings",
+          // Additional aliases
+          "workspace_list",
+          "help",
+          "preferences",
+        ],
+      },
+      {
+        name: "params",
+        type: "object",
+        required: false,
+        description:
+          "Page parameters like { projectId, workspaceId, query, path }",
+      },
     ],
     requiresConfirmation: false,
   },
-  "open_project": {
+  open_project: {
     type: "open_project",
     category: "navigate",
     targetEntity: "project",
     description: "Open a project in the editor",
     parameters: [
-      { name: "projectId", type: "string", required: true, description: "Project ID" },
+      {
+        name: "projectId",
+        type: "string",
+        required: true,
+        description: "Project ID",
+      },
     ],
     requiresConfirmation: false,
   },
 
   // Document Editing Actions
-  "edit_document": {
+  edit_document: {
     type: "edit_document",
     category: "update",
     targetEntity: "document",
     description: "Edit document content",
     parameters: [
-      { name: "projectId", type: "string", required: true, description: "Project ID" },
-      { name: "instruction", type: "string", required: true, description: "Editing instruction (e.g., 'add introduction', 'fix grammar')" },
+      {
+        name: "projectId",
+        type: "string",
+        required: true,
+        description: "Project ID",
+      },
+      {
+        name: "instruction",
+        type: "string",
+        required: true,
+        description:
+          "Editing instruction (e.g., 'add introduction', 'fix grammar')",
+      },
     ],
     requiresConfirmation: true,
   },
-  "summarize_document": {
+  summarize_document: {
     type: "summarize_document",
     category: "read",
     targetEntity: "document",
     description: "Summarize document content",
     parameters: [
-      { name: "projectId", type: "string", required: true, description: "Project ID" },
-      { name: "style", type: "string", required: false, description: "Summary style", enum: ["brief", "detailed", "bullet_points", "executive"] },
+      {
+        name: "projectId",
+        type: "string",
+        required: true,
+        description: "Project ID",
+      },
+      {
+        name: "style",
+        type: "string",
+        required: false,
+        description: "Summary style",
+        enum: ["brief", "detailed", "bullet_points", "executive"],
+      },
     ],
     requiresConfirmation: false,
   },
 
   // Notification Actions
-  "mark_notifications_read": {
+  mark_notifications_read: {
     type: "mark_notifications_read",
     category: "update",
     targetEntity: "notification",
     description: "Mark notifications as read",
     parameters: [
-      { name: "notificationIds", type: "array", required: false, description: "Specific notification IDs (omit for all)" },
+      {
+        name: "notificationIds",
+        type: "array",
+        required: false,
+        description: "Specific notification IDs (omit for all)",
+      },
     ],
     requiresConfirmation: false,
   },
 
   // Multi-step Actions
-  "create_project_with_tasks": {
+  create_project_with_tasks: {
     type: "create_project_with_tasks",
     category: "create",
     targetEntity: "project",
     description: "Create a project with initial tasks",
     parameters: [
-      { name: "title", type: "string", required: true, description: "Project title" },
-      { name: "type", type: "string", required: false, description: "Project type" },
-      { name: "tasks", type: "array", required: true, description: "Array of task titles to create" },
-      { name: "workspaceId", type: "string", required: false, description: "Optional workspace ID" },
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        description: "Project title",
+      },
+      {
+        name: "type",
+        type: "string",
+        required: false,
+        description: "Project type",
+      },
+      {
+        name: "tasks",
+        type: "array",
+        required: true,
+        description: "Array of task titles to create",
+      },
+      {
+        name: "workspaceId",
+        type: "string",
+        required: false,
+        description: "Optional workspace ID",
+      },
+    ],
+    requiresConfirmation: true,
+  },
+
+  // ─── Integration Actions (connected external tools) ───────────────────────
+  // These let the AI act on the user's connected Slack, Jira, Notion, and
+  // GitHub accounts. The executor resolves the user's connection via the
+  // connector registry and calls the connector's write method.
+
+  send_slack_message: {
+    type: "send_slack_message",
+    category: "create",
+    targetEntity: "slack_message",
+    description: "Send a message to a Slack channel or user",
+    parameters: [
+      {
+        name: "channel",
+        type: "string",
+        required: true,
+        description: "Slack channel name (e.g. #general) or user ID",
+      },
+      {
+        name: "text",
+        type: "string",
+        required: true,
+        description: "Message text to send",
+      },
+    ],
+    requiresConfirmation: true,
+  },
+  create_jira_issue: {
+    type: "create_jira_issue",
+    category: "create",
+    targetEntity: "jira_issue",
+    description: "Create a Jira issue/ticket",
+    parameters: [
+      {
+        name: "projectKey",
+        type: "string",
+        required: true,
+        description: "Jira project key (e.g. PROJ)",
+      },
+      {
+        name: "summary",
+        type: "string",
+        required: true,
+        description: "Issue summary/title",
+      },
+      {
+        name: "description",
+        type: "string",
+        required: false,
+        description: "Issue description",
+      },
+      {
+        name: "issueType",
+        type: "string",
+        required: false,
+        description: "Issue type (e.g. Task, Bug, Story)",
+        enum: ["Task", "Bug", "Story", "Epic"],
+      },
+      {
+        name: "priority",
+        type: "string",
+        required: false,
+        description: "Issue priority",
+        enum: ["Highest", "High", "Medium", "Low", "Lowest"],
+      },
+    ],
+    requiresConfirmation: true,
+  },
+  create_notion_page: {
+    type: "create_notion_page",
+    category: "create",
+    targetEntity: "notion_page",
+    description: "Create a page in Notion",
+    parameters: [
+      {
+        name: "parentPageId",
+        type: "string",
+        required: false,
+        description: "Parent page ID (omit to use the workspace root)",
+      },
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        description: "Page title",
+      },
+      {
+        name: "content",
+        type: "string",
+        required: false,
+        description: "Page content (markdown)",
+      },
+    ],
+    requiresConfirmation: true,
+  },
+  create_github_issue: {
+    type: "create_github_issue",
+    category: "create",
+    targetEntity: "github_issue",
+    description: "Create an issue in a GitHub repository",
+    parameters: [
+      {
+        name: "repo",
+        type: "string",
+        required: true,
+        description: "Repository in owner/repo format",
+      },
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        description: "Issue title",
+      },
+      {
+        name: "body",
+        type: "string",
+        required: false,
+        description: "Issue body/description",
+      },
+      {
+        name: "labels",
+        type: "array",
+        required: false,
+        description: "Issue labels",
+      },
     ],
     requiresConfirmation: true,
   },
@@ -401,28 +917,39 @@ export const ACTION_DEFINITIONS: Record<string, Partial<ActionDefinition>> = {
 export const INTENT_PATTERNS: Array<{
   pattern: RegExp;
   actionType: string;
-  extractParams: (match: RegExpMatchArray, message: string) => Record<string, any>;
+  extractParams: (
+    match: RegExpMatchArray,
+    message: string,
+  ) => Record<string, any>;
 }> = [
   {
-    pattern: /create\s+(?:a\s+)?new\s+workspace\s+(?:called\s+)?["']?([^"']+)["']?/i,
+    pattern:
+      /create\s+(?:a\s+)?new\s+workspace\s+(?:called\s+)?["']?([^"']+)["']?/i,
     actionType: "create_workspace",
     extractParams: (match) => ({ name: match[1]?.trim() }),
   },
   {
-    pattern: /create\s+(?:a\s+)?new\s+project\s+(?:called\s+)?["']?([^"']+)["']?/i,
+    pattern:
+      /create\s+(?:a\s+)?new\s+project\s+(?:called\s+)?["']?([^"']+)["']?/i,
     actionType: "create_project",
     extractParams: (match) => ({ title: match[1]?.trim() }),
   },
   {
-    pattern: /create\s+(?:a\s+)?task\s+(?:called\s+)?["']?([^"']+)["']?(?:\s+in\s+(?:the\s+)?workspace)?/i,
+    pattern:
+      /create\s+(?:a\s+)?task\s+(?:called\s+)?["']?([^"']+)["']?(?:\s+in\s+(?:the\s+)?workspace)?/i,
     actionType: "create_task",
     extractParams: (match) => ({ title: match[1]?.trim() }),
   },
   {
-    pattern: /delete\s+(?:the\s+)?(?:workspace|project|task)\s+["']?([^"']+)["']?/i,
+    pattern:
+      /delete\s+(?:the\s+)?(?:workspace|project|task)\s+["']?([^"']+)["']?/i,
     actionType: "delete_item",
     extractParams: (match, message) => {
-      const entity = message.match(/workspace/) ? "workspace" : message.match(/project/) ? "project" : "task";
+      const entity = message.match(/workspace/)
+        ? "workspace"
+        : message.match(/project/)
+          ? "project"
+          : "task";
       return { targetEntity: entity, name: match[1]?.trim() };
     },
   },
@@ -457,7 +984,8 @@ export const INTENT_PATTERNS: Array<{
     extractParams: (match) => ({ taskName: match[1]?.trim() }),
   },
   {
-    pattern: /(?:analyze|summarize|analyse)\s+(?:my\s+)?(?:the\s+)?(?:workspace|dashboard)(?:\s+["']?([^"']+)["']?)?/i,
+    pattern:
+      /(?:analyze|summarize|analyse)\s+(?:my\s+)?(?:the\s+)?(?:workspace|dashboard)(?:\s+["']?([^"']+)["']?)?/i,
     actionType: "analyze_workspace",
     extractParams: (match) => {
       if (match[1]?.trim()) {
@@ -467,7 +995,8 @@ export const INTENT_PATTERNS: Array<{
     },
   },
   {
-    pattern: /what(?:\'s| is)\s+(?:in|inside)\s+(?:my\s+)?(?:the\s+)?(?:workspace|dashboard)(?:\s+["']?([^"']+)["']?)?/i,
+    pattern:
+      /what(?:\'s| is)\s+(?:in|inside)\s+(?:my\s+)?(?:the\s+)?(?:workspace|dashboard)(?:\s+["']?([^"']+)["']?)?/i,
     actionType: "analyze_workspace",
     extractParams: (match) => {
       if (match[1]?.trim()) {
@@ -475,5 +1004,40 @@ export const INTENT_PATTERNS: Array<{
       }
       return {};
     },
+  },
+
+  // ─── Integration intent patterns ──────────────────────────────────────────
+  {
+    pattern:
+      /(?:send|post|message)\s+(?:a\s+)?(?:message|msg)?\s*(?:to\s+)?(?:slack\s+)?(?:channel\s+)?["']?#?([a-z0-9_-]+)["']?\s*(?:saying|:)?\s*["']?([^"']+)["']?/i,
+    actionType: "send_slack_message",
+    extractParams: (match) => ({
+      channel: match[1]?.trim() ? `#${match[1].trim().replace(/^#/, "")}` : "",
+      text: match[2]?.trim() || "",
+    }),
+  },
+  {
+    pattern:
+      /(?:create|open|file|log)\s+(?:a\s+)?(?:jira\s+)?(?:ticket|issue|bug)\s+(?:in\s+)?["']?([A-Z0-9_-]+)["']?\s*(?:called|titled|for|:)?\s*["']?([^"']+)["']?/i,
+    actionType: "create_jira_issue",
+    extractParams: (match) => ({
+      projectKey: match[1]?.trim() || "",
+      summary: match[2]?.trim() || "",
+    }),
+  },
+  {
+    pattern:
+      /(?:create|add|make)\s+(?:a\s+)?(?:notion\s+)?page\s+(?:called|titled)?\s*["']?([^"']+)["']?/i,
+    actionType: "create_notion_page",
+    extractParams: (match) => ({ title: match[1]?.trim() || "" }),
+  },
+  {
+    pattern:
+      /(?:create|open|file|log)\s+(?:a\s+)?(?:github\s+)?issue\s+(?:in\s+)?["']?([a-z0-9_.-]+\/[a-z0-9_.-]+)["']?\s*(?:called|titled|for|:)?\s*["']?([^"']+)["']?/i,
+    actionType: "create_github_issue",
+    extractParams: (match) => ({
+      repo: match[1]?.trim() || "",
+      title: match[2]?.trim() || "",
+    }),
   },
 ];

@@ -101,7 +101,8 @@ export class AIActionService {
       if (
         !intent ||
         intent.actionType === "chat" ||
-        (intent.confidence < 0.5 && AIIntentParser.isGeneralChat(request.message))
+        (intent.confidence < 0.5 &&
+          AIIntentParser.isGeneralChat(request.message))
       ) {
         return this.handleGeneralChat(request, context);
       }
@@ -220,49 +221,51 @@ export class AIActionService {
 
     try {
       // Build workspace context for general chat — search both internal workspace
-      // content and connected external tools so the AI is fully context-aware
+      // content and connected external tools so the AI is fully context-aware.
+      // NOTE: SearchAggregator scopes by userId, so it works even without a
+      // workspaceId — the AI should be context-aware from ANY page (dashboard,
+      // editor, workspace, etc.), not just workspace pages.
       let workspaceContext: any[] = [];
       try {
-        // Internal: semantically similar workspace items
+        // Internal: semantically similar workspace items (scoped to workspace when known)
         const workspaceId = request.currentWorkspaceId || request.entityId;
-        if (workspaceId) {
-          const [internalResults, externalResults] = await Promise.allSettled([
-            ContextEmbeddingService.similaritySearch({
-              query: request.message,
-              ownerId: request.userId,
-              workspaceId,
-              k: 4,
-              threshold: 0.3,
-            }),
-            SearchAggregator.search({
-              query: request.message,
-              userId: request.userId,
-              k: 6,
-            }),
-          ]);
+        const [internalResults, externalResults] = await Promise.allSettled([
+          ContextEmbeddingService.similaritySearch({
+            query: request.message,
+            ownerId: request.userId,
+            workspaceId: workspaceId || undefined,
+            k: 4,
+            threshold: 0.3,
+          }),
+          SearchAggregator.search({
+            query: request.message,
+            userId: request.userId,
+            workspaceId: workspaceId || undefined,
+            k: 6,
+          }),
+        ]);
 
-          if (internalResults.status === "fulfilled") {
-            workspaceContext.push(
-              ...internalResults.value.map((r: any) => ({
-                ...r,
-                source: "internal",
-              })),
-            );
-          }
-          if (externalResults.status === "fulfilled") {
-            workspaceContext.push(
-              ...externalResults.value.map((r: any) => ({
-                title: r.title,
-                content: r.snippet || r.content_text || "",
-                entity_type: r.type,
-                source: "external",
-                source_label: r.source_label,
-                author_name: r.author_name,
-                channel_or_project: r.channel_or_project,
-                url: r.content_url,
-              })),
-            );
-          }
+        if (internalResults.status === "fulfilled") {
+          workspaceContext.push(
+            ...internalResults.value.map((r: any) => ({
+              ...r,
+              source: "internal",
+            })),
+          );
+        }
+        if (externalResults.status === "fulfilled") {
+          workspaceContext.push(
+            ...externalResults.value.map((r: any) => ({
+              title: r.title,
+              content: r.snippet || r.content_text || "",
+              entity_type: r.content_type,
+              source: "external",
+              source_label: r.source_label,
+              author_name: r.author_name,
+              channel_or_project: r.channel_or_project,
+              url: r.content_url,
+            })),
+          );
         }
       } catch (ctxErr) {
         logger.warn("Failed to build workspace context for AI chat", {
@@ -275,7 +278,8 @@ export class AIActionService {
         userId: request.userId,
         content: request.message,
         model: request.model, // Use user's preferred model
-        metadata: workspaceContext.length > 0 ? { workspaceContext } : undefined,
+        metadata:
+          workspaceContext.length > 0 ? { workspaceContext } : undefined,
       });
 
       return {

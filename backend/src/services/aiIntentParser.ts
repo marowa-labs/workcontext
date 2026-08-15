@@ -209,7 +209,7 @@ RESPONSE FORMAT - Return valid JSON:
 {
   "action_type": "action type or 'chat' for general conversation",
   "action_category": "create|read|update|delete|manage|navigate",
-  "target_entity": "workspace|project|task|user|member|label|view|document|notification|page",
+  "target_entity": "workspace|project|task|user|member|label|view|document|notification|page|slack_message|jira_issue|notion_page|github_issue",
   "parameters": { extracted parameters },
   "confidence": 0.0-1.0,
   "suggested_response": "Natural, conversational response"
@@ -375,6 +375,10 @@ Respond ONLY with valid JSON.`;
       list_workspaces: `I'll show you all your workspaces.`,
       list_projects: `I'll show you all your projects.`,
       list_tasks: `I'll show you your tasks.`,
+      send_slack_message: `I'll send a message to ${intent.parameters.channel || "Slack"}.`,
+      create_jira_issue: `I'll create a Jira ticket in ${intent.parameters.projectKey || "your project"}.`,
+      create_notion_page: `I'll create a Notion page called "${entityName}".`,
+      create_github_issue: `I'll create a GitHub issue in ${intent.parameters.repo || "the repository"}.`,
     };
 
     return (
@@ -386,4 +390,3 @@ Respond ONLY with valid JSON.`;
 }
 
 export default AIIntentParser;
-

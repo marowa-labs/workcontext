@@ -248,6 +248,30 @@ export class SlackConnector extends ConnectorBase {
     return item.content_url || "";
   }
 
+  /**
+   * Send a message to a Slack channel or user (write action for AI).
+   * Requires the `chat:write` scope on the user token.
+   */
+  async sendMessage(
+    accessToken: string,
+    channel: string,
+    text: string,
+  ): Promise<{ ok: boolean; ts?: string; channel?: string; error?: string }> {
+    const res = await fetch(`${this.API_BASE}/chat.postMessage`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ channel, text }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      throw new Error(`Slack sendMessage failed: ${data.error}`);
+    }
+    return data;
+  }
+
   private async slackGet(
     url: string,
     token: string,
