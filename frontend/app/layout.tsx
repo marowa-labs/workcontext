@@ -6,6 +6,7 @@ import OnboardingModal from "./components/onboarding/OnboardingModal";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { Toaster } from "./components/ui/toaster";
 import { UpdateNotification } from "./components/UpdateNotification";
+import AuthInitializer from "./components/auth/AuthInitializer";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -51,11 +52,13 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <OnboardingProvider>
-            {children}
-            <OnboardingModal />
-            <CookieConsentBanner />
-            <Toaster />
-            <UpdateNotification />
+            <AuthInitializer>
+              {children}
+              <OnboardingModal />
+              <CookieConsentBanner />
+              <Toaster />
+              <UpdateNotification />
+            </AuthInitializer>
           </OnboardingProvider>
         </ThemeProvider>
         <Script

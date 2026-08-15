@@ -7,6 +7,7 @@ import { WelcomeEmailTemplate } from "../templates/emails/WelcomeEmailTemplate";
 import { NotificationEmailTemplate } from "../templates/emails/NotificationEmailTemplate";
 import { TeamInvitationEmailTemplate } from "../templates/emails/TeamInvitationEmailTemplate";
 import { SecurityEmailTemplate } from "../templates/emails/SecurityEmailTemplate";
+import { PasswordResetEmailTemplate } from "../templates/emails/PasswordResetEmailTemplate";
 
 const FROM_ADDRESS = "noreply@workcontext.me";
 
@@ -144,6 +145,19 @@ export class EmailService {
         invitationLink,
         role,
       }),
+    );
+  }
+
+  // Send password reset email via Plunk (bypasses Supabase's broken SMTP)
+  static async sendPasswordResetEmail(
+    to: string,
+    resetLink: string,
+    fullName: string = "",
+  ): Promise<boolean> {
+    return send(
+      to,
+      "Reset your WorkContext password",
+      PasswordResetEmailTemplate({ resetLink, fullName }),
     );
   }
 

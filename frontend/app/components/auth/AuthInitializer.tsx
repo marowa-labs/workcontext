@@ -26,6 +26,20 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
           event,
           session?.user?.id,
         );
+
+        // If this is a password recovery event, send the user to the
+        // reset-password page so they can set a new password. This handles
+        // recovery links whose redirect_to lands on the homepage (e.g. when
+        // the redirect URL isn't whitelisted and Supabase falls back to the
+        // site URL).
+        if (event === "PASSWORD_RECOVERY") {
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes("/reset-password")) {
+            window.location.href = "/reset-password";
+            return;
+          }
+        }
+
         // Once we get any auth state change, we're initialized
         if (mounted && !isInitialized) {
           setIsInitialized(true);

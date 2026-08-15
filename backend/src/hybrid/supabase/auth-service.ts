@@ -1,5 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { SecretsService } from "../../services/secrets-service";
+import EmailService from "../../services/emailService";
+import logger from "../../monitoring/logger";
+import { getSupabaseAdminClient } from "../../lib/supabase/client";
 
 // Supabase client configuration - ensure consistency with frontend
 let supabaseUrl: string | null = null;
@@ -154,13 +157,62 @@ export class AuthService {
   static async resetPassword(email: string) {
     console.log("AuthService.resetPassword called", { email });
     const client = await supabase;
-    const { data, error } = await client.auth.resetPasswordForEmail(email);
+
+    // Generate a recovery link via the admin API (does NOT send an email,
+    // so it bypasses Supabase's broken SMTP which returns 500 for some users).
+    const adminClient = await getSupabaseAdminClient();
+    if (!adminClient) {
+      throw new Error(
+        "Supabase Service Role Key not configured - cannot generate reset link",
+      );
+    }
+
+    const { data, error } = await adminClient.auth.admin.generateLink({
+      type: "recovery",
+      email,
+      options: {
+        redirectTo: `${
+          (await SecretsService.getPublicAppUrl()) ||
+          (await SecretsService.getSecret("APP_URL")) ||
+          process.env.FRONTEND_URL ||
+          "http://localhost:3000"
+        }/reset-password`,
+      },
+    });
+
     if (error) {
       console.error("AuthService.resetPassword error", {
         error: error.message,
       });
       throw new Error(error.message);
     }
+
+    if (!data?.properties?.action_link) {
+      console.error("AuthService.resetPassword error: no action link returned");
+      throw new Error("Failed to generate password reset link");
+    }
+
+    // Deliver the reset link via Plunk (the app's transactional email provider)
+    const fullName =
+      data.user?.user_metadata?.full_name ||
+      data.user?.user_metadata?.name ||
+      "";
+    const sent = await EmailService.sendPasswordResetEmail(
+      email,
+      data.properties.action_link,
+      fullName,
+    );
+
+    if (!sent) {
+      console.error(
+        "AuthService.resetPassword error: Plunk email send failed",
+        {
+          email,
+        },
+      );
+      throw new Error("Failed to send password reset email");
+    }
+
     console.log("AuthService.resetPassword success");
     return data;
   }

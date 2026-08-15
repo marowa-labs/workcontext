@@ -3,6 +3,7 @@ import {
   configureSessionPersistence,
   sessionManager,
 } from "../supabase/client";
+import { apiClient } from "./apiClient";
 import logger from "../../utils/logger";
 
 /**
@@ -16,7 +17,7 @@ import logger from "../../utils/logger";
 export async function signInWithEmail(
   email: string,
   password: string,
-  rememberMe: boolean = false
+  rememberMe: boolean = false,
 ) {
   try {
     // Configure session persistence based on "Remember Me" option
@@ -52,7 +53,7 @@ export async function signInWithEmail(
 export async function signUpWithEmail(
   email: string,
   password: string,
-  userData?: any
+  userData?: any,
 ) {
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -115,14 +116,17 @@ export async function getCurrentUser() {
  * Get current user's ID token
  */
 export async function getIdToken(
-  forceRefresh: boolean = false
+  forceRefresh: boolean = false,
 ): Promise<string | null> {
   try {
     if (forceRefresh) {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) {
         // Don't log AuthSessionMissingError as it's expected for unauthenticated users
-        if (error.message?.includes("Auth session missing") || error.name === "AuthSessionMissingError") {
+        if (
+          error.message?.includes("Auth session missing") ||
+          error.name === "AuthSessionMissingError"
+        ) {
           return null;
         }
         logger.error("Refresh session error", { error: error.message });
@@ -133,7 +137,10 @@ export async function getIdToken(
       const { data, error } = await supabase.auth.getSession();
       if (error) {
         // Don't log AuthSessionMissingError as it's expected for unauthenticated users
-        if (error.message?.includes("Auth session missing") || error.name === "AuthSessionMissingError") {
+        if (
+          error.message?.includes("Auth session missing") ||
+          error.name === "AuthSessionMissingError"
+        ) {
           return null;
         }
         logger.error("Get session error", { error: error.message });
@@ -143,7 +150,10 @@ export async function getIdToken(
     }
   } catch (error: any) {
     // Don't log AuthSessionMissingError as it's expected for unauthenticated users
-    if (error?.message?.includes("Auth session missing") || error?.name === "AuthSessionMissingError") {
+    if (
+      error?.message?.includes("Auth session missing") ||
+      error?.name === "AuthSessionMissingError"
+    ) {
       return null;
     }
     logger.error("Get ID token error", { error: error?.message });
@@ -153,14 +163,13 @@ export async function getIdToken(
 
 /**
  * Send password reset email
+ * Routes through the backend API so the reset link is generated via the
+ * Supabase admin API and delivered through Plunk (bypasses Supabase's
+ * broken SMTP which returns 500 for some users).
  */
 export async function resetPassword(email: string): Promise<void> {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      logger.error("Password reset error", { error: error.message, email });
-      throw error;
-    }
+    await apiClient.post("/api/auth/forgot-password", { email });
     logger.info("Password reset email sent", { email });
   } catch (error: any) {
     logger.error("Password reset error", { error: error.message, email });
@@ -249,7 +258,7 @@ export async function sendVerificationEmail(): Promise<void> {
  * OAuth Sign In
  */
 export async function signInWithProvider(
-  provider: "google" | "github" | "azure"
+  provider: "google" | "github" | "azure",
 ) {
   try {
     let providerName: "google" | "github" | "azure" = provider;
@@ -280,7 +289,7 @@ export async function signInWithProvider(
 export async function sendOTP(
   phoneNumber: string,
   userId: string,
-  method: string = "sms"
+  method: string = "sms",
 ) {
   try {
     // Use the backend API to send OTP

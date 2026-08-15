@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Lock, CheckCircle, Shield } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import FormInput from "../../components/auth/FormInput";
@@ -30,15 +30,12 @@ const resetPasswordSchema = z
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 const ResetPasswordPage: React.FC = () => {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
-  const [isValidToken, setIsValidToken] = React.useState(true);
+  const [isValidToken, setIsValidToken] = React.useState(false);
+  const [isChecking, setIsChecking] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
-  const oobCode = searchParams.get("oobCode");
-  const email = searchParams.get("email");
 
   const {
     register,
@@ -50,62 +47,57 @@ const ResetPasswordPage: React.FC = () => {
     mode: "onChange",
   });
 
-  const watchedFields = watch();
   const passwordValue = watch("password");
 
   React.useEffect(() => {
-    // Validate token when component mounts
-    if (oobCode) {
-      validateToken(oobCode);
-    } else {
-      setIsValidToken(false);
-    }
-  }, [oobCode]);
+    let mounted = true;
 
-  const validateToken = async (resetCode: string) => {
-    try {
-      // Verify the oobCode with Supabase to ensure it's valid
-      // Email is required by Supabase for recovery type OTP verification
-      const { error } = await supabase.auth.verifyOtp({
-        token: resetCode,
-        type: "recovery",
-        email: email || "",
-      });
+    // Supabase recovery links arrive as a URL hash fragment
+    // (#access_token=...&type=recovery). With detectSessionInUrl enabled,
+    // the client picks up the session automatically — we just need to
+    // confirm a recovery session exists before showing the form.
+    const checkRecoverySession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("Token validation failed:", error);
-        setIsValidToken(false);
-      } else {
-        setIsValidToken(true);
+        if (!mounted) return;
+
+        if (session) {
+          setIsValidToken(true);
+        } else {
+          // No session yet — wait briefly for the hash to be processed,
+          // then check again before declaring the link invalid.
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          if (!mounted) return;
+
+          const {
+            data: { session: retrySession },
+          } = await supabase.auth.getSession();
+          setIsValidToken(!!retrySession);
+        }
+      } catch (err) {
+        console.error("Recovery session check error:", err);
+        if (mounted) setIsValidToken(false);
+      } finally {
+        if (mounted) setIsChecking(false);
       }
-    } catch (error) {
-      console.error("Token validation error:", error);
-      setIsValidToken(false);
-    }
-  };
+    };
+
+    checkRecoverySession();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);
     setError(null);
     try {
-      if (!oobCode) {
-        throw new Error("Invalid reset code");
-      }
-
-      // First verify the oobCode to establish a recovery session
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        token: oobCode,
-        type: "recovery",
-        email: email || "",
-      });
-
-      if (verifyError) {
-        throw new Error(
-          "This password reset link has expired or is invalid. Please request a new one.",
-        );
-      }
-
-      // Now update the password — recovery session is established
+      // The recovery session is already established from the URL hash —
+      // just update the password directly.
       const { error: updateError } = await supabase.auth.updateUser({
         password: data.password,
       });
@@ -123,10 +115,28 @@ const ResetPasswordPage: React.FC = () => {
     }
   };
 
+  // Show loading state while checking the recovery session
+  if (isChecking) {
+    return (
+      <AuthLayout
+        white
+        title="Checking your link"
+        subtitle="Please wait while we verify your password reset link"
+        showSidebar={false}
+      >
+        <div className="flex flex-col items-center justify-center space-y-4 py-8">
+          <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-black">Verifying your reset link...</p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   // Show invalid token state
   if (!isValidToken) {
     return (
-      <AuthLayout white
+      <AuthLayout
+        white
         title="Invalid or expired link"
         subtitle="This password reset link is no longer valid"
         showSidebar={false}
@@ -183,7 +193,8 @@ const ResetPasswordPage: React.FC = () => {
   // Show success state
   if (isSuccess) {
     return (
-      <AuthLayout white
+      <AuthLayout
+        white
         title="Password reset successful"
         subtitle="You can now sign in with your new password"
         showSidebar={false}
@@ -201,12 +212,9 @@ const ResetPasswordPage: React.FC = () => {
             <p className="text-black text-lg">
               Your password has been successfully updated.
             </p>
-            {email && (
-              <p className="text-sm text-black">
-                You can now sign in to <strong>{email}</strong> with your new
-                password.
-              </p>
-            )}
+            <p className="text-sm text-black">
+              You can now sign in with your new password.
+            </p>
           </div>
 
           {/* Security Notice */}
@@ -235,7 +243,8 @@ const ResetPasswordPage: React.FC = () => {
 
   // Show reset form
   return (
-    <AuthLayout white
+    <AuthLayout
+      white
       title="Set new password"
       subtitle="Create a strong password for your account"
       showSidebar={false}
@@ -247,14 +256,6 @@ const ResetPasswordPage: React.FC = () => {
             <Lock className="h-8 w-8 text-blue-600" />
           </div>
         </div>
-
-        {email && (
-          <div className="text-center">
-            <p className="text-sm text-black">
-              Resetting password for <strong>{email}</strong>
-            </p>
-          </div>
-        )}
 
         {/* Error Message */}
         {error && (
@@ -292,10 +293,10 @@ const ResetPasswordPage: React.FC = () => {
             error={errors.confirmPassword?.message}
             success={
               !errors.confirmPassword &&
-              !!watchedFields.confirmPassword &&
-              watchedFields.confirmPassword === watchedFields.password &&
-              !!watchedFields.password &&
-              watchedFields.password.length > 0
+              !!watch("confirmPassword") &&
+              watch("confirmPassword") === watch("password") &&
+              !!watch("password") &&
+              watch("password").length > 0
             }
             {...register("confirmPassword")}
           />
