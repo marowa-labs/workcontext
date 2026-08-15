@@ -71,11 +71,11 @@ function WaveHero() {
     const positions = sampleTextPositions(text, W, H, yPos);
 
     // Group into rows
-    const rows = new Map();
+    const rows = new Map<number, { x: number; y: number }[]>();
     positions.forEach((pos) => {
       const key = Math.round(pos.y / 8);
       if (!rows.has(key)) rows.set(key, []);
-      rows.get(key).push(pos);
+      rows.get(key)!.push(pos);
     });
 
     const particles: {
