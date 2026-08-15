@@ -57,7 +57,10 @@ if (!globalForPrisma.prisma) {
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 // Add graceful shutdown handler
+let shutdownHandled = false;
 process.on("beforeExit", async () => {
+  if (shutdownHandled) return;
+  shutdownHandled = true;
   logger.info("Closing database connections...");
   await prisma.$disconnect();
 });
