@@ -10,12 +10,19 @@
  * Pagination: Cursor-based (start_cursor param)
  */
 
-import { ConnectorBase, ToolType, OAuthConfig, TokenResult, SyncedItem } from "./connectorBase";
+import {
+  ConnectorBase,
+  ToolType,
+  OAuthConfig,
+  TokenResult,
+  SyncedItem,
+} from "./connectorBase";
 
 export class NotionConnector extends ConnectorBase {
   readonly toolType: ToolType = "notion";
   readonly displayName = "Notion";
-  readonly iconUrl = "https://cdn.brandfetch.io/id-0MnQzDp/w/512/h/512/theme/dark/icon.jpeg";
+  readonly iconUrl =
+    "https://cdn.brandfetch.io/id-0MnQzDp/w/512/h/512/theme/dark/icon.jpeg";
   readonly description = "Search across Notion pages, databases, and wikis";
 
   readonly oauthConfig: OAuthConfig = {
@@ -32,7 +39,7 @@ export class NotionConnector extends ConnectorBase {
   async exchangeCode(code: string, redirectUri: string): Promise<TokenResult> {
     // Notion uses Basic Auth for token exchange (client_id:client_secret as Base64)
     const credentials = Buffer.from(
-      `${this.oauthConfig.clientId}:${this.oauthConfig.clientSecret}`
+      `${this.oauthConfig.clientId}:${this.oauthConfig.clientSecret}`,
     ).toString("base64");
 
     const res = await fetch(this.oauthConfig.tokenUrl, {
@@ -62,7 +69,7 @@ export class NotionConnector extends ConnectorBase {
   async refreshAccessToken(refreshToken: string): Promise<TokenResult> {
     // Notion OAuth refresh tokens are long-lived but can be refreshed
     const credentials = Buffer.from(
-      `${this.oauthConfig.clientId}:${this.oauthConfig.clientSecret}`
+      `${this.oauthConfig.clientId}:${this.oauthConfig.clientSecret}`,
     ).toString("base64");
 
     const res = await fetch(this.oauthConfig.tokenUrl, {
@@ -77,7 +84,8 @@ export class NotionConnector extends ConnectorBase {
       }),
     });
     const data = await res.json();
-    if (data.error) throw new Error(`Notion token refresh failed: ${data.error}`);
+    if (data.error)
+      throw new Error(`Notion token refresh failed: ${data.error}`);
 
     return {
       access_token: data.access_token,
@@ -97,7 +105,8 @@ export class NotionConnector extends ConnectorBase {
       },
     });
     const data = await res.json();
-    if (data.object === "error") throw new Error(`Notion API error: ${data.message}`);
+    if (data.object === "error")
+      throw new Error(`Notion API error: ${data.message}`);
 
     // For OAuth, the workspace info comes from the token response
     // For internal integrations, we get the bot user
@@ -113,7 +122,7 @@ export class NotionConnector extends ConnectorBase {
 
   async fetchContent(
     accessToken: string,
-    options: { since?: Date; pageSize?: number; cursor?: string }
+    options: { since?: Date; pageSize?: number; cursor?: string },
   ): Promise<{ items: SyncedItem[]; nextCursor?: string; hasMore: boolean }> {
     const items: SyncedItem[] = [];
     const pageSize = options.pageSize || 100;
@@ -122,7 +131,8 @@ export class NotionConnector extends ConnectorBase {
     let hasMore = true;
     let startCursor = options.cursor;
 
-    while (hasMore && items.length < 500) { // Cap at 500 items per sync
+    while (hasMore && items.length < 500) {
+      // Cap at 500 items per sync
       const body: Record<string, any> = {
         page_size: Math.min(pageSize, 100),
       };
@@ -138,7 +148,8 @@ export class NotionConnector extends ConnectorBase {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (data.object === "error") throw new Error(`Notion search error: ${data.message}`);
+      if (data.object === "error")
+        throw new Error(`Notion search error: ${data.message}`);
 
       for (const result of data.results || []) {
         const item = this.parseNotionResult(result);
@@ -146,14 +157,21 @@ export class NotionConnector extends ConnectorBase {
           // For pages (not databases), fetch the actual page body content as markdown
           if (result.object === "page" && item.content_type === "page") {
             try {
-              const bodyMarkdown = await this.fetchPageBodyContent(accessToken, result.id);
+              const bodyMarkdown = await this.fetchPageBodyContent(
+                accessToken,
+                result.id,
+              );
               if (bodyMarkdown) {
                 // Use the markdown for search/embedding (truncated)
-                item.content_text = bodyMarkdown.slice(0, 8000) || item.content_text;
+                item.content_text =
+                  bodyMarkdown.slice(0, 8000) || item.content_text;
               }
             } catch (err: any) {
               // Log but don't fail - we still have property text as fallback
-              console.warn(`Failed to fetch page body for ${result.id}:`, err.message);
+              console.warn(
+                `Failed to fetch page body for ${result.id}:`,
+                err.message,
+              );
             }
           }
           items.push(item);
@@ -181,7 +199,8 @@ export class NotionConnector extends ConnectorBase {
 
     let contentType = "page";
     if (result.object === "database") contentType = "database";
-    else if (result.parent?.type === "database_id") contentType = "database_entry";
+    else if (result.parent?.type === "database_id")
+      contentType = "database_entry";
 
     // Determine hierarchy: Notion parent types map to depth levels
     let depth = 0;
@@ -209,9 +228,8 @@ export class NotionConnector extends ConnectorBase {
       content_url: url,
       author_name: null,
       author_avatar: null,
-      channel_or_project: parentType === "database_id"
-        ? result.parent.database_id
-        : null,
+      channel_or_project:
+        parentType === "database_id" ? result.parent.database_id : null,
       parent_external_id: parentExternalId,
       depth,
       metadata: {
@@ -221,7 +239,11 @@ export class NotionConnector extends ConnectorBase {
         last_edited_time: lastEdited,
         created_time: result.created_time,
         parent_type: parentType,
-        tags: result.properties?.Tags?.multi_select?.map((t: any) => t.name),
+        // Guard against database property definitions where `multi_select`
+        // is an object (not an array) — only pages/entries have real values.
+        tags: Array.isArray(result.properties?.Tags?.multi_select)
+          ? result.properties.Tags.multi_select.map((t: any) => t.name)
+          : undefined,
         status: result.properties?.Status?.status?.name,
         type: result.type,
       },
@@ -229,17 +251,24 @@ export class NotionConnector extends ConnectorBase {
   }
 
   private extractTitle(result: any): string {
-    // Try various title property names
-    if (result.properties?.title?.title) {
-      return result.properties.title.title
-        .map((t: any) => t.plain_text)
-        .join("");
-    }
-    if (result.properties?.Name?.title) {
-      return result.properties.Name.title
-        .map((t: any) => t.plain_text)
-        .join("");
-    }
+    // Try various title property names.
+    // NOTE: For database objects, `properties.Name.title` is a property
+    // definition OBJECT (e.g. `{}`), not an array of rich text. Only pages
+    // (and database entries) have `title` as an array of rich text objects.
+    // Always guard with Array.isArray before calling .map().
+    const titleFromProperty = (prop: any): string => {
+      if (prop && Array.isArray(prop.title)) {
+        return prop.title.map((t: any) => t.plain_text).join("");
+      }
+      return "";
+    };
+
+    const fromTitle = titleFromProperty(result.properties?.title);
+    if (fromTitle) return fromTitle;
+
+    const fromName = titleFromProperty(result.properties?.Name);
+    if (fromName) return fromName;
+
     if (result.title) {
       if (Array.isArray(result.title)) {
         return result.title.map((t: any) => t.plain_text).join("");
@@ -256,9 +285,7 @@ export class NotionConnector extends ConnectorBase {
     if (result.properties) {
       for (const [, prop] of Object.entries(result.properties) as any[]) {
         if (prop.rich_text && Array.isArray(prop.rich_text)) {
-          texts.push(
-            prop.rich_text.map((t: any) => t.plain_text).join("")
-          );
+          texts.push(prop.rich_text.map((t: any) => t.plain_text).join(""));
         }
       }
     }
@@ -272,7 +299,7 @@ export class NotionConnector extends ConnectorBase {
    */
   private async fetchPageBodyContent(
     accessToken: string,
-    pageId: string
+    pageId: string,
   ): Promise<string | null> {
     const texts: string[] = [];
     let cursor: string | undefined;
@@ -298,7 +325,11 @@ export class NotionConnector extends ConnectorBase {
 
         // Fetch nested children as indented markdown
         if (block.has_children) {
-          const childTexts = await this.fetchChildBlocksAsMarkdown(accessToken, block.id, 1);
+          const childTexts = await this.fetchChildBlocksAsMarkdown(
+            accessToken,
+            block.id,
+            1,
+          );
           if (childTexts) texts.push(childTexts);
         }
       }
@@ -314,7 +345,7 @@ export class NotionConnector extends ConnectorBase {
   private async fetchChildBlocksAsMarkdown(
     accessToken: string,
     blockId: string,
-    depth: number
+    depth: number,
   ): Promise<string | null> {
     const texts: string[] = [];
     let cursor: string | undefined;
@@ -339,7 +370,11 @@ export class NotionConnector extends ConnectorBase {
         if (md) texts.push(`${indent}${md}`);
 
         if (block.has_children) {
-          const childTexts = await this.fetchChildBlocksAsMarkdown(accessToken, block.id, depth + 1);
+          const childTexts = await this.fetchChildBlocksAsMarkdown(
+            accessToken,
+            block.id,
+            depth + 1,
+          );
           if (childTexts) texts.push(childTexts);
         }
       }
@@ -404,9 +439,7 @@ export class NotionConnector extends ConnectorBase {
       case "equation":
         return `$$${blockData.expression}$$`;
       case "image":
-        return blockData.file?.url
-          ? `![image](${blockData.file.url})`
-          : "";
+        return blockData.file?.url ? `![image](${blockData.file.url})` : "";
       case "embed":
         return blockData.url || "";
       default:

@@ -15,7 +15,11 @@
 import { Router } from "express";
 import { authenticateExpressRequest } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
-import { getConnector, getAllConnectors, getToolTypes } from "../../services/integrations/connectorRegistry";
+import {
+  getConnector,
+  getAllConnectors,
+  getToolTypes,
+} from "../../services/integrations/connectorRegistry";
 import { SearchAggregator } from "../../services/integrations/searchAggregator";
 import { ToolType } from "../../services/integrations/connectorBase";
 import { IntegrationImportService } from "../../services/integrations/importService";
@@ -95,7 +99,9 @@ router.post("/", authenticateExpressRequest, async (req, res) => {
     const { tool_type, workspace_id } = req.body;
 
     if (!tool_type || typeof tool_type !== "string") {
-      return res.status(400).json({ success: false, message: "tool_type is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "tool_type is required" });
     }
 
     const connector = getConnector(tool_type as ToolType);
@@ -136,7 +142,8 @@ router.post("/", authenticateExpressRequest, async (req, res) => {
     let pkceData: { codeVerifier: string; codeChallenge: string } | undefined;
 
     if (tool_type === "github_app") {
-      const { GitHubAppConnector } = await import("../../services/integrations/githubAppConnector");
+      const { GitHubAppConnector } =
+        await import("../../services/integrations/githubAppConnector");
       const ghApp = new GitHubAppConnector();
       authorizationUrl = ghApp.getInstallationUrl(state);
     } else {
@@ -210,14 +217,21 @@ router.get("/callback", async (req, res) => {
 
     // Exchange code for tokens (pass PKCE code_verifier if present)
     const codeVerifier = stateData.pkceData?.codeVerifier;
-    const tokens = await connector.exchangeCode(code, redirectUri, codeVerifier);
+    const tokens = await connector.exchangeCode(
+      code,
+      redirectUri,
+      codeVerifier,
+    );
 
     // Fetch workspace info from the tool
     let workspaceInfo;
     try {
       workspaceInfo = await connector.fetchWorkspaceInfo(tokens.access_token);
     } catch (err: any) {
-      logger.warn("Failed to fetch workspace info", { tool: stateData.toolType, error: err.message });
+      logger.warn("Failed to fetch workspace info", {
+        tool: stateData.toolType,
+        error: err.message,
+      });
       workspaceInfo = {
         workspace_external_id: "unknown",
         workspace_external_name: "Connected",
@@ -270,13 +284,13 @@ router.get("/callback", async (req, res) => {
     // Redirect to frontend settings page with success
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     return res.redirect(
-      `${frontendUrl}/settings/integrations?connected=${stateData.toolType}&connection_id=${connection.id}`
+      `${frontendUrl}/settings/integrations?connected=${stateData.toolType}&connection_id=${connection.id}`,
     );
   } catch (error: any) {
     logger.error("OAuth callback failed", { error: error.message });
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     return res.redirect(
-      `${frontendUrl}/settings/integrations?error=${encodeURIComponent(error.message)}`
+      `${frontendUrl}/settings/integrations?error=${encodeURIComponent(error.message)}`,
     );
   }
 });
@@ -298,18 +312,18 @@ router.get("/github/installation/callback", async (req, res) => {
 
     if (!installation_id) {
       return res.redirect(
-        `${frontendUrl}/settings/integrations?error=Missing installation ID`
+        `${frontendUrl}/settings/integrations?error=Missing installation ID`,
       );
     }
 
-    if (setup_action === "update" || setup_action === "request") {
-      // App permissions were updated or requested — redirect back
-      return res.redirect(
-        `${frontendUrl}/settings/integrations?connected=github_app&installation_id=${installation_id}`
-      );
-    }
+    // Resolve the user/workspace from the state (CSRF token) when present.
+    // When `state` is missing (e.g. GitHub's `setup_action=update` flow, or a
+    // user re-installing an already-installed app), we can't resolve the user
+    // from state alone — so we fall back to the most recent pending state for
+    // this app, or redirect with an error if none is available.
+    let userId: string | undefined;
+    let workspaceId: string | undefined;
 
-    // Validate state
     if (state) {
       const stateRecord = await prisma.idempotencyRecord.findUnique({
         where: { idempotency_key: `oauth_state:${state}` },
@@ -317,42 +331,74 @@ router.get("/github/installation/callback", async (req, res) => {
 
       if (!stateRecord || stateRecord.status !== "pending") {
         return res.redirect(
-          `${frontendUrl}/settings/integrations?error=Invalid or expired state`
+          `${frontendUrl}/settings/integrations?error=Invalid or expired state`,
         );
       }
 
       const stateData = JSON.parse(stateRecord.result || "{}");
+      userId = stateData.userId;
+      workspaceId = stateData.workspaceId || undefined;
 
       // Mark state as used
       await prisma.idempotencyRecord.update({
         where: { idempotency_key: `oauth_state:${state}` },
         data: { status: "completed" },
       });
+    } else {
+      // No state — this happens when GitHub redirects with `setup_action=update`
+      // (user editing an existing install) or when the state was lost. Try to
+      // recover the user from the most recent pending github_app state.
+      const latestState = await prisma.idempotencyRecord.findFirst({
+        where: {
+          idempotency_key: { startsWith: "oauth_state:" },
+          status: "pending",
+        },
+        orderBy: { created_at: "desc" },
+      });
 
-      // Create connection via the GitHub App connector
-      const { GitHubAppConnector } = await import("../../services/integrations/githubAppConnector");
-      const ghApp = new GitHubAppConnector();
+      if (latestState) {
+        const stateData = JSON.parse(latestState.result || "{}");
+        if (stateData.toolType === "github_app") {
+          userId = stateData.userId;
+          workspaceId = stateData.workspaceId || undefined;
+          // Mark as used so it can't be replayed
+          await prisma.idempotencyRecord.update({
+            where: { idempotency_key: latestState.idempotency_key },
+            data: { status: "completed" },
+          });
+        }
+      }
+    }
 
-      const connection = await ghApp.handleInstallationCallback(
-        stateData.userId,
-        Number(installation_id),
-        stateData.workspaceId || undefined
-      );
-
+    if (!userId) {
       return res.redirect(
-        `${frontendUrl}/settings/integrations?connected=github_app&connection_id=${connection.id}`
+        `${frontendUrl}/settings/integrations?error=Unable to identify user for GitHub App installation`,
       );
     }
 
-    // No state — redirect with info
+    // Create/update the connection via the GitHub App connector.
+    // This runs for BOTH fresh installs and `setup_action=update` flows so the
+    // integration is always marked as connected.
+    const { GitHubAppConnector } =
+      await import("../../services/integrations/githubAppConnector");
+    const ghApp = new GitHubAppConnector();
+
+    const connection = await ghApp.handleInstallationCallback(
+      userId,
+      Number(installation_id),
+      workspaceId,
+    );
+
     return res.redirect(
-      `${frontendUrl}/settings/integrations?connected=github_app&installation_id=${installation_id}`
+      `${frontendUrl}/settings/integrations?connected=github_app&connection_id=${connection.id}`,
     );
   } catch (error: any) {
-    logger.error("GitHub App installation callback failed", { error: error.message });
+    logger.error("GitHub App installation callback failed", {
+      error: error.message,
+    });
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     return res.redirect(
-      `${frontendUrl}/settings/integrations?error=${encodeURIComponent(error.message)}`
+      `${frontendUrl}/settings/integrations?error=${encodeURIComponent(error.message)}`,
     );
   }
 });
@@ -370,15 +416,21 @@ router.post("/:id/sync", authenticateExpressRequest, async (req, res) => {
       where: { id, user_id: userId },
     });
     if (!connection) {
-      return res.status(404).json({ success: false, message: "Connection not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Connection not found" });
     }
     if (connection.status === "disconnected") {
-      return res.status(400).json({ success: false, message: "Connection is disconnected" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Connection is disconnected" });
     }
 
     const connector = getConnector(connection.tool_type as ToolType);
     if (!connector) {
-      return res.status(400).json({ success: false, message: "Unknown tool type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unknown tool type" });
     }
 
     // Prevent duplicate syncs — if one is already running, return the existing log
@@ -403,7 +455,10 @@ router.post("/:id/sync", authenticateExpressRequest, async (req, res) => {
 
     // Fire-and-forget: run sync in background
     connector.syncContent(id, syncLog.id).catch((err) => {
-      logger.error("Background sync failed", { connectionId: id, error: err.message });
+      logger.error("Background sync failed", {
+        connectionId: id,
+        error: err.message,
+      });
     });
 
     return res.status(202).json({
@@ -414,7 +469,9 @@ router.post("/:id/sync", authenticateExpressRequest, async (req, res) => {
       status: "pending",
     });
   } catch (error: any) {
-    logger.error("POST /api/integrations/:id/sync failed", { error: error.message });
+    logger.error("POST /api/integrations/:id/sync failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -431,7 +488,9 @@ router.delete("/:id", authenticateExpressRequest, async (req, res) => {
       where: { id, user_id: userId },
     });
     if (!connection) {
-      return res.status(404).json({ success: false, message: "Connection not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Connection not found" });
     }
 
     const connector = getConnector(connection.tool_type as ToolType);
@@ -446,7 +505,9 @@ router.delete("/:id", authenticateExpressRequest, async (req, res) => {
 
     return res.json({ success: true, message: "Connection disconnected" });
   } catch (error: any) {
-    logger.error("DELETE /api/integrations/:id failed", { error: error.message });
+    logger.error("DELETE /api/integrations/:id failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -470,10 +531,15 @@ router.get("/:id/status", authenticateExpressRequest, async (req, res) => {
       },
     });
     if (!connection) {
-      return res.status(404).json({ success: false, message: "Connection not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Connection not found" });
     }
 
-    const connWithExtras = connection as typeof connection & { sync_logs: any[]; _count: { content: number } };
+    const connWithExtras = connection as typeof connection & {
+      sync_logs: any[];
+      _count: { content: number };
+    };
 
     return res.json({
       success: true,
@@ -527,7 +593,9 @@ router.get("/:id/browse", authenticateExpressRequest, async (req, res) => {
 
     return res.json({ success: true, ...result });
   } catch (error: any) {
-    logger.error("GET /api/integrations/:id/browse failed", { error: error.message });
+    logger.error("GET /api/integrations/:id/browse failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -554,7 +622,9 @@ router.get("/:id/tree", authenticateExpressRequest, async (req, res) => {
 
     return res.json({ success: true, ...result });
   } catch (error: any) {
-    logger.error("GET /api/integrations/:id/tree failed", { error: error.message });
+    logger.error("GET /api/integrations/:id/tree failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -568,7 +638,9 @@ router.post("/import-tree", authenticateExpressRequest, async (req, res) => {
     const { root_content_id, workspace_id } = req.body;
 
     if (!root_content_id) {
-      return res.status(400).json({ success: false, message: "root_content_id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "root_content_id is required" });
     }
 
     const result = await IntegrationImportService.importTreeAsProject({
@@ -579,7 +651,9 @@ router.post("/import-tree", authenticateExpressRequest, async (req, res) => {
 
     return res.json({ success: true, ...result });
   } catch (error: any) {
-    logger.error("POST /api/integrations/import-tree failed", { error: error.message });
+    logger.error("POST /api/integrations/import-tree failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -595,7 +669,9 @@ router.get("/:id/types", authenticateExpressRequest, async (req, res) => {
     const types = await IntegrationImportService.getContentTypes(id, userId);
     return res.json({ success: true, types });
   } catch (error: any) {
-    logger.error("GET /api/integrations/:id/types failed", { error: error.message });
+    logger.error("GET /api/integrations/:id/types failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -610,7 +686,9 @@ router.post("/import", authenticateExpressRequest, async (req, res) => {
     const { content_id, workspace_id } = req.body;
 
     if (!content_id) {
-      return res.status(400).json({ success: false, message: "content_id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "content_id is required" });
     }
 
     const result = await IntegrationImportService.importAsProject({
@@ -621,7 +699,9 @@ router.post("/import", authenticateExpressRequest, async (req, res) => {
 
     return res.json({ success: true, ...result });
   } catch (error: any) {
-    logger.error("POST /api/integrations/import failed", { error: error.message });
+    logger.error("POST /api/integrations/import failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -637,136 +717,147 @@ export default router;
 //   - Slack: message permalink
 //   - Jira: issue URL + embedded issue data
 // ============================================================
-router.get("/embed/:contentId", authenticateExpressRequest, async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    const contentId = String(req.params.contentId);
+router.get(
+  "/embed/:contentId",
+  authenticateExpressRequest,
+  async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const contentId = String(req.params.contentId);
 
-    const contentItem = await prisma.externalToolContent.findUnique({
-      where: { id: contentId },
-      include: { connection: true },
-    });
+      const contentItem = await prisma.externalToolContent.findUnique({
+        where: { id: contentId },
+        include: { connection: true },
+      });
 
-    if (!contentItem) {
-      return res.status(404).json({ success: false, message: "Content item not found" });
+      if (!contentItem) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Content item not found" });
+      }
+
+      // Verify ownership
+      if (contentItem.connection.user_id !== userId) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Not authorized" });
+      }
+
+      const toolType = contentItem.tool_type;
+      const metadata = (contentItem.metadata as any) || {};
+      const contentUrl = contentItem.content_url || "";
+
+      // Build embed data based on tool type
+      let embedData: any = {
+        tool_type: toolType,
+        content_type: contentItem.content_type,
+        title: contentItem.title,
+        source_url: contentUrl,
+        edit_url: contentUrl, // Default: same as source
+        last_synced_at: contentItem.last_synced_at,
+      };
+
+      switch (toolType) {
+        case "figma": {
+          // Figma: build embed URL from file key
+          // Embed URL format: https://www.figma.com/embed?embed_host=share&url=FILE_URL
+          const fileUrl =
+            contentUrl || `https://www.figma.com/file/${metadata.file_id}`;
+          const embedUrl = `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(fileUrl)}`;
+
+          embedData = {
+            ...embedData,
+            embed_type: "iframe",
+            embed_url: embedUrl,
+            thumbnail_url: metadata.thumbnail || null,
+            pages: metadata.pages || [],
+            page_count: metadata.page_count || 0,
+            component_count: metadata.component_count || 0,
+            version: metadata.version || null,
+            last_modified: metadata.last_modified || null,
+            edit_url: fileUrl, // Edit in Figma
+          };
+          break;
+        }
+
+        case "github": {
+          // GitHub: build raw content URL and edit URL
+          const externalId = contentItem.external_id; // e.g. "repo_name:branch:path"
+          const parts = externalId.split(":");
+          const repoName = parts[0] || "";
+          const filePath = parts.slice(2).join(":") || "README.md";
+          const branch = parts[1] || "main";
+
+          const rawUrl = `https://raw.githubusercontent.com/${repoName}/${branch}/${filePath}`;
+          const ghEditUrl = `https://github.com/${repoName}/edit/${branch}/${filePath}`;
+          const ghViewUrl = `https://github.com/${repoName}/blob/${branch}/${filePath}`;
+
+          embedData = {
+            ...embedData,
+            embed_type: "code",
+            raw_url: rawUrl,
+            view_url: ghViewUrl,
+            edit_url: ghEditUrl, // Edit in GitHub
+            repo_name: repoName,
+            file_path: filePath,
+            branch: branch,
+            content_text: contentItem.content_text, // Markdown content
+          };
+          break;
+        }
+
+        case "notion": {
+          embedData = {
+            ...embedData,
+            embed_type: "link",
+            edit_url: contentUrl, // Edit in Notion
+            snippet: contentItem.content_text?.slice(0, 500) || null,
+          };
+          break;
+        }
+
+        case "slack": {
+          embedData = {
+            ...embedData,
+            embed_type: "link",
+            edit_url: contentUrl, // Open in Slack
+            channel: contentItem.channel_or_project,
+            author: contentItem.author_name,
+            snippet: contentItem.content_text?.slice(0, 500) || null,
+          };
+          break;
+        }
+
+        case "jira": {
+          embedData = {
+            ...embedData,
+            embed_type: "link",
+            edit_url: contentUrl, // Open in Jira
+            project: contentItem.channel_or_project,
+            snippet: contentItem.content_text?.slice(0, 500) || null,
+          };
+          break;
+        }
+
+        default: {
+          embedData = {
+            ...embedData,
+            embed_type: "link",
+            snippet: contentItem.content_text?.slice(0, 500) || null,
+          };
+          break;
+        }
+      }
+
+      return res.json({ success: true, embed: embedData });
+    } catch (error: any) {
+      logger.error("GET /api/integrations/embed/:contentId failed", {
+        error: error.message,
+      });
+      return res.status(500).json({ success: false, message: error.message });
     }
-
-    // Verify ownership
-    if (contentItem.connection.user_id !== userId) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    }
-
-    const toolType = contentItem.tool_type;
-    const metadata = (contentItem.metadata as any) || {};
-    const contentUrl = contentItem.content_url || "";
-
-    // Build embed data based on tool type
-    let embedData: any = {
-      tool_type: toolType,
-      content_type: contentItem.content_type,
-      title: contentItem.title,
-      source_url: contentUrl,
-      edit_url: contentUrl, // Default: same as source
-      last_synced_at: contentItem.last_synced_at,
-    };
-
-    switch (toolType) {
-      case "figma": {
-        // Figma: build embed URL from file key
-        // Embed URL format: https://www.figma.com/embed?embed_host=share&url=FILE_URL
-        const fileUrl = contentUrl || `https://www.figma.com/file/${metadata.file_id}`;
-        const embedUrl = `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(fileUrl)}`;
-
-        embedData = {
-          ...embedData,
-          embed_type: "iframe",
-          embed_url: embedUrl,
-          thumbnail_url: metadata.thumbnail || null,
-          pages: metadata.pages || [],
-          page_count: metadata.page_count || 0,
-          component_count: metadata.component_count || 0,
-          version: metadata.version || null,
-          last_modified: metadata.last_modified || null,
-          edit_url: fileUrl, // Edit in Figma
-        };
-        break;
-      }
-
-      case "github": {
-        // GitHub: build raw content URL and edit URL
-        const externalId = contentItem.external_id; // e.g. "repo_name:branch:path"
-        const parts = externalId.split(":");
-        const repoName = parts[0] || "";
-        const filePath = parts.slice(2).join(":") || "README.md";
-        const branch = parts[1] || "main";
-
-        const rawUrl = `https://raw.githubusercontent.com/${repoName}/${branch}/${filePath}`;
-        const ghEditUrl = `https://github.com/${repoName}/edit/${branch}/${filePath}`;
-        const ghViewUrl = `https://github.com/${repoName}/blob/${branch}/${filePath}`;
-
-        embedData = {
-          ...embedData,
-          embed_type: "code",
-          raw_url: rawUrl,
-          view_url: ghViewUrl,
-          edit_url: ghEditUrl, // Edit in GitHub
-          repo_name: repoName,
-          file_path: filePath,
-          branch: branch,
-          content_text: contentItem.content_text, // Markdown content
-        };
-        break;
-      }
-
-      case "notion": {
-        embedData = {
-          ...embedData,
-          embed_type: "link",
-          edit_url: contentUrl, // Edit in Notion
-          snippet: contentItem.content_text?.slice(0, 500) || null,
-        };
-        break;
-      }
-
-      case "slack": {
-        embedData = {
-          ...embedData,
-          embed_type: "link",
-          edit_url: contentUrl, // Open in Slack
-          channel: contentItem.channel_or_project,
-          author: contentItem.author_name,
-          snippet: contentItem.content_text?.slice(0, 500) || null,
-        };
-        break;
-      }
-
-      case "jira": {
-        embedData = {
-          ...embedData,
-          embed_type: "link",
-          edit_url: contentUrl, // Open in Jira
-          project: contentItem.channel_or_project,
-          snippet: contentItem.content_text?.slice(0, 500) || null,
-        };
-        break;
-      }
-
-      default: {
-        embedData = {
-          ...embedData,
-          embed_type: "link",
-          snippet: contentItem.content_text?.slice(0, 500) || null,
-        };
-        break;
-      }
-    }
-
-    return res.json({ success: true, embed: embedData });
-  } catch (error: any) {
-    logger.error("GET /api/integrations/embed/:contentId failed", { error: error.message });
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
+  },
+);
 
 // ============================================================
 // POST /api/integrations/:id/sync-back — Pull latest changes from source
@@ -783,27 +874,37 @@ router.post("/:id/sync-back", authenticateExpressRequest, async (req, res) => {
       where: { id, user_id: userId },
     });
     if (!connection) {
-      return res.status(404).json({ success: false, message: "Connection not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Connection not found" });
     }
 
     // Full connection sync (re-fetches all content)
     const connector = getConnector(connection.tool_type as ToolType);
     if (!connector) {
-      return res.status(400).json({ success: false, message: "Unknown tool type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unknown tool type" });
     }
 
     // Start sync in background
     connector.syncContent(id).catch((err: any) => {
-      logger.error("Sync-back failed", { connectionId: id, error: err.message });
+      logger.error("Sync-back failed", {
+        connectionId: id,
+        error: err.message,
+      });
     });
 
     return res.json({
       success: true,
-      message: "Sync-back started. Latest content from the source tool will be pulled.",
+      message:
+        "Sync-back started. Latest content from the source tool will be pulled.",
       connection_id: id,
     });
   } catch (error: any) {
-    logger.error("POST /api/integrations/:id/sync-back failed", { error: error.message });
+    logger.error("POST /api/integrations/:id/sync-back failed", {
+      error: error.message,
+    });
     return res.status(500).json({ success: false, message: error.message });
   }
 });

@@ -2,7 +2,10 @@
  * Figma Connector
  *
  * Implements OAuth2 for Figma.
- * Scopes: file_read, file_write, library_read
+ * Scopes: current_user:read, file_content:read, project_metadata:read
+ * NOTE: Figma does NOT have a `file_read` scope. The scopes below must match
+ * exactly what is enabled in the Figma Developer Console, otherwise Figma
+ * rejects the request with "Invalid scopes for app".
  *
  * API: https://www.figma.com/developers/api
  * Rate Limits: 60 requests per minute
@@ -31,7 +34,9 @@ export class FigmaConnector extends ConnectorBase {
     clientSecret: process.env.FIGMA_CLIENT_SECRET || "",
     authorizationUrl: "https://www.figma.com/oauth",
     tokenUrl: "https://www.figma.com/api/oauth/token",
-    scopes: ["file_read"],
+    // Figma OAuth scopes — must match the Figma Developer Console settings.
+    // There is no `file_read` scope in Figma; these are the correct ones.
+    scopes: ["current_user:read", "file_content:read", "project_metadata:read"],
     usePKCE: true,
     omitResponseType: false,
   };

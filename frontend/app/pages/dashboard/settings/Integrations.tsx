@@ -186,9 +186,19 @@ export default function IntegrationsPage() {
     const connId = searchParams.get("connection_id");
     const connError = searchParams.get("error");
     if (connected) {
-      setSuccessMessage(
-        `Successfully connected ${SOURCE_LABELS[connected] || connected}! Starting initial sync...`,
-      );
+      // Only show a success message when a connection was actually created
+      // (i.e. a connection_id is present). If `connected` is set but there is
+      // no connection_id, the backend did not persist a connection — show an
+      // error instead so the user isn't misled into thinking it worked.
+      if (connId) {
+        setSuccessMessage(
+          `Successfully connected ${SOURCE_LABELS[connected] || connected}! Starting initial sync...`,
+        );
+      } else {
+        setError(
+          `Connected to ${SOURCE_LABELS[connected] || connected}, but no connection was created. Please try again.`,
+        );
+      }
       fetchIntegrations();
       // Auto-trigger sync for the new connection
       if (connId) {
