@@ -39,12 +39,12 @@ export default function RootLayout({
           integrity="sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntILdUW9XmUC6+HX0sLNAK3q71HotJqlAn"
           crossOrigin="anonymous"
         />
-        <script
-          defer
+        <Script
           src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"
+          defer
+          strategy="afterInteractive"
           integrity="sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx"
-          crossOrigin="anonymous"
-        ></script>
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}

@@ -80,7 +80,7 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="fixed top-0 w-full bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/10 z-50">
+    <nav className="fixed top-0 w-full bg-black backdrop-blur-xl border-b border-white/10 z-50">
       <div className="container-custom">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

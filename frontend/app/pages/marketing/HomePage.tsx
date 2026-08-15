@@ -20,7 +20,159 @@ import Link from "next/link";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import Layout from "../../components/Layout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
+// ─── Wave Hero Component — 2 LineStitch layers (workcontext + workspace) ──
+function WaveHero() {
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animateRef = useRef<DOMHighResTimeStamp>(0);
+  const layersRef = useRef<{ particles: any[]; color: string }[]>([]);
+
+  // Sample text pixels into stitch positions
+  function sampleTextPositions(
+    text: string,
+    W: number,
+    H: number,
+    yPos: number,
+  ) {
+    // Create off-screen canvas - this runs on client after hydration
+    const off =
+      typeof document !== "undefined" ? document.createElement("canvas") : null;
+    if (!off || !off.getContext) return [];
+    const offCtx = off.getContext("2d")!;
+    off.width = W;
+    off.height = H;
+    const fontSize = Math.min(W * 0.11, 120);
+    offCtx.fillStyle = "#fff";
+    offCtx.font = `600 ${fontSize}px Inter, sans-serif`;
+    offCtx.textAlign = "center";
+    offCtx.textBaseline = "middle";
+    offCtx.fillText(text, W / 2, H * yPos);
+    const imgData = offCtx.getImageData(0, 0, W, H).data;
+    const positions = [];
+    const density = 4;
+    for (let y = 0; y < H; y += density) {
+      for (let x = 0; x < W; x += density) {
+        const idx = (y * W + x) * 4;
+        if (imgData[idx + 3] > 100) {
+          positions.push({ x, y });
+        }
+      }
+    }
+    return positions;
+  }
+
+  // Group positions into rows to form stitch lines
+  function initWaveLayer(text: string, yPos: number, color: string) {
+    const W = width > 0 ? width : 800;
+    const H = height > 0 ? height : 400;
+    const positions = sampleTextPositions(text, W, H, yPos);
+
+    // Group into rows
+    const rows = new Map();
+    positions.forEach((pos) => {
+      const key = Math.round(pos.y / 8);
+      if (!rows.has(key)) rows.set(key, []);
+      rows.get(key).push(pos);
+    });
+
+    const particles = [];
+    rows.forEach((rowPositions) => {
+      rowPositions.sort((a, b) => a.x - b.x);
+      rowPositions.forEach((pos, idx) => {
+        const next = rowPositions[idx + 1];
+        particles.push({
+          x: pos.x,
+          y: pos.y,
+          baseY: pos.y,
+          next: next || null,
+          phase: Math.random() * Math.PI * 2,
+          size: 2.2,
+          baseOpacity: 0.85 + Math.random() * 0.15,
+        });
+      });
+    });
+
+    return { particles, color: color };
+  }
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWidth(window.innerWidth);
+      setHeight(window.innerHeight);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animateRef.current);
+    };
+  }, []);
+
+  // Animation loop
+  useEffect(() => {
+    if (width <= 0 || height <= 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Initialize layers
+    layersRef.current = [
+      initWaveLayer("workcontext", 0.22, "#3b82f6"),
+      initWaveLayer("workspace", 0.68, "#f59e0b"),
+    ];
+
+    let waveTime = 0;
+    const animate = (now: number) => {
+      waveTime = now * 0.001;
+      ctx.clearRect(0, 0, width, height);
+
+      layersRef.current.forEach((layer, layerIdx) => {
+        layer.particles.forEach((p) => {
+          const wave = Math.sin(waveTime * 2.2 + p.x * 0.012);
+          p.y = p.baseY + wave * 30;
+          const opacity = (Math.abs(wave) * 0.6 + 0.4) * p.baseOpacity;
+          // Rainbow hue: shifts over time + varies by x position + layer offset
+          const hue = (waveTime * 60 + p.x * 0.15 + layerIdx * 40) % 360;
+          ctx.fillStyle = `hsla(${hue}, 90%, 60%, ${opacity})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          if (p.next) {
+            const nWave = Math.sin(waveTime * 2.2 + p.next.x * 0.012);
+            const nY = p.next.baseY + nWave * 30;
+            const nHue =
+              (waveTime * 60 + p.next.x * 0.15 + layerIdx * 40) % 360;
+            ctx.strokeStyle = `hsla(${nHue}, 90%, 60%, ${opacity * 0.9})`;
+            ctx.lineWidth = p.size * 0.9;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.next.x, nY);
+            ctx.stroke();
+          }
+        });
+      });
+
+      animateRef.current = requestAnimationFrame(animate);
+    };
+
+    animateRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animateRef.current);
+  }, [width, height]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none" }}
+      width={width}
+      height={height}
+    />
+  );
+}
 
 // ─── Glass Card Wrapper ─────────────────────────────────────────────────────
 function GlassCard({
@@ -147,27 +299,8 @@ function HeroSection() {
 
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-[#0a0a0f]">
-      {/* Line Stitch Canvas Background */}
-      <div className="absolute inset-0 z-0">
-        <LineStitch
-          text="WORKCONTEXT"
-          fontSize={200}
-          stitchDensity={5}
-          threadWeight={2}
-          baseColor="#3b82f6"
-          unravelColor="#f59e0b"
-          backgroundColor="#0a0a0f"
-          springForce={0.03}
-          damping={0.92}
-          repelForce={8}
-          jitter={0.5}
-          cursorRadius={120}
-          introScatter={40}
-          introDuration={2000}
-          className="opacity-30"
-        />
-      </div>
-
+      {/* Wave Hero — 2 LineStitch layers */}
+      <WaveHero />
       {/* Subtle gradient overlay */}
       <div className="absolute inset-0 z-[1] bg-gradient-to-b from-transparent via-transparent to-[#0a0a0f]" />
 
@@ -273,7 +406,10 @@ function PreviewSection() {
       </div>
 
       <div className="relative mt-16 flex justify-center">
-        <GlassCard className="p-2 overflow-hidden max-w-6xl w-full" hover={false}>
+        <GlassCard
+          className="p-2 overflow-hidden max-w-6xl w-full"
+          hover={false}
+        >
           <div className="rounded-xl overflow-hidden">
             <img
               src={homeGif.src}
@@ -319,8 +455,8 @@ function ComparisonSection() {
           Built to Save You Time and Stress
         </h2>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-          Say goodbye to tool overload. WorkContext brings your docs, tasks,
-          and team together in one intelligent workspace.
+          Say goodbye to tool overload. WorkContext brings your docs, tasks, and
+          team together in one intelligent workspace.
         </p>
       </div>
 
@@ -541,7 +677,10 @@ function CTASection() {
       </div>
 
       <div className="container-custom relative z-10">
-        <GlassCard className="p-12 md:p-16 text-center max-w-4xl mx-auto" hover={false}>
+        <GlassCard
+          className="p-12 md:p-16 text-center max-w-4xl mx-auto"
+          hover={false}
+        >
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
             Ready to Upgrade Your{" "}
             <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
@@ -549,8 +688,8 @@ function CTASection() {
             </span>
           </h2>
           <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
-            Join thousands of individuals and teams who&apos;ve already transformed
-            their workflow. Start free today.
+            Join thousands of individuals and teams who&apos;ve already
+            transformed their workflow. Start free today.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
