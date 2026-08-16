@@ -5,6 +5,7 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   MinusCircle,
+  LucideIcon,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { Button } from "../../ui/button";
@@ -20,7 +21,7 @@ export function PrioritySelector({ value, onChange }: PrioritySelectorProps) {
   const priorities: {
     id: Priority;
     label: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     color: string;
     bgColor: string;
   }[] = [
@@ -68,7 +69,8 @@ export function PrioritySelector({ value, onChange }: PrioritySelectorProps) {
                   p.color,
                   "border-current font-medium shadow-sm border-2",
                 ),
-            )}>
+            )}
+          >
             <Icon
               className={cn(
                 "h-3.5 w-3.5",

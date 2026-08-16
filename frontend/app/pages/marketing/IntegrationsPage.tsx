@@ -1,6 +1,13 @@
 "use client";
 
-import { Cloud, Database, GitBranch, Shield, CheckCircle } from "lucide-react";
+import {
+  Cloud,
+  Database,
+  GitBranch,
+  Shield,
+  CheckCircle,
+  LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
 import Layout from "../../components/Layout";
@@ -63,7 +70,7 @@ function IntroHero() {
 
 // Feature Detail Component
 interface FeatureDetailProps {
-  icon: React.ElementType;
+  icon: LucideIcon;
   title: string;
   description: string;
   features: string[];

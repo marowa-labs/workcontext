@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { motion } from "framer-motion";
 
 export interface Feature3DItem {
-  icon?: React.ElementType;
+  icon?: React.ElementType | null;
   title: string;
   color: string;
   description: string;

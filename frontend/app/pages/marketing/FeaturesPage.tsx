@@ -13,6 +13,7 @@ import {
   SpellCheck,
   Shield,
   Sparkles,
+  LucideIcon,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import Layout from "../../components/Layout";
@@ -24,7 +25,7 @@ import { useInView } from "react-intersection-observer";
 import { Feature3DScene } from "../../components/FeaturesPresentationFlow3D";
 
 interface FeatureDetailProps {
-  icon: React.ElementType;
+  icon: LucideIcon;
   title: string;
   description: string;
   benefits: string[];

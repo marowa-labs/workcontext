@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  forwardRef,
-  ButtonHTMLAttributes,
-  ReactNode,
-  ElementType,
-} from "react";
-import { Loader2 } from "lucide-react";
+import { forwardRef, ButtonHTMLAttributes, ReactNode } from "react";
+import { Loader2, LucideIcon } from "lucide-react";
 
 type ButtonProps = {
   children: ReactNode;
@@ -15,7 +10,7 @@ type ButtonProps = {
   loading?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
-  icon?: ElementType;
+  icon?: LucideIcon;
   className?: string;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
@@ -70,7 +65,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ${isDisabled ? "opacity-60" : "hover:scale-105 active:scale-95"}
         ${className}
       `}
-        {...props}>
+        {...props}
+      >
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         {Icon && !loading && <Icon className="w-4 h-4 mr-2" />}
         {children}

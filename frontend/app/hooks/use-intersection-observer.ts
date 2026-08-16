@@ -1,9 +1,12 @@
-import { useInView } from "react-intersection-observer";
+import {
+  useInView,
+  type IntersectionOptions,
+} from "react-intersection-observer";
 
 export function useIntersectionObserver(
   ref: React.RefObject<HTMLElement>,
-  options?: IntersectionObserverOptions,
+  options?: IntersectionOptions,
 ) {
-  const [isIntersecting, setIsIntersecting] = useInView(options);
-  return { isIntersecting, setIsIntersecting };
+  const { ref: inViewRef, inView } = useInView(options);
+  return { ref: inViewRef, isIntersecting: inView };
 }

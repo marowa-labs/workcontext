@@ -7,6 +7,7 @@ import {
   CheckCircle,
   FileSpreadsheet,
   BookOpen,
+  LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
@@ -178,7 +179,7 @@ function IntroHero() {
 }
 
 interface FeatureDetailProps {
-  icon: React.ElementType;
+  icon: LucideIcon;
   title: string;
   description: string;
   benefits: string[];
