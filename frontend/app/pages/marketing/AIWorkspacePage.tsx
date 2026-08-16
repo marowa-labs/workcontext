@@ -4,69 +4,178 @@ import {
   Bot,
   PenTool,
   SpellCheck,
-  Lightbulb,
   CheckCircle,
   Sparkles,
   Search,
   Shield,
-  ImageIcon,
-  Sigma,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
 import Layout from "../../components/Layout";
 import { useRouter } from "next/navigation";
+import { useRef } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
+import AuraObject3DViolet from "../../components/AuraObject3DViolet";
 
+// ─── Aura Design Tokens (Regal / Violet variant) ────────────────────────────
+const ACCENT = "#a78bfa";
+const ACCENT_GLOW = "rgba(167, 139, 250, 0.45)";
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+// ─── Reveal Variants ────────────────────────────────────────────────────────
+const reveal: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.9, ease: EASE, delay: i * 0.12 },
+  }),
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Intro Hero — split layout with the violet crystal centerpiece
+// ═══════════════════════════════════════════════════════════════════════════════
 function IntroHero() {
   const router = useRouter();
+  const ref = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   const handleGetStarted = () => {
     router.push("/signup");
   };
 
   return (
-    <section className="section-padding bg-[#121212] relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 z-0"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=800&fit=crop')",
-        }}
-      ></div>
-      <div className="container-custom relative z-10">
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
-            Work Smarter with{" "}
-            <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              AI-Powered Productivity
-            </span>
-          </h1>
+    <section
+      ref={ref}
+      className="relative min-h-screen flex items-center overflow-hidden bg-[#111111]"
+    >
+      {/* 3D centerpiece */}
+      <div className="absolute inset-0 z-0">
+        <AuraObject3DViolet />
+      </div>
 
-          <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
+      {/* Overlays */}
+      <div className="absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,rgba(17,17,17,0.35)_0%,rgba(17,17,17,0.85)_70%,#111111_100%)]" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-[#111111]/60 via-transparent to-[#111111]" />
+
+      <motion.div
+        style={
+          reduceMotion ? undefined : { y: contentY, opacity: contentOpacity }
+        }
+        className="relative z-10 container-custom grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-24 lg:py-0"
+      >
+        {/* Left: copy */}
+        <div className="text-left">
+          <motion.p
+            custom={0}
+            variants={reveal}
+            initial="hidden"
+            animate="visible"
+            className="text-xs uppercase tracking-[0.35em] text-[#a78bfa] mb-6"
+          >
+            AI Workspace
+          </motion.p>
+
+          <motion.h1
+            custom={1}
+            variants={reveal}
+            initial="hidden"
+            animate="visible"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#f4f4f2] mb-6 leading-[1.05]"
+          >
+            Work Smarter with{" "}
+            <span className="text-[#a78bfa]">AI-Powered Productivity</span>
+          </motion.h1>
+
+          <motion.p
+            custom={2}
+            variants={reveal}
+            initial="hidden"
+            animate="visible"
+            className="text-lg text-[rgba(244,244,242,0.55)] mb-8 leading-relaxed max-w-xl"
+          >
             Harness multiple AI models — Gemini 2.5 Flash, GPT OSS 120B, and
             Nvidia Nemotron — with Bring Your Own Key support. Write, research,
             generate images, check grammar, simulate peer review, and
             collaborate — all from one workspace.
-          </p>
+          </motion.p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <motion.div
+            custom={3}
+            variants={reveal}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col sm:flex-row gap-4"
+          >
             <Button
               size="lg"
-              className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold px-8 py-6 shadow-lg hover:shadow-indigo-500/20 transition-all duration-300"
+              className="rounded-none bg-[#a78bfa] text-[#0b0b0b] hover:bg-[#c4b5fd] font-semibold px-8 py-6 transition-all duration-300"
               onClick={handleGetStarted}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = `0 0 40px ${ACCENT_GLOW}`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
               Start Writing Smarter
             </Button>
             <Button
               size="lg"
-              className="bg-white text-gray-600 border border-white hover:bg-white font-semibold px-8 py-6"
+              className="rounded-none border border-[rgba(255,255,255,0.16)] text-[#f4f4f2] bg-white/[0.03] hover:bg-white/[0.08] font-semibold px-8 py-6"
               asChild
             >
               <Link href="/features">Explore Features</Link>
             </Button>
-          </div>
+          </motion.div>
         </div>
-      </div>
+
+        {/* Right: ghost outline title for depth */}
+        <div className="hidden lg:block relative h-[420px]">
+          <h1
+            aria-hidden
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[7rem] font-bold text-transparent whitespace-nowrap select-none pointer-events-none"
+            style={{ WebkitTextStroke: "1px rgba(167,139,250,0.14)" }}
+          >
+            AI
+          </h1>
+        </div>
+      </motion.div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.4, duration: 1 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3"
+      >
+        <span className="text-[10px] uppercase tracking-[0.35em] text-[rgba(244,244,242,0.32)]">
+          Scroll
+        </span>
+        <div className="w-px h-12 bg-[rgba(255,255,255,0.08)] relative overflow-hidden">
+          <motion.div
+            animate={{ y: [-48, 48] }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-transparent via-[#a78bfa] to-transparent"
+          />
+        </div>
+      </motion.div>
     </section>
   );
 }
@@ -78,7 +187,6 @@ interface FeatureDetailProps {
   benefits: string[];
   imageUrl: string;
   reverse?: boolean;
-  color: string;
 }
 
 function FeatureDetail({
@@ -88,49 +196,57 @@ function FeatureDetail({
   benefits,
   imageUrl,
   reverse = false,
-  color,
 }: FeatureDetailProps) {
   return (
     <div
       className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${reverse ? "lg:grid-flow-col-dense" : ""}`}
     >
-      <div className={reverse ? "lg:col-start-2" : ""}>
+      <motion.div
+        custom={0}
+        variants={reveal}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-80px" }}
+        className={reverse ? "lg:col-start-2" : ""}
+      >
         <div
-          className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${color} mb-6`}
+          className={`inline-flex items-center justify-center w-16 h-16 rounded-none border border-[rgba(255,255,255,0.08)] bg-[#171717] mb-6`}
         >
-          <Icon className="h-8 w-8 text-white" />
+          <Icon className="h-8 w-8 text-[#a78bfa]" />
         </div>
 
-        <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+        <h3 className="text-2xl md:text-3xl font-bold text-[#f4f4f2] mb-4">
           {title}
         </h3>
 
-        <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+        <p className="text-lg text-[rgba(244,244,242,0.55)] mb-6 leading-relaxed">
           {description}
         </p>
 
         <ul className="space-y-3">
           {benefits.map((benefit, index) => (
             <li key={index} className="flex items-start gap-3">
-              <div
-                className={`w-2 h-2 rounded-full bg-gradient-to-br ${color} mt-2.5 flex-shrink-0`}
-              ></div>
-              <span className="text-gray-600">{benefit}</span>
+              <div className="w-2 h-2 bg-[#a78bfa] mt-2.5 flex-shrink-0"></div>
+              <span className="text-[rgba(244,244,242,0.55)]">{benefit}</span>
             </li>
           ))}
         </ul>
-      </div>
+      </motion.div>
 
-      <div className={reverse ? "lg:col-start-1" : ""}>
-        <div className="relative">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="rounded-2xl shadow-2xl w-full"
-          />
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-black/10 to-transparent"></div>
+      <motion.div
+        custom={1}
+        variants={reveal}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-80px" }}
+        className={reverse ? "lg:col-start-1" : ""}
+      >
+        <div className="relative border border-[rgba(255,255,255,0.08)] bg-[#171717] p-2">
+          <div className="h-px bg-gradient-to-r from-transparent via-[#a78bfa]/60 to-transparent absolute top-0 left-0 right-0"></div>
+          <img src={imageUrl} alt={title} className="w-full" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent pointer-events-none"></div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -150,7 +266,6 @@ function FeaturesPresentationFlow() {
       ],
       imageUrl:
         "https://image2url.com/images/1766041152077-b4c17420-fe8e-4b9c-9c7c-dd9b7c022d9c.png?w=800&h=600&fit=crop",
-      color: "from-indigo-600 to-indigo-800",
     },
     {
       icon: PenTool,
@@ -165,7 +280,6 @@ function FeaturesPresentationFlow() {
       ],
       imageUrl:
         "https://image2url.com/images/1766041153329-020b1a54-2b68-4606-b68b-7db5fda21e14.png?w=800&h=600&fit=crop",
-      color: "from-indigo-600 to-indigo-800",
       reverse: true,
     },
     {
@@ -181,7 +295,6 @@ function FeaturesPresentationFlow() {
       ],
       imageUrl:
         "https://image2url.com/images/1766041154551-efe0d071-68f1-4ded-be3a-fe39a16514fc.png?w=800&h=600&fit=crop",
-      color: "from-indigo-600 to-indigo-800",
     },
     {
       icon: Sparkles,
@@ -196,7 +309,6 @@ function FeaturesPresentationFlow() {
       ],
       imageUrl:
         "https://image2url.com/images/1766035312459-98d7648e-94de-43de-8e51-c1d98680ce12.png?w=800&h=600&fit=crop",
-      color: "from-indigo-600 to-indigo-800",
       reverse: true,
     },
     {
@@ -212,7 +324,6 @@ function FeaturesPresentationFlow() {
       ],
       imageUrl:
         "https://image2url.com/images/1766041414714-d21fc2eb-7026-4d37-9bb7-2c564aed93ab.png?w=800&h=600&fit=crop",
-      color: "from-indigo-600 to-indigo-800",
     },
     {
       icon: Shield,
@@ -227,15 +338,37 @@ function FeaturesPresentationFlow() {
       ],
       imageUrl:
         "https://www.frontiersin.org/files/Articles/1596462/feduc-10-1596462-HTML/image_m/feduc-10-1596462-g001.jpg?w=800&h=600&fit=crop",
-      color: "from-indigo-600 to-indigo-800",
       reverse: true,
     },
   ];
 
   return (
-    <section className="section-padding bg-white">
-      <div className="container-custom">
-        <div className="space-y-24 text-gray-600">
+    <section className="section-padding bg-[#0b0b0b] relative overflow-hidden">
+      {/* Ambient glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#a78bfa]/[0.05] blur-3xl pointer-events-none" />
+
+      <div className="container-custom relative">
+        <motion.div
+          custom={0}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="text-center max-w-3xl mx-auto mb-20"
+        >
+          <p className="text-xs uppercase tracking-[0.35em] text-[#a78bfa] mb-4">
+            Capabilities
+          </p>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#f4f4f2] mb-6">
+            Everything Your Writing Needs
+          </h2>
+          <p className="text-lg text-[rgba(244,244,242,0.55)] leading-relaxed">
+            Six deeply integrated AI capabilities — from multi-model chat to
+            simulated peer review — working together inside one workspace.
+          </p>
+        </motion.div>
+
+        <div className="space-y-24">
           {features.map((feature, index) => (
             <FeatureDetail key={index} {...feature} />
           ))}
@@ -253,21 +386,27 @@ function ClosingCTA() {
   };
 
   return (
-    <section className="section-padding relative overflow-hidden bg-[#121212]">
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/20 to-purple-900/20 opacity-95"></div>
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-10 left-10 w-20 h-20 border-2 border-indigo-500/30 rounded-full"></div>
-        <div className="absolute top-40 right-20 w-16 h-16 border-2 border-indigo-500/30 rotate-45"></div>
-        <div className="absolute bottom-20 left-1/4 w-24 h-24 border-2 border-indigo-500/30 rounded-full"></div>
-        <div className="absolute bottom-40 right-10 w-12 h-12 border-2 border-indigo-500/30 rotate-12"></div>
-      </div>
+    <section className="section-padding relative overflow-hidden bg-[#111111]">
+      {/* Glow blobs */}
+      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-[#a78bfa]/[0.06] blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[#a78bfa]/[0.04] blur-3xl pointer-events-none" />
 
       <div className="container-custom relative z-10">
-        <div className="text-center max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+        <motion.div
+          custom={0}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="text-center max-w-3xl mx-auto"
+        >
+          <p className="text-xs uppercase tracking-[0.35em] text-[#a78bfa] mb-4">
+            Get Started
+          </p>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#f4f4f2] mb-6">
             Ready to Boost Your Productivity?
           </h2>
-          <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+          <p className="text-lg text-[rgba(244,244,242,0.55)] mb-8 leading-relaxed">
             Join thousands of individuals and teams who are already working
             smarter with AI chat, task management, real-time collaboration, and
             seamless export — all in one powerful workspace.
@@ -275,8 +414,14 @@ function ClosingCTA() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold px-8 py-6 shadow-lg hover:shadow-indigo-500/20 transition-all duration-300"
+              className="rounded-none bg-[#a78bfa] text-[#0b0b0b] hover:bg-[#c4b5fd] font-semibold px-8 py-6 transition-all duration-300"
               onClick={handleGetStarted}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = `0 0 40px ${ACCENT_GLOW}`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
               Start Your Free Trial
             </Button>
@@ -284,7 +429,7 @@ function ClosingCTA() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white text-gray-600 hover:bg-white backdrop-blur-sm px-8 py-6 text-lg"
+              className="rounded-none border-[rgba(255,255,255,0.16)] text-[#f4f4f2] bg-white/[0.03] hover:bg-white/[0.08] px-8 py-6 text-lg"
             >
               <Link href="/docs/quickstart" className="flex items-center">
                 See How It Works
@@ -292,21 +437,21 @@ function ClosingCTA() {
             </Button>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 text-gray-600 text-sm">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 text-[rgba(244,244,242,0.55)] text-sm">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-indigo-400" />
+              <CheckCircle className="h-4 w-4 text-[#a78bfa]" />
               <span>No credit card required</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-indigo-400" />
+              <CheckCircle className="h-4 w-4 text-[#a78bfa]" />
               <span>Cancel anytime</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-indigo-400" />
+              <CheckCircle className="h-4 w-4 text-[#a78bfa]" />
               <span>Available worldwide</span>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

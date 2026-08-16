@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
       yjs: "yjs",
+      "@": "./",
     },
   },
   // Keep webpack config for development if using --webpack flag
