@@ -49,12 +49,21 @@ export class NotificationServer {
       // Standalone mode (local dev - separate port)
       const server = http.createServer((req, res) => {
         if (req.method === "OPTIONS") {
-          res.writeHead(200, {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Max-Age": 2592000,
-          });
+          const origin = req.headers.origin;
+          const allowed = [
+            process.env.FRONTEND_URL || "http://localhost:3000",
+            "http://localhost:5173",
+          ];
+          if (origin && allowed.includes(origin)) {
+            res.writeHead(200, {
+              "Access-Control-Allow-Origin": origin,
+              "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+              "Access-Control-Allow-Headers": "Content-Type, Authorization",
+              "Access-Control-Max-Age": 2592000,
+            });
+          } else {
+            res.writeHead(403);
+          }
           res.end();
           return;
         }

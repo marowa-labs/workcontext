@@ -247,19 +247,12 @@ app.use(
   }),
 );
 
-// Debug middleware to log all requests
 app.use((req, res, next) => {
-  console.log("=== REQUEST DEBUG ===");
-  console.log("Method:", req.method);
-  console.log("URL:", req.url);
-  console.log("Original URL:", req.originalUrl);
-  console.log("Path:", req.path);
-  console.log("Headers:", req.headers);
-  res.on("finish", () => {
-    console.log("=== RESPONSE DEBUG ===");
-    console.log("Status Code:", res.statusCode);
-    console.log("Headers:", res.getHeaders());
-  });
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co;");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   next();
 });
 app.use(express.json({ limit: "50mb" }));
