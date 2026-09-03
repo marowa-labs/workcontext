@@ -103,6 +103,7 @@
     "pdfjs-dist": "^4.4.168",
     "postcss": "^8.5.6",
     "posthog-js": "^1.422.5",
+    "posthog-node": "^5.51.4",
     "react": "^19.2.4",
     "react-day-picker": "^9.13.0",
     "react-diff-viewer": "^3.1.1",
