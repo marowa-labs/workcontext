@@ -11,6 +11,7 @@ import { useUser } from "../../../lib/utils/useUser";
 import ProjectService from "../../../lib/utils/projectService";
 import ExportService from "../../../lib/utils/exportService";
 import { useToast } from "../../../hooks/use-toast";
+import posthog from "posthog-js";
 
 
 export default function ProjectsListPage() {
@@ -116,6 +117,9 @@ export default function ProjectsListPage() {
   const handleDocumentImport = (importedProject) => {
     try {
       setProjects((prev) => [importedProject, ...prev]);
+      posthog.capture("document_imported", {
+        project_type: importedProject?.type,
+      });
       toast({
         title: "Success",
         description: "Document imported successfully!",
@@ -134,6 +138,10 @@ export default function ProjectsListPage() {
     try {
       // Add the workProject_id to the newly created project
       setProjects((prev) => [newProject, ...prev]);
+      posthog.capture("project_created", {
+        project_type: newProject?.type,
+        citation_style: newProject?.citation_style,
+      });
       toast({
         title: "Success",
         description: "Project created successfully!",
@@ -207,6 +215,9 @@ export default function ProjectsListPage() {
         citation_style: project.citation_style,
       });
       setProjects((prev) => [duplicatedProject, ...prev]);
+      posthog.capture("project_duplicated", {
+        project_type: project.type,
+      });
 
       toast({
         title: "Success",
@@ -239,6 +250,9 @@ export default function ProjectsListPage() {
         });
 
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        posthog.capture("project_archived", {
+          project_type: project.type,
+        });
 
         toast({
           title: "Success",
@@ -295,6 +309,9 @@ export default function ProjectsListPage() {
         // Remove from both arrays
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
         setArchivedProjects((prev) => prev.filter((p) => p.id !== project.id));
+        posthog.capture("project_deleted", {
+          project_type: project.type,
+        });
 
         toast({
           title: "Success",
@@ -414,6 +431,11 @@ export default function ProjectsListPage() {
       setSelectedProjects([]);
 
       if (exportedCount > 0) {
+        posthog.capture("project_exported", {
+          export_format: "pdf",
+          project_count: exportedCount,
+          batch: exportedCount > 1,
+        });
         toast({
           title: "Batch Export Complete",
           description: `${exportedCount} of ${selectedProjects.length} Projects exported successfully.`,

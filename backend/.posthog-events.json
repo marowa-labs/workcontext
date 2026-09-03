@@ -1,0 +1,62 @@
+[
+  {
+    "event_name": "user_signed_up",
+    "event_description": "A new user completed the email/password signup flow.",
+    "file": "src/hybrid/main-server.ts"
+  },
+  {
+    "event_name": "oauth_signup_completed",
+    "event_description": "A new user completed signup via an OAuth provider.",
+    "file": "src/hybrid/main-server.ts"
+  },
+  {
+    "event_name": "user_signed_in",
+    "event_description": "An existing user successfully signed in with email and password.",
+    "file": "src/hybrid/main-server.ts"
+  },
+  {
+    "event_name": "user_signed_out",
+    "event_description": "A user signed out of the application.",
+    "file": "src/hybrid/main-server.ts"
+  },
+  {
+    "event_name": "support_ticket_submitted",
+    "event_description": "A user submitted a support ticket.",
+    "file": "src/hybrid/main-server.ts"
+  },
+  {
+    "event_name": "project_created",
+    "event_description": "A user created a new writing project.",
+    "file": "src/api/projects/route.ts"
+  },
+  {
+    "event_name": "project_deleted",
+    "event_description": "A user deleted a project.",
+    "file": "src/api/projects/route.ts"
+  },
+  {
+    "event_name": "project_exported",
+    "event_description": "A user exported a project to a file format.",
+    "file": "src/api/projects/route.ts"
+  },
+  {
+    "event_name": "workspace_created",
+    "event_description": "A user created a new workspace.",
+    "file": "src/api/workspaces/index.ts"
+  },
+  {
+    "event_name": "workspace_invitation_sent",
+    "event_description": "A workspace admin sent an invitation to a new member.",
+    "file": "src/api/workspaces/index.ts"
+  },
+  {
+    "event_name": "workspace_invitation_accepted",
+    "event_description": "A user accepted an invitation to join a workspace.",
+    "file": "src/api/workspaces/index.ts"
+  },
+  {
+    "event_name": "task_created",
+    "event_description": "A user created a new workspace task.",
+    "file": "src/api/workspaces/tasks/route.ts"
+  }
+]

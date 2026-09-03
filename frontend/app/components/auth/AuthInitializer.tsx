@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase/client";
+import posthog from "posthog-js";
 
 interface AuthInitializerProps {
   children: React.ReactNode;
@@ -38,6 +39,16 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
             window.location.href = "/reset-password";
             return;
           }
+        }
+
+        // Identify or reset the PostHog user based on auth state
+        if (session?.user) {
+          posthog.identify(session.user.id, {
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+          });
+        } else if (event === "SIGNED_OUT") {
+          posthog.reset();
         }
 
         // Once we get any auth state change, we're initialized

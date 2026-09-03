@@ -16,6 +16,7 @@ import {
   signInWithGoogle,
   resendVerificationEmail,
 } from "../../lib/utils/hybridAuth";
+import posthog from "posthog-js";
 
 // List of allowed email domains
 const ALLOWED_DOMAINS = [
@@ -138,6 +139,17 @@ const LoginPage: React.FC = () => {
       if (result.user) {
         // Handle successful login
         console.log("Login successful", result);
+
+        // Identify user in PostHog (distinct ID is the Supabase user ID)
+        posthog.identify(result.user.id, {
+          email: result.user.email,
+          name: result.user.full_name || result.user.user_metadata?.full_name || result.user.user_metadata?.name,
+          role: result.userData?.role,
+        });
+        posthog.capture("user_logged_in", {
+          plan: result.userData?.plan || result.user.selected_plan,
+          remember_me: data.rememberMe,
+        });
 
         // Wait a bit for the auth state to propagate
         await new Promise((resolve) => setTimeout(resolve, 100));

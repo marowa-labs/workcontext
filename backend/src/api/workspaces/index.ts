@@ -8,6 +8,7 @@ import labelsRouter from "./labels-route";
 import viewsRouter from "./views-route";
 import customFieldsRouter from "./custom-fields-route";
 import { EmailService } from "../../services/emailService";
+import { posthog } from "../../lib/posthog";
 
 const router = Router();
 
@@ -384,6 +385,13 @@ router.post("/", async (req: any, res) => {
       },
     });
 
+    if (posthog) {
+      posthog.capture({
+        distinctId: userId,
+        event: "workspace_created",
+        properties: { workspace_id: workspace.id },
+      });
+    }
     res.json(workspace);
   } catch (error) {
     logger.error("Error creating workspace", error);
@@ -536,6 +544,16 @@ router.post("/:id/invite", async (req: any, res) => {
       // Continue even if email fails - user can still see invitation in dashboard
     }
 
+    if (posthog) {
+      posthog.capture({
+        distinctId: userId,
+        event: "workspace_invitation_sent",
+        properties: {
+          workspace_id: id,
+          role: role || "viewer",
+        },
+      });
+    }
     res.json({
       message: "Invitation sent successfully",
       invitation: {
@@ -684,6 +702,16 @@ router.post("/invitations/:token/accept", async (req: any, res) => {
       data: { status: "accepted" },
     });
 
+    if (posthog) {
+      posthog.capture({
+        distinctId: userId,
+        event: "workspace_invitation_accepted",
+        properties: {
+          workspace_id: invitation.workspace_id,
+          role: invitation.role,
+        },
+      });
+    }
     res.json({
       message: "Invitation accepted successfully",
       workspace: invitation.workspace,

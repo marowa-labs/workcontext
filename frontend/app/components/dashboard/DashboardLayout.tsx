@@ -38,6 +38,7 @@ import useAuth from "../../lib/utils/useAuth";
 import NotificationBell from "./NotificationBell";
 import WorkspaceService, { Workspace } from "../../lib/utils/workspaceService";
 import ProjectService from "../../lib/utils/projectService";
+import posthog from "posthog-js";
 
 import { usePresence } from "../../lib/hooks/usePresence";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -452,6 +453,8 @@ export default function DashboardLayout({
 
   const handleSignOut = async () => {
     try {
+      // Reset PostHog session before signing out
+      posthog.reset();
       await signOut();
     } catch (error) {
       console.error("Sign out error:", error);

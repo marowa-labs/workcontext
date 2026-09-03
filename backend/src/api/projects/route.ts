@@ -4,6 +4,7 @@ import { ProjectServiceEnhanced } from "../../services/projectServiceEnhanced";
 import { ContextEmbeddingService } from "../../services/contextEmbeddingService";
 import { prisma } from "../../lib/prisma";
 import logger from "../../monitoring/logger";
+import { posthog } from "../../lib/posthog";
 // Get all projects for a user
 export async function GET(request: Request & { user?: any }) {
   return handleGET(request);
@@ -268,6 +269,17 @@ async function handlePOST(request: Request & { user?: any }) {
     );
 
     console.log("Project created successfully:", project.id);
+    if (posthog) {
+      posthog.capture({
+        distinctId: userId,
+        event: "project_created",
+        properties: {
+          project_type: projectData.type || null,
+          citation_style: projectData.citation_style || null,
+          workspace_id: projectData.workspace_id || null,
+        },
+      });
+    }
     return new Response(JSON.stringify({ project }), {
       status: 201,
       headers: { "Content-Type": "application/json" },
@@ -395,6 +407,13 @@ async function handleDELETE(request: Request & { user?: any }) {
       userId,
     );
 
+    if (posthog) {
+      posthog.capture({
+        distinctId: userId,
+        event: "project_deleted",
+        properties: { project_id: projectId },
+      });
+    }
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -512,7 +531,17 @@ async function handleGET_EXPORT(request: Request & { user?: any }) {
       userId,
       fileSize: result.fileSize,
     });
-
+    if (posthog) {
+      posthog.capture({
+        distinctId: userId,
+        event: "project_exported",
+        properties: {
+          format,
+          project_id: projectId,
+          file_size_bytes: result.fileSize,
+        },
+      });
+    }
     return new Response(uint8Array, {
       status: 200,
       headers,

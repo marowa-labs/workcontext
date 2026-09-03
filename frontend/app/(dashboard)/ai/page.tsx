@@ -22,6 +22,7 @@ import remarkGfm from "remark-gfm";
 import { cn } from "../../lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import posthog from "posthog-js";
 import {
   AIActionResult,
   formatActionType,
@@ -538,6 +539,12 @@ export default function AIPage() {
         feedback: feedbackText || undefined,
       });
 
+      // Track feedback in PostHog
+      posthog.capture("ai_feedback_submitted", {
+        is_helpful: feedbackIsHelpful,
+        has_comment: !!feedbackText,
+      });
+
       // Mark this message as rated so the thumb stays highlighted
       if (feedbackMessage) {
         setMessageRatings((prev) => ({
@@ -782,6 +789,10 @@ export default function AIPage() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
+
+    posthog.capture("ai_message_sent", {
+      has_existing_session: !!currentSession,
+    });
 
     const pageContext = getPageContext();
 

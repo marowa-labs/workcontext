@@ -106,6 +106,7 @@ import multer from "multer";
 // Import feature request service
 import { handleSimpleFeatureRequest } from "../api/feature-requests/simple-feature-request-route";
 import { POST as writingProjectPOST } from "../api/ai/writing-project-route";
+import { posthog, setupPostHog, setupPostHogErrorHandler, shutdownPostHog } from "../lib/posthog";
 
 const app: Application = express();
 
@@ -257,6 +258,7 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "50mb" }));
 app.use(metricsMiddleware);
+setupPostHog(app);
 
 // Enhanced error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -641,6 +643,15 @@ app.post("/api/support-ticket", async (req, res) => {
       user_agent,
     });
 
+    if (posthog && userId) {
+      posthog.capture({
+        distinctId: userId,
+        event: "support_ticket_submitted",
+        properties: {
+          priority: priority || "normal",
+        },
+      });
+    }
     return res.status(200).json({
       success: true,
       message: "Support ticket submitted successfully",
@@ -982,6 +993,25 @@ app.post("/api/auth/hybrid/signup", async (req, res) => {
         logger.error("Error sending OTP:", otpError);
       }
 
+      if (posthog) {
+        posthog.identify({
+          distinctId: data.user.id,
+          properties: {
+            $set: { user_type, field_of_study, selected_plan },
+            $set_once: { registered_at: new Date().toISOString() },
+          },
+        });
+        posthog.capture({
+          distinctId: data.user.id,
+          event: "user_signed_up",
+          properties: {
+            user_type: user_type || null,
+            field_of_study: field_of_study || null,
+            selected_plan: selected_plan || null,
+            otp_method: otp_method || null,
+          },
+        });
+      }
       return res.json({
         success: true,
         message:
@@ -1094,6 +1124,13 @@ app.post("/api/auth/hybrid/oauth-signup", async (req, res) => {
       });
     }
 
+    if (posthog) {
+      posthog.capture({
+        distinctId: id,
+        event: "oauth_signup_completed",
+        properties: { provider: provider || null },
+      });
+    }
     return res.json({
       success: true,
       message:
@@ -1128,6 +1165,13 @@ app.post("/api/auth/signin", async (req, res) => {
       });
     }
 
+    if (posthog && result.user?.id) {
+      posthog.identify({
+        distinctId: result.user.id,
+        properties: { $set: { last_login: new Date().toISOString() } },
+      });
+      posthog.capture({ distinctId: result.user.id, event: "user_signed_in" });
+    }
     res.json({ success: true, data: result });
   } catch (error: any) {
     logger.error("Signin failed", {
@@ -4122,6 +4166,9 @@ const server = app.listen(Number(PORT), "0.0.0.0", async () => {
   });
 });
 
+// Register PostHog error handler before 404 handler
+setupPostHogErrorHandler(app);
+
 // Enhanced 404 handler - This should be at the VERY END
 app.use((req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
@@ -4155,6 +4202,8 @@ process.on("SIGINT", () => {
     logger.info("HTTP server closed");
   });
 
+  // Flush PostHog analytics before exiting
+  shutdownPostHog().catch(() => {});
   // Exit the process
   process.exit(0);
 });
