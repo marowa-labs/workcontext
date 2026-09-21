@@ -98,11 +98,14 @@ export default function RootLayout({
           defer
         />
         <form action="/submit-form" method="POST">
-          <!-- Your existing input fields -->
+          {/* Your existing input fields */}
           <input type="text" name="username" placeholder="Username" required />
 
-          <!-- Turnstile Widget Container -->
-          <div class="cf-turnstile" data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"></div>
+          {/* Turnstile Widget Container */}
+          <div
+            className="cf-turnstile"
+            data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"
+          ></div>
 
           <button type="submit">Submit</button>
         </form>
