@@ -7,6 +7,7 @@ import dependenciesRouter from "./dependencies-route";
 import { authenticateExpressRequest } from "../../../middleware/auth";
 import multer from "multer";
 import prisma from "../../../lib/prisma";
+import { posthog } from "../../../lib/posthog";
 
 const upload = multer();
 
@@ -653,6 +654,17 @@ router.post("/", async (req: any, res) => {
       taskData,
     );
 
+    if (posthog) {
+      posthog.capture({
+        distinctId: userId,
+        event: "task_created",
+        properties: {
+          workspace_id: workspaceId,
+          priority: taskData.priority || null,
+          status: taskData.status || null,
+        },
+      });
+    }
     res.status(201).json({ task });
   } catch (error: any) {
     console.error("Error in Workspace Task POST:", error);

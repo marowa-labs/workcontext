@@ -25,6 +25,7 @@ import {
   signUpWithGoogle,
 } from "../../lib/utils/hybridAuth";
 import { useToast } from "../../hooks/use-toast";
+import posthog from "posthog-js";
 
 // Log the supabase object for debugging
 console.log("Supabase object in SignupPage:", {
@@ -649,6 +650,16 @@ const SignupPage: React.FC = () => {
         setRequiresEmailVerification(!!needsVerification);
 
         console.log("Signup successful, moving to survey step");
+
+        // Identify the new user in PostHog (PII goes on the person, not the event)
+        posthog.identify(finalUserId, {
+          name: data.fullName,
+          selected_plan: selectedPlan || "free",
+        });
+        posthog.capture("user_signed_up", {
+          plan: selectedPlan || "free",
+        });
+
         setSurveyStep(true);
       } catch (error: unknown) {
         console.error("Signup failed:", error);
@@ -725,6 +736,13 @@ const SignupPage: React.FC = () => {
         }
 
         console.log("Survey data submitted successfully");
+
+        // Track survey completion
+        posthog.capture("signup_survey_completed", {
+          role: data.userRole,
+          heard_about: data.heardAboutPlatform,
+          plan: selectedPlan || "free",
+        });
       } catch (error: any) {
         console.error("Error submitting survey data:", error);
         setError("root", {

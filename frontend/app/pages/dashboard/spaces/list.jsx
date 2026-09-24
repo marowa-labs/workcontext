@@ -45,6 +45,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "../../../components/ui/dropdown-menu";
+import posthog from "posthog-js";
 
 const ACCESS_LABELS = {
   public: { label: "Public", color: "text-green-600 bg-green-100" },
@@ -428,6 +429,9 @@ export default function SpacesLibraryPage() {
       try {
         await ProjectService.deleteProject(space.id);
         setSpaces((prev) => prev.filter((s) => s.id !== space.id));
+        posthog.capture("space_deleted", {
+          space_type: space.type,
+        });
         toast({ title: "Success", description: "Space deleted!" });
       } catch {
         toast({ title: "Error", description: "Failed to delete space.", variant: "destructive" });
@@ -481,6 +485,9 @@ export default function SpacesLibraryPage() {
           }, ...prev];
         });
       }
+      posthog.capture("space_created", {
+        space_type: createForm.type,
+      });
       setShowCreateModal(false);
       setCreateForm({ name: "", description: "", type: "teamspace" });
       toast({ title: "Success", description: "Space created successfully!" });

@@ -7,6 +7,7 @@ import express, {
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import rateLimit from "express-rate-limit";
 import logger from "../monitoring/logger";
 import { metrics, metricsMiddleware } from "../monitoring/metrics";
 import { scheduleVersionCleanupTask } from "../scheduledTasks/versionCleanupTask";
@@ -106,6 +107,7 @@ import multer from "multer";
 // Import feature request service
 import { handleSimpleFeatureRequest } from "../api/feature-requests/simple-feature-request-route";
 import { POST as writingProjectPOST } from "../api/ai/writing-project-route";
+import { posthog, setupPostHog, setupPostHogErrorHandler, shutdownPostHog } from "../lib/posthog";
 
 const app: Application = express();
 
@@ -257,6 +259,70 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "50mb" }));
 app.use(metricsMiddleware);
+setupPostHog(app);
+
+// ── Rate Limiting ──────────────────────────────────────────────
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests from this IP, please try again later.",
+  },
+  handler: (req, res, _, options) => {
+    logger.warn("Rate limit exceeded", {
+      ip: req.ip || req.headers["x-forwarded-for"] || req.headers["x-real-ip"],
+      path: req.path,
+    });
+    res.status(options.statusCode).json(options.message);
+  },
+});
+
+// Stricter limiter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many authentication attempts, please try again later.",
+  },
+  handler: (req, res, _, options) => {
+    logger.warn("Auth rate limit exceeded", {
+      ip: req.ip || req.headers["x-forwarded-for"] || req.headers["x-real-ip"],
+      path: req.path,
+    });
+    res.status(options.statusCode).json(options.message);
+  },
+});
+
+// Apply API rate limiting to all /api routes
+app.use("/api", apiLimiter);
+
+// Apply stricter rate limiting to auth endpoints
+app.use("/api/auth", authLimiter);
+
+// Rate limiter for public form endpoints (not under /api)
+const formLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many form submissions, please try again later.",
+  },
+  handler: (req, res, _, options) => {
+    logger.warn("Form rate limit exceeded", {
+      ip: req.ip || req.headers["x-forwarded-for"] || req.headers["x-real-ip"],
+      path: req.path,
+    });
+    res.status(options.statusCode).json(options.message);
+  },
+});
 
 // Enhanced error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -575,6 +641,82 @@ app.post("/api/contact/feature-request", async (req, res) => {
 // Simple feature request endpoint for Help.tsx
 app.post("/api/feature-request/simple", handleSimpleFeatureRequest);
 
+// Cloudflare Turnstile form submission endpoint
+app.post("/submit-form", formLimiter, async (req, res) => {
+  try {
+    const body = req.body;
+    const token = body["cf-turnstile-response"];
+
+    // Validate Turnstile token
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Turnstile token is required",
+      });
+    }
+
+    // Get client IP
+    const ip =
+      req.ip ||
+      (req.headers["x-forwarded-for"] as string) ||
+      (req.headers["x-real-ip"] as string) ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      (req.connection as any).remoteAddress;
+
+    // Verify Turnstile token with Cloudflare
+    const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+    if (!secretKey) {
+      logger.error("CLOUDFLARE_TURNSTILE_SECRET_KEY is not configured");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error",
+      });
+    }
+
+    const verificationResponse = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          secret: secretKey,
+          response: token,
+          remoteip: ip as string,
+        }),
+      },
+    );
+
+    const verificationData = await verificationResponse.json();
+
+    if (!verificationData.success) {
+      logger.warn("Turnstile verification failed", {
+        errors: verificationData.error_codes,
+        ip,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Turnstile verification failed",
+      });
+    }
+
+    logger.info("Turnstile verification successful", { ip });
+
+    return res.status(200).json({
+      success: true,
+      message: "Form submitted successfully",
+    });
+  } catch (error: any) {
+    logger.error("Error processing form submission:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process form submission",
+    });
+  }
+});
+
 // Support ticket endpoint
 app.post("/api/support-ticket", async (req, res) => {
   try {
@@ -641,6 +783,15 @@ app.post("/api/support-ticket", async (req, res) => {
       user_agent,
     });
 
+    if (posthog && userId) {
+      posthog.capture({
+        distinctId: userId,
+        event: "support_ticket_submitted",
+        properties: {
+          priority: priority || "normal",
+        },
+      });
+    }
     return res.status(200).json({
       success: true,
       message: "Support ticket submitted successfully",
@@ -982,6 +1133,25 @@ app.post("/api/auth/hybrid/signup", async (req, res) => {
         logger.error("Error sending OTP:", otpError);
       }
 
+      if (posthog) {
+        posthog.identify({
+          distinctId: data.user.id,
+          properties: {
+            $set: { user_type, field_of_study, selected_plan },
+            $set_once: { registered_at: new Date().toISOString() },
+          },
+        });
+        posthog.capture({
+          distinctId: data.user.id,
+          event: "user_signed_up",
+          properties: {
+            user_type: user_type || null,
+            field_of_study: field_of_study || null,
+            selected_plan: selected_plan || null,
+            otp_method: otp_method || null,
+          },
+        });
+      }
       return res.json({
         success: true,
         message:
@@ -1094,6 +1264,13 @@ app.post("/api/auth/hybrid/oauth-signup", async (req, res) => {
       });
     }
 
+    if (posthog) {
+      posthog.capture({
+        distinctId: id,
+        event: "oauth_signup_completed",
+        properties: { provider: provider || null },
+      });
+    }
     return res.json({
       success: true,
       message:
@@ -1128,6 +1305,13 @@ app.post("/api/auth/signin", async (req, res) => {
       });
     }
 
+    if (posthog && result.user?.id) {
+      posthog.identify({
+        distinctId: result.user.id,
+        properties: { $set: { last_login: new Date().toISOString() } },
+      });
+      posthog.capture({ distinctId: result.user.id, event: "user_signed_in" });
+    }
     res.json({ success: true, data: result });
   } catch (error: any) {
     logger.error("Signin failed", {
@@ -2135,12 +2319,12 @@ app.post("/api/notifications/test", async (req, res) => {
 });
 
 // Apply auth middleware to editor routes
- app.use("/api/editor", authMiddleware);
- app.use("/api/collaboration", authMiddleware);
- app.use("/api/comments", authMiddleware);
+app.use("/api/editor", authMiddleware);
+app.use("/api/collaboration", authMiddleware);
+app.use("/api/comments", authMiddleware);
 
- // Apply auth middleware to privacy routes
- app.use("/api/privacy", authMiddleware);
+// Apply auth middleware to privacy routes
+app.use("/api/privacy", authMiddleware);
 
 // Import privacy settings router
 import privacySettingsRouter from "../api/privacy/route";
@@ -4122,6 +4306,9 @@ const server = app.listen(Number(PORT), "0.0.0.0", async () => {
   });
 });
 
+// Register PostHog error handler before 404 handler
+setupPostHogErrorHandler(app);
+
 // Enhanced 404 handler - This should be at the VERY END
 app.use((req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
@@ -4155,6 +4342,8 @@ process.on("SIGINT", () => {
     logger.info("HTTP server closed");
   });
 
+  // Flush PostHog analytics before exiting
+  shutdownPostHog().catch(() => { });
   // Exit the process
   process.exit(0);
 });
