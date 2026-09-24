@@ -1,21 +1,21 @@
 import { PostHog, setupExpressRequestContext, setupExpressErrorHandler } from "posthog-node";
 import type { Application } from "express";
 
-const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
-const POSTHOG_HOST = process.env.POSTHOG_HOST;
+const POSTHOG_API_KEY = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
-let posthog: PostHog | null = null;
+let posthogClient: PostHog | null = null;
 
 if (!POSTHOG_API_KEY) {
   if (process.env.NODE_ENV !== "production") {
     console.warn(
-      "POSTHOG_API_KEY variable required by PostHog is missing or un-configured, " +
-        "this causes events to be silently missed. " +
-        "This error stops appearing once POSTHOG_API_KEY is configured.",
+      "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, " +
+      "this causes events to be silently missed. " +
+      "This error stops appearing once NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN is configured.",
     );
   }
 } else {
-  posthog = new PostHog(POSTHOG_API_KEY, {
+  posthogClient = new PostHog(POSTHOG_API_KEY, {
     host: POSTHOG_HOST,
     enableExceptionAutocapture: true,
   });
@@ -26,8 +26,8 @@ if (!POSTHOG_API_KEY) {
  * Call this after creating `app` but before mounting routes.
  */
 export function setupPostHog(app: Application): void {
-  if (!posthog) return;
-  setupExpressRequestContext(posthog, app);
+  if (!posthogClient) return;
+  setupExpressRequestContext(posthogClient, app);
 }
 
 /**
@@ -35,8 +35,8 @@ export function setupPostHog(app: Application): void {
  * Call this AFTER all routes are registered.
  */
 export function setupPostHogErrorHandler(app: Application): void {
-  if (!posthog) return;
-  setupExpressErrorHandler(posthog, app);
+  if (!posthogClient) return;
+  setupExpressErrorHandler(posthogClient, app);
 }
 
 /**
@@ -44,8 +44,8 @@ export function setupPostHogErrorHandler(app: Application): void {
  * Call on process exit.
  */
 export async function shutdownPostHog(): Promise<void> {
-  if (!posthog) return;
-  await posthog.shutdown();
+  if (!posthogClient) return;
+  await posthogClient.shutdown();
 }
 
-export { posthog };
+export { posthogClient };

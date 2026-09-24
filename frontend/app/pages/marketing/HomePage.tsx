@@ -16,7 +16,7 @@ import {
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
 import Layout from "../../components/Layout";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import {
   motion,
   useScroll,
@@ -25,6 +25,7 @@ import {
   type Variants,
 } from "framer-motion";
 import AuraObject3D from "../../components/AuraObject3D";
+import * as Sentry from "@sentry/nextjs";
 
 // ─── Aura Design Tokens ─────────────────────────────────────────────────────
 const ACCENT = "#22d3ee";
@@ -47,6 +48,16 @@ const reveal: Variants = {
 function HeroSection() {
   const ref = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
+
+  // Test Sentry metrics on mount
+  useEffect(() => {
+    Sentry.metrics.count("homepage_view", 1, { attributes: { page: "home" } });
+    Sentry.metrics.distribution("hero_section_load", 100, {
+      attributes: { component: "HeroSection" },
+    });
+    console.log("Sentry test metrics sent: homepage_view, hero_section_load");
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
