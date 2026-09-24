@@ -162,7 +162,6 @@ const signupSchema = z
     heardAboutPlatform: z.string().optional(),
     userGoal: z.string().optional(),
     userRole: z.string().optional(),
-
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -1029,6 +1028,14 @@ const SignupPage: React.FC = () => {
             </Button>
           </>
         )}
+
+        {/* Cloudflare Turnstile Widget */}
+        <div className="flex justify-center my-4">
+          <div
+            className="cf-turnstile"
+            data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"
+          ></div>
+        </div>
 
         {/* Survey Step */}
         {surveyStep && (
