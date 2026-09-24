@@ -45,6 +45,7 @@ export default function RootLayout({
           defer
           strategy="afterInteractive"
           integrity="sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx"
+          crossOrigin="anonymous"
         />
       </head>
       <body
@@ -64,6 +65,7 @@ export default function RootLayout({
         <Script
           src="https://va.vercel-scripts.com/v1/script.js"
           strategy="afterInteractive"
+          crossOrigin="anonymous"
         />
         <Script
           id="emailoctopus-form"
@@ -75,6 +77,7 @@ export default function RootLayout({
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-L6YH94GFC1"
           strategy="afterInteractive"
+          crossOrigin="anonymous"
         />
         <Script id="google-gtag" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || [];
@@ -97,19 +100,8 @@ export default function RootLayout({
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           async
           defer
+          crossOrigin="anonymous"
         />
-        <form action="/submit-form" method="POST">
-          {/* Your existing input fields */}
-          <input type="text" name="username" placeholder="Username" required />
-
-          {/* Turnstile Widget Container */}
-          <div
-            className="cf-turnstile"
-            data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"
-          ></div>
-
-          <button type="submit">Submit</button>
-        </form>
       </body>
     </html>
   );
