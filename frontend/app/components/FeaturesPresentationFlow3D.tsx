@@ -5,6 +5,8 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Float, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
+import Canvas3DGuard from "./Canvas3DGuard";
+import Canvas3DFallback from "./Canvas3DFallback";
 
 export interface Feature3DItem {
   icon?: React.ElementType | null;
@@ -126,41 +128,48 @@ export function Feature3DScene({
 
   return (
     <div className="relative w-full">
-      <Canvas
-        style={{ height: `${height}px`, width: "100%" }}
-        camera={{ position: [0, 1.5, 9], fov: 55 }}
-        dpr={[1, 2]}
+      <Canvas3DGuard
+        variant="features-flow"
+        fallback={
+          <Canvas3DFallback accent="#8b5cf6" style={{ height: `${height}px` }} />
+        }
       >
-        <ambientLight intensity={0.55} />
-        <directionalLight intensity={1.4} position={[6, 8, 6]} />
-        <pointLight intensity={0.8} position={[-6, -4, -6]} color="#8b5cf6" />
-        <pointLight intensity={0.6} position={[6, -4, 4]} color="#3b82f6" />
+        <Canvas
+          style={{ height: `${height}px`, width: "100%" }}
+          camera={{ position: [0, 1.5, 9], fov: 55 }}
+          dpr={[1, 2]}
+        >
+          <ambientLight intensity={0.55} />
+          <directionalLight intensity={1.4} position={[6, 8, 6]} />
+          <pointLight intensity={0.8} position={[-6, -4, -6]} color="#8b5cf6" />
+          <pointLight intensity={0.6} position={[6, -4, 4]} color="#3b82f6" />
 
-        <Float speed={2} rotationIntensity={0.4} floatIntensity={0.6}>
-          <group>
-            {features.map((feature, i) => (
-              <FeatureCube
-                key={i}
-                feature={feature}
-                position={positions[i]}
-                index={i}
-                active={activeIndex === i}
-                onSelect={setActiveIndex}
-                onHover={setHoveredIndex}
-              />
-            ))}
-          </group>
-        </Float>
+          <Float speed={2} rotationIntensity={0.4} floatIntensity={0.6}>
+            <group>
+              {features.map((feature, i) => (
+                <FeatureCube
+                  key={i}
+                  feature={feature}
+                  position={positions[i]}
+                  index={i}
+                  active={activeIndex === i}
+                  onSelect={setActiveIndex}
+                  onHover={setHoveredIndex}
+                />
+              ))}
+            </group>
+          </Float>
 
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          autoRotate
-          autoRotateSpeed={0.8}
-          minPolarAngle={Math.PI / 3.2}
-          maxPolarAngle={Math.PI / 1.8}
-        />
-      </Canvas>
+          <OrbitControls
+            enableZoom={false}
+            enablePan={false}
+            autoRotate
+            autoRotateSpeed={0.8}
+            minPolarAngle={Math.PI / 3.2}
+            maxPolarAngle={Math.PI / 1.8}
+          />
+        </Canvas>
+      </Canvas3DGuard>
 
       {/* Active feature caption */}
       <motion.div
