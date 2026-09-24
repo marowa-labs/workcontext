@@ -415,6 +415,14 @@ const LoginPage: React.FC = () => {
             "Sign In"
           )}
         </Button>
+
+        {/* Cloudflare Turnstile Widget */}
+        <div className="flex justify-center my-4">
+          <div
+            className="cf-turnstile"
+            data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"
+          ></div>
+        </div>
       </form>
 
       {/* Footer */}
