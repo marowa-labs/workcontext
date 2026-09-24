@@ -143,7 +143,10 @@ const LoginPage: React.FC = () => {
         // Identify user in PostHog (distinct ID is the Supabase user ID)
         posthog.identify(result.user.id, {
           email: result.user.email,
-          name: result.user.full_name || result.user.user_metadata?.full_name || result.user.user_metadata?.name,
+          name:
+            result.user.full_name ||
+            result.user.user_metadata?.full_name ||
+            result.user.user_metadata?.name,
           role: result.userData?.role,
         });
         posthog.capture("user_logged_in", {
@@ -412,6 +415,14 @@ const LoginPage: React.FC = () => {
             "Sign In"
           )}
         </Button>
+
+        {/* Cloudflare Turnstile Widget */}
+        <div className="flex justify-center my-4">
+          <div
+            className="cf-turnstile"
+            data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"
+          ></div>
+        </div>
       </form>
 
       {/* Footer */}

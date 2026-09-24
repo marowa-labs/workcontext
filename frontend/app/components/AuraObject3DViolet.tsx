@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float } from "@react-three/drei";
 import * as THREE from "three";
+import Canvas3DGuard from "./Canvas3DGuard";
+import Canvas3DFallback from "./Canvas3DFallback";
 
 /**
  * AuraObject3DViolet — regal variant of the living 3D centerpiece.
@@ -71,18 +73,23 @@ function Object3D() {
 
 export default function AuraObject3DViolet() {
   return (
-    <Canvas
-      camera={{ position: [0, 0, 7], fov: 45 }}
-      dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true }}
-      style={{ position: "absolute", inset: 0 }}
+    <Canvas3DGuard
+      variant="ai-workspace-aura"
+      fallback={<Canvas3DFallback accent="#a78bfa" />}
     >
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[4, 3, 5]} intensity={0.6} color="#a78bfa" />
-      <directionalLight position={[-4, 2, 4]} intensity={1.1} />
-      <Float speed={1.2} rotationIntensity={0.4} floatIntensity={0.6}>
-        <Object3D />
-      </Float>
-    </Canvas>
+      <Canvas
+        camera={{ position: [0, 0, 7], fov: 45 }}
+        dpr={[1, 2]}
+        gl={{ antialias: true, alpha: true }}
+        style={{ position: "absolute", inset: 0 }}
+      >
+        <ambientLight intensity={0.25} />
+        <directionalLight position={[4, 3, 5]} intensity={0.6} color="#a78bfa" />
+        <directionalLight position={[-4, 2, 4]} intensity={1.1} />
+        <Float speed={1.2} rotationIntensity={0.4} floatIntensity={0.6}>
+          <Object3D />
+        </Float>
+      </Canvas>
+    </Canvas3DGuard>
   );
 }
