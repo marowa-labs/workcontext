@@ -5,7 +5,14 @@ import { blogPosts, BlogPost } from "../posts";
 import Layout from "../../components/Layout";
 import { Button } from "../../components/ui/button";
 import Link from "next/link";
-import { Calendar, Clock, User, ArrowLeft, Share2, Bookmark } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  User,
+  ArrowLeft,
+  Share2,
+  Bookmark,
+} from "lucide-react";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -19,7 +26,9 @@ export default function BlogPostPage({ params }: PageProps) {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 bg-[#121212]">
-          <h1 className="text-4xl font-bold text-white mb-4">Article Not Found</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">
+            Article Not Found
+          </h1>
           <p className="text-gray-400 mb-8">
             The blog post you are looking for does not exist or has been moved.
           </p>
@@ -104,7 +113,10 @@ export default function BlogPostPage({ params }: PageProps) {
                 Share
               </Button>
             </div>
-            <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <Button
+              asChild
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+            >
               <Link href="/signup">Get Started Free</Link>
             </Button>
           </div>

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Calendar,
-  Clock,
-  ArrowRight,
-  User,
-  Tag,
-} from "lucide-react";
+import { Calendar, Clock, ArrowRight, User, Tag } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
@@ -25,8 +19,6 @@ const categories = [
 ];
 
 function BlogHero() {
-  const router = useRouter();
-
   return (
     <section className="section-padding bg-[#121212] relative overflow-hidden">
       <div
@@ -145,8 +137,6 @@ function BlogContent() {
 }
 
 function BlogNewsletter() {
-  const router = useRouter();
-
   return (
     <section className="section-padding relative overflow-hidden bg-[#121212]">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20 opacity-95"></div>
