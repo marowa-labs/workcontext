@@ -4,6 +4,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import PostHogInit from "./components/PostHogInit";
 import { Toaster } from "./components/ui/toaster";
 import { UpdateNotification } from "./components/UpdateNotification";
 import AuthInitializer from "./components/auth/AuthInitializer";
@@ -54,6 +55,7 @@ export default function RootLayout({
         <ThemeProvider>
           <OnboardingProvider>
             <AuthInitializer>
+              <PostHogInit />
               {children}
               <OnboardingModal />
               <CookieConsentBanner />
@@ -65,6 +67,7 @@ export default function RootLayout({
         <Script
           src="https://va.vercel-scripts.com/v1/script.js"
           strategy="afterInteractive"
+          crossOrigin="anonymous"
         />
         <Script
           id="emailoctopus-form"
@@ -76,6 +79,7 @@ export default function RootLayout({
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-L6YH94GFC1"
           strategy="afterInteractive"
+          crossOrigin="anonymous"
         />
         <Script id="google-gtag" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || [];
@@ -94,7 +98,12 @@ export default function RootLayout({
           })
           `}
         </Script>
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" />
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async
+          defer
+          crossOrigin="anonymous"
+        />
       </body>
     </html>
   );

@@ -1030,14 +1030,12 @@ const SignupPage: React.FC = () => {
         )}
 
         {/* Cloudflare Turnstile Widget */}
-        {!surveyStep && (
-          <div className="flex justify-center my-4">
-            <div
-              className="cf-turnstile"
-              data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"
-            ></div>
-          </div>
-        )}
+        <div className="flex justify-center my-4">
+          <div
+            className="cf-turnstile"
+            data-sitekey="0x4AAAAAAE8xMaqmdgV1RuFO"
+          ></div>
+        </div>
 
         {/* Survey Step */}
         {surveyStep && (

@@ -1,34 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const STORAGE_KEY = "workcontext_cookie_consent";
-
-export type CookieConsent = {
-  essential: true;
-  analytics: boolean;
-  marketing: boolean;
-  preferences: boolean;
-  decidedAt: string;
-};
-
-function readConsent(): CookieConsent | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as CookieConsent) : null;
-  } catch {
-    return null;
-  }
-}
-
-function persist(consent: CookieConsent) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
-  // Expose to server/middleware as a cookie (1 year)
-  const maxAge = 60 * 60 * 24 * 365;
-  document.cookie = `workcontext_cookie_consent=${encodeURIComponent(
-    JSON.stringify(consent),
-  )}; path=/; max-age=${maxAge}; samesite=lax`;
-}
+import { persistConsent, readConsent } from "../lib/cookieConsent";
 
 export default function CookieConsentBanner() {
   const [mounted, setMounted] = useState(false);
@@ -66,7 +39,7 @@ export default function CookieConsentBanner() {
     marketing: boolean,
     preferences: boolean,
   ) => {
-    persist({
+    persistConsent({
       essential: true,
       analytics,
       marketing,
