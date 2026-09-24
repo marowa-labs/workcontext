@@ -4,6 +4,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import PostHogInit from "./components/PostHogInit";
 import { Toaster } from "./components/ui/toaster";
 import { UpdateNotification } from "./components/UpdateNotification";
 import AuthInitializer from "./components/auth/AuthInitializer";
@@ -54,6 +55,7 @@ export default function RootLayout({
         <ThemeProvider>
           <OnboardingProvider>
             <AuthInitializer>
+              <PostHogInit />
               {children}
               <OnboardingModal />
               <CookieConsentBanner />
