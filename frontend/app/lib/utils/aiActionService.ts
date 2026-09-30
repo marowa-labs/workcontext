@@ -371,7 +371,7 @@ class AIActionService {
         trackAIActionCompleted({
           surface,
           action_type: result.actionType,
-          outcome: result.result.success ? "success" : "failure",
+          outcome: getActionOutcome(result),
           required_confirmation: false,
         });
       }
