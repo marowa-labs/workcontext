@@ -907,6 +907,7 @@ export function AIChatDrawer({
             setMessages((prev) => [...prev, errorMessage]);
           },
         },
+        "dashboard_drawer",
       );
     } catch (error: any) {
       const msg = error.message || "Unknown error";
@@ -1216,6 +1217,7 @@ export function AIChatDrawer({
             }
           },
         },
+        "dashboard_drawer",
       );
     } catch (error: any) {
       console.error("Failed to send message:", error);

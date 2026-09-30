@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { apiClient } from "../../lib/utils/apiClient";
+import { trackAIFeedbackSubmitted } from "../../lib/analytics/aiChatEvents";
 
 interface AIResponseInterfaceProps {
   action: string;
@@ -109,6 +110,12 @@ const AIResponseInterface: React.FC<AIResponseInterfaceProps> = ({
         suggestion,
         isHelpful: positive,
         feedback: "",
+      });
+      trackAIFeedbackSubmitted({
+        surface: "editor_suggestion",
+        is_helpful: positive,
+        has_comment: false,
+        ai_action: action,
       });
       setFeedbackGiven(true);
       setShowFeedbackInput(true);
