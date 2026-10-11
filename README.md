@@ -1,5 +1,8 @@
 # WorkContext
 
+![WorkContext Logo](frontend/public/assets/images/WorkContext-Logo.png)
+*Figure 1: WorkContext.*
+
 An AI-powered collaborative writing and research workspace that connects your team's context across all tools — Slack, Notion, Jira, GitHub, and Figma — into a single searchable, actionable layer.
 
 ## Key Features
