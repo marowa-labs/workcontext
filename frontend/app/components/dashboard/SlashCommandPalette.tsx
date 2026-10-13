@@ -87,7 +87,7 @@ export function SlashCommandPalette({
       title: "Create Task",
       description: "Quickly add a new task to your workspace",
       icon: <Plus className="w-4 h-4" />,
-      shortcut: "⌘T",
+      shortcut: "Alt N",
       category: "create",
       action: () => {
         onClose();
