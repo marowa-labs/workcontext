@@ -11,6 +11,12 @@ interface ShortcutHandler {
   category?: string;
 }
 
+// Display-only description of a shortcut (used by the shortcuts help dialog).
+type ShortcutInfo = Pick<
+  ShortcutHandler,
+  "key" | "ctrlKey" | "metaKey" | "shiftKey" | "altKey" | "description" | "category"
+>;
+
 interface UseKeyboardShortcutsOptions {
   enabled?: boolean;
   preventDefault?: boolean;
@@ -87,4 +93,4 @@ export function useKeyboardShortcuts(
   return { shortcuts: shortcutsRef.current };
 }
 
-export type { ShortcutHandler };
+export type { ShortcutHandler, ShortcutInfo };

@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+  ReactNode,
+} from "react";
 import Image from "next/image";
 import {
   Menu,
@@ -29,6 +35,8 @@ import {
   Activity,
   Loader2,
   Paperclip,
+  Search,
+  Keyboard,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import Link from "next/link";
@@ -46,6 +54,7 @@ import { ModeToggle } from "../ModeToggle";
 import { GlobalTimerWidget } from "./team/GlobalTimerWidget";
 import { SearchModal } from "./SearchModal";
 import { QuickTaskModal } from "./QuickTaskModal";
+import { KeyboardShortcutsHelper } from "./KeyboardShortcutsHelper";
 import { AIChatDrawer } from "./AIChatDrawer";
 import { FloatingAIButton } from "./FloatingAIButton";
 import { InboxPanel } from "./NotificationBell";
@@ -63,6 +72,17 @@ import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { toast } from "../../hooks/use-toast";
 import { cn } from "../../lib/utils";
+import { getPageShortcuts } from "../../lib/utils/pageShortcuts";
+import type { ShortcutInfo } from "../../hooks/useKeyboardShortcuts";
+
+// Shortcuts handled by this layout, available on every dashboard page
+const GLOBAL_SHORTCUTS: ShortcutInfo[] = [
+  { key: "k", ctrlKey: true, description: "Search everything", category: "Anywhere" },
+  { key: "/", description: "Search everything", category: "Anywhere" },
+  { key: "j", ctrlKey: true, description: "Toggle AI chat", category: "Anywhere" },
+  { key: "n", altKey: true, description: "Create a quick task", category: "Anywhere" },
+  { key: "?", description: "Show keyboard shortcuts", category: "Anywhere" },
+];
 
 interface DashboardLayoutProps {
   children?: ReactNode;
@@ -112,6 +132,21 @@ export default function DashboardLayout({
 
   // Quick Task Modal State
   const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
+
+  // Keyboard Shortcuts Dialog State
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  // Platform-aware modifier label; "Ctrl" on the server to keep hydration stable
+  const modKey = useSyncExternalStore(
+    () => () => {},
+    () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"),
+    () => "Ctrl",
+  );
+
+  // Page-specific shortcuts are read when the dialog opens
+  const shortcutsForDialog = useMemo(
+    () => (showShortcuts ? [...GLOBAL_SHORTCUTS, ...getPageShortcuts()] : []),
+    [showShortcuts],
+  );
 
   // AI Chat Drawer State
   const [showAIChat, setShowAIChat] = useState(false);
@@ -294,7 +329,8 @@ export default function DashboardLayout({
     fetchSidebarData();
   }, [user, token]);
 
-  // Global keyboard shortcuts: Cmd+K search, Cmd+J AI chat, / search
+  // Global keyboard shortcuts: Cmd+K search, Cmd+J AI chat, / search,
+  // Alt+N quick task, ? shortcuts help
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -321,11 +357,45 @@ export default function DashboardLayout({
         setShowSearchModal(true);
         return;
       }
+
+      const hasOpenDialog = !!document.querySelector(
+        '[role="dialog"][data-state="open"]',
+      );
+
+      // ? — toggle the shortcuts dialog (only when NOT typing)
+      if (
+        event.key === "?" &&
+        !isInput &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        if (showShortcuts || !hasOpenDialog) {
+          event.preventDefault();
+          setShowShortcuts((prev) => !prev);
+        }
+        return;
+      }
+
+      // Alt+N — create a quick task from anywhere. Uses event.code because
+      // Alt changes the produced character on macOS keyboards.
+      if (
+        event.code === "KeyN" &&
+        event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        !hasOpenDialog
+      ) {
+        event.preventDefault();
+        setShowQuickTaskModal(true);
+        return;
+      }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [showSearchModal]);
+  }, [showSearchModal, showShortcuts]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -357,6 +427,7 @@ export default function DashboardLayout({
     const handleOpenSearch = () => setShowSearchModal(true);
     const handleCreateProject = () => setShowCreateWorkspaceModal(true);
     const handleCreateQuickTask = () => setShowQuickTaskModal(true);
+    const handleOpenShortcuts = () => setShowShortcuts(true);
     const handleOpenAIChat = () => setShowAIChat(true);
     const handleSummarizeWorkspace = (e: any) => {
       // Open AIChatDrawer and set pending action to auto-send summary
@@ -371,6 +442,7 @@ export default function DashboardLayout({
     window.addEventListener("create-project", handleCreateProject);
     window.addEventListener("create-quick-task", handleCreateQuickTask);
     window.addEventListener("open-ai-chat", handleOpenAIChat);
+    window.addEventListener("open-shortcuts-help", handleOpenShortcuts);
     window.addEventListener("summarize-workspace", handleSummarizeWorkspace);
 
     return () => {
@@ -378,6 +450,7 @@ export default function DashboardLayout({
       window.removeEventListener("create-project", handleCreateProject);
       window.removeEventListener("create-quick-task", handleCreateQuickTask);
       window.removeEventListener("open-ai-chat", handleOpenAIChat);
+      window.removeEventListener("open-shortcuts-help", handleOpenShortcuts);
       window.removeEventListener(
         "summarize-workspace",
         handleSummarizeWorkspace,
@@ -619,6 +692,58 @@ export default function DashboardLayout({
                   )}
                 </button>
               </div>
+            </div>
+            {/* Quick actions */}
+            <div className="px-4 pt-4 space-y-1">
+              {[
+                {
+                  id: "search",
+                  label: "Search",
+                  icon: Search,
+                  hint: `${modKey}K`,
+                  title: `Search (${modKey}+K)`,
+                  onClick: () => setShowSearchModal(true),
+                },
+                {
+                  id: "quick-task",
+                  label: "New task",
+                  icon: Plus,
+                  hint: "Alt N",
+                  title: "Create a quick task (Alt+N)",
+                  onClick: () => setShowQuickTaskModal(true),
+                },
+                {
+                  id: "shortcuts",
+                  label: "Shortcuts",
+                  icon: Keyboard,
+                  hint: "?",
+                  title: "Keyboard shortcuts (?)",
+                  onClick: () => setShowShortcuts(true),
+                },
+              ].map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={action.onClick}
+                  title={action.title}
+                  aria-label={action.title}
+                  className={`
+                    w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium
+                    text-muted-foreground hover:bg-muted hover:text-foreground ${transitionClasses}
+                    ${sidebarCollapsed ? "justify-center" : ""}
+                  `}
+                >
+                  <action.icon className="w-5 h-5 flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="ml-3 truncate">{action.label}</span>
+                      <kbd className="ml-auto px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded">
+                        {action.hint}
+                      </kbd>
+                    </>
+                  )}
+                </button>
+              ))}
             </div>
             {/* Navigation Sections */}
             <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto custom-scrollbar">
@@ -1342,6 +1467,13 @@ export default function DashboardLayout({
       <QuickTaskModal
         isOpen={showQuickTaskModal}
         onClose={() => setShowQuickTaskModal(false)}
+      />
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsHelper
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+        shortcuts={shortcutsForDialog}
       />
 
       {/* Create Workspace Modal */}

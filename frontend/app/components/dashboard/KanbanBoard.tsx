@@ -63,7 +63,7 @@ import {
   useKeyboardShortcuts,
   ShortcutHandler,
 } from "../../hooks/useKeyboardShortcuts";
-import { KeyboardShortcutsHelper } from "./KeyboardShortcutsHelper";
+import { registerPageShortcuts } from "../../lib/utils/pageShortcuts";
 import { useRecentTasks } from "../../hooks/useRecentTasks";
 import { RecentTasksDropdown } from "./RecentTasksDropdown";
 import TaskTemplateCards from "./tasks/TaskTemplateCards";
@@ -110,7 +110,6 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
     "kanban",
   );
   const { recentTasks, addRecentTask } = useRecentTasks();
-  const [showShortcutsHelper, setShowShortcutsHelper] = useState(false);
   const [members, setMembers] = useState<
     { id: string; full_name: string | null; email: string }[]
   >([]);
@@ -410,35 +409,17 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
   const shortcuts: ShortcutHandler[] = [
     {
       key: "n",
+      altKey: false,
       handler: () => handleCreateTask(),
       description: "Create new task",
       category: "Tasks",
     },
     {
-      key: "?",
-      handler: () => setShowShortcutsHelper(!showShortcutsHelper),
-      description: "Show keyboard shortcuts",
-      category: "Help",
-    },
-    {
       key: "Escape",
       handler: () => {
         setIsModalOpen(false);
-        setShowShortcutsHelper(false);
       },
       description: "Close modals",
-      category: "Navigation",
-    },
-    {
-      key: "k",
-      ctrlKey: true,
-      handler: () => {
-        const searchInput = document.querySelector(
-          'input[placeholder*="Search"]',
-        ) as HTMLInputElement;
-        searchInput?.focus();
-      },
-      description: "Focus search",
       category: "Navigation",
     },
     {
@@ -462,6 +443,9 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
   ];
 
   useKeyboardShortcuts(shortcuts, { enabled: true });
+
+  // Expose these shortcuts to the global "?" shortcuts dialog
+  useEffect(() => registerPageShortcuts(() => shortcuts));
 
   const handleApplyView = (view: WorkspaceView) => {
     const f = view.filters;
@@ -686,9 +670,11 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowShortcutsHelper(true)}
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent("open-shortcuts-help"))
+            }
             className="h-10 px-3 text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-            title="Keyboard Shortcuts (Shift + /)">
+            title="Keyboard shortcuts (?)">
             <Keyboard className="w-4 h-4" />
           </Button>
         </div>
@@ -995,13 +981,6 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
           onToggleSelection={handleToggleSelection}
         />
       )}
-
-      {/* Keyboard Shortcuts Helper */}
-      <KeyboardShortcutsHelper
-        isOpen={showShortcutsHelper}
-        onClose={() => setShowShortcutsHelper(false)}
-        shortcuts={shortcuts}
-      />
 
       {/* Task Details Modal */}
       <TaskDetailsModal
