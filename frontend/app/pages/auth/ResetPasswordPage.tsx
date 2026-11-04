@@ -12,6 +12,7 @@ import FormInput from "../../components/auth/FormInput";
 import PasswordStrength from "../../components/auth/PasswordStrength";
 import { Button } from "../../components/ui/button";
 import { supabase } from "../../lib/supabase/client";
+import posthog from "posthog-js";
 
 const resetPasswordSchema = z
   .object({
@@ -28,6 +29,59 @@ const resetPasswordSchema = z
   });
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
+type RecoveryCheck = {
+  valid: boolean;
+  linkType: "token_hash" | "implicit" | "error" | "none";
+};
+
+// Starts the recovery session from the reset link. Reset emails link here
+// with ?token_hash=...&type=recovery. Older emails sent a Supabase verify
+// link that lands with an implicit-flow hash (#access_token=...). The PKCE
+// browser client rejects that hash, so we set that session ourselves.
+async function establishRecoverySession(): Promise<RecoveryCheck> {
+  const url = new URL(window.location.href);
+  const hash = new URLSearchParams(url.hash.slice(1));
+  const tokenHash = url.searchParams.get("token_hash");
+  const accessToken = hash.get("access_token");
+  const refreshToken = hash.get("refresh_token");
+
+  try {
+    if (tokenHash && url.searchParams.get("type") === "recovery") {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "recovery",
+      });
+      window.history.replaceState(null, "", url.pathname);
+      if (error) console.error("Recovery token verification failed:", error);
+      return { valid: !error, linkType: "token_hash" };
+    }
+
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      window.history.replaceState(null, "", url.pathname);
+      if (error) console.error("Recovery session setup failed:", error);
+      return { valid: !error, linkType: "implicit" };
+    }
+
+    if (hash.get("error") || hash.get("error_code")) {
+      return { valid: false, linkType: "error" };
+    }
+
+    // No token in the URL: a recovery session can already exist, for example
+    // after AuthInitializer sends a PASSWORD_RECOVERY event to this page.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return { valid: !!session, linkType: "none" };
+  } catch (err) {
+    console.error("Recovery session check error:", err);
+    return { valid: false, linkType: "none" };
+  }
+}
 
 const ResetPasswordPage: React.FC = () => {
   const router = useRouter();
@@ -49,43 +103,23 @@ const ResetPasswordPage: React.FC = () => {
 
   const passwordValue = watch("password");
 
+  // The token is single-use, so verify it only once, even when React runs
+  // the effect twice in development.
+  const recoveryCheck = React.useRef<Promise<RecoveryCheck> | null>(null);
+
   React.useEffect(() => {
     let mounted = true;
 
-    // Supabase recovery links arrive as a URL hash fragment
-    // (#access_token=...&type=recovery). With detectSessionInUrl enabled,
-    // the client picks up the session automatically — we just need to
-    // confirm a recovery session exists before showing the form.
-    const checkRecoverySession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
-        if (session) {
-          setIsValidToken(true);
-        } else {
-          // No session yet — wait briefly for the hash to be processed,
-          // then check again before declaring the link invalid.
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-          if (!mounted) return;
-
-          const {
-            data: { session: retrySession },
-          } = await supabase.auth.getSession();
-          setIsValidToken(!!retrySession);
-        }
-      } catch (err) {
-        console.error("Recovery session check error:", err);
-        if (mounted) setIsValidToken(false);
-      } finally {
-        if (mounted) setIsChecking(false);
-      }
-    };
-
-    checkRecoverySession();
+    recoveryCheck.current ??= establishRecoverySession();
+    recoveryCheck.current.then(({ valid, linkType }) => {
+      if (!mounted) return;
+      posthog.capture("password_reset_link_checked", {
+        valid,
+        link_type: linkType,
+      });
+      setIsValidToken(valid);
+      setIsChecking(false);
+    });
 
     return () => {
       mounted = false;
@@ -96,7 +130,7 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // The recovery session is already established from the URL hash —
+      // The recovery session is already established from the reset link —
       // just update the password directly.
       const { error: updateError } = await supabase.auth.updateUser({
         password: data.password,
@@ -106,6 +140,7 @@ const ResetPasswordPage: React.FC = () => {
         throw updateError;
       }
 
+      posthog.capture("password_reset_completed");
       setIsSuccess(true);
     } catch (error: any) {
       console.error("Password reset failed:", error);
