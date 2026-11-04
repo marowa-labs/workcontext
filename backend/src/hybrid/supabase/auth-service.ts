@@ -191,12 +191,9 @@ export class AuthService {
       throw new Error("Failed to generate password reset link");
     }
 
-    // Link straight to our reset page with the token hash instead of using
-    // action_link. action_link returns an implicit-flow session in the URL
-    // hash, which the PKCE browser client (@supabase/ssr) rejects, so the
-    // page always showed "invalid or expired". The page now verifies the
-    // token with verifyOtp. This also stops email link scanners from using
-    // up the one-time token with a GET request.
+    // Not action_link: it lands with an implicit-flow hash that the PKCE
+    // browser client (@supabase/ssr) rejects. The reset page verifies this
+    // token hash with verifyOtp, so a link scanner's GET cannot use it up.
     const resetLink = `${appUrl}/reset-password?token_hash=${encodeURIComponent(
       data.properties.hashed_token,
     )}&type=recovery`;
