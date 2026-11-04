@@ -167,17 +167,16 @@ export class AuthService {
       );
     }
 
+    const appUrl = (
+      (await SecretsService.getPublicAppUrl()) ||
+      (await SecretsService.getSecret("APP_URL")) ||
+      process.env.FRONTEND_URL ||
+      "http://localhost:3000"
+    ).replace(/\/+$/, "");
+
     const { data, error } = await adminClient.auth.admin.generateLink({
       type: "recovery",
       email,
-      options: {
-        redirectTo: `${
-          (await SecretsService.getPublicAppUrl()) ||
-          (await SecretsService.getSecret("APP_URL")) ||
-          process.env.FRONTEND_URL ||
-          "http://localhost:3000"
-        }/reset-password`,
-      },
     });
 
     if (error) {
@@ -187,10 +186,20 @@ export class AuthService {
       throw new Error(error.message);
     }
 
-    if (!data?.properties?.action_link) {
-      console.error("AuthService.resetPassword error: no action link returned");
+    if (!data?.properties?.hashed_token) {
+      console.error("AuthService.resetPassword error: no token returned");
       throw new Error("Failed to generate password reset link");
     }
+
+    // Link straight to our reset page with the token hash instead of using
+    // action_link. action_link returns an implicit-flow session in the URL
+    // hash, which the PKCE browser client (@supabase/ssr) rejects, so the
+    // page always showed "invalid or expired". The page now verifies the
+    // token with verifyOtp. This also stops email link scanners from using
+    // up the one-time token with a GET request.
+    const resetLink = `${appUrl}/reset-password?token_hash=${encodeURIComponent(
+      data.properties.hashed_token,
+    )}&type=recovery`;
 
     // Deliver the reset link via Plunk (the app's transactional email provider)
     const fullName =
@@ -199,7 +208,7 @@ export class AuthService {
       "";
     const sent = await EmailService.sendPasswordResetEmail(
       email,
-      data.properties.action_link,
+      resetLink,
       fullName,
     );
 
