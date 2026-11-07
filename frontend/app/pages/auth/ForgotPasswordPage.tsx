@@ -114,7 +114,7 @@ const ForgotPasswordPage: React.FC = () => {
             </div>
           )}
 
-          {/* Each new email replaces the reset link in earlier emails */}
+          {/* Resend Notice */}
           {isResent && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <p className="text-sm text-green-700">

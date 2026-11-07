@@ -32,7 +32,7 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 type RecoveryCheck = {
   valid: boolean;
-  linkType: "token_hash" | "implicit" | "error" | "none";
+  linkType: "implicit" | "error" | "none";
 };
 
 // Reset emails link here with ?token_hash=...&type=recovery. The token is
