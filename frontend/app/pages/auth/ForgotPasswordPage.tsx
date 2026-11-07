@@ -22,6 +22,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [submittedEmail, setSubmittedEmail] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
+  const [isResent, setIsResent] = React.useState(false);
 
   const {
     register,
@@ -57,10 +58,12 @@ const ForgotPasswordPage: React.FC = () => {
   const handleResendEmail = async () => {
     setIsLoading(true);
     setError(null);
+    setIsResent(false);
     try {
       // Use Supabase to resend reset email
       await resetPassword(submittedEmail);
       console.log("Reset email resent successfully");
+      setIsResent(true);
     } catch (error: any) {
       console.error("Resend email failed:", error);
       setError(
@@ -108,6 +111,16 @@ const ForgotPasswordPage: React.FC = () => {
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Resend Notice */}
+          {isResent && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm text-green-700">
+                We sent a new email. Use the link in the newest email. Links in
+                earlier emails no longer work.
+              </p>
             </div>
           )}
 
