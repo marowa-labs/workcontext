@@ -35,28 +35,25 @@ type RecoveryCheck = {
   linkType: "token_hash" | "implicit" | "error" | "none";
 };
 
-// Starts the recovery session from the reset link. Reset emails link here
-// with ?token_hash=...&type=recovery. Older emails sent a Supabase verify
-// link that lands with an implicit-flow hash (#access_token=...). The PKCE
-// browser client rejects that hash, so we set that session ourselves.
+// Reset emails link here with ?token_hash=...&type=recovery. The token is
+// single-use, and some email link scanners run the page's JavaScript, so the
+// page verifies the token only when the user submits a new password.
+function getRecoveryTokenHash(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("type") === "recovery" ? params.get("token_hash") : null;
+}
+
+// Starts the recovery session for links without a token hash. Older emails
+// sent a Supabase verify link that lands with an implicit-flow hash
+// (#access_token=...). The PKCE browser client rejects that hash, so we set
+// that session ourselves.
 async function establishRecoverySession(): Promise<RecoveryCheck> {
   const url = new URL(window.location.href);
   const hash = new URLSearchParams(url.hash.slice(1));
-  const tokenHash = url.searchParams.get("token_hash");
   const accessToken = hash.get("access_token");
   const refreshToken = hash.get("refresh_token");
 
   try {
-    if (tokenHash && url.searchParams.get("type") === "recovery") {
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: tokenHash,
-        type: "recovery",
-      });
-      window.history.replaceState(null, "", url.pathname);
-      if (error) console.error("Recovery token verification failed:", error);
-      return { valid: !error, linkType: "token_hash" };
-    }
-
     if (accessToken && refreshToken) {
       const { error } = await supabase.auth.setSession({
         access_token: accessToken,
@@ -103,12 +100,21 @@ const ResetPasswordPage: React.FC = () => {
 
   const passwordValue = watch("password");
 
-  // The token is single-use, so verify it only once, even when React runs
-  // the effect twice in development.
+  const recoveryTokenHash = React.useRef<string | null>(null);
+  // Set up the session only once, even when React runs the effect twice in
+  // development.
   const recoveryCheck = React.useRef<Promise<RecoveryCheck> | null>(null);
 
   React.useEffect(() => {
     let mounted = true;
+
+    const tokenHash = getRecoveryTokenHash();
+    if (tokenHash) {
+      recoveryTokenHash.current = tokenHash;
+      setIsValidToken(true);
+      setIsChecking(false);
+      return;
+    }
 
     recoveryCheck.current ??= establishRecoverySession();
     recoveryCheck.current.then(({ valid, linkType }) => {
@@ -130,8 +136,27 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // The recovery session is already established from the reset link —
-      // just update the password directly.
+      const tokenHash = recoveryTokenHash.current;
+      if (tokenHash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        });
+        posthog.capture("password_reset_link_checked", {
+          valid: !verifyError,
+          link_type: "token_hash",
+        });
+        if (verifyError) {
+          console.error("Recovery token verification failed:", verifyError);
+          setIsValidToken(false);
+          return;
+        }
+        // The token is used up now. A retry after a failed update uses the
+        // session that verifyOtp started.
+        recoveryTokenHash.current = null;
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+
       const { error: updateError } = await supabase.auth.updateUser({
         password: data.password,
       });
@@ -197,7 +222,8 @@ const ResetPasswordPage: React.FC = () => {
               This could happen if:
             </p>
             <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
-              <li>The link is older than 24 hours</li>
+              <li>You requested a newer reset email. Only the newest link works</li>
+              <li>The link has expired</li>
               <li>You've already used this link</li>
               <li>The link was copied incorrectly</li>
             </ul>
