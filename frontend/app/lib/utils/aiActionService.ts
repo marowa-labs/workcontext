@@ -2,6 +2,14 @@
 // Handles AI action execution and confirmation flow
 
 import apiClient from "./apiClient";
+import {
+  trackAIActionCompleted,
+  trackAIMessageSent,
+  trackAIResponseFailed,
+  trackAIResponseReceived,
+  type AIActionOutcome,
+  type AIChatSurface,
+} from "../analytics/aiChatEvents";
 
 export interface AIActionRequest {
   message: string;
@@ -286,6 +294,13 @@ export function getConfirmationButtonText(actionType: string): {
   };
 }
 
+function getActionOutcome(result: AIActionResult): AIActionOutcome {
+  if (result.type === "error" || result.result?.success === false) {
+    return "failure";
+  }
+  return "success";
+}
+
 class AIActionService {
   private pendingConfirmation: AIActionResult | null = null;
   private confirmationCallbacks: {
@@ -323,7 +338,11 @@ class AIActionService {
       onNavigation?: (page: string, params?: Record<string, string>) => void;
       onCancel?: () => void;
     },
+    surface: AIChatSurface,
   ): Promise<AIActionResult | null> {
+    trackAIMessageSent({ surface, request_type: "action" });
+    const startedAt = Date.now();
+
     try {
       // Get user's preferred model if not provided
       const model =
@@ -335,6 +354,27 @@ class AIActionService {
         model,
         ...context,
       });
+
+      const latency_ms = Date.now() - startedAt;
+      if (result.type === "error") {
+        trackAIResponseFailed({ surface, request_type: "action", latency_ms });
+      } else {
+        trackAIResponseReceived({
+          surface,
+          request_type: "action",
+          response_type: result.type,
+          action_type: result.actionType,
+          latency_ms,
+        });
+      }
+      if (result.type === "action" && result.result) {
+        trackAIActionCompleted({
+          surface,
+          action_type: result.actionType,
+          outcome: getActionOutcome(result),
+          required_confirmation: false,
+        });
+      }
 
       // Handle confirmation required
       if (
@@ -350,6 +390,12 @@ class AIActionService {
               // User confirmed
               const confirmedResult = await confirmAIAction(result.actionId!);
               this.pendingConfirmation = null;
+              trackAIActionCompleted({
+                surface,
+                action_type: result.actionType,
+                outcome: getActionOutcome(confirmedResult),
+                required_confirmation: true,
+              });
 
               // Check for navigation in confirmed result
               this.handleNavigation(confirmedResult, callbacks.onNavigation);
@@ -364,6 +410,12 @@ class AIActionService {
                 await cancelAIAction(result.actionId);
               }
               this.pendingConfirmation = null;
+              trackAIActionCompleted({
+                surface,
+                action_type: result.actionType,
+                outcome: "cancelled",
+                required_confirmation: true,
+              });
 
               if (callbacks.onCancel) {
                 callbacks.onCancel();
@@ -386,6 +438,11 @@ class AIActionService {
       return result;
     } catch (error: any) {
       console.error("AI Action error:", error);
+      trackAIResponseFailed({
+        surface,
+        request_type: "action",
+        latency_ms: Date.now() - startedAt,
+      });
       if (callbacks.onError) {
         callbacks.onError(error.message || "An error occurred");
       }

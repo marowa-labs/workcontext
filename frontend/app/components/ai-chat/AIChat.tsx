@@ -45,6 +45,11 @@ import {
   getConfirmationButtonText,
 } from "../../lib/utils/aiActionService";
 import { useRouter } from "next/navigation";
+import {
+  trackAIMessageSent,
+  trackAIResponseFailed,
+  trackAIResponseReceived,
+} from "../../lib/analytics/aiChatEvents";
 
 // Enhanced interfaces for the new functionality
 interface SourceCitation {
@@ -639,6 +644,14 @@ export function AIChatPanel({
   const sendMessage = async () => {
     if ((!inputValue.trim() && !selectedImage) || isLoading) return;
 
+    const requestType = chatMode === "synthesis" ? "synthesis" : "chat";
+    trackAIMessageSent({
+      surface: "editor_panel",
+      request_type: requestType,
+      chat_mode: chatMode,
+    });
+    const startedAt = Date.now();
+
     try {
       setIsLoading(true);
       setError(null);
@@ -718,6 +731,11 @@ export function AIChatPanel({
         };
 
         setMessages((prev) => [...prev, aiMessage]);
+        trackAIResponseReceived({
+          surface: "editor_panel",
+          request_type: requestType,
+          latency_ms: Date.now() - startedAt,
+        });
         setIsLoading(false);
         return;
       }
@@ -814,8 +832,18 @@ export function AIChatPanel({
         content: stripEditorMarkers(result.aiMessage.content),
       };
       setMessages((prev) => [...prev, cleanChatMessage]);
+      trackAIResponseReceived({
+        surface: "editor_panel",
+        request_type: requestType,
+        latency_ms: Date.now() - startedAt,
+      });
     } catch (error: any) {
       console.error("Error sending message:", error);
+      trackAIResponseFailed({
+        surface: "editor_panel",
+        request_type: requestType,
+        latency_ms: Date.now() - startedAt,
+      });
       setError(error.message || "Failed to send message");
     } finally {
       setIsLoading(false);
@@ -1320,6 +1348,7 @@ export function AIChatPanel({
             }
           },
         },
+        "editor_panel",
       );
     } catch (error: any) {
       console.error("Chat error:", error);

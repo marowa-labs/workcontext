@@ -22,7 +22,6 @@ import remarkGfm from "remark-gfm";
 import { cn } from "../../lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import posthog from "posthog-js";
 import {
   AIActionResult,
   formatActionType,
@@ -33,6 +32,7 @@ import {
 } from "../../lib/utils/aiActionService";
 import aiActionService from "../../lib/utils/aiActionService";
 import apiClient from "../../lib/utils/apiClient";
+import { trackAIFeedbackSubmitted } from "../../lib/analytics/aiChatEvents";
 
 interface Message {
   id: string;
@@ -539,8 +539,8 @@ export default function AIPage() {
         feedback: feedbackText || undefined,
       });
 
-      // Track feedback in PostHog
-      posthog.capture("ai_feedback_submitted", {
+      trackAIFeedbackSubmitted({
+        surface: "ai_page",
         is_helpful: feedbackIsHelpful,
         has_comment: !!feedbackText,
       });
@@ -790,10 +790,6 @@ export default function AIPage() {
     setInput("");
     setLoading(true);
 
-    posthog.capture("ai_message_sent", {
-      has_existing_session: !!currentSession,
-    });
-
     const pageContext = getPageContext();
 
     try {
@@ -863,6 +859,7 @@ export default function AIPage() {
             await saveAIMessage(`Sorry, I encountered an error: ${error}. Please try again.`, sessionId);
           },
         },
+        "ai_page",
       );
     } catch (error: any) {
       console.error("Failed to send message:", error);
