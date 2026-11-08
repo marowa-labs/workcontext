@@ -25,12 +25,7 @@ function IntroHero() {
             </span>
           </h1>
           <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
-            Last updated:{" "}
-            {new Date().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+            Last updated: August 3, 2026
           </p>
           <p className="text-gray-400 max-w-2xl mx-auto">
             We are committed to protecting your privacy and being transparent
