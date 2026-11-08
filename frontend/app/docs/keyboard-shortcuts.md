@@ -1,5 +1,15 @@
 # Keyboard Shortcuts
 
+## Anywhere in the Dashboard
+
+| Shortcut                       | Action                                     |
+| ------------------------------ | ------------------------------------------ |
+| Cmd+K (Mac) / Ctrl+K (Windows) | Search everything                          |
+| /                              | Search everything (when not typing)        |
+| Cmd+J (Mac) / Ctrl+J (Windows) | Toggle AI chat                             |
+| Alt+N                          | Create a quick task                        |
+| ?                              | Show the shortcuts available on this page  |
+
 This document provides a comprehensive list of keyboard shortcuts available in the WorkContexteditor to help you work more efficiently.
 
 ## Text Formatting
