@@ -193,7 +193,8 @@ export class AuthService {
 
     // Not action_link: it lands with an implicit-flow hash that the PKCE
     // browser client (@supabase/ssr) rejects. The reset page verifies this
-    // token hash with verifyOtp, so a link scanner's GET cannot use it up.
+    // token hash with verifyOtp only when the user submits a new password,
+    // so a link scanner cannot use it up.
     const resetLink = `${appUrl}/reset-password?token_hash=${encodeURIComponent(
       data.properties.hashed_token,
     )}&type=recovery`;
